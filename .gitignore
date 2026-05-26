@@ -1,0 +1,130 @@
+# ─────────────────────────────────────────────────────────────────────
+# Secrets / env
+# ─────────────────────────────────────────────────────────────────────
+# Por defecto NINGÚN .env se sube. Whitelist explícito al final.
+.env
+.env.*
+.env.local
+.env.*.local
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Python / backend
+# ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.basedpyright/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.hypothesis/
+.ipynb_checkpoints/
+dist/
+build/
+*.egg-info/
+pip-wheel-metadata/
+
+# ─────────────────────────────────────────────────────────────────────
+# Node / frontend
+# ─────────────────────────────────────────────────────────────────────
+node_modules/
+.next/
+.turbo/
+.swc/
+out/
+.pnpm-store/
+.yarn/cache/
+.yarn/install-state.gz
+.parcel-cache/
+*.tsbuildinfo
+next-env.d.ts.tmp
+
+# pnpm 11 RC genera este workspace.yaml vacío sin valores útiles.
+frontend/pnpm-workspace.yaml
+
+# ─────────────────────────────────────────────────────────────────────
+# IDE / editores
+# ─────────────────────────────────────────────────────────────────────
+.vscode/
+!.vscode/settings.json.example
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.history/
+
+# ─────────────────────────────────────────────────────────────────────
+# Claude Code (worktrees, cache, sesiones internas)
+# ─────────────────────────────────────────────────────────────────────
+.claude/
+.agents/
+
+# ─────────────────────────────────────────────────────────────────────
+# OS leftover
+# ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ─────────────────────────────────────────────────────────────────────
+# Logs y outputs temporales
+# ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─────────────────────────────────────────────────────────────────────
+# Datos locales / artefactos / backups
+# ─────────────────────────────────────────────────────────────────────
+data/
+*.sqlite
+*.sqlite3
+*.db-journal
+*.bak
+*.tmp
+*.old
+
+# Paquetes / instaladores que no deberían vivir en el repo.
+*.deb
+*.rpm
+*.msi
+*.dmg
+*.exe
+*.dll
+*.pdb
+
+# Archivos comprimidos generados (descargas temporales).
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Cachés de modelos de ML / embeddings si alguien los redirige al repo
+# (por defecto viven en ~/.cache/orf-aniro/fastembed/ — fuera del repo).
+.cache/
+.fastembed_cache/
+
+
+# PM2 runtime (logs, pids) — pero NO el ecosystem.config.js que sí va al repo.
+.pm2/
+*.pid
