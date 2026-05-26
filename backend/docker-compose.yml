@@ -1,0 +1,21 @@
+services:
+  postgres-savi:
+    image: postgres:16-alpine
+    container_name: savi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AGENT_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${AGENT_DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${AGENT_DB_NAME:-savi_agente}
+    ports:
+      - "${AGENT_DB_PORT:-5434}:5432"
+    volumes:
+      - savi_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AGENT_DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  savi_pgdata:

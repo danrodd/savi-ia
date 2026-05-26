@@ -1,0 +1,43 @@
+[project]
+name = "savi"
+version = "0.1.0"
+description = "SAVI - Agente de IA corporativo de SEO Group"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.14",
+    "asyncpg>=0.30",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.6",
+    "orjson>=3.10",
+    "claude-agent-sdk>=0.0.10",
+    "anthropic>=0.40",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.28",
+    "ruff>=0.8",
+    "pyright>=1.1.390",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "ASYNC"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+include = ["app", "tests"]
+pythonVersion = "3.12"
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
