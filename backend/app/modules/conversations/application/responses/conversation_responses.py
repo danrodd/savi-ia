@@ -66,6 +66,8 @@ class MessageResponse(BaseModel):
     )
     usage: TokenUsageResponse | None = None
     cost_usd: Decimal | None = None
+    superseded_at: datetime | None = None
+    superseded_by_id: UUID | None = None
 
     @classmethod
     def from_dto(cls, dto: MessageDTO) -> "MessageResponse":
@@ -87,6 +89,8 @@ class MessageResponse(BaseModel):
             ],
             usage=TokenUsageResponse(**dto.usage.to_dict()) if dto.usage else None,
             cost_usd=dto.cost_usd,
+            superseded_at=dto.superseded_at,
+            superseded_by_id=dto.superseded_by_id,
         )
 
 

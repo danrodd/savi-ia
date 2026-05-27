@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -80,11 +81,55 @@ class SqlAlchemyConversationRepository(ConversationRepository):
         await self._session.refresh(model)
         return ConversationOrmMapper.message_to_entity(model)
 
-    async def list_messages(self, conversation_id: UUID) -> list[Message]:
-        stmt = (
-            select(MessageModel)
-            .where(MessageModel.conversation_id == conversation_id)
-            .order_by(MessageModel.created_at.asc())
+    async def list_messages(
+        self,
+        conversation_id: UUID,
+        *,
+        include_superseded: bool = False,
+    ) -> list[Message]:
+        stmt = select(MessageModel).where(
+            MessageModel.conversation_id == conversation_id
         )
+        if not include_superseded:
+            stmt = stmt.where(MessageModel.superseded_at.is_(None))
+        stmt = stmt.order_by(MessageModel.created_at.asc())
         result = await self._session.execute(stmt)
         return [ConversationOrmMapper.message_to_entity(m) for m in result.scalars().all()]
+
+    async def get_last_active_message(
+        self,
+        conversation_id: UUID,
+    ) -> Message | None:
+        stmt = (
+            select(MessageModel)
+            .where(
+                MessageModel.conversation_id == conversation_id,
+                MessageModel.superseded_at.is_(None),
+            )
+            .order_by(MessageModel.created_at.desc())
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return ConversationOrmMapper.message_to_entity(model) if model else None
+
+    async def supersede_messages(
+        self,
+        message_ids: list[UUID],
+        *,
+        superseded_by_id: UUID | None = None,
+    ) -> None:
+        if not message_ids:
+            return
+        stmt = (
+            update(MessageModel)
+            .where(
+                MessageModel.id.in_(message_ids),
+                MessageModel.superseded_at.is_(None),
+            )
+            .values(
+                superseded_at=datetime.now(UTC),
+                superseded_by_id=superseded_by_id,
+            )
+        )
+        await self._session.execute(stmt)

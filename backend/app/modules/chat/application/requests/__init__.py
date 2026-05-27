@@ -1,3 +1,3 @@
-from app.modules.chat.application.requests.chat_request import ChatRequest
+from app.modules.chat.application.requests.chat_request import ChatAction, ChatRequest
 
-__all__ = ["ChatRequest"]
+__all__ = ["ChatAction", "ChatRequest"]

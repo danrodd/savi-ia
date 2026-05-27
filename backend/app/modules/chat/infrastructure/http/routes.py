@@ -1,11 +1,12 @@
 """Endpoint POST /chat con Server-Sent Events.
 
+Body discriminado por `action`:
+- `send`: envío normal de un mensaje del usuario.
+- `edit_last`: reemplaza el último user activo + regenera la respuesta.
+- `regenerate`: regenera la última respuesta sin tocar el user.
+
 El cuerpo del stream son líneas SSE estándar:
     data: {"type": "text_delta", "text": "..."}\\n\\n
-
-El frontend abre `fetch('/chat', { method:'POST', body:... })` y consume el
-ReadableStream parseando líneas separadas por `\\n\\n`. Esto es lo mismo que
-ya hace la SDK de SAVI en el frontend hermano (Vue 3).
 """
 from __future__ import annotations
 
@@ -18,7 +19,7 @@ from fastapi.responses import StreamingResponse
 
 from app.modules.chat.application.requests import ChatRequest
 from app.modules.chat.domain.entities import ChatEvent
-from app.modules.chat.infrastructure.http.dependencies import SendMessageUseCaseDep
+from app.modules.chat.infrastructure.http.dependencies import ChatTurnUseCaseDep
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -36,10 +37,19 @@ def _sse(payload: dict[str, Any]) -> str:
 @router.post("")
 async def chat(
     request: ChatRequest,
-    use_case: SendMessageUseCaseDep,
+    use_case: ChatTurnUseCaseDep,
 ) -> StreamingResponse:
+    # Validaciones de dominio ANTES de devolver StreamingResponse: si
+    # algo falla, el handler global emite el 4xx limpio (dentro del
+    # SSE ya no podemos cambiar el status code).
+    await use_case.validate(request.conversation_id, request.action)
+
     async def event_stream():
-        async for event in use_case.execute(request.conversation_id, request.message):
+        async for event in use_case.execute(
+            request.conversation_id,
+            request.action,
+            request.message,
+        ):
             yield _sse(_event_to_payload(event))
 
     return StreamingResponse(

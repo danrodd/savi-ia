@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from app.infrastructure.config import Settings, get_settings
 from app.infrastructure.database import get_agent_sessionmaker
-from app.modules.chat.application.use_cases import SendMessageUseCase
+from app.modules.chat.application.use_cases import ChatTurnUseCase
 from app.modules.chat.domain.interfaces import (
     AssistantMessageWriter,
     ConversationTitleUpdater,
@@ -57,14 +57,14 @@ ConversationTitleUpdaterDep = Annotated[
 ]
 
 
-def get_send_message_use_case(
+def get_chat_turn_use_case(
     repository: ConversationRepositoryDep,
     runner: LLMRunnerDep,
     assistant_writer: AssistantMessageWriterDep,
     title_updater: ConversationTitleUpdaterDep,
     settings: SettingsDep,
-) -> SendMessageUseCase:
-    return SendMessageUseCase(
+) -> ChatTurnUseCase:
+    return ChatTurnUseCase(
         repository=repository,
         runner=runner,
         assistant_writer=assistant_writer,
@@ -73,6 +73,4 @@ def get_send_message_use_case(
     )
 
 
-SendMessageUseCaseDep = Annotated[
-    SendMessageUseCase, Depends(get_send_message_use_case)
-]
+ChatTurnUseCaseDep = Annotated[ChatTurnUseCase, Depends(get_chat_turn_use_case)]

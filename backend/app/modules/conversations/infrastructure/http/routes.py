@@ -50,8 +50,18 @@ async def list_conversations(
 async def get_conversation(
     conversation_id: UUID,
     use_case: GetConversationWithMessagesUseCaseDep,
+    include_superseded: bool = Query(
+        default=False,
+        description=(
+            "Si true, incluye en `messages` las versiones anteriores de mensajes "
+            "editados o regenerados (con `superseded_at`/`superseded_by_id` set). "
+            "Default: solo el hilo activo."
+        ),
+    ),
 ) -> ConversationWithMessagesResponse:
-    result = await use_case.execute(conversation_id)
+    result = await use_case.execute(
+        conversation_id, include_superseded=include_superseded
+    )
     return ConversationWithMessagesResponse.from_dto(result)
 
 

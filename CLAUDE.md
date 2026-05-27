@@ -107,15 +107,32 @@ app/modules/<feature>/
 CRUD de conversaciones y mensajes. Endpoints:
 - `POST /conversations` — crear conversación.
 - `GET /conversations` — listar (filtro `user_id`, paginación).
-- `GET /conversations/{id}` — conversación + todos sus mensajes.
+- `GET /conversations/{id}?include_superseded=bool` — conversación +
+  mensajes. Default sólo trae el hilo activo. Con
+  `include_superseded=true` también trae versiones anteriores (mensajes
+  editados o regenerados).
 - `PATCH /conversations/{id}` — renombrar manual + lock (`title_locked=true`).
+
+Modelo de **revisiones soft**: columnas `superseded_at` +
+`superseded_by_id` (FK self) en `messages`. Los mensajes nunca se
+borran al editar/regenerar — quedan superseded y enlazados al que los
+reemplazó, para trazabilidad completa.
 
 ### 5.2 `chat`
 Endpoint conversacional con streaming SSE y LLM (Claude vía
 `claude-agent-sdk`):
-- `POST /chat` con body `{conversation_id: UUID, message: str}`.
+- `POST /chat` con body discriminado por `action`:
+  - `send` (default): envía un mensaje nuevo.
+  - `edit_last`: reemplaza el último user activo y regenera. Supersede
+    user + assistant viejos.
+  - `regenerate`: regenera la última respuesta sin tocar el user.
+    Supersede el assistant viejo.
   Devuelve un stream `text/event-stream` con eventos `text_delta`,
-  `thinking_delta`, `tool_use`, `tool_result`, `done`, `error`.
+  `thinking_delta`, `tool_use`, `tool_result`, `superseded`,
+  `title_update`, `done`, `error`. Las validaciones de precondiciones
+  (último user editable / último assistant regenerable) ocurren **antes**
+  del stream para que FastAPI emita 422 limpio en lugar de un error
+  enterrado en el SSE.
 - Persiste mensaje del usuario al inicio del turno con la sesión del
   request.
 - Persiste respuesta del asistente al cierre vía

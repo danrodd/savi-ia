@@ -43,6 +43,10 @@ type Message = {
   tool_invocations: ToolInvocation[]; // [] si no hubo tools
   usage: TokenUsage | null;
   cost_usd: string | null; // Decimal serializado como string
+  // Revisiones: si superseded_at != null, este mensaje ya no es parte
+  // del hilo activo. superseded_by_id apunta al que lo reemplazó.
+  superseded_at: string | null;       // ISO 8601 UTC
+  superseded_by_id: string | null;    // UUID
 }
 
 type ToolInvocation = {
@@ -125,6 +129,11 @@ A partir de este momento ningún autotítulo del backend la sobrescribirá.
 
 ### `GET /conversations/{id}` — conversación + mensajes
 
+**Query params**:
+- `include_superseded: bool` (default `false`) — si true, devuelve también
+  las versiones anteriores de mensajes editados o regenerados (con
+  `superseded_at`/`superseded_by_id` set).
+
 **Respuesta `200`**:
 ```json
 {
@@ -134,22 +143,40 @@ A partir de este momento ningún autotítulo del backend la sobrescribirá.
 ```
 
 Úsalo al abrir una conversación en el panel central para hidratar el
-historial.
+historial. Con `?include_superseded=true` lo usas para el panel de
+"ver versiones anteriores" de un mensaje editado/regenerado.
 
 ---
 
-### `POST /chat` — enviar mensaje y recibir respuesta en stream
+### `POST /chat` — enviar / editar / regenerar (todos stream)
 
-**Body**:
-```json
-{
-  "conversation_id": "856d84c7-...",
-  "message": "Hola, ¿cuál es el NIT de mi empresa?"
-}
+**Body** discriminado por `action`:
+
+```ts
+type ChatBody =
+  | { conversation_id: string; action?: "send"; message: string }
+  | { conversation_id: string; action: "edit_last"; message: string }
+  | { conversation_id: string; action: "regenerate" }
 ```
 
-`message` requerido, 1–16000 chars. `conversation_id` requerido —
-debes crear la conversación antes (paso anterior).
+- `action: "send"` (default si se omite) — envío normal del primer
+  mensaje o de uno nuevo. Requiere `message` (1–16000 chars).
+- `action: "edit_last"` — reemplaza el último mensaje del usuario
+  activo. Marca el viejo (y el assistant que le respondió, si existe)
+  como `superseded` y regenera la respuesta. Requiere `message`.
+- `action: "regenerate"` — regenera la última respuesta del asistente
+  sin tocar el mensaje del usuario. NO requiere `message`.
+
+**Errores antes del stream** (status 422 con `detail`):
+- `edit_last` sin nada que editar: "No hay un mensaje del usuario que
+  se pueda editar en esta conversación".
+- `regenerate` sin respuesta del asistente: "No hay una respuesta del
+  asistente que se pueda regenerar; envía primero un mensaje".
+
+Estos errores llegan **antes** del SSE, así que llegan como JSON normal.
+Cuando uses `edit_last` o `regenerate`, deshabilita el botón si no se
+cumplen las precondiciones (el frontend ya sabe quién es el último
+mensaje activo) en lugar de esperar al 422.
 
 **Respuesta**: `Content-Type: text/event-stream` con eventos SSE
 estándar separados por `\n\n`, cada uno con prefijo `data: `.
@@ -164,6 +191,7 @@ Todos los payloads incluyen `type`. Otros campos varían:
 | `thinking_delta`  | `text: string`                                     | (Opcional) mostrar "pensando…" colapsable |
 | `tool_use`        | `id: string`, `name: string`, `input: object`     | El agente está llamando una tool; muestra spinner |
 | `tool_result`     | `tool_use_id: string`, `is_error: bool`           | Cierra el spinner de esa tool |
+| `superseded`      | `message_ids: string[]`                            | Llega al inicio del stream en `edit_last` y `regenerate`. Lista de IDs que pasan a ser superseded: ocúltalos del hilo activo. |
 | `title_update`    | `title: string`                                    | Renombra la conversación en el sidebar en vivo. Llega 0, 1 o 2 veces por turno (fase provisional + fase refinada). Sólo en conversaciones cuyo título sigue siendo el default. |
 | `done`            | `usage: object \| null`, `cost_usd: number \| null`, `finish_reason: string` | Cierre limpio |
 | `error`           | `message: string`                                  | El stream falló; muestra error y permite reintentar |
@@ -274,7 +302,76 @@ flujo:
 
 ---
 
-## 5. Comportamiento de SAVI a respetar en la UI
+## 5. Editar último mensaje y regenerar — revisiones
+
+El backend usa **soft branches**: editar o regenerar **nunca borra** un
+mensaje. El viejo queda con `superseded_at` y `superseded_by_id`. Esto
+te da trazabilidad sin árbol completo de versiones.
+
+### Editar el último mensaje del usuario
+
+Botón "Editar" visible solo en el **último** mensaje del usuario del
+hilo activo. Al confirmar:
+
+```ts
+POST /chat
+{ "conversation_id": "...", "action": "edit_last", "message": "texto nuevo" }
+```
+
+Llega un `superseded` con 1 o 2 ids (el user viejo + el assistant si
+existía). Ocúltalos del hilo y pinta el nuevo mensaje del usuario +
+empieza a renderizar la respuesta como en `send` normal.
+
+### Regenerar la última respuesta del asistente
+
+Botón "Regenerar" visible solo en el **último** mensaje del asistente
+del hilo activo. Al hacer click:
+
+```ts
+POST /chat
+{ "conversation_id": "...", "action": "regenerate" }
+```
+
+Llega un `superseded` con 1 id (el assistant viejo). Ocúltalo y empieza
+a renderizar la nueva respuesta.
+
+### Ver versiones anteriores
+
+Para reconstruir las versiones de un mensaje editado/regenerado:
+
+```
+GET /conversations/{id}?include_superseded=true
+```
+
+Trae **todos** los mensajes en orden de `created_at`, incluidos los
+superseded. Reconstrucción:
+- Versiones del par (user2, asst2): seguir la cadena
+  `superseded_by_id` hacia adelante desde `user2`. Cada salto te lleva
+  a la siguiente versión activa o superseded.
+- Si quieres mostrar `< 2 / 3 >` en el mensaje activo, cuenta cuántos
+  superseded apuntan eventualmente hacia él (los previos) y permite
+  navegar entre ellos (vista de solo lectura — no se puede "volver" a
+  una versión vieja como acción, solo verla).
+
+### UI sugerida
+
+- En cada mensaje activo del usuario: si `superseded_by_id` está set
+  en alguna versión anterior de ese turno, muestra `< 1 / N >` con
+  flechas para navegar a las versiones anteriores en read-only.
+- Igual para mensajes del asistente regenerados.
+
+### Reglas duras del backend
+
+- `edit_last` solo aplica al **último user activo**. No se puede editar
+  un mensaje intermedio. Si el frontend trata, el backend devuelve
+  422 con "No hay un mensaje del usuario que se pueda editar".
+- `regenerate` solo aplica al **último assistant activo**. Si el último
+  activo es un user (cancel sin respuesta), el backend devuelve 422
+  con "No hay una respuesta del asistente que se pueda regenerar".
+
+---
+
+## 6. Comportamiento de SAVI a respetar en la UI
 
 - SAVI **rechaza** cualquier pregunta fuera de SEO Group (en cualquier
   idioma, con cualquier formulación). NO programes en el frontend
@@ -289,7 +386,7 @@ flujo:
 
 ---
 
-## 6. Stack sugerido para el frontend
+## 7. Stack sugerido para el frontend
 
 Recomendaciones del equipo (no obligatorias):
 
@@ -304,7 +401,7 @@ Recomendaciones del equipo (no obligatorias):
 
 ---
 
-## 7. Layout objetivo (referencia visual)
+## 8. Layout objetivo (referencia visual)
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -320,7 +417,7 @@ Recomendaciones del equipo (no obligatorias):
 
 ---
 
-## 8. Cómo arrancar el backend (para probar el frontend en local)
+## 9. Cómo arrancar el backend (para probar el frontend en local)
 
 Desde `SAVI_SEO-ERP/backend/`:
 
@@ -342,12 +439,13 @@ OpenAPI / Swagger UI en `http://127.0.0.1:8000/docs`.
 
 ---
 
-## 9. Limitaciones conocidas del MVP
+## 10. Limitaciones conocidas del MVP
 
 - **Sin auth**. El backend acepta cualquier request. No expongas el
   endpoint en internet hasta que entre auth.
 - **Sin rate limit**. Una pestaña abierta puede gastar tokens rápido.
-- **Sin regenerar / editar último mensaje**. Si lo necesitas en la UI
-  ya, dímelo y lo agregamos.
+- **Edición sólo del último**. No se puede editar mensajes intermedios
+  ni hacer bifurcaciones desde el medio del hilo (ChatGPT lo permite —
+  nosotros no en MVP). El backend devuelve 422 si se intenta.
 - **Solo una tool de negocio**: `info_empresa`. El resto del catálogo
   (Wave 1) viene después.

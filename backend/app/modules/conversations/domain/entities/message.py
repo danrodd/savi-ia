@@ -38,4 +38,14 @@ class Message:
     )
     usage: TokenUsage | None = None
     cost_usd: Decimal | None = None
+    # Revisiones: si `superseded_at` está set, este mensaje ya no es parte
+    # del hilo activo de la conversación. `superseded_by_id` apunta al
+    # mensaje que lo reemplazó (puede ser None si el reemplazo aún no se
+    # persistió — caso del assistant viejo justo después de `regenerate`).
+    superseded_at: datetime | None = None
+    superseded_by_id: UUID | None = None
     created_at: datetime = field(default_factory=_utc_now)
+
+    @property
+    def is_active(self) -> bool:
+        return self.superseded_at is None

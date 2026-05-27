@@ -70,6 +70,19 @@ class MessageModel(Base):
     )
     usage: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 6), nullable=True)
+    # Revisiones: cuando un mensaje se edita o se regenera, el viejo NO se
+    # borra: queda con `superseded_at=now()` y `superseded_by_id` apuntando
+    # al mensaje que lo reemplazó. El hilo activo se filtra por
+    # `superseded_at IS NULL`.
+    superseded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    superseded_by_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("messages.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -79,9 +92,15 @@ class MessageModel(Base):
     conversation: Mapped[ConversationModel] = relationship(back_populates="messages")
 
     __table_args__ = (
+        # Optimizado para "hilo activo de la conversación" (la query default).
         Index(
             "ix_messages_conversation_created",
             "conversation_id",
             "created_at",
+        ),
+        # Optimizado para reconstruir versiones de un mensaje superseded.
+        Index(
+            "ix_messages_superseded_by",
+            "superseded_by_id",
         ),
     )

@@ -1,3 +1,3 @@
-from app.modules.chat.application.use_cases.send_message import SendMessageUseCase
+from app.modules.chat.application.use_cases.chat_turn import ChatTurnUseCase
 
-__all__ = ["SendMessageUseCase"]
+__all__ = ["ChatTurnUseCase"]

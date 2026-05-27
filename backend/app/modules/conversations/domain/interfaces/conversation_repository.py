@@ -44,4 +44,38 @@ class ConversationRepository(ABC):
     async def add_message(self, message: Message) -> Message: ...
 
     @abstractmethod
-    async def list_messages(self, conversation_id: UUID) -> list[Message]: ...
+    async def list_messages(
+        self,
+        conversation_id: UUID,
+        *,
+        include_superseded: bool = False,
+    ) -> list[Message]:
+        """Lista los mensajes de la conversación.
+
+        Por default sólo devuelve el hilo activo
+        (`superseded_at IS NULL`), ordenado por `created_at` ascendente.
+
+        Con `include_superseded=True` devuelve también las versiones
+        anteriores — útil para reconstruir trazabilidad en la UI.
+        """
+
+    @abstractmethod
+    async def get_last_active_message(
+        self,
+        conversation_id: UUID,
+    ) -> Message | None:
+        """Devuelve el último mensaje activo (más reciente por created_at)
+        o None si la conversación no tiene mensajes activos."""
+
+    @abstractmethod
+    async def supersede_messages(
+        self,
+        message_ids: list[UUID],
+        *,
+        superseded_by_id: UUID | None = None,
+    ) -> None:
+        """Marca un conjunto de mensajes como superseded en una sola
+        operación. Setea `superseded_at=now()`. Si `superseded_by_id`
+        está dado, lo aplica a todos (uso normal: el USER viejo apunta al
+        USER nuevo; el ASSISTANT viejo queda con None hasta que el nuevo
+        ASSISTANT se persiste y el writer lo enlaza)."""

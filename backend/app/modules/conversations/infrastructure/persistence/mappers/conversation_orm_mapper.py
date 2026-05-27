@@ -52,6 +52,8 @@ class ConversationOrmMapper:
             tool_invocations=tools,
             usage=usage,
             cost_usd=model.cost_usd,
+            superseded_at=model.superseded_at,
+            superseded_by_id=model.superseded_by_id,
             created_at=model.created_at,
         )
 
@@ -74,4 +76,6 @@ class ConversationOrmMapper:
             tool_invocations=tool_payload,
             usage=usage_payload,
             cost_usd=entity.cost_usd,
+            superseded_at=entity.superseded_at,
+            superseded_by_id=entity.superseded_by_id,
         )

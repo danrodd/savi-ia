@@ -9,6 +9,7 @@ class ChatEventType(StrEnum):
     TOOL_USE = "tool_use"
     TOOL_RESULT = "tool_result"
     TITLE_UPDATE = "title_update"
+    SUPERSEDED = "superseded"
     DONE = "done"
     ERROR = "error"
 
@@ -47,6 +48,19 @@ class TitleUpdateEvent:
 
 
 @dataclass(slots=True)
+class SupersededEvent:
+    """Lista de IDs que pasan a ser superseded al iniciar este turno.
+
+    El frontend los oculta del hilo activo. Aún quedan en BD para
+    auditoría/trazabilidad y se devuelven cuando el cliente pide
+    `GET /conversations/{id}?include_superseded=true`.
+    """
+
+    message_ids: list[str]
+    type: ChatEventType = ChatEventType.SUPERSEDED
+
+
+@dataclass(slots=True)
 class DoneEvent:
     usage: dict[str, Any] | None = None
     cost_usd: float | None = None
@@ -66,6 +80,7 @@ ChatEvent = (
     | ToolUseEvent
     | ToolResultEvent
     | TitleUpdateEvent
+    | SupersededEvent
     | DoneEvent
     | ErrorEvent
 )

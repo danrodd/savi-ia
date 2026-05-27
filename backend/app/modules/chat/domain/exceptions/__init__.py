@@ -1,3 +1,11 @@
-from app.modules.chat.domain.exceptions.exceptions import EmptyMessageError
+from app.modules.chat.domain.exceptions.exceptions import (
+    EmptyMessageError,
+    NoAssistantToRegenerateError,
+    NothingToEditError,
+)
 
-__all__ = ["EmptyMessageError"]
+__all__ = [
+    "EmptyMessageError",
+    "NoAssistantToRegenerateError",
+    "NothingToEditError",
+]
