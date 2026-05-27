@@ -115,9 +115,19 @@ Endpoint conversacional con streaming SSE y LLM (Claude vía
 - `POST /chat` con body `{conversation_id: UUID, message: str}`.
   Devuelve un stream `text/event-stream` con eventos `text_delta`,
   `thinking_delta`, `tool_use`, `tool_result`, `done`, `error`.
-- Persiste mensaje del usuario al inicio del turno; persiste respuesta
-  del asistente al final (best-effort si el cliente cancela).
-- Carga historial completo previo y lo antepone como contexto.
+- Persiste mensaje del usuario al inicio del turno con la sesión del
+  request.
+- Persiste respuesta del asistente al cierre vía
+  `AssistantMessageWriter` — un puerto cuya implementación usa un
+  **sessionmaker independiente** y se despacha como
+  `asyncio.create_task`. Esto garantiza que la persistencia
+  sobreviva a la cancelación del cliente sin trucos shielded.
+- Persiste **metadata completa del turno**: `finish_reason`
+  (complete/interrupted/error/truncated), `tool_invocations[]` con
+  input y status, `usage` (tokens) y `cost_usd`. El use case lo
+  acumula con un `_TurnAccumulator` que consume cada `ChatEvent`.
+- Carga historial completo previo y lo antepone como contexto, con
+  marker `=== Nueva consulta del usuario (responde esta) ===`.
 - **System prompt** estricto: identidad SAVI, alcance limitado a SEO
   Group, rechazo canónico para off-topic en cualquier idioma.
 - **MCP server in-process** (construido por turno para futuras
