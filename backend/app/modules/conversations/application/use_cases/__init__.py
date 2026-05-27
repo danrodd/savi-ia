@@ -1,6 +1,9 @@
 from app.modules.conversations.application.use_cases.create_conversation import (
     CreateConversationUseCase,
 )
+from app.modules.conversations.application.use_cases.delete_conversation import (
+    DeleteConversationUseCase,
+)
 from app.modules.conversations.application.use_cases.get_conversation_with_messages import (
     GetConversationWithMessagesUseCase,
 )
@@ -13,6 +16,7 @@ from app.modules.conversations.application.use_cases.rename_conversation import 
 
 __all__ = [
     "CreateConversationUseCase",
+    "DeleteConversationUseCase",
     "GetConversationWithMessagesUseCase",
     "ListConversationsUseCase",
     "RenameConversationUseCase",

@@ -90,6 +90,12 @@ CRUD de conversaciones y mensajes. Endpoints:
   `include_superseded=true` también trae versiones anteriores (mensajes
   editados o regenerados).
 - `PATCH /conversations/{id}` — renombrar manual + lock (`title_locked=true`).
+- `DELETE /conversations/{id}` — soft delete idempotente (`deleted_at=now()`,
+  `COALESCE` para no pisar el timestamp original). `204` si existía,
+  `404` si nunca existió. No interrumpe turnos en curso: los writers
+  con sessionmaker independiente siguen insertando contra la FK; los
+  mensajes quedan invisibles al usuario porque los listados filtran
+  `deleted_at IS NULL`.
 
 Modelo de **revisiones soft**: columnas `superseded_at` +
 `superseded_by_id` (FK self) en `messages`. Los mensajes nunca se

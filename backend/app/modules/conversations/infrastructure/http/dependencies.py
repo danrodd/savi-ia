@@ -5,6 +5,7 @@ from fastapi import Depends
 from app.infrastructure.database.session import AgentSessionDep
 from app.modules.conversations.application.use_cases import (
     CreateConversationUseCase,
+    DeleteConversationUseCase,
     GetConversationWithMessagesUseCase,
     ListConversationsUseCase,
     RenameConversationUseCase,
@@ -46,6 +47,12 @@ def get_rename_conversation_use_case(
     return RenameConversationUseCase(repository)
 
 
+def get_delete_conversation_use_case(
+    repository: ConversationRepositoryDep,
+) -> DeleteConversationUseCase:
+    return DeleteConversationUseCase(repository)
+
+
 CreateConversationUseCaseDep = Annotated[
     CreateConversationUseCase, Depends(get_create_conversation_use_case)
 ]
@@ -57,4 +64,7 @@ GetConversationWithMessagesUseCaseDep = Annotated[
 ]
 RenameConversationUseCaseDep = Annotated[
     RenameConversationUseCase, Depends(get_rename_conversation_use_case)
+]
+DeleteConversationUseCaseDep = Annotated[
+    DeleteConversationUseCase, Depends(get_delete_conversation_use_case)
 ]

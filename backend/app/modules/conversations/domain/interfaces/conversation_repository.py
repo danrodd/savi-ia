@@ -41,6 +41,22 @@ class ConversationRepository(ABC):
         """
 
     @abstractmethod
+    async def soft_delete(self, conversation_id: UUID) -> bool:
+        """Marca la conversación como eliminada (`deleted_at=now()`).
+
+        Idempotente: si la conversación ya estaba eliminada, respeta el
+        `deleted_at` original (vía `COALESCE`). Si no existe, devuelve
+        `False`. Si existe (esté ya eliminada o no), devuelve `True`.
+
+        No bloquea ni cancela los turnos en curso: los writers
+        independientes (`AssistantMessageWriter`,
+        `ConversationTitleUpdater`) siguen insertando contra la FK por
+        `conversations.id`. Esos escritos quedan asociados a una
+        conversación invisible al usuario, lo cual es el comportamiento
+        esperado del soft delete.
+        """
+
+    @abstractmethod
     async def add_message(self, message: Message) -> Message: ...
 
     @abstractmethod

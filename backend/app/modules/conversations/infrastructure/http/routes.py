@@ -13,6 +13,7 @@ from app.modules.conversations.application.responses import (
 )
 from app.modules.conversations.infrastructure.http.dependencies import (
     CreateConversationUseCaseDep,
+    DeleteConversationUseCaseDep,
     GetConversationWithMessagesUseCaseDep,
     ListConversationsUseCaseDep,
     RenameConversationUseCaseDep,
@@ -76,3 +77,19 @@ async def rename_conversation(
     """
     result = await use_case.execute(conversation_id, request.title)
     return ConversationResponse.from_dto(result)
+
+
+@router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_conversation(
+    conversation_id: UUID,
+    use_case: DeleteConversationUseCaseDep,
+) -> None:
+    """Soft delete idempotente: marca `deleted_at=now()` y deja de aparecer
+    en listados / `GET /conversations/{id}`. Si ya estaba eliminada,
+    devuelve 204 igual (idempotente). Si nunca existió, 404.
+
+    No interrumpe turnos en curso: los writers independientes del módulo
+    `chat` siguen insertando los mensajes pendientes contra la
+    conversación, que quedan persistidos pero invisibles al usuario.
+    """
+    await use_case.execute(conversation_id)

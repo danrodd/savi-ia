@@ -111,6 +111,34 @@ Ambos campos son opcionales. Si omites `title`, se usa
 
 ---
 
+### `DELETE /conversations/{id}` — soft delete idempotente
+
+**Respuesta `204 No Content`** si la conversación existía (esté ya
+eliminada o no). **`404`** si nunca existió.
+
+Tras el DELETE, la conversación deja de aparecer en `GET /conversations`
+y `GET /conversations/{id}` devuelve `404`. Los mensajes quedan en BD
+(soft delete real) pero invisibles al usuario.
+
+**Idempotente**: dos `DELETE` seguidos sobre la misma conversación
+devuelven `204` ambos. Útil cuando el cliente reintenta por timeout
+o cuando el usuario hace doble click.
+
+**No interrumpe turnos en curso**: si el cliente tiene un `POST /chat`
+streameando cuando llega el `DELETE`, el stream sigue hasta su `done`
+y la respuesta del asistente se persiste igual (queda en una
+conversación invisible — coherente con soft delete). En la UI, ocultá
+la conversación del sidebar apenas mandes el `DELETE` sin esperar al
+stream.
+
+> Frontend: deshabilita el botón "Eliminar" mientras hay un POST /chat
+> activo, **o** acepta que el stream termine en background y muestra
+> al usuario que la conversación se eliminó. Lo recomendado: ocultar
+> del sidebar inmediatamente (optimistic update) y al recibir el 204
+> confirmar; revertir si 4xx.
+
+---
+
 ### `PATCH /conversations/{id}` — renombrar manualmente
 
 **Body**:

@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.conversations.domain.entities import Conversation, Message
@@ -73,6 +73,23 @@ class SqlAlchemyConversationRepository(ConversationRepository):
         result = await self._session.execute(stmt)
         returned_id = result.scalar_one_or_none()
         return clean if returned_id is not None else None
+
+    async def soft_delete(self, conversation_id: UUID) -> bool:
+        # COALESCE garantiza idempotencia: si ya estaba eliminada, deja
+        # el `deleted_at` original; si era NULL, asigna ahora. RETURNING
+        # nos dice si la fila existía.
+        stmt = (
+            update(ConversationModel)
+            .where(ConversationModel.id == conversation_id)
+            .values(
+                deleted_at=func.coalesce(
+                    ConversationModel.deleted_at, func.now()
+                )
+            )
+            .returning(ConversationModel.id)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none() is not None
 
     async def add_message(self, message: Message) -> Message:
         model = ConversationOrmMapper.message_to_model(message)
