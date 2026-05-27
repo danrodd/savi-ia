@@ -166,7 +166,85 @@ Endpoint conversacional con streaming SSE y LLM (Claude vía
 
 ---
 
-## 6. Bases de datos
+## 6. Skills disponibles — qué leer antes de codear
+
+Las skills viven en `skills/<nombre>/SKILL.md` y contienen patrones
+detallados con ejemplos. **Lee la skill correspondiente ANTES de
+generar código** — están escritas para que el LLM las consulte.
+
+### Tabla de skills
+
+| Skill                          | Descripción                                                            | Archivo                                                          |
+|--------------------------------|------------------------------------------------------------------------|------------------------------------------------------------------|
+| `commit-guides`                | Commits convencionales en español                                      | [SKILL.md](skills/commit-guides/SKILL.md)                        |
+| `create-adaptable-composable`  | Composables Vue reutilizables y desacoplados                           | [SKILL.md](skills/create-adaptable-composable/SKILL.md)          |
+| `frontend-shadcn-guide`        | Componentes shadcn-vue, convenciones de uso                            | [SKILL.md](skills/frontend-shadcn-guide/SKILL.md)                |
+| `skill-creator`                | Crear nuevas skills para este proyecto                                 | [SKILL.md](skills/skill-creator/SKILL.md)                        |
+| `tailwind-4`                   | `cn()`, clases utilitarias, Tailwind v4                                | [SKILL.md](skills/tailwind-4/SKILL.md)                           |
+| `typescript`                   | Tipos const, interfaces planas, utility types                          | [SKILL.md](skills/typescript/SKILL.md)                           |
+| `vue-best-practices`           | Composition API, `<script setup>`, SFC, composables                    | [SKILL.md](skills/vue-best-practices/SKILL.md)                   |
+| `vue-debug-guides`             | Debugging de reactivity, watchers, lifecycle                           | [SKILL.md](skills/vue-debug-guides/SKILL.md)                     |
+| `vue-pinia-best-practices`     | Stores, state, actions, getters con Pinia                              | [SKILL.md](skills/vue-pinia-best-practices/SKILL.md)             |
+| `vue-router-best-practices`    | Rutas, guards, navegación programática                                 | [SKILL.md](skills/vue-router-best-practices/SKILL.md)            |
+| `vue-testing-best-practices`   | Tests de componentes y composables                                     | [SKILL.md](skills/vue-testing-best-practices/SKILL.md)           |
+| `zod-4`                        | Validaciones con Zod v4 (`z.email()`, `z.uuid()`)                      | [SKILL.md](skills/zod-4/SKILL.md)                                |
+
+> Las skills del proyecto son **todas de frontend / cross-cutting**.
+> El backend Python sigue los patrones documentados en este mismo
+> CLAUDE.md (secciones 4, 5, 8 y 9) — Ruff strict + Pyright strict +
+> Clean Architecture estricta. Si en el futuro el equipo backend
+> quiere skills propias, agregarlas con `skill-creator`.
+
+### Auto-invoke — qué skill leer antes de cada acción
+
+**Frontend (Vue 3 + Tailwind + Vite)** — la app `frontend/` del monorepo:
+
+| Acción                                                            | Skill                          |
+|-------------------------------------------------------------------|--------------------------------|
+| Crear o modificar componentes Vue                                 | `vue-best-practices`           |
+| Crear o modificar stores con Pinia                                | `vue-pinia-best-practices`     |
+| Agregar rutas o guards de navegación                              | `vue-router-best-practices`    |
+| Escribir tests de componentes o composables                       | `vue-testing-best-practices`   |
+| Trabajar con componentes shadcn-vue                               | `frontend-shadcn-guide`        |
+| Aplicar clases de Tailwind                                        | `tailwind-4`                   |
+| Escribir tipos o interfaces TypeScript                            | `typescript`                   |
+| Crear esquemas de validación con Zod                              | `zod-4`                        |
+| Crear composables reutilizables y desacoplados                    | `create-adaptable-composable`  |
+| Depurar problemas de reactividad, lifecycle o watchers            | `vue-debug-guides`             |
+
+> **Reglas críticas del frontend (NO negociables)**:
+> - El consumer del SSE `POST /chat` está documentado en
+>   `backend/docs/FRONTEND_CHAT_SPEC.md` — léelo antes de escribir el
+>   código del chat.
+> - **NUNCA muestres SQL crudo ni nombres internos de tools** al usuario
+>   final. El backend ya devuelve respuestas interpretadas; si llega
+>   alguna leak, es bug del backend.
+> - Respeta `title_locked` (sin auto-rename si `true`) y `superseded_at`
+>   (oculta del hilo activo por default).
+
+**General (aplica a backend y frontend)**:
+
+| Acción                          | Skill           |
+|---------------------------------|-----------------|
+| Crear un commit git             | `commit-guides` |
+| Escribir un mensaje de commit   | `commit-guides` |
+| Crear una nueva skill           | `skill-creator` |
+
+> **Reglas críticas del backend (NO negociables — sin skill aún)**:
+> - **Ruff + Pyright strict** verdes antes de dar tarea por terminada
+>   (`uv run lint` + `uv run typecheck`).
+> - **Migraciones autogeneradas** cada vez que cambie el modelo ORM
+>   (`uv run python -m alembic revision --autogenerate -m "..."`).
+> - **Todo SQL contra el ERP** va por el pool readonly del módulo `chat`
+>   (transacción `default_transaction_read_only=on` + `statement_timeout`).
+> - **Repositorios devuelven entidades de dominio**, no modelos ORM.
+> - **Endpoints devuelven Pydantic responses**, no entidades ni DTOs.
+> - **NUNCA** menciones nombres de otros productos / backends hermanos
+>   en código, commits, comentarios o docs de SAVI.
+
+---
+
+## 7. Bases de datos
 
 Dos pools async aislados (`app/infrastructure/database/pool.py`):
 
@@ -180,7 +258,7 @@ en el agente con `deleted_at` y `user_id` nullable para auth futura.
 
 ---
 
-## 7. Entorno local (Windows + PowerShell)
+## 8. Entorno local (Windows + PowerShell)
 
 - **uv** en `C:\Users\hikig\.local\bin\uv.exe` — NO está en PATH por
   defecto. Anteponer en cada comando:
@@ -220,7 +298,7 @@ uv run alembic revision --autogenerate -m "msg"    # generar migración
 
 ---
 
-## 8. Cómo se construye el agente
+## 9. Cómo se construye el agente
 
 El runner está en `app/modules/chat/infrastructure/llm/runner.py`. Flujo:
 
@@ -243,7 +321,7 @@ El runner está en `app/modules/chat/infrastructure/llm/runner.py`. Flujo:
 
 ---
 
-## 9. Decisiones tomadas (no rehacerlas sin razón)
+## 10. Decisiones tomadas (no rehacerlas sin razón)
 
 - **No usar `anthropic` directo** — usar `claude-agent-sdk`. Ya está
   decidido y validado contra otro backend hermano.
@@ -256,7 +334,7 @@ El runner está en `app/modules/chat/infrastructure/llm/runner.py`. Flujo:
 
 ---
 
-## 10. Pendientes (en orden sugerido)
+## 11. Pendientes (en orden sugerido)
 
 1. **Frontend del chat** — Vue 3, sidebar con conversaciones + área de
    mensajes con markdown (`markdown-it`) + input con SSE consumer.
@@ -271,7 +349,7 @@ El runner está en `app/modules/chat/infrastructure/llm/runner.py`. Flujo:
 
 ---
 
-## 11. Convenciones de commits
+## 12. Convenciones de commits
 
 ```
 feat(scope): mensaje en imperativo lowercase
@@ -286,7 +364,7 @@ docs(scope): ...
 
 ---
 
-## 12. Reglas estrictas para el asistente (tú, Claude)
+## 13. Reglas estrictas para el asistente (tú, Claude)
 
 - **NUNCA** menciones nombres de otros productos o backends hermanos en
   el código, los commits, los comentarios ni la documentación de SAVI.
