@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
-import type { UIMessage } from '../types'
+import type { MessageVersion, UIMessage } from '../types'
 import AssistantMessage from './AssistantMessage.vue'
 import UserMessage from './UserMessage.vue'
 
-const props = defineProps<{ messages: UIMessage[] }>()
+const props = defineProps<{
+  messages: UIMessage[]
+  lastUserIndex: number
+  canRegenerate: boolean
+  streaming: boolean
+  versionsByActiveId: Record<string, MessageVersion[]>
+}>()
+const emit = defineEmits<{
+  edit: [text: string]
+  regenerate: []
+}>()
 
 const container = ref<HTMLDivElement | null>(null)
 const stickToBottom = ref(true)
@@ -27,14 +37,43 @@ watch(
     })
   },
 )
+
+function versionsFor(id: string | null): MessageVersion[] | null {
+  if (!id) return null
+  return props.versionsByActiveId[id] ?? null
+}
+
+function isLastDoneAssistant(idx: number): boolean {
+  if (props.streaming) return false
+  for (let i = props.messages.length - 1; i >= 0; i--) {
+    const m = props.messages[i]
+    if (!m) continue
+    if (m.role === 'assistant' && m.done) return i === idx
+    if (m.role === 'user') return false
+  }
+  return false
+}
 </script>
 
 <template>
   <div ref="container" class="message-list" @scroll="onScroll">
     <div class="message-list__inner">
-      <template v-for="(m, i) in messages" :key="i">
-        <UserMessage v-if="m.role === 'user'" :text="m.text" />
-        <AssistantMessage v-else :message="m" />
+      <template v-for="(m, i) in messages" :key="m.tempId">
+        <UserMessage
+          v-if="m.role === 'user'"
+          :text="m.text"
+          :message-id="m.id"
+          :can-edit="i === lastUserIndex && !streaming"
+          :versions="versionsFor(m.id)"
+          @edit="(text) => emit('edit', text)"
+        />
+        <AssistantMessage
+          v-else
+          :message="m"
+          :can-regenerate="isLastDoneAssistant(i) && canRegenerate"
+          :versions="versionsFor(m.id)"
+          @regenerate="emit('regenerate')"
+        />
       </template>
     </div>
   </div>
@@ -45,7 +84,7 @@ watch(
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-7) var(--space-7) var(--space-7);
+  padding: 72px var(--space-7) var(--space-7);
 }
 
 .message-list__inner {
@@ -55,7 +94,7 @@ watch(
 
 @media (max-width: 767px) {
   .message-list {
-    padding: var(--space-5) var(--space-4) var(--space-5);
+    padding: 56px var(--space-4) var(--space-5);
   }
 }
 </style>

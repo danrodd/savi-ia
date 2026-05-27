@@ -21,6 +21,9 @@ const {
   loadingConversations,
   streaming,
   error,
+  lastUserIndex,
+  canRegenerate,
+  versionsByActiveId,
 } = storeToRefs(store)
 
 const { isMobile } = useBreakpoint()
@@ -78,6 +81,14 @@ async function handleSend(text: string): Promise<void> {
     router.replace({ name: 'conversation', params: { id: activeConversationId.value } })
   }
 }
+
+function handleEdit(text: string): void {
+  store.editLastUserMessage(text)
+}
+
+function handleRegenerate(): void {
+  store.regenerateLastAssistant()
+}
 </script>
 
 <template>
@@ -118,7 +129,16 @@ async function handleSend(text: string): Promise<void> {
         </div>
       </div>
 
-      <MessageList v-else :messages="messages" />
+      <MessageList
+        v-else
+        :messages="messages"
+        :last-user-index="lastUserIndex"
+        :can-regenerate="canRegenerate"
+        :streaming="streaming"
+        :versions-by-active-id="versionsByActiveId"
+        @edit="handleEdit"
+        @regenerate="handleRegenerate"
+      />
 
       <Composer :streaming="streaming" @send="handleSend" @stop="store.stopStream" />
     </main>

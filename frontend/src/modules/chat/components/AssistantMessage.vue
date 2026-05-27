@@ -1,54 +1,102 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { UIMessage } from '../types'
+import type { MessageVersion, UIMessage } from '../types'
 import BrandMark from './BrandMark.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import ToolPill from './ToolPill.vue'
+import VersionNavigator from './VersionNavigator.vue'
 
-const props = defineProps<{ message: UIMessage }>()
+const props = defineProps<{
+  message: UIMessage
+  canRegenerate: boolean
+  versions: MessageVersion[] | null
+}>()
+const emit = defineEmits<{ regenerate: [] }>()
 
 const showCaret = computed(() => !props.message.done)
 const showPlaceholder = computed(() => !props.message.done && props.message.text === '')
 const copied = ref(false)
+const versionIdx = ref<number | null>(null)
+
+const hasVersions = computed(() => (props.versions?.length ?? 0) > 1)
+const totalVersions = computed(() => props.versions?.length ?? 0)
+const displayedText = computed(() => {
+  if (versionIdx.value === null) return props.message.text
+  return props.versions?.[versionIdx.value]?.text ?? props.message.text
+})
+const displayedToolCalls = computed(() => {
+  if (versionIdx.value === null) return props.message.toolCalls
+  return props.versions?.[versionIdx.value]?.toolCalls ?? props.message.toolCalls
+})
+const displayedInterrupted = computed(() => {
+  if (versionIdx.value === null) return !!props.message.interrupted
+  return props.versions?.[versionIdx.value]?.interrupted ?? false
+})
+const isViewingHistorical = computed(
+  () =>
+    versionIdx.value !== null &&
+    props.versions !== null &&
+    versionIdx.value < totalVersions.value - 1,
+)
 
 async function copyText(): Promise<void> {
   try {
-    await navigator.clipboard.writeText(props.message.text)
+    await navigator.clipboard.writeText(displayedText.value)
     copied.value = true
     setTimeout(() => (copied.value = false), 1500)
   } catch {
     // ignore
   }
 }
+
+function prev(): void {
+  if (versionIdx.value === null) versionIdx.value = totalVersions.value - 1
+  if (versionIdx.value > 0) versionIdx.value--
+}
+
+function next(): void {
+  if (versionIdx.value === null) return
+  if (versionIdx.value < totalVersions.value - 1) versionIdx.value++
+  else versionIdx.value = null
+}
 </script>
 
 <template>
-  <div class="assistant-message">
+  <div class="assistant-message" :class="{ 'assistant-message--historical': isViewingHistorical }">
     <BrandMark :size="32" label="S" class="assistant-message__avatar" />
 
     <div class="assistant-message__body">
       <div class="assistant-message__meta">
         <span class="assistant-message__name">SAVI</span>
-        <span v-if="message.done && !message.error" class="assistant-message__time">Ahora</span>
+        <span v-if="message.done && !message.error" class="assistant-message__time">
+          {{ isViewingHistorical ? 'Versión anterior' : 'Ahora' }}
+        </span>
       </div>
 
-      <div v-if="message.toolCalls.length > 0" class="assistant-message__tools">
-        <ToolPill v-for="call in message.toolCalls" :key="call.id" :call="call" />
+      <div v-if="displayedToolCalls.length > 0" class="assistant-message__tools">
+        <ToolPill v-for="call in displayedToolCalls" :key="call.id" :call="call" />
       </div>
 
       <div class="assistant-message__content">
         <span v-if="showPlaceholder" class="caret" aria-hidden="true" />
         <template v-else>
-          <MarkdownRenderer :source="message.text" />
-          <span v-if="showCaret" class="caret" aria-hidden="true" />
+          <MarkdownRenderer :source="displayedText" />
+          <span v-if="showCaret && !isViewingHistorical" class="caret" aria-hidden="true" />
         </template>
       </div>
 
-      <p v-if="message.error" class="assistant-message__error">{{ message.error }}</p>
-      <p v-if="message.interrupted" class="assistant-message__hint">Respuesta detenida.</p>
+      <p v-if="message.error && !isViewingHistorical" class="assistant-message__error">
+        {{ message.error }}
+      </p>
+      <p v-if="displayedInterrupted" class="assistant-message__hint">Respuesta detenida.</p>
 
-      <div v-if="message.done && !message.error && message.text" class="assistant-message__actions">
-        <button type="button" class="action-btn" :title="copied ? 'Copiado' : 'Copiar'" @click="copyText">
+      <div v-if="message.done && !message.error" class="assistant-message__actions">
+        <button
+          type="button"
+          class="action-btn"
+          :title="copied ? 'Copiado' : 'Copiar'"
+          @click="copyText"
+        >
           <svg v-if="!copied" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -58,6 +106,36 @@ async function copyText(): Promise<void> {
           </svg>
           <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
         </button>
+        <button
+          v-if="canRegenerate"
+          type="button"
+          class="action-btn"
+          title="Regenerar respuesta"
+          @click="emit('regenerate')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 14.85-6.85L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-14.85 6.85L3 16" />
+            <path d="M3 21v-5h5" />
+          </svg>
+          <span>Regenerar</span>
+        </button>
+        <button
+          v-if="hasVersions && versionIdx !== null"
+          type="button"
+          class="action-btn action-btn--exit"
+          @click="versionIdx = null"
+        >
+          ← actual
+        </button>
+        <VersionNavigator
+          v-if="hasVersions"
+          :current="(versionIdx ?? totalVersions - 1) + 1"
+          :total="totalVersions"
+          @prev="prev"
+          @next="next"
+        />
       </div>
     </div>
   </div>
@@ -69,6 +147,11 @@ async function copyText(): Promise<void> {
   gap: var(--space-5);
   margin-bottom: var(--space-7);
   animation: fadeInUp 0.3s var(--ease-out);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.assistant-message--historical .assistant-message__content {
+  opacity: 0.78;
 }
 
 @media (max-width: 767px) {
@@ -122,6 +205,7 @@ async function copyText(): Promise<void> {
   font-size: 14.5px;
   line-height: 1.65;
   color: var(--text);
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .caret {
@@ -153,6 +237,7 @@ async function copyText(): Promise<void> {
 
 .assistant-message__actions {
   display: flex;
+  align-items: center;
   gap: var(--space-1);
   margin-top: var(--space-4);
   opacity: 0;
@@ -161,7 +246,9 @@ async function copyText(): Promise<void> {
     transform var(--duration-normal) var(--ease-out);
 }
 
-.assistant-message:hover .assistant-message__actions {
+.assistant-message:hover .assistant-message__actions,
+.assistant-message__actions:has(.nav),
+.assistant-message__actions:has(.action-btn--exit) {
   opacity: 1;
   transform: translateY(0);
 }
@@ -182,9 +269,30 @@ async function copyText(): Promise<void> {
   transition: all var(--duration-fast) var(--ease-out);
 }
 
-.action-btn:hover {
+.action-btn:hover:not(:disabled) {
   background: var(--surface-subtle);
   color: var(--text-muted);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn--exit {
+  color: var(--brand);
+}
+
+.action-btn--exit:hover {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+@media (max-width: 767px) {
+  .assistant-message__actions {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeInUp {

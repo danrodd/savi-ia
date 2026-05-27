@@ -18,6 +18,12 @@ class ConversationService {
     return this.http.get<ConversationDetail>(`/${id}`)
   }
 
+  getWithVersions(id: string): Promise<ConversationDetail> {
+    return this.http.get<ConversationDetail>(`/${id}`, {
+      query: { include_superseded: true },
+    })
+  }
+
   rename(id: string, title: string): Promise<Conversation> {
     return this.http.patch<Conversation>(`/${id}`, { title })
   }
