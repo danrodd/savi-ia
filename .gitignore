@@ -74,6 +74,8 @@ frontend/pnpm-workspace.yaml
 # ─────────────────────────────────────────────────────────────────────
 .claude/
 .agents/
+# Cache de skill-registry (generado por la skill `skill-registry`).
+.atl/
 
 # ─────────────────────────────────────────────────────────────────────
 # OS leftover

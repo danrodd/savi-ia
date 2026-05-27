@@ -60,44 +60,22 @@ whitelist (`!.env.example`), `.env` no.
 ## 4. Arquitectura
 
 **Clean Architecture + Hexagonal + Feature-based modularity + DDD táctico
-ligero.** Por cada módulo:
+ligero.** La definición completa de capas, gates y patrones está en
+[`skills/enterprise-backend-fastapi/SKILL.md`](skills/enterprise-backend-fastapi/SKILL.md)
+— **léelo antes de tocar código backend**.
+
+Resumen de la triada por módulo:
 
 ```
 app/modules/<feature>/
-├── domain/
-│   ├── entities/          # Dataclasses puras (sin ORM)
-│   ├── interfaces/        # Puertos (ABCs)
-│   └── exceptions/
-├── application/
-│   ├── dtos/
-│   ├── requests/          # Pydantic — entrada HTTP
-│   ├── responses/         # Pydantic — salida HTTP
-│   ├── mappers/
-│   └── use_cases/         # Lógica orquestadora pura
-└── infrastructure/
-    ├── persistence/
-    │   ├── models/        # SQLAlchemy ORM
-    │   ├── mappers/       # ORM ↔ entidad
-    │   └── repositories/  # Implementa los puertos
-    ├── http/
-    │   ├── routes.py
-    │   └── dependencies.py
-    └── llm/               # Solo en módulo `chat`
-        ├── runner.py
-        ├── system_prompt.py
-        └── mcp/
-            ├── server.py
-            └── tools/
+├── domain/         # Entities, interfaces (puertos), exceptions, value objects
+├── application/    # DTOs, requests, responses, mappers, use cases
+└── infrastructure/ # SQLAlchemy ORM, HTTP routes, LLM (sólo chat)
 ```
 
-**Reglas no negociables**:
-- Repositorios devuelven **entidades de dominio**, no modelos ORM.
-- Endpoints devuelven **Pydantic responses**, no entidades ni DTOs.
-- Todo SQL contra el ERP va por el pool readonly (transacción RO +
-  `statement_timeout`).
-- Migraciones con `uv run alembic revision --autogenerate -m "..."`.
-- Soft delete via `deleted_at` (no `DELETE` físico).
-- Conventional Commits.
+Para los patrones específicos de SAVI (módulo `chat`, MCP por turno,
+soft branches, writers independientes, auto-título), ver
+[`skills/savi-backend-patterns/SKILL.md`](skills/savi-backend-patterns/SKILL.md).
 
 ---
 
@@ -120,49 +98,25 @@ reemplazó, para trazabilidad completa.
 
 ### 5.2 `chat`
 Endpoint conversacional con streaming SSE y LLM (Claude vía
-`claude-agent-sdk`):
-- `POST /chat` con body discriminado por `action`:
-  - `send` (default): envía un mensaje nuevo.
-  - `edit_last`: reemplaza el último user activo y regenera. Supersede
-    user + assistant viejos.
-  - `regenerate`: regenera la última respuesta sin tocar el user.
-    Supersede el assistant viejo.
-  Devuelve un stream `text/event-stream` con eventos `text_delta`,
-  `thinking_delta`, `tool_use`, `tool_result`, `superseded`,
-  `title_update`, `done`, `error`. Las validaciones de precondiciones
-  (último user editable / último assistant regenerable) ocurren **antes**
-  del stream para que FastAPI emita 422 limpio en lugar de un error
-  enterrado en el SSE.
-- Persiste mensaje del usuario al inicio del turno con la sesión del
-  request.
-- Persiste respuesta del asistente al cierre vía
-  `AssistantMessageWriter` — un puerto cuya implementación usa un
-  **sessionmaker independiente** y se despacha como
-  `asyncio.create_task`. Esto garantiza que la persistencia
-  sobreviva a la cancelación del cliente sin trucos shielded.
-- Persiste **metadata completa del turno**: `finish_reason`
-  (complete/interrupted/error/truncated), `tool_invocations[]` con
-  input y status, `usage` (tokens) y `cost_usd`. El use case lo
-  acumula con un `_TurnAccumulator` que consume cada `ChatEvent`.
-- Carga historial completo previo y lo antepone como contexto, con
-  marker `=== Nueva consulta del usuario (responde esta) ===`.
-- **System prompt** estricto: identidad SAVI, alcance limitado a SEO
-  Group, rechazo canónico para off-topic en cualquier idioma.
-- **MCP server in-process** (construido por turno para futuras
-  clausuras con el usuario). Tool inicial: `info_empresa()` — lee
-  `Empresa.Empresa` del ERP.
-- **Auto-título de la conversación** en dos fases con modelo barato
-  (`CLAUDE_TITLE_MODEL`, Haiku por default):
-  - Fase 1: dispara como `asyncio.create_task` al inicio del primer
-    turno con sólo el `user_msg`. Emite evento SSE `title_update` en
-    cuanto está lista. Sobrevive a la cancelación del cliente.
-  - Fase 2: tras `finish_reason=complete`, refina el título con la
-    respuesta del asistente a la vista (timeout `TITLE_PHASE2_TIMEOUT_S`,
-    default 4 s). Si no alcanza, persiste igual en background.
-  - Sólo dispara si `title_locked=false` y `title='Nueva conversación'`
-    — esto evita el bug de Open WebUI (cancel+retry del primer mensaje
-    no genera título).
-- En Windows requiere `CLAUDE_CODE_GIT_BASH_PATH=C:/Program Files/Git/bin/bash.exe`.
+`claude-agent-sdk`). Tres acciones discriminadas en `POST /chat`:
+
+- `send` (default): envía un mensaje nuevo.
+- `edit_last`: reemplaza el último user activo y regenera. Supersede
+  user + assistant viejos (soft branches).
+- `regenerate`: regenera la última respuesta sin tocar el user.
+
+Eventos SSE: `text_delta`, `thinking_delta`, `tool_use`, `tool_result`,
+`superseded`, `title_update`, `done`, `error`. Auto-título en dos
+fases con Haiku, persistencia con sessionmaker independiente que
+sobrevive a la cancelación del cliente, metadata completa por turno
+(`finish_reason`, `tool_invocations`, `usage`, `cost_usd`).
+
+> **Todo el detalle** (anatomía del módulo, hard rules, decision gates,
+> gotchas, plantillas para tools MCP nuevas) está en
+> [`skills/savi-backend-patterns/SKILL.md`](skills/savi-backend-patterns/SKILL.md).
+> Léelo antes de tocar el módulo `chat`.
+
+Contrato hacia el frontend en [`backend/docs/FRONTEND_CHAT_SPEC.md`](backend/docs/FRONTEND_CHAT_SPEC.md).
 
 ---
 
@@ -189,28 +143,61 @@ generar código** — están escritas para que el LLM las consulte.
 | `vue-testing-best-practices`   | Tests de componentes y composables                                     | [SKILL.md](skills/vue-testing-best-practices/SKILL.md)           |
 | `zod-4`                        | Validaciones con Zod v4 (`z.email()`, `z.uuid()`)                      | [SKILL.md](skills/zod-4/SKILL.md)                                |
 
-> Las skills del proyecto son **todas de frontend / cross-cutting**.
-> El backend Python sigue los patrones documentados en este mismo
-> CLAUDE.md (secciones 4, 5, 8 y 9) — Ruff strict + Pyright strict +
-> Clean Architecture estricta. Si en el futuro el equipo backend
-> quiere skills propias, agregarlas con `skill-creator`.
+> Todas las skills viven en `skills/` del repo (versionadas con el código).
+> Dos skills extra cubren la arquitectura empresarial de referencia
+> (vienen versionadas también, originalmente publicadas como skills
+> globales por @gentleman-programming):
+
+| Skill                              | Descripción                                                                                              | Archivo                                                          |
+|------------------------------------|----------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| `enterprise-backend-fastapi`       | Arquitectura backend de referencia: FastAPI + Clean/Hexagonal, use cases, repositorios, SQLAlchemy 2 async, Pydantic v2, uv | [SKILL.md](skills/enterprise-backend-fastapi/SKILL.md)           |
+| `enterprise-frontend-architecture` | Arquitectura empresarial Vue 3: feature-based modules, vue-query, Pinia setup, shadcn-vue, axios HttpClient | [SKILL.md](skills/enterprise-frontend-architecture/SKILL.md)     |
+| `savi-backend-patterns`            | Particularidades de SAVI: módulo chat, MCP por turno, soft branches, writers independientes, auto-título | [SKILL.md](skills/savi-backend-patterns/SKILL.md)                |
+
+### Precedencia entre skills
+
+Cuando varias skills aplican al mismo cambio, el orden de lectura es:
+
+1. **Skill general** que da el marco arquitectónico
+   (`enterprise-backend-fastapi`, `enterprise-frontend-architecture`).
+2. **Skill específica** del proyecto (`savi-backend-patterns`) o del
+   tema (`vue-pinia-best-practices`, `frontend-shadcn-guide`, etc.).
+3. Si la específica contradice la general, **gana la específica** —
+   está más cerca del caso real.
 
 ### Auto-invoke — qué skill leer antes de cada acción
 
+**Backend (FastAPI + Clean Architecture)** — la app `backend/` del monorepo:
+
+| Acción                                                                  | Skills (en orden)                                          |
+|-------------------------------------------------------------------------|------------------------------------------------------------|
+| Crear un module nuevo (`app/modules/<feature>/`)                        | `enterprise-backend-fastapi`                               |
+| Crear un use case, repository, mapper o entity en module existente      | `enterprise-backend-fastapi`                               |
+| Tocar cualquier archivo de `app/modules/chat/`                          | `enterprise-backend-fastapi` + `savi-backend-patterns`     |
+| Añadir una tool MCP nueva                                               | `savi-backend-patterns`                                    |
+| Diseñar endpoints REST / SSE en `infrastructure/http/`                  | `enterprise-backend-fastapi`                               |
+| Modificar el flujo del turno (send/edit_last/regenerate/auto-título)    | `savi-backend-patterns`                                    |
+| Agregar puertos (interfaces) y sus implementaciones                     | `enterprise-backend-fastapi` (+ `savi-backend-patterns` si afecta `chat`) |
+| Generar o aplicar una migración Alembic                                 | `enterprise-backend-fastapi`                               |
+| Persistencia que debe sobrevivir a la cancelación del cliente           | `savi-backend-patterns` (patrón sessionmaker independiente) |
+
 **Frontend (Vue 3 + Tailwind + Vite)** — la app `frontend/` del monorepo:
 
-| Acción                                                            | Skill                          |
-|-------------------------------------------------------------------|--------------------------------|
-| Crear o modificar componentes Vue                                 | `vue-best-practices`           |
-| Crear o modificar stores con Pinia                                | `vue-pinia-best-practices`     |
-| Agregar rutas o guards de navegación                              | `vue-router-best-practices`    |
-| Escribir tests de componentes o composables                       | `vue-testing-best-practices`   |
-| Trabajar con componentes shadcn-vue                               | `frontend-shadcn-guide`        |
-| Aplicar clases de Tailwind                                        | `tailwind-4`                   |
-| Escribir tipos o interfaces TypeScript                            | `typescript`                   |
-| Crear esquemas de validación con Zod                              | `zod-4`                        |
-| Crear composables reutilizables y desacoplados                    | `create-adaptable-composable`  |
-| Depurar problemas de reactividad, lifecycle o watchers            | `vue-debug-guides`             |
+| Acción                                                            | Skill                                |
+|-------------------------------------------------------------------|--------------------------------------|
+| Diseñar la arquitectura de un módulo nuevo en `src/modules/`      | `enterprise-frontend-architecture`   |
+| Configurar `axios HttpClient`, `vue-query` o el setup de Pinia    | `enterprise-frontend-architecture`   |
+| Crear el adapter / service / composable de un endpoint del backend | `enterprise-frontend-architecture`   |
+| Crear o modificar componentes Vue                                 | `vue-best-practices`                 |
+| Crear o modificar stores con Pinia                                | `vue-pinia-best-practices`           |
+| Agregar rutas o guards de navegación                              | `vue-router-best-practices`          |
+| Escribir tests de componentes o composables                       | `vue-testing-best-practices`         |
+| Trabajar con componentes shadcn-vue                               | `frontend-shadcn-guide`              |
+| Aplicar clases de Tailwind                                        | `tailwind-4`                         |
+| Escribir tipos o interfaces TypeScript                            | `typescript`                         |
+| Crear esquemas de validación con Zod                              | `zod-4`                              |
+| Crear composables reutilizables y desacoplados                    | `create-adaptable-composable`        |
+| Depurar problemas de reactividad, lifecycle o watchers            | `vue-debug-guides`                   |
 
 > **Reglas críticas del frontend (NO negociables)**:
 > - El consumer del SSE `POST /chat` está documentado en
@@ -230,17 +217,13 @@ generar código** — están escritas para que el LLM las consulte.
 | Escribir un mensaje de commit   | `commit-guides` |
 | Crear una nueva skill           | `skill-creator` |
 
-> **Reglas críticas del backend (NO negociables — sin skill aún)**:
-> - **Ruff + Pyright strict** verdes antes de dar tarea por terminada
->   (`uv run lint` + `uv run typecheck`).
-> - **Migraciones autogeneradas** cada vez que cambie el modelo ORM
->   (`uv run python -m alembic revision --autogenerate -m "..."`).
-> - **Todo SQL contra el ERP** va por el pool readonly del módulo `chat`
->   (transacción `default_transaction_read_only=on` + `statement_timeout`).
-> - **Repositorios devuelven entidades de dominio**, no modelos ORM.
-> - **Endpoints devuelven Pydantic responses**, no entidades ni DTOs.
-> - **NUNCA** menciones nombres de otros productos / backends hermanos
->   en código, commits, comentarios o docs de SAVI.
+> **Regla de oro de los commits — NO negociable**:
+> **NUNCA hago commits por iniciativa propia.** Termino el trabajo,
+> dejo claro qué cambió, propongo el mensaje, y **espero confirmación
+> explícita del usuario** antes de ejecutar `git commit`. Ni siquiera
+> aunque hayan pasado varias funcionalidades seguidas: el commit lo
+> autoriza el usuario, no yo. Esto incluye los commits "obvios" de
+> docs o lint — todos requieren OK.
 
 ---
 
@@ -296,28 +279,49 @@ uv run pytest                                      # tests
 uv run alembic revision --autogenerate -m "msg"    # generar migración
 ```
 
+### Pre-commit hook (instalar una sola vez tras clonar)
+
+Desde la raíz del monorepo:
+
+```powershell
+uv tool install pre-commit            # o: pipx install pre-commit
+pre-commit install                    # registra el hook en .git/hooks
+```
+
+Configurado en `.pre-commit-config.yaml`:
+
+- **Backend** (`backend/**/*.py`): Ruff (lint + fix + format) + Pyright
+  strict. Si falla, el commit se aborta.
+- **Genéricos**: trailing whitespace, end-of-file-fixer, YAML/TOML
+  válidos, sin archivos enormes (> 500 KB), sin merge conflicts.
+
+Forzar sobre todos los archivos: `pre-commit run --all-files`.
+
 ---
 
 ## 9. Cómo se construye el agente
 
-El runner está en `app/modules/chat/infrastructure/llm/runner.py`. Flujo:
+El runner está en `app/modules/chat/infrastructure/llm/runner.py` y
+sigue los patrones documentados en
+[`skills/savi-backend-patterns/SKILL.md`](skills/savi-backend-patterns/SKILL.md)
+(hard rules + decision gates + anatomía del módulo `chat`).
 
-1. **Cada turno** construye un nuevo `ClaudeAgentOptions`:
-   - `system_prompt` = SYSTEM_PROMPT de SAVI.
-   - `mcp_servers={"savi": build_savi_mcp_server()}` (in-process).
-   - `allowed_tools=["mcp__savi__info_empresa", ...]`.
-   - `permission_mode="bypassPermissions"` (las tools están curadas).
-   - `max_turns` del config.
-2. `query(prompt, options)` devuelve un async generator de mensajes
-   del SDK (AssistantMessage, UserMessage, ResultMessage).
-3. Los mensajes se traducen a eventos tipados (`TextDeltaEvent`,
-   `ToolUseEvent`, etc.) y se yieldean al endpoint, que los serializa
-   como SSE.
-4. Hay **cap de chars** en la respuesta (`max_response_chars`) — al
-   cruzarlo añade nota de truncación pero sigue drenando el stream
-   para que el subproceso cierre limpio.
-5. Reintento único en `Control request timeout: initialize` (el binario
-   `claude` tarda en arrancar bajo carga).
+Resumen del ciclo de un turno:
+
+```
+POST /chat (action) → ChatTurnUseCase.validate()  ← 422 si falla
+                    → ChatTurnUseCase.execute()   ← async generator
+                          ↳ runner.stream_turn(prompt)
+                              ↳ build_savi_mcp_server() in-process
+                              ↳ claude_agent_sdk.query()
+                          ↳ _TurnAccumulator.consume(event)
+                          ↳ asyncio.create_task(writer.write(msg))   ← sobrevive cancel
+                          ↳ asyncio.create_task(title_updater.*)     ← sobrevive cancel
+                    → StreamingResponse(SSE)
+```
+
+Detalles (cap de chars, retry en initialize-timeout, auto-título dos
+fases, soft branches, etc.) en la skill — no los repito acá.
 
 ---
 
@@ -351,6 +355,13 @@ El runner está en `app/modules/chat/infrastructure/llm/runner.py`. Flujo:
 
 ## 12. Convenciones de commits
 
+> **⚠️ Los commits SIEMPRE los confirma el usuario.** No se hace
+> `git commit` por iniciativa propia, ni siquiera al cerrar una
+> funcionalidad. Termina el trabajo, muestra el resumen del diff,
+> propone el mensaje, y espera el OK explícito antes de ejecutar.
+> Esto aplica a TODOS los commits, incluso los "obvios" de docs o
+> lint. Ver skill `commit-guides`.
+
 ```
 feat(scope): mensaje en imperativo lowercase
 fix(scope): ...
@@ -366,6 +377,11 @@ docs(scope): ...
 
 ## 13. Reglas estrictas para el asistente (tú, Claude)
 
+- **NUNCA hago commits por iniciativa propia.** Aunque haya cerrado una
+  funcionalidad completa, los commits los autoriza el usuario. Resumo
+  qué cambió, propongo el mensaje, espero "sí / commit" explícito y
+  recién ahí ejecuto `git commit`. Aplica a todos los commits — feat,
+  fix, docs, chore.
 - **NUNCA** menciones nombres de otros productos o backends hermanos en
   el código, los commits, los comentarios ni la documentación de SAVI.
 - **NUNCA** crees `.gitignore` locales en `backend/` o `frontend/` — el
@@ -377,3 +393,5 @@ docs(scope): ...
 - **Siempre** que cambies el modelo de BD, genera migración Alembic.
 - **Backend primero, frontend después** — y el backend nunca debe asumir
   qué frontend lo consume.
+- **SIEMPRE** lee la skill correspondiente (ver sección 6) ANTES de
+  generar código en cualquier capa.

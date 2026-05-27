@@ -1,0 +1,53 @@
+# Pre-commit hooks para SAVI.
+#
+# Instalación una sola vez tras clonar el repo:
+#     pipx install pre-commit         # o `uv tool install pre-commit`
+#     pre-commit install              # registra el hook en .git/hooks
+#
+# Los hooks corren automáticamente en cada `git commit` sobre los archivos
+# del stage. Si fallan, el commit se aborta — corregís y reintentás.
+#
+# Forzar ejecución manual sobre todos los archivos:
+#     pre-commit run --all-files
+
+repos:
+  # ── Hooks genéricos del repo ───────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^backend/alembic/versions/
+      - id: end-of-file-fixer
+        exclude: ^backend/alembic/versions/
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+  # ── Backend: Ruff (lint + format) ──────────────────────────────────────
+  # Corre Ruff sin depender de `uv` instalado en el contributor's shell.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.0
+    hooks:
+      - id: ruff
+        name: ruff check (backend)
+        files: ^backend/.*\.py$
+        args: ["--fix"]
+      - id: ruff-format
+        name: ruff format (backend)
+        files: ^backend/.*\.py$
+
+  # ── Backend: Pyright strict ────────────────────────────────────────────
+  # Local hook: usa la instalación del venv del backend (uv).
+  - repo: local
+    hooks:
+      - id: pyright-backend
+        name: pyright strict (backend)
+        entry: bash -c 'cd backend && uv run python -m pyright app'
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+        # No falla por errores de uv-no-instalado: el hook avisa pero deja pasar.
+        # Quítese `verbose: true` cuando esté validado.
+        verbose: true
