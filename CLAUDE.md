@@ -161,25 +161,32 @@ en el agente con `deleted_at` y `user_id` nullable para auth futura.
 - **Postgres** en `localhost:5433`, usuario `postgres`. Contraseña en
   `backend/.env` (gitignored).
 - **uvicorn bug local**: `uv run uvicorn` falla con `uv trampoline failed
-  to canonicalize script path`. Usar siempre:
-  ```powershell
-  uv run python -m uvicorn app.main:app --reload
-  ```
+  to canonicalize script path`. Por eso el atajo `uv run dev` invoca
+  uvicorn vía `python -m` desde `app/cli.py`.
+- **NO usar `--reload`** en uvicorn — el módulo `chat` lanza el binario
+  `claude.exe` como subproceso y monta un MCP server in-process por
+  turno; el watcher de reload los mataría a mitad de stream. El atajo
+  `uv run dev` arranca sin reload por diseño.
 - **claude.exe** (binario del Claude Agent SDK) necesita git-bash. Está
   configurado vía `CLAUDE_CODE_GIT_BASH_PATH` en `.env`.
 
 ### Comandos típicos (desde `SAVI_SEO-ERP/backend/`)
 
+Atajos definidos en `[project.scripts]` de `pyproject.toml`, implementados
+en `app/cli.py`. Tras un `uv sync`, uv los expone como ejecutables del
+venv.
+
 ```powershell
 $env:Path = "C:\Users\hikig\.local\bin;$env:Path"
 
 uv sync                                            # instalar deps
-uv run alembic revision --autogenerate -m "msg"    # generar migración
-uv run alembic upgrade head                        # aplicar migraciones
-uv run python -m uvicorn app.main:app --reload     # dev server
-uv run ruff check .                                # lint
-uv run python -m pyright app                       # type check
+uv run dev                                         # dev server (sin --reload)
+uv run lint                                        # ruff check .
+uv run fmt                                         # ruff format .
+uv run typecheck                                   # pyright app
+uv run migrate                                     # alembic upgrade head
 uv run pytest                                      # tests
+uv run alembic revision --autogenerate -m "msg"    # generar migración
 ```
 
 ---
