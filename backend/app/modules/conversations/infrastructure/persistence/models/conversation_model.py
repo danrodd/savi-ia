@@ -1,7 +1,10 @@
 from datetime import datetime
+from decimal import Decimal
+from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -54,6 +57,13 @@ class MessageModel(Base):
     )
     role: Mapped[str] = mapped_column(String(16), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    finish_reason: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    tool_invocations: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+    usage: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 6), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -62,4 +72,10 @@ class MessageModel(Base):
 
     conversation: Mapped[ConversationModel] = relationship(back_populates="messages")
 
-    __table_args__ = (Index("ix_messages_conversation_id", "conversation_id"),)
+    __table_args__ = (
+        Index(
+            "ix_messages_conversation_created",
+            "conversation_id",
+            "created_at",
+        ),
+    )

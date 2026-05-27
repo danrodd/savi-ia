@@ -37,8 +37,33 @@ type Message = {
   role: "user" | "assistant" | "system" | "tool";
   content: string;
   created_at: string;
+  // Metadata del turno (sólo presente en mensajes role=assistant)
+  finish_reason: "complete" | "interrupted" | "error" | "truncated" | null;
+  tool_invocations: ToolInvocation[]; // [] si no hubo tools
+  usage: TokenUsage | null;
+  cost_usd: string | null; // Decimal serializado como string
+}
+
+type ToolInvocation = {
+  id: string;            // toolu_xxx
+  name: string;          // mcp__savi__info_empresa, etc.
+  input: Record<string, unknown>;
+  status: "running" | "ok" | "error";
+}
+
+type TokenUsage = {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_input_tokens: number;
+  cache_creation_input_tokens: number;
 }
 ```
+
+> **Para la UI**: Usa `tool_invocations` para rehidratar los chips de
+> tools en mensajes históricos (cuando el usuario recarga una
+> conversación). `finish_reason === "interrupted"` indica respuesta
+> cortada — muéstralo como nota visual. `usage` y `cost_usd` son útiles
+> para un panel admin/observabilidad; no los muestres al usuario final.
 
 ---
 

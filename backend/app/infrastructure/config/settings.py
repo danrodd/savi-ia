@@ -38,7 +38,9 @@ class Settings(BaseSettings):
     max_response_chars: int = Field(default=20000)
     max_agent_turns: int = Field(default=40)
 
-    cors_allowed_origins: str = Field(default="")
+    cors_allowed_origins: str = Field(
+        default="http://localhost:5173,http://localhost:3000"
+    )
 
     @property
     def agent_db_url(self) -> str:

@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
+
+from app.modules.conversations.domain.value_objects import (
+    MessageFinishReason,
+    TokenUsage,
+    ToolInvocation,
+)
 
 
 @dataclass(frozen=True)
@@ -25,6 +32,10 @@ class MessageDTO:
     role: str
     content: str
     created_at: datetime
+    tool_invocations: list[ToolInvocation]
+    finish_reason: MessageFinishReason | None = None
+    usage: TokenUsage | None = None
+    cost_usd: Decimal | None = None
 
 
 @dataclass(frozen=True)

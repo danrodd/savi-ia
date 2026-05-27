@@ -21,4 +21,8 @@ class ConversationMapper:
             role=entity.role.value,
             content=entity.content,
             created_at=entity.created_at,
+            tool_invocations=list(entity.tool_invocations),
+            finish_reason=entity.finish_reason,
+            usage=entity.usage,
+            cost_usd=entity.cost_usd,
         )

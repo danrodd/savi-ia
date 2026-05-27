@@ -9,6 +9,7 @@ from app.infrastructure.database.session import (
     AgentSessionDep,
     ErpSessionDep,
     get_agent_session,
+    get_agent_sessionmaker,
     get_erp_session,
 )
 
@@ -19,6 +20,7 @@ __all__ = [
     "close_engines",
     "get_agent_engine",
     "get_agent_session",
+    "get_agent_sessionmaker",
     "get_erp_engine",
     "get_erp_session",
     "init_engines",
