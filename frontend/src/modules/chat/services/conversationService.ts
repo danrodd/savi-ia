@@ -17,6 +17,10 @@ class ConversationService {
   get(id: string): Promise<ConversationDetail> {
     return this.http.get<ConversationDetail>(`/${id}`)
   }
+
+  rename(id: string, title: string): Promise<Conversation> {
+    return this.http.patch<Conversation>(`/${id}`, { title })
+  }
 }
 
 export const conversationService = new ConversationService()

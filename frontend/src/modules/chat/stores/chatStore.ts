@@ -2,17 +2,38 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { agentService } from '../services/agentService'
 import { conversationService } from '../services/conversationService'
-import type { ChatEvent, Conversation, StoredMessage, ToolCall, UIMessage } from '../types'
+import type {
+  ChatEvent,
+  Conversation,
+  StoredMessage,
+  ToolCall,
+  ToolInvocation,
+  UIMessage,
+} from '../types'
+
+function mapStoredToolCall(t: ToolInvocation): ToolCall {
+  const status: ToolCall['status'] =
+    t.status === 'ok' ? 'success' : t.status === 'error' ? 'error' : 'success'
+  return { id: t.id, name: t.name, status }
+}
 
 function toUIMessages(stored: StoredMessage[]): UIMessage[] {
   return stored
     .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      text: m.content,
-      toolCalls: [],
-      done: true,
-    }))
+    .map((m) => {
+      const role = m.role as 'user' | 'assistant'
+      if (role === 'user') {
+        return { role, text: m.content, toolCalls: [], done: true }
+      }
+      return {
+        role,
+        text: m.content,
+        toolCalls: m.tool_invocations.map(mapStoredToolCall),
+        done: true,
+        interrupted: m.finish_reason === 'interrupted',
+        error: m.finish_reason === 'error' ? 'La respuesta falló.' : undefined,
+      }
+    })
 }
 
 function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
@@ -51,7 +72,7 @@ function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
       next[next.length - 1] = { ...last, done: true, error: ev.message }
       break
     case 'thinking_delta':
-      // ignored in this MVP
+    case 'title_update':
       break
   }
   return next
@@ -71,6 +92,20 @@ export const useChatStore = defineStore('chat', () => {
   const activeConversation = computed(
     () => conversations.value.find((c) => c.id === activeConversationId.value) ?? null,
   )
+
+  function patchConversation(id: string, patch: Partial<Conversation>): void {
+    const idx = conversations.value.findIndex((c) => c.id === id)
+    if (idx === -1) return
+    const existing = conversations.value[idx]
+    if (!existing) return
+    conversations.value[idx] = { ...existing, ...patch }
+  }
+
+  function applyTitleUpdate(id: string, title: string): void {
+    const conv = conversations.value.find((c) => c.id === id)
+    if (!conv || conv.title_locked) return
+    patchConversation(id, { title })
+  }
 
   async function loadConversations(): Promise<void> {
     loadingConversations.value = true
@@ -110,6 +145,13 @@ export const useChatStore = defineStore('chat', () => {
     return conv
   }
 
+  async function renameConversation(id: string, title: string): Promise<void> {
+    const trimmed = title.trim()
+    if (!trimmed) return
+    const updated = await conversationService.rename(id, trimmed)
+    patchConversation(id, updated)
+  }
+
   function clearActive(): void {
     activeConversationId.value = null
     messages.value = []
@@ -124,6 +166,7 @@ export const useChatStore = defineStore('chat', () => {
       const conv = await createConversation()
       convId = conv.id
     }
+    const targetConvId = convId
 
     messages.value = [
       ...messages.value,
@@ -136,14 +179,18 @@ export const useChatStore = defineStore('chat', () => {
     abortController = new AbortController()
 
     try {
-      for await (const ev of agentService.stream(convId, trimmed, abortController.signal)) {
+      for await (const ev of agentService.stream(targetConvId, trimmed, abortController.signal)) {
+        if (ev.type === 'title_update') {
+          applyTitleUpdate(targetConvId, ev.title)
+          continue
+        }
         messages.value = applyEvent(messages.value, ev)
       }
       const last = messages.value[messages.value.length - 1]
       if (last && last.role === 'assistant' && !last.done) {
         messages.value = [...messages.value.slice(0, -1), { ...last, done: true }]
       }
-      const convIdx = conversations.value.findIndex((c) => c.id === convId)
+      const convIdx = conversations.value.findIndex((c) => c.id === targetConvId)
       const existing = convIdx !== -1 ? conversations.value[convIdx] : undefined
       if (existing) {
         const updated = { ...existing, updated_at: new Date().toISOString() }
@@ -185,6 +232,7 @@ export const useChatStore = defineStore('chat', () => {
     loadConversations,
     loadConversation,
     createConversation,
+    renameConversation,
     clearActive,
     sendMessage,
     stopStream,

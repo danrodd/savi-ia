@@ -57,6 +57,14 @@ function handleSelect(id: string): void {
   if (isMobile.value) sidebarOpen.value = false
 }
 
+async function handleRename(id: string, title: string): Promise<void> {
+  try {
+    await store.renameConversation(id, title)
+  } catch (e) {
+    error.value = (e as Error).message
+  }
+}
+
 function handleNewChat(): void {
   if (route.name !== 'home') router.push({ name: 'home' })
   store.clearActive()
@@ -81,6 +89,7 @@ async function handleSend(text: string): Promise<void> {
       :open="sidebarVisible"
       :mobile="isMobile"
       @select="handleSelect"
+      @rename="handleRename"
       @new-chat="handleNewChat"
       @close="sidebarOpen = false"
     />

@@ -67,6 +67,10 @@ export class HttpClient {
     return this.request<T>('POST', endpoint, { ...opts, body })
   }
 
+  patch<T, B = unknown>(endpoint: string, body?: B, opts?: RequestOptions): Promise<T> {
+    return this.request<T>('PATCH', endpoint, { ...opts, body })
+  }
+
   delete<T>(endpoint: string, opts?: RequestOptions): Promise<T> {
     return this.request<T>('DELETE', endpoint, opts)
   }
