@@ -5,17 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "vue-tsc --build && vite build",
     "preview": "vite preview",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
-    "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "biome lint --write .",
     "format": "biome format --write .",
     "check": "biome check --write ."
   },
   "dependencies": {
+    "@vueuse/core": "^14.3.0",
+    "dompurify": "^3.4.5",
+    "markdown-it": "^14.2.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.32",
     "vue-router": "^5.0.4"
@@ -25,6 +27,7 @@
     "@playwright/test": "^1.59.1",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.1",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.12.2",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/test-utils": "^2.4.6",

@@ -1,0 +1,8 @@
+export const STORAGE_PREFIX = 'savi-agent' as const
+
+export const STORAGE_KEYS = {
+  THEME_MODE: `${STORAGE_PREFIX}-theme-mode`,
+  SIDEBAR_OPEN: `${STORAGE_PREFIX}-sidebar-open`,
+} as const
+
+export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
