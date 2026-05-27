@@ -108,6 +108,7 @@ CRUD de conversaciones y mensajes. Endpoints:
 - `POST /conversations` — crear conversación.
 - `GET /conversations` — listar (filtro `user_id`, paginación).
 - `GET /conversations/{id}` — conversación + todos sus mensajes.
+- `PATCH /conversations/{id}` — renombrar manual + lock (`title_locked=true`).
 
 ### 5.2 `chat`
 Endpoint conversacional con streaming SSE y LLM (Claude vía
@@ -133,6 +134,17 @@ Endpoint conversacional con streaming SSE y LLM (Claude vía
 - **MCP server in-process** (construido por turno para futuras
   clausuras con el usuario). Tool inicial: `info_empresa()` — lee
   `Empresa.Empresa` del ERP.
+- **Auto-título de la conversación** en dos fases con modelo barato
+  (`CLAUDE_TITLE_MODEL`, Haiku por default):
+  - Fase 1: dispara como `asyncio.create_task` al inicio del primer
+    turno con sólo el `user_msg`. Emite evento SSE `title_update` en
+    cuanto está lista. Sobrevive a la cancelación del cliente.
+  - Fase 2: tras `finish_reason=complete`, refina el título con la
+    respuesta del asistente a la vista (timeout `TITLE_PHASE2_TIMEOUT_S`,
+    default 4 s). Si no alcanza, persiste igual en background.
+  - Sólo dispara si `title_locked=false` y `title='Nueva conversación'`
+    — esto evita el bug de Open WebUI (cancel+retry del primer mensaje
+    no genera título).
 - En Windows requiere `CLAUDE_CODE_GIT_BASH_PATH=C:/Program Files/Git/bin/bash.exe`.
 
 ---

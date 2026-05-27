@@ -38,6 +38,7 @@ class ConversationResponse(BaseModel):
     id: UUID
     user_id: UUID | None
     title: str
+    title_locked: bool
     created_at: datetime
     updated_at: datetime
 
@@ -47,6 +48,7 @@ class ConversationResponse(BaseModel):
             id=dto.id,
             user_id=dto.user_id,
             title=dto.title,
+            title_locked=dto.title_locked,
             created_at=dto.created_at,
             updated_at=dto.updated_at,
         )

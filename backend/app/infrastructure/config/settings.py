@@ -34,9 +34,16 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = Field(default="")
     claude_model: str = Field(default="claude-sonnet-4-6")
+    # Modelo dedicado a generación de títulos (tareas one-shot baratas).
+    # Haiku 4.5 cuesta ~10× menos que Sonnet y rinde bien para resumir
+    # una conversación en ≤5 palabras.
+    claude_title_model: str = Field(default="claude-haiku-4-5")
     claude_code_git_bash_path: str = Field(default="")
     max_response_chars: int = Field(default=20000)
     max_agent_turns: int = Field(default=40)
+    # Timeout corto para la fase 2 del título inline al cierre del turno.
+    # Si tarda más, dejamos el de la fase 1 (que ya está en BD) y seguimos.
+    title_phase2_timeout_s: float = Field(default=4.0)
 
     cors_allowed_origins: str = Field(
         default="http://localhost:5173,http://localhost:3000"

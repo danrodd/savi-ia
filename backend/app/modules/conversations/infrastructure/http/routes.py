@@ -3,7 +3,10 @@ from uuid import UUID
 from fastapi import APIRouter, Query, status
 
 from app.modules.conversations.application.dtos import CreateConversationDTO
-from app.modules.conversations.application.requests import CreateConversationRequest
+from app.modules.conversations.application.requests import (
+    CreateConversationRequest,
+    RenameConversationRequest,
+)
 from app.modules.conversations.application.responses import (
     ConversationResponse,
     ConversationWithMessagesResponse,
@@ -12,6 +15,7 @@ from app.modules.conversations.infrastructure.http.dependencies import (
     CreateConversationUseCaseDep,
     GetConversationWithMessagesUseCaseDep,
     ListConversationsUseCaseDep,
+    RenameConversationUseCaseDep,
 )
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -49,3 +53,16 @@ async def get_conversation(
 ) -> ConversationWithMessagesResponse:
     result = await use_case.execute(conversation_id)
     return ConversationWithMessagesResponse.from_dto(result)
+
+
+@router.patch("/{conversation_id}", response_model=ConversationResponse)
+async def rename_conversation(
+    conversation_id: UUID,
+    request: RenameConversationRequest,
+    use_case: RenameConversationUseCaseDep,
+) -> ConversationResponse:
+    """Renombra la conversación y bloquea los autotítulos futuros
+    (`title_locked=True`). Lo usa el botón de "Renombrar" del sidebar.
+    """
+    result = await use_case.execute(conversation_id, request.title)
+    return ConversationResponse.from_dto(result)

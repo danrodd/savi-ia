@@ -9,6 +9,7 @@ class ConversationMapper:
             id=entity.id,
             user_id=entity.user_id,
             title=entity.title,
+            title_locked=entity.title_locked,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

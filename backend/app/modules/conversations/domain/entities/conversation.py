@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+DEFAULT_TITLE = "Nueva conversación"
+
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
@@ -11,18 +13,27 @@ def _utc_now() -> datetime:
 class Conversation:
     id: UUID = field(default_factory=uuid4)
     user_id: UUID | None = None
-    title: str = "Nueva conversación"
+    title: str = DEFAULT_TITLE
+    title_locked: bool = False
     created_at: datetime = field(default_factory=_utc_now)
     updated_at: datetime = field(default_factory=_utc_now)
     deleted_at: datetime | None = None
 
-    def rename(self, new_title: str) -> None:
+    def rename(self, new_title: str, *, lock: bool = False) -> None:
+        """Renombra la conversación.
+
+        Si `lock=True`, marca `title_locked=True` y los autotítulos futuros
+        no la sobrescribirán. Lo usa el endpoint manual de renombre del
+        usuario.
+        """
         new_title = new_title.strip()
         if not new_title:
             raise ValueError("El título no puede estar vacío")
         if len(new_title) > 200:
             raise ValueError("El título no puede superar 200 caracteres")
         self.title = new_title
+        if lock:
+            self.title_locked = True
         self.updated_at = _utc_now()
 
     def soft_delete(self) -> None:
@@ -31,3 +42,7 @@ class Conversation:
     @property
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
+
+    @property
+    def has_default_title(self) -> bool:
+        return self.title == DEFAULT_TITLE

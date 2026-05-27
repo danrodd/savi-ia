@@ -21,6 +21,26 @@ class ConversationRepository(ABC):
     ) -> list[Conversation]: ...
 
     @abstractmethod
+    async def update_title(
+        self,
+        conversation_id: UUID,
+        new_title: str,
+        *,
+        respect_lock: bool = True,
+        lock: bool = False,
+    ) -> str | None:
+        """Cambia el título de una conversación.
+
+        - `respect_lock`: si True y la conversación tiene `title_locked`,
+          NO se hace nada y devuelve None. Lo usan los autotítulos.
+        - `lock`: si True, marca `title_locked=true` tras actualizar.
+          Lo usa el endpoint manual de renombre.
+
+        Devuelve el título efectivamente aplicado, o None si no se aplicó
+        (por lock o por conversación inexistente).
+        """
+
+    @abstractmethod
     async def add_message(self, message: Message) -> Message: ...
 
     @abstractmethod

@@ -21,6 +21,7 @@ class ConversationDTO:
     id: UUID
     user_id: UUID | None
     title: str
+    title_locked: bool
     created_at: datetime
     updated_at: datetime
 

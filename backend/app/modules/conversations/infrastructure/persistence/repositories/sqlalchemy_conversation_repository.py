@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.conversations.domain.entities import Conversation, Message
@@ -47,6 +47,31 @@ class SqlAlchemyConversationRepository(ConversationRepository):
 
         result = await self._session.execute(stmt)
         return [ConversationOrmMapper.to_entity(m) for m in result.scalars().all()]
+
+    async def update_title(
+        self,
+        conversation_id: UUID,
+        new_title: str,
+        *,
+        respect_lock: bool = True,
+        lock: bool = False,
+    ) -> str | None:
+        clean = new_title.strip()[:200]
+        if not clean:
+            return None
+        stmt = update(ConversationModel).where(
+            ConversationModel.id == conversation_id,
+            ConversationModel.deleted_at.is_(None),
+        )
+        if respect_lock:
+            stmt = stmt.where(ConversationModel.title_locked.is_(False))
+        values: dict[str, str | bool] = {"title": clean}
+        if lock:
+            values["title_locked"] = True
+        stmt = stmt.values(**values).returning(ConversationModel.id)
+        result = await self._session.execute(stmt)
+        returned_id = result.scalar_one_or_none()
+        return clean if returned_id is not None else None
 
     async def add_message(self, message: Message) -> Message:
         model = ConversationOrmMapper.message_to_model(message)

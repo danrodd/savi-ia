@@ -8,6 +8,7 @@ class ChatEventType(StrEnum):
     THINKING_DELTA = "thinking_delta"
     TOOL_USE = "tool_use"
     TOOL_RESULT = "tool_result"
+    TITLE_UPDATE = "title_update"
     DONE = "done"
     ERROR = "error"
 
@@ -40,6 +41,12 @@ class ToolResultEvent:
 
 
 @dataclass(slots=True)
+class TitleUpdateEvent:
+    title: str
+    type: ChatEventType = ChatEventType.TITLE_UPDATE
+
+
+@dataclass(slots=True)
 class DoneEvent:
     usage: dict[str, Any] | None = None
     cost_usd: float | None = None
@@ -58,6 +65,7 @@ ChatEvent = (
     | ThinkingDeltaEvent
     | ToolUseEvent
     | ToolResultEvent
+    | TitleUpdateEvent
     | DoneEvent
     | ErrorEvent
 )

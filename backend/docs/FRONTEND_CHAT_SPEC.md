@@ -24,6 +24,7 @@ type Conversation = {
   id: string;            // UUID
   user_id: string | null; // por ahora siempre null (auth pendiente)
   title: string;
+  title_locked: boolean; // true tras un PATCH manual del usuario
   created_at: string;    // ISO 8601 UTC
   updated_at: string;
 }
@@ -106,6 +107,22 @@ Ambos campos son opcionales. Si omites `title`, se usa
 
 ---
 
+### `PATCH /conversations/{id}` — renombrar manualmente
+
+**Body**:
+```json
+{ "title": "Mi título personalizado" }
+```
+
+`title` requerido, 1–200 chars.
+
+**Respuesta `200`**: la `Conversation` actualizada con `title_locked: true`.
+A partir de este momento ningún autotítulo del backend la sobrescribirá.
+
+Úsalo desde el botón "Renombrar" del sidebar.
+
+---
+
 ### `GET /conversations/{id}` — conversación + mensajes
 
 **Respuesta `200`**:
@@ -147,6 +164,7 @@ Todos los payloads incluyen `type`. Otros campos varían:
 | `thinking_delta`  | `text: string`                                     | (Opcional) mostrar "pensando…" colapsable |
 | `tool_use`        | `id: string`, `name: string`, `input: object`     | El agente está llamando una tool; muestra spinner |
 | `tool_result`     | `tool_use_id: string`, `is_error: bool`           | Cierra el spinner de esa tool |
+| `title_update`    | `title: string`                                    | Renombra la conversación en el sidebar en vivo. Llega 0, 1 o 2 veces por turno (fase provisional + fase refinada). Sólo en conversaciones cuyo título sigue siendo el default. |
 | `done`            | `usage: object \| null`, `cost_usd: number \| null`, `finish_reason: string` | Cierre limpio |
 | `error`           | `message: string`                                  | El stream falló; muestra error y permite reintentar |
 
@@ -223,7 +241,40 @@ al cerrar el stream, así que la respuesta parcial queda guardada.
 
 ---
 
-## 4. Comportamiento de SAVI a respetar en la UI
+## 4. Auto-título — comportamiento esperado en la UI
+
+El backend genera el título automáticamente la primera vez que se chatea
+en una conversación cuyo título sigue siendo `"Nueva conversación"`. El
+flujo:
+
+1. El usuario crea una conversación → llega `Conversation` con
+   `title: "Nueva conversación"`, `title_locked: false`. **El sidebar
+   muestra "Nueva conversación"**.
+2. El usuario manda el primer mensaje. Por el SSE recibes 0–2 eventos
+   `title_update`:
+   - **Fase 1** (al ~1–2 s): título provisional con sólo el `user_msg`.
+     Ej.: `"Información de la empresa"`. **Actualiza el sidebar al
+     vuelo** sin pedir nada al backend.
+   - **Fase 2** (al cierre del turno, si llega antes del timeout):
+     título refinado con la respuesta del asistente a la vista. Ej.:
+     `"NIT y razón social"`. **Actualiza el sidebar otra vez**.
+3. Si el cliente cancela el primer turno antes del DONE: la **fase 1
+   sigue corriendo en background** y el título se persiste igual. Si
+   recargas la conversación con `GET /conversations/{id}` verás el
+   título actualizado.
+4. Si el usuario hace `PATCH /conversations/{id}` para renombrar a
+   mano, la response trae `title_locked: true` y **ningún `title_update`
+   futuro lo va a sobrescribir**. La UI debería mostrar un indicador
+   sutil (icono de candado, opcional) de que el título está fijado.
+
+> **No hagas polling** del título — confía en los eventos SSE
+> + la response de `PATCH`. Si el usuario llega tarde a una
+> conversación cancelada (caso del paso 3), el `GET` de hidratación
+> al abrirla resuelve.
+
+---
+
+## 5. Comportamiento de SAVI a respetar en la UI
 
 - SAVI **rechaza** cualquier pregunta fuera de SEO Group (en cualquier
   idioma, con cualquier formulación). NO programes en el frontend
@@ -238,7 +289,7 @@ al cerrar el stream, así que la respuesta parcial queda guardada.
 
 ---
 
-## 5. Stack sugerido para el frontend
+## 6. Stack sugerido para el frontend
 
 Recomendaciones del equipo (no obligatorias):
 
@@ -253,7 +304,7 @@ Recomendaciones del equipo (no obligatorias):
 
 ---
 
-## 6. Layout objetivo (referencia visual)
+## 7. Layout objetivo (referencia visual)
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -269,7 +320,7 @@ Recomendaciones del equipo (no obligatorias):
 
 ---
 
-## 7. Cómo arrancar el backend (para probar el frontend en local)
+## 8. Cómo arrancar el backend (para probar el frontend en local)
 
 Desde `SAVI_SEO-ERP/backend/`:
 
@@ -291,15 +342,12 @@ OpenAPI / Swagger UI en `http://127.0.0.1:8000/docs`.
 
 ---
 
-## 8. Limitaciones conocidas del MVP
+## 9. Limitaciones conocidas del MVP
 
 - **Sin auth**. El backend acepta cualquier request. No expongas el
   endpoint en internet hasta que entre auth.
 - **Sin rate limit**. Una pestaña abierta puede gastar tokens rápido.
 - **Sin regenerar / editar último mensaje**. Si lo necesitas en la UI
   ya, dímelo y lo agregamos.
-- **Sin auto-título**. La conversación queda con
-  `"Nueva conversación"` hasta que se cambie. Te puedo agregar un
-  `POST /conversations/{id}/title` cuando estés listo.
 - **Solo una tool de negocio**: `info_empresa`. El resto del catálogo
   (Wave 1) viene después.

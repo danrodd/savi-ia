@@ -7,6 +7,7 @@ from app.modules.conversations.application.use_cases import (
     CreateConversationUseCase,
     GetConversationWithMessagesUseCase,
     ListConversationsUseCase,
+    RenameConversationUseCase,
 )
 from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.infrastructure.persistence.repositories import (
@@ -39,6 +40,12 @@ def get_conversation_with_messages_use_case(
     return GetConversationWithMessagesUseCase(repository)
 
 
+def get_rename_conversation_use_case(
+    repository: ConversationRepositoryDep,
+) -> RenameConversationUseCase:
+    return RenameConversationUseCase(repository)
+
+
 CreateConversationUseCaseDep = Annotated[
     CreateConversationUseCase, Depends(get_create_conversation_use_case)
 ]
@@ -47,4 +54,7 @@ ListConversationsUseCaseDep = Annotated[
 ]
 GetConversationWithMessagesUseCaseDep = Annotated[
     GetConversationWithMessagesUseCase, Depends(get_conversation_with_messages_use_case)
+]
+RenameConversationUseCaseDep = Annotated[
+    RenameConversationUseCase, Depends(get_rename_conversation_use_case)
 ]

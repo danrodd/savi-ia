@@ -5,6 +5,7 @@ from app.modules.chat.domain.entities.chat_event import (
     ErrorEvent,
     TextDeltaEvent,
     ThinkingDeltaEvent,
+    TitleUpdateEvent,
     ToolResultEvent,
     ToolUseEvent,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "ErrorEvent",
     "TextDeltaEvent",
     "ThinkingDeltaEvent",
+    "TitleUpdateEvent",
     "ToolResultEvent",
     "ToolUseEvent",
 ]

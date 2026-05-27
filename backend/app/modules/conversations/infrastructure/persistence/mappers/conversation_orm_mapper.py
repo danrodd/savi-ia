@@ -19,6 +19,7 @@ class ConversationOrmMapper:
             id=model.id,
             user_id=model.user_id,
             title=model.title,
+            title_locked=model.title_locked,
             created_at=model.created_at,
             updated_at=model.updated_at,
             deleted_at=model.deleted_at,
@@ -30,6 +31,7 @@ class ConversationOrmMapper:
             id=entity.id,
             user_id=entity.user_id,
             title=entity.title,
+            title_locked=entity.title_locked,
             deleted_at=entity.deleted_at,
         )
 

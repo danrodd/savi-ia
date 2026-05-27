@@ -11,6 +11,16 @@ Diseño:
   shielded waits ni perder el contenido parcial generado.
 - La referencia fuerte de las tareas se mantiene en `_BG_TASKS` para que
   el GC no las recolecte antes de que terminen.
+
+Auto-título (dos fases):
+- Si el turno es el primero "no bloqueado" de la conversación, despacha
+  la **fase 1** del título junto con el stream (`asyncio.create_task`).
+  Cuando termina, emite un `TitleUpdateEvent` por el stream.
+- Si el turno cierra OK, ejecuta la **fase 2** inline con un timeout
+  corto (para refinar el título con la respuesta a la vista). Emite
+  otro `TitleUpdateEvent` con el título refinado.
+- Ambas fases usan el modelo barato (`CLAUDE_TITLE_MODEL`, Haiku por
+  default) y respetan `title_locked` del lado del repositorio.
 """
 from __future__ import annotations
 
@@ -21,16 +31,23 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
+from app.infrastructure.config import Settings
 from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
     TextDeltaEvent,
+    TitleUpdateEvent,
     ToolResultEvent,
     ToolUseEvent,
 )
-from app.modules.chat.domain.interfaces import AssistantMessageWriter, LLMRunner
+from app.modules.chat.domain.interfaces import (
+    AssistantMessageWriter,
+    ConversationTitleUpdater,
+    LLMRunner,
+)
 from app.modules.conversations.domain.entities import Message, MessageRole
+from app.modules.conversations.domain.entities.conversation import DEFAULT_TITLE
 from app.modules.conversations.domain.exceptions import ConversationNotFoundError
 from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.domain.value_objects import (
@@ -47,10 +64,10 @@ _HISTORY_CHAR_LIMIT = 1500
 _NEW_QUERY_MARKER = "=== Nueva consulta del usuario (responde esta) ==="
 _TRUNCATION_MARKER = "Respuesta truncada por límite de tamaño"
 
-_BG_TASKS: set[asyncio.Task[None]] = set()
+_BG_TASKS: set[asyncio.Task[Any]] = set()
 
 
-def _spawn(coro: Coroutine[Any, Any, None]) -> asyncio.Task[None]:
+def _spawn(coro: Coroutine[Any, Any, Any]) -> asyncio.Task[Any]:
     task = asyncio.create_task(coro)
     _BG_TASKS.add(task)
     task.add_done_callback(_BG_TASKS.discard)
@@ -138,10 +155,14 @@ class SendMessageUseCase:
         repository: ConversationRepository,
         runner: LLMRunner,
         assistant_writer: AssistantMessageWriter,
+        title_updater: ConversationTitleUpdater,
+        settings: Settings,
     ) -> None:
         self._repository = repository
         self._runner = runner
         self._assistant_writer = assistant_writer
+        self._title_updater = title_updater
+        self._settings = settings
 
     async def execute(
         self,
@@ -154,6 +175,15 @@ class SendMessageUseCase:
 
         history = await self._repository.list_messages(conversation_id)
 
+        # Detecta primer turno "renombrable": título por defecto y no
+        # bloqueado por el usuario. Esto sobrevive a cancelación + retry
+        # del primer mensaje (donde Open WebUI falla), porque mientras el
+        # título siga siendo el default y no esté locked, los siguientes
+        # turnos también lo renombran.
+        is_renamable = (
+            not conversation.title_locked and conversation.has_default_title
+        )
+
         user_message = Message(
             conversation_id=conversation_id,
             role=MessageRole.USER,
@@ -163,11 +193,29 @@ class SendMessageUseCase:
 
         prompt = _format_history_block(history) + user_text.strip()
 
+        title_phase1_task: asyncio.Task[Any] | None = None
+        title_phase1_emitted = False
+        if is_renamable:
+            title_phase1_task = _spawn(
+                self._title_updater.update_from_user(conversation_id, user_text)
+            )
+
         accumulator = _TurnAccumulator()
         try:
             async for event in self._runner.stream_turn(prompt):
                 accumulator.consume(event)
                 yield event
+                # Entre eventos del LLM: si la fase 1 ya terminó, emite
+                # el título sin esperar al cierre del turno.
+                if (
+                    title_phase1_task is not None
+                    and not title_phase1_emitted
+                    and title_phase1_task.done()
+                ):
+                    title = self._read_title_task(title_phase1_task)
+                    title_phase1_emitted = True
+                    if title:
+                        yield TitleUpdateEvent(title=title)
         except asyncio.CancelledError:
             accumulator.finish_reason = MessageFinishReason.INTERRUPTED
             raise
@@ -180,6 +228,36 @@ class SendMessageUseCase:
                 assistant_message = accumulator.build_message(conversation_id)
                 _spawn(self._safe_write(assistant_message))
 
+        # ── Cierre OK: refinar el título con la respuesta a la vista. ──
+        if (
+            is_renamable
+            and accumulator.finish_reason == MessageFinishReason.COMPLETE
+            and accumulator.has_content()
+        ):
+            # Antes de fase 2: drenar fase 1 si aún no salió, con timeout
+            # corto. Si tarda más, seguimos sin emitir el provisional.
+            if title_phase1_task is not None and not title_phase1_emitted:
+                drained = await self._await_title(
+                    title_phase1_task, max_wait_s=3.0
+                )
+                title_phase1_emitted = True
+                if drained:
+                    yield TitleUpdateEvent(title=drained)
+
+            phase2_task = _spawn(
+                self._title_updater.update_from_turn(
+                    conversation_id,
+                    user_text,
+                    "".join(accumulator.text_parts),
+                )
+            )
+            refined = await self._await_title(
+                phase2_task,
+                max_wait_s=self._settings.title_phase2_timeout_s,
+            )
+            if refined:
+                yield TitleUpdateEvent(title=refined)
+
     async def _safe_write(self, message: Message) -> None:
         try:
             await self._assistant_writer.write(message)
@@ -188,3 +266,29 @@ class SendMessageUseCase:
                 "persist_assistant_message_failed conversation_id=%s",
                 message.conversation_id,
             )
+
+    @staticmethod
+    def _read_title_task(task: asyncio.Task[Any]) -> str | None:
+        try:
+            result = task.result()
+        except Exception:
+            log.exception("title_task_failed")
+            return None
+        return result if isinstance(result, str) and result else None
+
+    @staticmethod
+    async def _await_title(
+        task: asyncio.Task[Any], *, max_wait_s: float
+    ) -> str | None:
+        try:
+            async with asyncio.timeout(max_wait_s):
+                result = await asyncio.shield(task)
+        except TimeoutError:
+            return None
+        except Exception:
+            log.exception("title_await_failed")
+            return None
+        return result if isinstance(result, str) and result else None
+
+
+__all__ = ["SendMessageUseCase", "DEFAULT_TITLE"]
