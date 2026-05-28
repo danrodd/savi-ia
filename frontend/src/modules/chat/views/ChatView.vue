@@ -2,13 +2,16 @@
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import { toast } from '@/lib/toast'
 import BrandMark from '../components/BrandMark.vue'
 import Composer from '../components/Composer.vue'
 import MessageList from '../components/MessageList.vue'
 import MobileTopBar from '../components/MobileTopBar.vue'
 import Sidebar from '../components/Sidebar.vue'
 import { useChatStore } from '../stores/chatStore'
+import type { Conversation } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,6 +71,34 @@ async function handleRename(id: string, title: string): Promise<void> {
   }
 }
 
+const deleteTarget = ref<Conversation | null>(null)
+const confirmDeleteOpen = computed({
+  get: () => deleteTarget.value !== null,
+  set: (open: boolean) => {
+    if (!open) deleteTarget.value = null
+  },
+})
+
+function requestDelete(id: string): void {
+  deleteTarget.value = conversations.value.find((c) => c.id === id) ?? null
+}
+
+async function confirmDelete(): Promise<void> {
+  const target = deleteTarget.value
+  if (!target) return
+  try {
+    const { wasActive } = await store.deleteConversation(target.id)
+    if (wasActive && route.name !== 'home') {
+      router.replace({ name: 'home' })
+    }
+    toast.success('Conversación eliminada', { description: target.title })
+  } catch (e) {
+    toast.error('No se pudo eliminar la conversación', {
+      description: (e as Error).message,
+    })
+  }
+}
+
 function handleNewChat(): void {
   if (route.name !== 'home') router.push({ name: 'home' })
   store.clearActive()
@@ -101,6 +132,7 @@ function handleRegenerate(): void {
       :mobile="isMobile"
       @select="handleSelect"
       @rename="handleRename"
+      @delete="requestDelete"
       @new-chat="handleNewChat"
       @close="sidebarOpen = false"
     />
@@ -142,6 +174,19 @@ function handleRegenerate(): void {
 
       <Composer :streaming="streaming" @send="handleSend" @stop="store.stopStream" />
     </main>
+
+    <ConfirmDialog
+      v-model:open="confirmDeleteOpen"
+      title="Eliminar conversación"
+      :description="
+        deleteTarget
+          ? `Se eliminará “${deleteTarget.title}”. Esta acción no se puede deshacer.`
+          : ''
+      "
+      confirm-label="Eliminar"
+      variant="danger"
+      :on-confirm="confirmDelete"
+    />
   </div>
 </template>
 

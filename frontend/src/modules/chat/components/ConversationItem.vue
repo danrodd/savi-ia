@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import type { Conversation } from '../types'
+import ConversationMenu from './ConversationMenu.vue'
 
 const props = defineProps<{ conversation: Conversation; active: boolean }>()
 const emit = defineEmits<{
   select: []
   rename: [title: string]
+  delete: []
 }>()
 
 const editing = ref(false)
 const draft = ref(props.conversation.title)
 const inputRef = useTemplateRef<HTMLInputElement>('input')
+const moreBtnRef = useTemplateRef<HTMLButtonElement>('moreBtn')
+const menuOpen = ref(false)
 
 const displayedTitle = ref(props.conversation.title)
 const animating = ref(false)
@@ -60,7 +64,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  animationToken++ // invalida cualquier animación pendiente
+  animationToken++
 })
 
 const time = computed(() => {
@@ -78,9 +82,8 @@ const time = computed(() => {
   return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
 })
 
-async function startEdit(e: Event): Promise<void> {
-  e.stopPropagation()
-  animationToken++ // cancela animación si está corriendo
+async function startEdit(): Promise<void> {
+  animationToken++
   animating.value = false
   displayedTitle.value = props.conversation.title
   editing.value = true
@@ -111,8 +114,13 @@ function cancel(): void {
 }
 
 function onClick(): void {
-  if (editing.value) return
+  if (editing.value || menuOpen.value) return
   emit('select')
+}
+
+function toggleMenu(e: Event): void {
+  e.stopPropagation()
+  menuOpen.value = !menuOpen.value
 }
 </script>
 
@@ -123,6 +131,7 @@ function onClick(): void {
       'item-wrap--active': active,
       'item-wrap--editing': editing,
       'item-wrap--animating': animating,
+      'item-wrap--menu-open': menuOpen,
     }"
   >
     <button type="button" class="item" :disabled="editing" @click="onClick">
@@ -160,22 +169,34 @@ function onClick(): void {
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
       </span>
-      <span v-if="!editing" class="item__time">{{ time }}</span>
+      <span v-if="!editing && !menuOpen" class="item__time">{{ time }}</span>
     </button>
 
-    <button
-      v-if="!editing"
-      type="button"
-      class="item__rename"
-      aria-label="Renombrar conversación"
-      title="Renombrar"
-      @click="startEdit"
-    >
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 20h9" />
-        <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
-      </svg>
-    </button>
+    <div v-if="!editing" class="item__action-slot">
+      <button
+        ref="moreBtn"
+        type="button"
+        class="item__more"
+        :class="{ 'item__more--open': menuOpen }"
+        aria-label="Más opciones"
+        :aria-expanded="menuOpen"
+        @click="toggleMenu"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="6" r="1.5" />
+          <circle cx="12" cy="12" r="1.5" />
+          <circle cx="12" cy="18" r="1.5" />
+        </svg>
+      </button>
+
+      <ConversationMenu
+        :open="menuOpen"
+        :anchor="moreBtnRef"
+        @update:open="menuOpen = $event"
+        @rename="startEdit"
+        @delete="emit('delete')"
+      />
+    </div>
   </div>
 </template>
 
@@ -186,7 +207,8 @@ function onClick(): void {
   align-items: center;
   border: 1px solid transparent;
   border-radius: 7px;
-  transition: background var(--duration-fast) var(--ease-out),
+  transition:
+    background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out);
 }
@@ -215,7 +237,8 @@ function onClick(): void {
 }
 
 @keyframes rewrite-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 2px var(--brand-ring);
   }
   50% {
@@ -322,13 +345,18 @@ function onClick(): void {
   opacity: 0;
 }
 
-.item__rename {
+.item__action-slot {
   position: absolute;
   right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.item__more {
   display: inline-grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   background: var(--surface-elev);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
@@ -339,23 +367,26 @@ function onClick(): void {
   transition: all var(--duration-fast) var(--ease-out);
 }
 
-.item-wrap:hover:not(.item-wrap--animating) .item__rename {
+.item-wrap:hover:not(.item-wrap--animating) .item__more,
+.item__more--open {
   opacity: 1;
   transform: scale(1);
 }
 
-.item-wrap:hover:not(.item-wrap--animating) .item__time {
+.item-wrap:hover:not(.item-wrap--animating) .item__time,
+.item-wrap--menu-open .item__time {
   opacity: 0;
 }
 
-.item__rename:hover {
+.item__more:hover,
+.item__more--open {
   background: var(--surface-hover);
   color: var(--text);
   border-color: var(--border-strong);
 }
 
 @media (hover: none) {
-  .item__rename {
+  .item__more {
     opacity: 1;
     transform: scale(1);
     background: transparent;

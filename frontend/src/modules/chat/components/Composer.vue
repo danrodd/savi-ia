@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import Tooltip from '@/components/ui/Tooltip.vue'
 
 const props = defineProps<{ streaming: boolean; disabled?: boolean }>()
 const emit = defineEmits<{ send: [text: string]; stop: [] }>()
@@ -50,28 +51,30 @@ function onKeydown(e: KeyboardEvent): void {
         <span class="composer__hint">
           <kbd>Enter</kbd> para enviar · <kbd>Shift</kbd>+<kbd>Enter</kbd> para nueva línea
         </span>
-        <button
-          v-if="streaming"
-          type="button"
-          class="composer__btn composer__btn--stop"
-          aria-label="Detener"
-          @click="emit('stop')"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="6" y="6" width="12" height="12" rx="2" />
-          </svg>
-        </button>
-        <button
-          v-else
-          type="submit"
-          class="composer__btn composer__btn--send"
-          aria-label="Enviar"
-          :disabled="!text.trim() || disabled"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 19V5M5 12l7-7 7 7" />
-          </svg>
-        </button>
+        <Tooltip v-if="streaming" text="Detener">
+          <button
+            type="button"
+            class="composer__btn composer__btn--stop"
+            aria-label="Detener"
+            @click="emit('stop')"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+          </button>
+        </Tooltip>
+        <Tooltip v-else text="Enviar mensaje">
+          <button
+            type="submit"
+            class="composer__btn composer__btn--send"
+            aria-label="Enviar"
+            :disabled="!text.trim() || disabled"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </button>
+        </Tooltip>
       </div>
     </form>
   </div>

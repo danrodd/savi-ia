@@ -285,6 +285,39 @@ export const useChatStore = defineStore('chat', () => {
     patchConversation(id, updated)
   }
 
+  /**
+   * Optimistic delete: oculta la conversación del sidebar inmediatamente,
+   * llama al DELETE, revierte si el backend devuelve 4xx (404 cuando nunca
+   * existió). El 204 — incluso si llega tras un reintento — confirma.
+   * Si la conversación eliminada era la activa, la limpia y devuelve true
+   * para que la vista navegue a home.
+   */
+  async function deleteConversation(id: string): Promise<{ wasActive: boolean }> {
+    const idx = conversations.value.findIndex((c) => c.id === id)
+    if (idx === -1) return { wasActive: false }
+    const snapshot = conversations.value[idx]
+    if (!snapshot) return { wasActive: false }
+
+    const wasActive = activeConversationId.value === id
+    conversations.value = conversations.value.filter((c) => c.id !== id)
+    if (wasActive) clearActive()
+
+    try {
+      await conversationService.delete(id)
+      return { wasActive }
+    } catch (e) {
+      // Revertir: re-insertar en la misma posición; si era la activa,
+      // la vista decide si reabrir o quedarse en home.
+      conversations.value = [
+        ...conversations.value.slice(0, idx),
+        snapshot,
+        ...conversations.value.slice(idx),
+      ]
+      error.value = (e as Error).message
+      throw e
+    }
+  }
+
   function clearActive(): void {
     activeConversationId.value = null
     messages.value = []
@@ -424,6 +457,7 @@ export const useChatStore = defineStore('chat', () => {
     loadConversation,
     createConversation,
     renameConversation,
+    deleteConversation,
     clearActive,
     sendMessage,
     editLastUserMessage,

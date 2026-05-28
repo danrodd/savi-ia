@@ -27,6 +27,10 @@ class ConversationService {
   rename(id: string, title: string): Promise<Conversation> {
     return this.http.patch<Conversation>(`/${id}`, { title })
   }
+
+  delete(id: string): Promise<void> {
+    return this.http.delete<void>(`/${id}`)
+  }
 }
 
 export const conversationService = new ConversationService()

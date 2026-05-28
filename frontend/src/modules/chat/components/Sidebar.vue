@@ -15,6 +15,7 @@ defineProps<{
 const emit = defineEmits<{
   select: [id: string]
   rename: [id: string, title: string]
+  delete: [id: string]
   'new-chat': []
   close: []
 }>()
@@ -73,6 +74,7 @@ const emit = defineEmits<{
         :active="c.id === activeId"
         @select="emit('select', c.id)"
         @rename="(title) => emit('rename', c.id, title)"
+        @delete="emit('delete', c.id)"
       />
     </nav>
 
