@@ -10,12 +10,16 @@ from typing import Any
 
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
+from app.modules.chat.infrastructure.llm.mcp.tools.consultar_datos import (
+    build_description,
+    consultar_datos_impl,
+)
 from app.modules.chat.infrastructure.llm.mcp.tools.info_empresa import (
     info_empresa_impl,
 )
 
 MCP_SERVER_NAME = "savi"
-MCP_SERVER_VERSION = "0.1.0"
+MCP_SERVER_VERSION = "0.2.0"
 
 
 def _build_info_empresa_tool():
@@ -36,14 +40,26 @@ def _build_info_empresa_tool():
     return _impl
 
 
+def _build_consultar_datos_tool():
+    @tool("consultar_datos", build_description(), {"consulta": dict})
+    async def _impl(args: dict[str, Any]) -> dict[str, Any]:
+        return await consultar_datos_impl(args)
+
+    return _impl
+
+
 def build_savi_mcp_server():
     return create_sdk_mcp_server(
         name=MCP_SERVER_NAME,
         version=MCP_SERVER_VERSION,
-        tools=[_build_info_empresa_tool()],
+        tools=[
+            _build_info_empresa_tool(),
+            _build_consultar_datos_tool(),
+        ],
     )
 
 
 ALLOWED_TOOLS: list[str] = [
     f"mcp__{MCP_SERVER_NAME}__info_empresa",
+    f"mcp__{MCP_SERVER_NAME}__consultar_datos",
 ]

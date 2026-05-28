@@ -109,6 +109,10 @@ data/
 *.tmp
 *.old
 
+# Análisis de la BD del cliente con samples reales (PII). NUNCA versionar:
+# el mapa derivado y sanitizado vive en backend/docs/, no acá.
+backend/scripts/db_analysis/
+
 # Paquetes / instaladores que no deberían vivir en el repo.
 *.deb
 *.rpm
