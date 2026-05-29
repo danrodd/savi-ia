@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     # Si tarda más, dejamos el de la fase 1 (que ya está en BD) y seguimos.
     title_phase2_timeout_s: float = Field(default=4.0)
 
+    # ── Free SQL query (Nivel D) ─────────────────────────────────────────
+    # Tope absoluto de filas devueltas por consulta libre del LLM.
+    free_query_max_rows: int = Field(default=50)
+    # EXPLAIN gate: si el planner estima más que esto, rechazamos antes
+    # de ejecutar.
+    free_query_max_estimated_rows: int = Field(default=1000)
+
     cors_allowed_origins: str = Field(
         default="http://localhost:5173,http://localhost:3000"
     )

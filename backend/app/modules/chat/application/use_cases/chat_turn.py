@@ -365,7 +365,9 @@ class ChatTurnUseCase:
 
         accumulator = _TurnAccumulator()
         try:
-            async for event in self._runner.stream_turn(prompt):
+            async for event in self._runner.stream_turn(
+                prompt, conversation_id=conversation_id
+            ):
                 accumulator.consume(event)
                 yield event
                 if (

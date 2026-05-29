@@ -14,6 +14,7 @@ import asyncio
 import logging
 import os
 from collections.abc import AsyncIterator
+from uuid import UUID
 
 from claude_agent_sdk import (
     AssistantMessage,
@@ -63,8 +64,12 @@ def _apply_sdk_env(settings: Settings) -> None:
         )
 
 
-def _build_options(settings: Settings) -> ClaudeAgentOptions:
-    mcp_server = build_savi_mcp_server()
+def _build_options(
+    settings: Settings,
+    *,
+    conversation_id: UUID | None,
+) -> ClaudeAgentOptions:
+    mcp_server = build_savi_mcp_server(conversation_id=conversation_id)
     return ClaudeAgentOptions(
         model=settings.claude_model,
         system_prompt=SYSTEM_PROMPT,
@@ -104,8 +109,15 @@ class ClaudeAgentRunner(LLMRunner):
         self._settings = settings
         _apply_sdk_env(settings)
 
-    async def stream_turn(self, prompt: str) -> AsyncIterator[ChatEvent]:
-        options = _build_options(self._settings)
+    async def stream_turn(
+        self,
+        prompt: str,
+        *,
+        conversation_id: UUID | None = None,
+    ) -> AsyncIterator[ChatEvent]:
+        options = _build_options(
+            self._settings, conversation_id=conversation_id
+        )
         max_chars = self._settings.max_response_chars
         emitted_chars = 0
         truncated = False
