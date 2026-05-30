@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { MessageVersion, UIMessage } from '../types'
+import { groupToolCalls } from '../utils/groupToolCalls'
 import BrandMark from './BrandMark.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import ToolPill from './ToolPill.vue'
@@ -28,6 +29,7 @@ const displayedToolCalls = computed(() => {
   if (versionIdx.value === null) return props.message.toolCalls
   return props.versions?.[versionIdx.value]?.toolCalls ?? props.message.toolCalls
 })
+const displayedToolGroups = computed(() => groupToolCalls(displayedToolCalls.value))
 const displayedInterrupted = computed(() => {
   if (versionIdx.value === null) return !!props.message.interrupted
   return props.versions?.[versionIdx.value]?.interrupted ?? false
@@ -73,8 +75,8 @@ function next(): void {
         </span>
       </div>
 
-      <div v-if="displayedToolCalls.length > 0" class="assistant-message__tools">
-        <ToolPill v-for="call in displayedToolCalls" :key="call.id" :call="call" />
+      <div v-if="displayedToolGroups.length > 0" class="assistant-message__tools">
+        <ToolPill v-for="group in displayedToolGroups" :key="group.label" :group="group" />
       </div>
 
       <div class="assistant-message__content">

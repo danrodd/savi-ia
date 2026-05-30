@@ -1,24 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { ToolCall } from '../types'
+import type { ToolCallGroup } from '../types'
 
-const props = defineProps<{ call: ToolCall }>()
-
-const TOOL_LABELS: Record<string, string> = {
-  info_empresa: 'Consultando datos de tu empresa',
-}
-
-const label = computed(() => TOOL_LABELS[props.call.name] ?? 'Procesando información')
+defineProps<{ group: ToolCallGroup }>()
 </script>
 
 <template>
-  <div class="pill" :class="`pill--${call.status}`">
+  <div class="pill" :class="`pill--${group.status}`">
     <span class="pill__dot">
-      <svg v-if="call.status === 'running'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg v-if="group.status === 'running'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="11" cy="11" r="7" />
         <path d="m21 21-4.3-4.3" />
       </svg>
-      <svg v-else-if="call.status === 'success'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <svg v-else-if="group.status === 'success'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12" />
       </svg>
       <svg v-else width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -26,7 +19,8 @@ const label = computed(() => TOOL_LABELS[props.call.name] ?? 'Procesando informa
         <circle cx="12" cy="12" r="9" />
       </svg>
     </span>
-    <span class="pill__label">{{ label }}</span>
+    <span class="pill__label">{{ group.label }}</span>
+    <span v-if="group.count > 1" class="pill__count">×{{ group.count }}</span>
   </div>
 </template>
 
@@ -79,6 +73,17 @@ const label = computed(() => TOOL_LABELS[props.call.name] ?? 'Procesando informa
 
 .pill--error .pill__dot {
   background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.pill__count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-subtle);
+  letter-spacing: 0.02em;
+}
+
+.pill--error .pill__count {
   color: var(--brand);
 }
 

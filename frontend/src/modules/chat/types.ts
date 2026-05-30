@@ -73,6 +73,17 @@ export interface ToolCall {
   status: ToolCallStatus
 }
 
+/**
+ * Agregación visual de tool calls con el mismo label público. La agrupación
+ * usa el label (no el `name` técnico) para que tools distintas que mapean
+ * al mismo texto amigable se fusionen en una sola pill con `×N`.
+ */
+export interface ToolCallGroup {
+  label: string
+  status: ToolCallStatus
+  count: number
+}
+
 export interface UIMessage {
   /** Estable durante todo el ciclo de vida del componente; usado como key de Vue. */
   tempId: string
