@@ -1,3 +1,19 @@
+/**
+ * HttpClient — wrapper sobre fetch con auth automática.
+ *
+ * Pipeline de cada request:
+ *  1. Inyecta el header `Authorization: Bearer <access>` si hay sesión.
+ *  2. Envía la request.
+ *  3. Si la respuesta es 401:
+ *      a. dispara (o se engancha a) un único refresh global (cola),
+ *      b. reintenta la request original UNA vez con el nuevo access,
+ *      c. si el refresh falla → limpia sesión + redirige a `/login`.
+ *  4. Cualquier otra respuesta !ok se convierte en `Error` con `detail`.
+ *
+ * NO importa el store de Pinia directamente — usa `authBridge` para no
+ * generar ciclos.
+ */
+import { getAuthBridge } from './authBridge'
 import { ENV } from './env'
 
 export interface RequestOptions {
@@ -17,6 +33,21 @@ async function extractErrorMessage(res: Response): Promise<string> {
   } catch {
     return `HTTP ${res.status} ${res.statusText}`
   }
+}
+
+function buildHeaders(
+  body: unknown,
+  custom: Record<string, string> | undefined,
+  token: string | null,
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...(custom ?? {}),
+  }
+  if (token && !('Authorization' in headers)) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
 }
 
 export class HttpClient {
@@ -39,21 +70,51 @@ export class HttpClient {
     return url
   }
 
+  private async fetchWithAuth(
+    url: string,
+    init: RequestInit,
+    customHeaders: Record<string, string> | undefined,
+    body: unknown,
+  ): Promise<Response> {
+    const bridge = getAuthBridge()
+    const token = bridge.getAccessToken()
+    const initialHeaders = buildHeaders(body, customHeaders, token)
+    let res = await fetch(url, { ...init, headers: initialHeaders })
+
+    if (res.status !== 401) return res
+
+    // 401: si no hay refresh disponible, no se intenta — el caller
+    // recibe el error y el router lo redirige al login.
+    try {
+      const newToken = await bridge.refreshAccessToken()
+      const retryHeaders = buildHeaders(body, customHeaders, newToken)
+      res = await fetch(url, { ...init, headers: retryHeaders })
+      if (res.status === 401) {
+        bridge.clearSession()
+        bridge.redirectToLogin(window.location.pathname + window.location.search)
+      }
+      return res
+    } catch {
+      // refresh falló (token revocado, expirado, sin refresh, etc.)
+      bridge.clearSession()
+      bridge.redirectToLogin(window.location.pathname + window.location.search)
+      return res
+    }
+  }
+
   private async request<T>(
     method: string,
     endpoint: string,
     opts: ReqOptionsWithBody = {},
   ): Promise<T> {
-    const headers: Record<string, string> = {
-      ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...(opts.headers ?? {}),
-    }
-    const res = await fetch(this.buildUrl(endpoint, opts.query), {
-      method,
-      headers,
-      signal: opts.signal,
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-    })
+    const url = this.buildUrl(endpoint, opts.query)
+    const body = opts.body !== undefined ? JSON.stringify(opts.body) : undefined
+    const res = await this.fetchWithAuth(
+      url,
+      { method, signal: opts.signal, body },
+      opts.headers,
+      opts.body,
+    )
     if (!res.ok) throw new Error(await extractErrorMessage(res))
     if (res.status === 204) return undefined as T
     return (await res.json()) as T
@@ -75,11 +136,26 @@ export class HttpClient {
     return this.request<T>('DELETE', endpoint, opts)
   }
 
+  /**
+   * Para SSE: devuelve la Response directa con auth inyectada y refresh
+   * automático en caso de 401. El caller la procesa con readSseJson o
+   * similar. NO se reintenta automáticamente si el chat ya empezó a
+   * streamear y la sesión expira mid-stream — el handler de la consola
+   * lo verá como una conexión cortada.
+   */
   raw(
     endpoint: string,
-    init: RequestInit & { query?: RequestOptions['query'] } = {},
+    init: RequestInit & { query?: RequestOptions['query']; body?: BodyInit | null } = {},
   ): Promise<Response> {
-    const { query, ...rest } = init
-    return fetch(this.buildUrl(endpoint, query), rest)
+    const { query, body, ...rest } = init
+    const url = this.buildUrl(endpoint, query)
+    // Para SSE el body ya viene como BodyInit (string). Tratamos `body`
+    // como JSON solo cuando es string (caso común del chat).
+    return this.fetchWithAuth(
+      url,
+      { ...rest, body },
+      rest.headers as Record<string, string> | undefined,
+      body,
+    )
   }
 }

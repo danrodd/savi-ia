@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
+import { useRouter } from 'vue-router'
+
+import Tooltip from '@/components/ui/Tooltip.vue'
+import { useAuthStore } from '@/modules/auth/stores/authStore'
 import type { Conversation } from '../types'
 import BrandMark from './BrandMark.vue'
 import ConversationItem from './ConversationItem.vue'
@@ -19,6 +25,35 @@ const emit = defineEmits<{
   'new-chat': []
   close: []
 }>()
+
+const authStore = useAuthStore()
+const router = useRouter()
+const isLoggingOut = ref(false)
+
+const userInitial = computed(() => {
+  const fullName = authStore.user?.full_name ?? authStore.user?.login ?? ''
+  return fullName.trim().charAt(0).toUpperCase() || 'U'
+})
+
+const userDisplayName = computed(() => {
+  return authStore.user?.full_name ?? authStore.user?.login ?? 'Invitado'
+})
+
+const userSubtitle = computed(() => {
+  if (!authStore.user) return ''
+  const { login, is_admin } = authStore.user
+  return is_admin ? `${login} · Admin` : login
+})
+
+async function onLogout(): Promise<void> {
+  isLoggingOut.value = true
+  try {
+    await authStore.logout()
+  } finally {
+    isLoggingOut.value = false
+    void router.push({ name: 'login' })
+  }
+}
 </script>
 
 <template>
@@ -39,17 +74,13 @@ const emit = defineEmits<{
         <p class="sidebar__brand-name">SAVI</p>
         <p class="sidebar__brand-sub">SEO ERP</p>
       </div>
-      <button
-        v-if="mobile"
-        type="button"
-        class="sidebar__close"
-        aria-label="Cerrar menú"
-        @click="emit('close')"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 6 6 18M6 6l12 12" />
-        </svg>
-      </button>
+      <Tooltip v-if="mobile" text="Cerrar menú" side="bottom">
+        <button type="button" class="sidebar__close" aria-label="Cerrar menú" @click="emit('close')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </Tooltip>
     </header>
 
     <div class="sidebar__action">
@@ -79,6 +110,28 @@ const emit = defineEmits<{
     </nav>
 
     <footer class="sidebar__footer">
+      <div v-if="authStore.user" class="sidebar__user" aria-label="Usuario autenticado">
+        <div class="sidebar__user-avatar" aria-hidden="true">{{ userInitial }}</div>
+        <div class="sidebar__user-meta">
+          <p class="sidebar__user-name">{{ userDisplayName }}</p>
+          <p v-if="userSubtitle" class="sidebar__user-sub">{{ userSubtitle }}</p>
+        </div>
+        <Tooltip text="Cerrar sesión" side="top">
+          <button
+            type="button"
+            class="sidebar__logout"
+            aria-label="Cerrar sesión"
+            :disabled="isLoggingOut"
+            @click="onLogout"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        </Tooltip>
+      </div>
       <ThemeToggle />
     </footer>
   </aside>
@@ -243,5 +296,81 @@ const emit = defineEmits<{
   padding: var(--space-3);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sidebar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.sidebar__user-avatar {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--brand);
+  color: var(--text-on-brand);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  flex-shrink: 0;
+}
+
+.sidebar__user-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar__user-name {
+  margin: 0;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar__user-sub {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar__logout {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.sidebar__logout:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.sidebar__logout:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
