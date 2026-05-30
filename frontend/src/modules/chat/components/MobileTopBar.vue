@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Tooltip from '@/components/ui/Tooltip.vue'
 import BrandMark from './BrandMark.vue'
 
 defineProps<{ title?: string }>()
@@ -7,32 +8,26 @@ const emit = defineEmits<{ 'menu-open': []; 'new-chat': [] }>()
 
 <template>
   <header class="topbar">
-    <button
-      type="button"
-      class="topbar__btn"
-      aria-label="Abrir menú"
-      @click="emit('menu-open')"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12h18M3 6h18M3 18h18" />
-      </svg>
-    </button>
+    <Tooltip text="Abrir menú" side="bottom">
+      <button type="button" class="topbar__btn" aria-label="Abrir menú" @click="emit('menu-open')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12h18M3 6h18M3 18h18" />
+        </svg>
+      </button>
+    </Tooltip>
 
     <div class="topbar__brand">
       <BrandMark :size="22" label="S" />
       <span class="topbar__title">{{ title ?? 'SAVI' }}</span>
     </div>
 
-    <button
-      type="button"
-      class="topbar__btn"
-      aria-label="Nueva conversación"
-      @click="emit('new-chat')"
-    >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
-      </svg>
-    </button>
+    <Tooltip text="Nueva conversación" side="bottom">
+      <button type="button" class="topbar__btn" aria-label="Nueva conversación" @click="emit('new-chat')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
+        </svg>
+      </button>
+    </Tooltip>
   </header>
 </template>
 

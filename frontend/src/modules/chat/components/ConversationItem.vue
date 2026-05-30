@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import Tooltip from '@/components/ui/Tooltip.vue'
 import type { Conversation } from '../types'
 import ConversationMenu from './ConversationMenu.vue'
 
@@ -173,11 +174,28 @@ function toggleMenu(e: Event): void {
     </button>
 
     <div v-if="!editing" class="item__action-slot">
+      <Tooltip v-if="!menuOpen" text="Más opciones" side="right">
+        <button
+          ref="moreBtn"
+          type="button"
+          class="item__more"
+          :class="{ 'item__more--open': menuOpen }"
+          aria-label="Más opciones"
+          :aria-expanded="menuOpen"
+          @click="toggleMenu"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="6" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="12" cy="18" r="1.5" />
+          </svg>
+        </button>
+      </Tooltip>
       <button
+        v-else
         ref="moreBtn"
         type="button"
-        class="item__more"
-        :class="{ 'item__more--open': menuOpen }"
+        class="item__more item__more--open"
         aria-label="Más opciones"
         :aria-expanded="menuOpen"
         @click="toggleMenu"
