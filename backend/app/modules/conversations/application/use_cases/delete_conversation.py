@@ -7,9 +7,11 @@ from app.modules.conversations.domain.interfaces import ConversationRepository
 class DeleteConversationUseCase:
     """Soft delete idempotente de una conversación.
 
-    - Si la conversación existe (esté ya eliminada o no): éxito silencioso.
-      Repetir `DELETE` sobre la misma conversación es seguro.
-    - Si no existe: `ConversationNotFoundError` → handler global emite 404.
+    - Si la conversación existe (esté ya eliminada o no) y el caller es
+      el dueño: éxito silencioso. Repetir `DELETE` sobre la misma
+      conversación es seguro.
+    - Si no existe o no pertenece al caller: `ConversationNotFoundError`
+      → handler global emite 404 (no 403 para no filtrar existencia).
 
     No interfiere con turnos en curso: los writers del módulo `chat`
     operan con sessionmakers independientes y siguen insertando vía la
@@ -21,7 +23,22 @@ class DeleteConversationUseCase:
     def __init__(self, repository: ConversationRepository) -> None:
         self._repository = repository
 
-    async def execute(self, conversation_id: UUID) -> None:
+    async def execute(
+        self,
+        conversation_id: UUID,
+        *,
+        expected_owner_id: int | None = None,
+    ) -> None:
+        if expected_owner_id is not None:
+            # Validamos ownership antes del soft delete: si no es del
+            # caller, 404 (no exponer la existencia de la conversación).
+            conversation = await self._repository.get_by_id(conversation_id)
+            if (
+                conversation is None
+                or conversation.is_deleted
+                or conversation.user_id != expected_owner_id
+            ):
+                raise ConversationNotFoundError(conversation_id)
         existed = await self._repository.soft_delete(conversation_id)
         if not existed:
             raise ConversationNotFoundError(conversation_id)

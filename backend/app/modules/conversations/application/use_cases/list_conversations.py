@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from app.modules.conversations.application.dtos import ConversationDTO
 from app.modules.conversations.application.mappers import ConversationMapper
 from app.modules.conversations.domain.interfaces import ConversationRepository
@@ -11,7 +9,7 @@ class ListConversationsUseCase:
 
     async def execute(
         self,
-        user_id: UUID | None,
+        user_id: int | None,
         *,
         limit: int = 50,
         offset: int = 0,

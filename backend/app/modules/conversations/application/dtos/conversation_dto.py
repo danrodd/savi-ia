@@ -13,13 +13,13 @@ from app.modules.conversations.domain.value_objects import (
 @dataclass(frozen=True)
 class CreateConversationDTO:
     title: str | None
-    user_id: UUID | None
+    user_id: int | None
 
 
 @dataclass(frozen=True)
 class ConversationDTO:
     id: UUID
-    user_id: UUID | None
+    user_id: int | None
     title: str
     title_locked: bool
     created_at: datetime

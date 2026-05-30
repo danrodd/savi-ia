@@ -36,7 +36,7 @@ class TokenUsageResponse(BaseModel):
 
 class ConversationResponse(BaseModel):
     id: UUID
-    user_id: UUID | None
+    user_id: int | None
     title: str
     title_locked: bool
     created_at: datetime

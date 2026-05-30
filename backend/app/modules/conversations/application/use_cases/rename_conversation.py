@@ -20,9 +20,16 @@ class RenameConversationUseCase:
         self,
         conversation_id: UUID,
         new_title: str,
+        *,
+        expected_owner_id: int | None = None,
     ) -> ConversationDTO:
         conversation = await self._repository.get_by_id(conversation_id)
         if conversation is None or conversation.is_deleted:
+            raise ConversationNotFoundError(conversation_id)
+        if (
+            expected_owner_id is not None
+            and conversation.user_id != expected_owner_id
+        ):
             raise ConversationNotFoundError(conversation_id)
 
         applied = await self._repository.update_title(

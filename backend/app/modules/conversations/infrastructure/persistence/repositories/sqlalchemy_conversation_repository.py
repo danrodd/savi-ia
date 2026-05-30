@@ -34,7 +34,7 @@ class SqlAlchemyConversationRepository(ConversationRepository):
 
     async def list_for_user(
         self,
-        user_id: UUID | None,
+        user_id: int | None,
         *,
         limit: int = 50,
         offset: int = 0,

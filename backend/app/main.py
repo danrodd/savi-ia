@@ -7,6 +7,7 @@ from sqlalchemy import text
 
 from app.infrastructure.config import get_settings
 from app.infrastructure.database import close_engines, get_agent_engine, init_engines
+from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.chat.infrastructure.http import router as chat_router
 from app.modules.conversations.infrastructure.http import router as conversations_router
 from app.shared.exceptions import register_exception_handlers
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
             await conn.execute(text("SELECT 1"))
         return {"status": "ok", "app": settings.app_name, "env": settings.app_env}
 
+    app.include_router(auth_router)
     app.include_router(conversations_router)
     app.include_router(chat_router)
 

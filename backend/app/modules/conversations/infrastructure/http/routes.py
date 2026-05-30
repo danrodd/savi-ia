@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
+from app.modules.auth.infrastructure.http import CurrentUserDep
 from app.modules.conversations.application.dtos import CreateConversationDTO
 from app.modules.conversations.application.requests import (
     CreateConversationRequest,
@@ -30,8 +31,11 @@ router = APIRouter(prefix="/conversations", tags=["conversations"])
 async def create_conversation(
     request: CreateConversationRequest,
     use_case: CreateConversationUseCaseDep,
+    user: CurrentUserDep,
 ) -> ConversationResponse:
-    dto = CreateConversationDTO(title=request.title, user_id=request.user_id)
+    # El owner es SIEMPRE el usuario autenticado — no se acepta del body
+    # para evitar impersonation.
+    dto = CreateConversationDTO(title=request.title, user_id=user.id)
     result = await use_case.execute(dto)
     return ConversationResponse.from_dto(result)
 
@@ -39,11 +43,12 @@ async def create_conversation(
 @router.get("", response_model=list[ConversationResponse])
 async def list_conversations(
     use_case: ListConversationsUseCaseDep,
-    user_id: UUID | None = Query(default=None),
+    user: CurrentUserDep,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> list[ConversationResponse]:
-    results = await use_case.execute(user_id, limit=limit, offset=offset)
+    # Filtra siempre por el usuario autenticado.
+    results = await use_case.execute(user.id, limit=limit, offset=offset)
     return [ConversationResponse.from_dto(r) for r in results]
 
 
@@ -51,6 +56,7 @@ async def list_conversations(
 async def get_conversation(
     conversation_id: UUID,
     use_case: GetConversationWithMessagesUseCaseDep,
+    user: CurrentUserDep,
     include_superseded: bool = Query(
         default=False,
         description=(
@@ -61,7 +67,9 @@ async def get_conversation(
     ),
 ) -> ConversationWithMessagesResponse:
     result = await use_case.execute(
-        conversation_id, include_superseded=include_superseded
+        conversation_id,
+        expected_owner_id=user.id,
+        include_superseded=include_superseded,
     )
     return ConversationWithMessagesResponse.from_dto(result)
 
@@ -71,11 +79,14 @@ async def rename_conversation(
     conversation_id: UUID,
     request: RenameConversationRequest,
     use_case: RenameConversationUseCaseDep,
+    user: CurrentUserDep,
 ) -> ConversationResponse:
     """Renombra la conversación y bloquea los autotítulos futuros
     (`title_locked=True`). Lo usa el botón de "Renombrar" del sidebar.
     """
-    result = await use_case.execute(conversation_id, request.title)
+    result = await use_case.execute(
+        conversation_id, request.title, expected_owner_id=user.id
+    )
     return ConversationResponse.from_dto(result)
 
 
@@ -83,13 +94,15 @@ async def rename_conversation(
 async def delete_conversation(
     conversation_id: UUID,
     use_case: DeleteConversationUseCaseDep,
+    user: CurrentUserDep,
 ) -> None:
     """Soft delete idempotente: marca `deleted_at=now()` y deja de aparecer
     en listados / `GET /conversations/{id}`. Si ya estaba eliminada,
-    devuelve 204 igual (idempotente). Si nunca existió, 404.
+    devuelve 204 igual (idempotente). Si nunca existió o no pertenece al
+    usuario, 404.
 
     No interrumpe turnos en curso: los writers independientes del módulo
     `chat` siguen insertando los mensajes pendientes contra la
     conversación, que quedan persistidos pero invisibles al usuario.
     """
-    await use_case.execute(conversation_id)
+    await use_case.execute(conversation_id, expected_owner_id=user.id)

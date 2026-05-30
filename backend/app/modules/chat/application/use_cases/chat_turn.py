@@ -162,6 +162,8 @@ class ChatTurnUseCase:
         self,
         conversation_id: UUID,
         action: ChatAction,
+        *,
+        expected_owner_id: int | None = None,
     ) -> None:
         """Chequea precondiciones antes de devolver el StreamingResponse.
 
@@ -171,6 +173,13 @@ class ChatTurnUseCase:
         los headers HTTP ya están enviados con 200)."""
         conversation = await self._repository.get_by_id(conversation_id)
         if conversation is None or conversation.is_deleted:
+            raise ConversationNotFoundError(conversation_id)
+        # Ownership: si el endpoint pasa el dueño esperado y no coincide,
+        # tratamos como "no existe" (no leak de existencia).
+        if (
+            expected_owner_id is not None
+            and conversation.user_id != expected_owner_id
+        ):
             raise ConversationNotFoundError(conversation_id)
 
         if action == ChatAction.EDIT_LAST:

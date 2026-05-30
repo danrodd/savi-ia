@@ -52,6 +52,15 @@ class Settings(BaseSettings):
     # de ejecutar.
     free_query_max_estimated_rows: int = Field(default=1000)
 
+    # ── Auth ─────────────────────────────────────────────────────────────
+    # Secreto para firmar los JWT. NUNCA usar el default en prod.
+    jwt_secret: str = Field(default="change-me-in-prod")
+    jwt_algorithm: str = Field(default="HS256")
+    access_token_ttl_minutes: int = Field(default=15)
+    refresh_token_ttl_days: int = Field(default=7)
+    # Issuer claim del JWT — útil cuando varios servicios firman.
+    jwt_issuer: str = Field(default="savi")
+
     cors_allowed_origins: str = Field(
         default="http://localhost:5173,http://localhost:3000"
     )

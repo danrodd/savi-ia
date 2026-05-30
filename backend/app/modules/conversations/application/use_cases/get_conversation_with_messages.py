@@ -14,10 +14,19 @@ class GetConversationWithMessagesUseCase:
         self,
         conversation_id: UUID,
         *,
+        expected_owner_id: int | None = None,
         include_superseded: bool = False,
     ) -> ConversationWithMessagesDTO:
         conversation = await self._repository.get_by_id(conversation_id)
         if conversation is None or conversation.is_deleted:
+            raise ConversationNotFoundError(conversation_id)
+        # Ownership: si se pasa el owner esperado y no coincide, tratamos
+        # como "no existe" — no le damos pistas al atacante sobre la
+        # existencia de conversaciones ajenas.
+        if (
+            expected_owner_id is not None
+            and conversation.user_id != expected_owner_id
+        ):
             raise ConversationNotFoundError(conversation_id)
 
         messages = await self._repository.list_messages(

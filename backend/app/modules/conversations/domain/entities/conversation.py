@@ -12,7 +12,10 @@ def _utc_now() -> datetime:
 @dataclass
 class Conversation:
     id: UUID = field(default_factory=uuid4)
-    user_id: UUID | None = None
+    # `idUsuario` del ERP (entero). Nullable mientras existan
+    # conversaciones legadas anónimas, pero todas las nuevas SAVI tienen
+    # owner.
+    user_id: int | None = None
     title: str = DEFAULT_TITLE
     title_locked: bool = False
     created_at: datetime = field(default_factory=_utc_now)

@@ -17,6 +17,7 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from app.modules.auth.infrastructure.http import CurrentUserDep
 from app.modules.chat.application.requests import ChatRequest
 from app.modules.chat.domain.entities import ChatEvent
 from app.modules.chat.infrastructure.http.dependencies import ChatTurnUseCaseDep
@@ -38,11 +39,17 @@ def _sse(payload: dict[str, Any]) -> str:
 async def chat(
     request: ChatRequest,
     use_case: ChatTurnUseCaseDep,
+    user: CurrentUserDep,
 ) -> StreamingResponse:
     # Validaciones de dominio ANTES de devolver StreamingResponse: si
     # algo falla, el handler global emite el 4xx limpio (dentro del
-    # SSE ya no podemos cambiar el status code).
-    await use_case.validate(request.conversation_id, request.action)
+    # SSE ya no podemos cambiar el status code). Incluye chequeo de
+    # ownership: si la conversación no es del usuario autenticado, 404.
+    await use_case.validate(
+        request.conversation_id,
+        request.action,
+        expected_owner_id=user.id,
+    )
 
     async def event_stream():
         async for event in use_case.execute(
