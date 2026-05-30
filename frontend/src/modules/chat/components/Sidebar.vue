@@ -54,6 +54,11 @@ async function onLogout(): Promise<void> {
     void router.push({ name: 'login' })
   }
 }
+
+function goToProfile(): void {
+  void router.push({ name: 'profile' })
+}
+
 </script>
 
 <template>
@@ -111,11 +116,20 @@ async function onLogout(): Promise<void> {
 
     <footer class="sidebar__footer">
       <div v-if="authStore.user" class="sidebar__user" aria-label="Usuario autenticado">
-        <div class="sidebar__user-avatar" aria-hidden="true">{{ userInitial }}</div>
-        <div class="sidebar__user-meta">
-          <p class="sidebar__user-name">{{ userDisplayName }}</p>
-          <p v-if="userSubtitle" class="sidebar__user-sub">{{ userSubtitle }}</p>
-        </div>
+        <Tooltip text="Ver mi perfil" side="top">
+          <button
+            type="button"
+            class="sidebar__user-trigger"
+            aria-label="Ver mi perfil"
+            @click="goToProfile"
+          >
+            <div class="sidebar__user-avatar" aria-hidden="true">{{ userInitial }}</div>
+            <div class="sidebar__user-meta">
+              <p class="sidebar__user-name">{{ userDisplayName }}</p>
+              <p v-if="userSubtitle" class="sidebar__user-sub">{{ userSubtitle }}</p>
+            </div>
+          </button>
+        </Tooltip>
         <Tooltip text="Cerrar sesión" side="top">
           <button
             type="button"
@@ -304,11 +318,35 @@ async function onLogout(): Promise<void> {
 .sidebar__user {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   background: var(--surface-elev);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
+}
+
+.sidebar__user-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.sidebar__user-trigger:hover {
+  background: var(--surface-hover);
+}
+
+.sidebar__user-trigger:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: -2px;
 }
 
 .sidebar__user-avatar {

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/modules/auth/stores/authStore'
 
 const ChatView = () => import('@/modules/chat/views/ChatView.vue')
 const LoginView = () => import('@/modules/auth/views/LoginView.vue')
+const UserProfileView = () => import('@/modules/auth/views/UserProfileView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +26,12 @@ const router = createRouter({
       name: 'conversation',
       component: ChatView,
       props: true,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/perfil',
+      name: 'profile',
+      component: UserProfileView,
       meta: { requiresAuth: true },
     },
   ],
