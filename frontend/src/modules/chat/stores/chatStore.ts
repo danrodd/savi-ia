@@ -240,33 +240,67 @@ export const useChatStore = defineStore('chat', () => {
   /**
    * Hidrata IDs reales en los placeholders locales sin reemplazar el array.
    * Preserva los tempIds (claves de Vue) → evita unmount/remount y parpadeo.
-   * Si las longitudes no coinciden cae a un reemplazo completo como fallback.
+   *
+   * Race condition resuelta: el writer del mensaje del asistente corre en
+   * `asyncio.create_task` con sessionmaker independiente del request — el
+   * SSE puede haber emitido `done` pero el INSERT todavía no haber hecho
+   * commit. Si en ese instante hacemos `GET /conversations/{id}`, el
+   * backend devuelve menos mensajes de los que tenemos localmente. NO
+   * debemos pisar el array — esperamos al próximo tick con backoff.
+   *
+   * Reglas:
+   * - fresh.length === local.length → patch IDs en-place.
+   * - fresh.length > local.length    → usar `fresh` (raro pero seguro).
+   * - fresh.length < local.length    → NO pisar; reintentar con backoff.
    */
   async function hydrateActiveMessages(): Promise<void> {
     const id = activeConversationId.value
     if (!id) return
-    try {
-      const detail = await conversationService.getWithVersions(id)
-      const fresh = toUIMessages(detail.messages)
-      versionsByActiveId.value = buildVersionChains(detail.messages)
+    const MAX_ATTEMPTS = 5
+    const BACKOFF_MS = [200, 400, 800, 1500, 2500] as const
 
-      if (fresh.length === messages.value.length) {
-        for (let i = 0; i < fresh.length; i++) {
-          const local = messages.value[i]
-          const remote = fresh[i]
-          if (!local || !remote) continue
-          if (local.role !== remote.role) {
-            messages.value = fresh
-            return
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      // Si el usuario cambió de conversación mientras esperábamos, abortamos.
+      if (activeConversationId.value !== id) return
+      try {
+        const detail = await conversationService.getWithVersions(id)
+        const fresh = toUIMessages(detail.messages)
+        versionsByActiveId.value = buildVersionChains(detail.messages)
+
+        if (fresh.length === messages.value.length) {
+          // Caso normal: el backend ya tiene todo, hidratamos IDs en-place.
+          for (let i = 0; i < fresh.length; i++) {
+            const local = messages.value[i]
+            const remote = fresh[i]
+            if (!local || !remote) continue
+            if (local.role !== remote.role) {
+              messages.value = fresh
+              return
+            }
+            if (local.id === null) local.id = remote.id
           }
-          if (local.id === null) local.id = remote.id
+          return
         }
-      } else {
-        messages.value = fresh
+
+        if (fresh.length > messages.value.length) {
+          // Backend tiene MÁS que el store: improbable salvo edits cruzados.
+          // Confiamos en el backend.
+          messages.value = fresh
+          return
+        }
+
+        // fresh.length < local.length: writer en vuelo. NO pisar.
+        // Reintento con backoff hasta MAX_ATTEMPTS.
+        const wait = BACKOFF_MS[attempt] ?? 2500
+        await new Promise((resolve) => setTimeout(resolve, wait))
+      } catch {
+        // silencioso — el flujo principal ya manejó el error
+        return
       }
-    } catch {
-      // silencioso — el flujo principal ya manejó el error
     }
+    // Si tras todos los reintentos el backend sigue corto, no tocamos el
+    // array local: el mensaje queda con id=null (no se podrá editar ni
+    // versionar hasta el próximo refetch). Es el menor mal posible.
   }
 
   async function createConversation(title?: string): Promise<Conversation> {
