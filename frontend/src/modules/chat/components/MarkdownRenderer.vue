@@ -1,14 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { renderMarkdown } from '@/lib/markdown'
+import { parseSegments } from '@/lib/markdownSegments'
+
+// Lazy: los motores de gráfica/diagrama solo se descargan cuando aparece un
+// segmento que los usa. El chat sin gráficas no paga ese peso.
+const SaviChart = defineAsyncComponent(() => import('./SaviChart.vue'))
+const MermaidDiagram = defineAsyncComponent(() => import('./MermaidDiagram.vue'))
 
 const props = defineProps<{ source: string }>()
 
-const html = computed(() => renderMarkdown(props.source))
+const segments = computed(() => parseSegments(props.source))
 </script>
 
 <template>
-  <div class="markdown" v-html="html" />
+  <div class="markdown">
+    <template v-for="(seg, i) in segments" :key="`${seg.type}-${i}`">
+      <!-- Prosa: markdown-it + DOMPurify, igual que antes. -->
+      <div v-if="seg.type === 'prose'" v-html="renderMarkdown(seg.content)" />
+      <SaviChart v-else-if="seg.type === 'chart'" :source="seg.content" />
+      <MermaidDiagram v-else :source="seg.content" />
+    </template>
+  </div>
 </template>
 
 <style scoped>
@@ -18,10 +31,10 @@ const html = computed(() => renderMarkdown(props.source))
   color: var(--text);
 }
 
-.markdown :deep(> *:first-child) {
+.markdown > *:first-child :deep(> *:first-child) {
   margin-top: 0;
 }
-.markdown :deep(> *:last-child) {
+.markdown > *:last-child :deep(> *:last-child) {
   margin-bottom: 0;
 }
 
