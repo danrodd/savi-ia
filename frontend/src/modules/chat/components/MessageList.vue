@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { ref } from 'vue'
+import { useAutoScroll } from '../composables/useAutoScroll'
 import type { MessageVersion, UIMessage } from '../types'
 import AssistantMessage from './AssistantMessage.vue'
+import ScrollToBottomButton from './ScrollToBottomButton.vue'
 import UserMessage from './UserMessage.vue'
 
 const props = defineProps<{
@@ -18,90 +20,9 @@ const emit = defineEmits<{
 
 const container = ref<HTMLDivElement | null>(null)
 
-/**
- * Autoscroll inteligente — patrón estándar de chats (ChatGPT/Slack):
- *
- * - **Carga inicial / cambio de conversación**: scroll instant al fondo.
- *   Sin animación, sin parpadeo "veo el inicio y después salta".
- * - **Mensaje nuevo del usuario**: scroll al fondo SIEMPRE. El usuario
- *   acaba de mandarlo: querés ver tu propio mensaje y la respuesta.
- * - **Stream del asistente**: scrolea solo si el usuario está cerca del
- *   fondo (`stickToBottom`). Si está arriba leyendo algo viejo, no se le
- *   roba el foco.
- * - **Usuario scrollea arriba**: `stickToBottom = false`. El stream deja
- *   de seguirlo automáticamente hasta que vuelva al fondo (≤ THRESHOLD).
- */
-const SCROLL_THRESHOLD = 80
-const stickToBottom = ref(true)
-let programmaticScroll = false
-
-function scrollToBottom(): void {
-  const el = container.value
-  if (!el) return
-  programmaticScroll = true
-  el.scrollTop = el.scrollHeight
-  // Liberamos el flag tras dos frames: el evento `scroll` que dispara
-  // este `scrollTop` corre asíncrono y queremos que no actualice
-  // `stickToBottom` cuando es un scroll que nosotros forzamos.
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      programmaticScroll = false
-    })
-  })
-}
-
-function onScroll(): void {
-  if (programmaticScroll) return
-  const el = container.value
-  if (!el) return
-  const distance = el.scrollHeight - el.scrollTop - el.clientHeight
-  stickToBottom.value = distance <= SCROLL_THRESHOLD
-}
-
-// Watch #1: cambios de "estructura" (carga inicial, switch, mensaje nuevo).
-// Decide si forzamos scroll independientemente de `stickToBottom`.
-watch(
-  () => ({
-    length: props.messages.length,
-    firstId: props.messages[0]?.tempId,
-    lastRole: props.messages[props.messages.length - 1]?.role,
-  }),
-  (curr, prev) => {
-    const prevLen = prev?.length ?? 0
-    const conversationChanged = curr.firstId !== prev?.firstId
-    const messageAdded = curr.length > prevLen
-    if (curr.length === 0) return
-
-    // Carga inicial o cambio de conversación → al fondo, ya.
-    if (conversationChanged || prev === undefined) {
-      stickToBottom.value = true
-      // Doble nextTick: el primero deja que Vue renderice el DOM;
-      // el segundo espera a que el navegador calcule scrollHeight con
-      // las alturas reales de los mensajes (importante con markdown
-      // pesado, tablas, code blocks…).
-      nextTick(() => nextTick(() => scrollToBottom()))
-      return
-    }
-
-    // Mensaje nuevo del usuario → al fondo SIEMPRE.
-    // (`messageAdded && lastRole === 'user'` ignora el caso de stream del
-    //  asistente que se maneja en el watch #2.)
-    if (messageAdded && curr.lastRole === 'user') {
-      stickToBottom.value = true
-      nextTick(() => scrollToBottom())
-    }
-  },
-  { immediate: true },
-)
-
-// Watch #2: cambios de contenido del último mensaje (stream del asistente).
-// Solo scrolea si el usuario está cerca del fondo.
-watch(
-  () => props.messages.map((m) => `${m.text.length}:${m.toolCalls.length}:${m.done}`).join('|'),
-  () => {
-    if (!stickToBottom.value) return
-    nextTick(() => scrollToBottom())
-  },
+const { stickToBottom, hasNewContent, jumpToBottom } = useAutoScroll(
+  container,
+  () => props.messages,
 )
 
 function versionsFor(id: string | null): MessageVersion[] | null {
@@ -122,30 +43,50 @@ function isLastDoneAssistant(idx: number): boolean {
 </script>
 
 <template>
-  <div ref="container" class="message-list" @scroll="onScroll">
-    <div class="message-list__inner">
-      <template v-for="(m, i) in messages" :key="m.tempId">
-        <UserMessage
-          v-if="m.role === 'user'"
-          :text="m.text"
-          :message-id="m.id"
-          :can-edit="i === lastUserIndex && !streaming"
-          :versions="versionsFor(m.id)"
-          @edit="(text) => emit('edit', text)"
-        />
-        <AssistantMessage
-          v-else
-          :message="m"
-          :can-regenerate="isLastDoneAssistant(i) && canRegenerate"
-          :versions="versionsFor(m.id)"
-          @regenerate="emit('regenerate')"
-        />
-      </template>
+  <div class="message-list-wrap">
+    <div ref="container" class="message-list">
+      <div class="message-list__inner">
+        <template v-for="(m, i) in messages" :key="m.tempId">
+          <UserMessage
+            v-if="m.role === 'user'"
+            :text="m.text"
+            :message-id="m.id"
+            :can-edit="i === lastUserIndex && !streaming"
+            :versions="versionsFor(m.id)"
+            @edit="(text) => emit('edit', text)"
+          />
+          <AssistantMessage
+            v-else
+            :message="m"
+            :can-regenerate="isLastDoneAssistant(i) && canRegenerate"
+            :versions="versionsFor(m.id)"
+            @regenerate="emit('regenerate')"
+          />
+        </template>
+      </div>
     </div>
+
+    <Transition name="scroll-btn">
+      <ScrollToBottomButton
+        v-if="!stickToBottom"
+        class="message-list__scroll-btn"
+        :has-new="hasNewContent"
+        :streaming="streaming"
+        @click="jumpToBottom"
+      />
+    </Transition>
   </div>
 </template>
 
 <style scoped>
+.message-list-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .message-list {
   flex: 1;
   min-height: 0;
@@ -156,6 +97,50 @@ function isLastDoneAssistant(idx: number): boolean {
 .message-list__inner {
   max-width: var(--content-max-width);
   margin: 0 auto;
+}
+
+/* Centrado horizontal sin `transform` para no chocar con el hover/transición
+   del propio botón (ambos usan transform y se pisarían). */
+.message-list__scroll-btn {
+  position: absolute;
+  bottom: var(--space-4);
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
+  z-index: 2;
+}
+
+/* Transición de entrada/salida del botón flotante. La entrada es lenta y con
+   leve escala para que "crezca" suave; la salida, algo más ágil. */
+.scroll-btn-enter-active {
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+}
+
+.scroll-btn-leave-active {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+
+.scroll-btn-enter-from,
+.scroll-btn-leave-to {
+  opacity: 0;
+  transform: translateY(12px) scale(0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-btn-enter-active,
+  .scroll-btn-leave-active {
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+
+  .scroll-btn-enter-from,
+  .scroll-btn-leave-to {
+    transform: none;
+  }
 }
 
 @media (max-width: 767px) {
