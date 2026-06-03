@@ -145,7 +145,11 @@ function handleDownloadMd(): void {
 </script>
 
 <template>
-  <div ref="rootRef" class="share-menu" :class="`share-menu--${placement}`">
+  <div
+    ref="rootRef"
+    class="share-menu"
+    :class="[`share-menu--${placement}`, { 'share-menu--open': open }]"
+  >
     <button
       type="button"
       class="share-menu__trigger"
@@ -247,6 +251,14 @@ function handleDownloadMd(): void {
 .share-menu {
   position: relative;
   display: inline-flex;
+}
+
+/* Cuando está abierto, elevamos la stacking context del root para que el
+   panel quede por encima de mensajes/avatares posteriores en el DOM.
+   El z-index del panel solo afecta DENTRO del contexto local — necesitamos
+   elevar el root mismo para ganar contra hermanos siguientes. */
+.share-menu--open {
+  z-index: 40;
 }
 
 .share-menu__trigger {

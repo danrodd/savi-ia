@@ -118,6 +118,7 @@ function next(): void {
         </button>
         <ShareMenu
           kind="message"
+          placement="top-end"
           :text="displayedText"
           :conversation-id="conversationId"
           :content-ref="contentEl"
