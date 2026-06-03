@@ -10,6 +10,7 @@ from app.infrastructure.database import close_engines, get_agent_engine, init_en
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.chat.infrastructure.http import router as chat_router
 from app.modules.conversations.infrastructure.http import router as conversations_router
+from app.modules.usage.infrastructure.http import router as usage_router
 from app.shared.exceptions import register_exception_handlers
 
 
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(conversations_router)
     app.include_router(chat_router)
+    app.include_router(usage_router)
 
     return app
 

@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/modules/auth/stores/authStore'
-import { usePermisosStore, type ModuleCode } from '@/modules/permisos'
+import { type ModuleCode, usePermisosStore } from '@/modules/permisos'
 
 const ChatView = () => import('@/modules/chat/views/ChatView.vue')
 const LoginView = () => import('@/modules/auth/views/LoginView.vue')
 const UserProfileView = () => import('@/modules/auth/views/UserProfileView.vue')
+const UsageView = () => import('@/modules/usage/views/UsageView.vue')
 const SinAccesoView = () => import('@/modules/permisos/views/SinAccesoView.vue')
 
 declare module 'vue-router' {
@@ -43,6 +44,12 @@ const router = createRouter({
       path: '/perfil',
       name: 'profile',
       component: UserProfileView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/consumo',
+      name: 'usage',
+      component: UsageView,
       meta: { requiresAuth: true },
     },
     {

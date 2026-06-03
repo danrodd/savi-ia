@@ -65,6 +65,15 @@ class Settings(BaseSettings):
         default="http://localhost:5173,http://localhost:3000"
     )
 
+    # ── Usage / consumo ──────────────────────────────────────────────────
+    # El consumo se ALMACENA siempre en USD (lo que reporta el SDK). Esta
+    # tasa es solo para que el frontend muestre el equivalente en COP — no
+    # se persiste ni afecta el dato fuente. Ajustable sin redeploy vía .env.
+    usd_to_cop_rate: float = Field(default=4000.0)
+    # Zona horaria con la que se agrupan los consumos por día. Colombia es
+    # UTC-5; agrupar en UTC partiría los días a las 19:00 hora local.
+    reporting_timezone: str = Field(default="America/Bogota")
+
     @property
     def agent_db_url(self) -> str:
         return (

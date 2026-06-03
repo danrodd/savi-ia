@@ -6,7 +6,12 @@ from app.modules.auth.domain.exceptions import (
     ModuleAccessDeniedError,
     UserDisabledError,
 )
-from app.shared.exceptions.base import DomainError, NotFoundError, ValidationError
+from app.shared.exceptions.base import (
+    DomainError,
+    ForbiddenError,
+    NotFoundError,
+    ValidationError,
+)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -28,6 +33,10 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(NotFoundError)
     async def _not_found(_: Request, exc: NotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    @app.exception_handler(ForbiddenError)
+    async def _forbidden(_: Request, exc: ForbiddenError) -> JSONResponse:
+        return JSONResponse(status_code=403, content={"detail": str(exc)})
 
     @app.exception_handler(ValidationError)
     async def _validation(_: Request, exc: ValidationError) -> JSONResponse:
