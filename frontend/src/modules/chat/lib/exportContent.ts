@@ -238,8 +238,14 @@ function downloadBlob(blob: Blob, filename: string): void {
 // ─────────────────────────────────────────────────────────────────────
 
 export function buildConversationUrl(id: string): string {
+  // Apuntamos a `/share/:id` (vista de solo lectura) en lugar de `/c/:id`
+  // (vista editable). Esto refleja la convención de productos tipo
+  // ChatGPT: el link compartido lleva a un viewer público sin composer
+  // ni acciones de edición. Por ahora la vista igualmente requiere
+  // sesión — habilitar acceso público requiere un endpoint backend
+  // dedicado (TODO documentado en chat_data_access_proposal.md).
   const base = typeof window !== 'undefined' ? window.location.origin : ''
-  return `${base}/c/${id}`
+  return `${base}/share/${id}`
 }
 
 /**

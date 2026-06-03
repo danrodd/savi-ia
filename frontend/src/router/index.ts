@@ -41,6 +41,21 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      // Vista compartida de una conversación — misma UI que /c/:id pero
+      // con banner identificador. Si la conversación es del usuario
+      // actual queda totalmente editable; si pertenece a otro usuario
+      // se renderiza en modo solo lectura. La detección de propiedad
+      // la hace ChatView vs authStore.user.id. Hoy el endpoint backend
+      // scopea por user_id (404 para no-dueño); cuando se habilite
+      // acceso público basta con habilitarlo en backend — el frontend
+      // ya está listo para read-only.
+      path: '/share/:id',
+      name: 'shared-conversation',
+      component: ChatView,
+      props: true,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/perfil',
       name: 'profile',
       component: UserProfileView,

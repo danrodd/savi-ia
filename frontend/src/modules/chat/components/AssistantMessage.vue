@@ -8,15 +8,21 @@ import ShareMenu from './ShareMenu.vue'
 import ToolPill from './ToolPill.vue'
 import VersionNavigator from './VersionNavigator.vue'
 
-const props = defineProps<{
-  message: UIMessage
-  canRegenerate: boolean
-  versions: MessageVersion[] | null
-  /** ID de la conversación que contiene este mensaje. Lo recibe el menú
-   *  de compartir para armar el deep link `/c/:id`. Null mientras la
-   *  conversación está pendiente de persistirse en backend. */
-  conversationId: string | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    message: UIMessage
+    canRegenerate: boolean
+    versions: MessageVersion[] | null
+    /** ID de la conversación que contiene este mensaje. Lo recibe el menú
+     *  de compartir para armar el deep link `/share/:id`. Null mientras la
+     *  conversación está pendiente de persistirse en backend. */
+    conversationId: string | null
+    /** Vista compartida: oculta acciones que no aplican (regenerar, share
+     *  por mensaje). Se mantiene Copiar porque es read-only seguro. */
+    readOnly?: boolean
+  }>(),
+  { readOnly: false },
+)
 const emit = defineEmits<{ regenerate: [] }>()
 
 const showCaret = computed(() => !props.message.done)
@@ -117,6 +123,7 @@ function next(): void {
           <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
         </button>
         <ShareMenu
+          v-if="!readOnly"
           kind="message"
           placement="top-end"
           :text="displayedText"

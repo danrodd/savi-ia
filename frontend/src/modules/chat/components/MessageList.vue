@@ -6,15 +6,20 @@ import AssistantMessage from './AssistantMessage.vue'
 import ScrollToBottomButton from './ScrollToBottomButton.vue'
 import UserMessage from './UserMessage.vue'
 
-const props = defineProps<{
-  messages: UIMessage[]
-  lastUserIndex: number
-  canRegenerate: boolean
-  streaming: boolean
-  versionsByActiveId: Record<string, MessageVersion[]>
-  /** ID de la conversación activa — se propaga al ShareMenu de cada mensaje. */
-  conversationId: string | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    messages: UIMessage[]
+    lastUserIndex: number
+    canRegenerate: boolean
+    streaming: boolean
+    versionsByActiveId: Record<string, MessageVersion[]>
+    /** ID de la conversación activa — se propaga al ShareMenu de cada mensaje. */
+    conversationId: string | null
+    /** Modo solo-lectura (vista compartida): sin editar ni regenerar. */
+    readOnly?: boolean
+  }>(),
+  { readOnly: false },
+)
 const emit = defineEmits<{
   edit: [text: string]
   regenerate: []
@@ -57,16 +62,17 @@ defineExpose({ container })
             v-if="m.role === 'user'"
             :text="m.text"
             :message-id="m.id"
-            :can-edit="i === lastUserIndex && !streaming"
+            :can-edit="!readOnly && i === lastUserIndex && !streaming"
             :versions="versionsFor(m.id)"
             @edit="(text) => emit('edit', text)"
           />
           <AssistantMessage
             v-else
             :message="m"
-            :can-regenerate="isLastDoneAssistant(i) && canRegenerate"
+            :can-regenerate="!readOnly && isLastDoneAssistant(i) && canRegenerate"
             :versions="versionsFor(m.id)"
             :conversation-id="conversationId"
+            :read-only="readOnly"
             @regenerate="emit('regenerate')"
           />
         </template>

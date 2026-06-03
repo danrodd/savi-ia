@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import { toast } from '@/lib/toast'
+import { useAuthStore } from '@/modules/auth/stores/authStore'
 import Composer from '../components/Composer.vue'
 import MessageList from '../components/MessageList.vue'
 import MobileTopBar from '../components/MobileTopBar.vue'
@@ -18,6 +19,30 @@ import type { Conversation } from '../types'
 const route = useRoute()
 const router = useRouter()
 const store = useChatStore()
+const authStore = useAuthStore()
+
+// ── Modo "vista compartida" (ruta `/share/:id`) ────────────────────────
+// Misma UI que /c/:id pero con un banner identificador. Cuando la
+// conversación es del usuario actual, la vista queda editable (puede
+// seguir conversando, regenerar, etc.). Cuando pertenece a otro usuario,
+// se renderiza en modo read-only y se oculta el composer. Hoy el
+// endpoint backend filtra por user_id (no devuelve conversaciones
+// ajenas — 404), así que el caso "ajena" solo se va a poder ver cuando
+// se habilite acceso público a nivel de backend. El frontend ya está
+// preparado para ese día.
+const isSharedRoute = computed(() => route.name === 'shared-conversation')
+const isOwnedConversation = computed<boolean>(() => {
+  const conv = activeConversation.value
+  const me = authStore.user
+  if (!conv || !me) return false
+  if (conv.user_id === null) return false
+  return String(conv.user_id) === String(me.id)
+})
+// En la ruta /share/:id, si la conversación NO es mía → solo lectura.
+// En /c/:id nunca aplica read-only.
+const isReadOnly = computed<boolean>(
+  () => isSharedRoute.value && activeConversation.value !== null && !isOwnedConversation.value,
+)
 const {
   conversations,
   activeConversation,
@@ -186,6 +211,45 @@ const showConversationShare = computed<boolean>(
         @new-chat="handleNewChat"
       />
 
+      <!-- Banner de "vista compartida". Dos variantes según la propiedad:
+           - Mía: nota suave, sin restringir.
+           - Ajena: aviso de solo lectura.
+           El ShareMenu del thread completo se monta acá adentro (a la
+           derecha) en lugar del botón flotante — así el header del banner
+           y el botón quedan alineados visualmente, sin solapamiento. -->
+      <div
+        v-if="isSharedRoute && activeConversation"
+        class="chat-main__share-banner"
+        :class="{ 'chat-main__share-banner--readonly': isReadOnly }"
+        role="status"
+      >
+        <div class="chat-main__share-banner-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          <span v-if="isReadOnly">
+            Estás viendo una conversación compartida — <strong>solo lectura</strong>.
+          </span>
+          <span v-else>
+            Esta conversación está compartida vía enlace. Vos sos el autor, podés seguir escribiendo normalmente.
+          </span>
+        </div>
+
+        <ShareMenu
+          v-if="showConversationShare && !isMobile"
+          kind="conversation"
+          placement="bottom-end"
+          :text="conversationMarkdown"
+          :conversation-id="activeConversationId"
+          :content-ref="conversationContentRef"
+          :title="activeConversation?.title ?? 'Conversación con SAVI'"
+        />
+      </div>
+
       <div v-if="error" class="chat-main__banner" role="alert">{{ error }}</div>
 
       <WelcomeScreen v-if="messages.length === 0" @suggest="handleSend" />
@@ -199,17 +263,20 @@ const showConversationShare = computed<boolean>(
         :streaming="streaming"
         :versions-by-active-id="versionsByActiveId"
         :conversation-id="activeConversationId"
+        :read-only="isReadOnly"
         @edit="handleEdit"
         @regenerate="handleRegenerate"
       />
 
       <!-- Share de conversación entera — botón flotante top-right.
-           Decisión: ubicarlo acá (in-chat) y NO solo en el ConversationMenu
-           del sidebar para que sea discoverable sin tener que hovear los
-           tres puntos de cada item. Se muestra solo cuando hay mensajes
-           Y la conversación ya está persistida (tiene id). -->
+           Solo se muestra cuando NO hay banner de vista compartida
+           (en /share/:id el ShareMenu va integrado dentro del banner
+           para evitar superposición visual). -->
       <Transition name="fade">
-        <div v-if="showConversationShare && !isMobile" class="chat-main__share">
+        <div
+          v-if="showConversationShare && !isMobile && !isSharedRoute"
+          class="chat-main__share"
+        >
           <ShareMenu
             kind="conversation"
             placement="bottom-end"
@@ -221,7 +288,15 @@ const showConversationShare = computed<boolean>(
         </div>
       </Transition>
 
-      <Composer :streaming="streaming" @send="handleSend" @stop="store.stopStream" />
+      <!-- Composer oculto en modo solo-lectura (vista compartida de una
+           conversación ajena). Cuando es tuya, el composer aparece igual
+           y podés seguir escribiendo aunque la URL sea /share/:id. -->
+      <Composer
+        v-if="!isReadOnly"
+        :streaming="streaming"
+        @send="handleSend"
+        @stop="store.stopStream"
+      />
     </main>
 
     <ConfirmDialog
@@ -271,6 +346,53 @@ const showConversationShare = computed<boolean>(
   font-size: 13px;
   font-weight: var(--fw-medium);
   flex-shrink: 0;
+}
+
+/* Banner identificador de "vista compartida". Variante suave por default
+   (conversación propia), variante de alerta cuando es solo lectura.
+   El layout es flex con la nota a la izquierda y el ShareMenu del
+   thread a la derecha — así no necesitamos botón flotante en esta
+   ruta y nada se superpone. */
+.chat-main__share-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-elev);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: var(--fw-medium);
+  flex-shrink: 0;
+}
+
+.chat-main__share-banner-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.chat-main__share-banner svg {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+}
+
+.chat-main__share-banner strong {
+  color: var(--text);
+  font-weight: var(--fw-semibold);
+}
+
+.chat-main__share-banner--readonly {
+  background: var(--brand-soft);
+  border-bottom-color: var(--brand);
+  color: var(--brand-strong, var(--brand));
+}
+
+.chat-main__share-banner--readonly svg,
+.chat-main__share-banner--readonly strong {
+  color: var(--brand);
 }
 
 /* Botón flotante de "compartir conversación" en desktop. Se posiciona
