@@ -11,7 +11,7 @@ import MobileTopBar from '../components/MobileTopBar.vue'
 import ShareMenu from '../components/ShareMenu.vue'
 import Sidebar from '../components/Sidebar.vue'
 import WelcomeScreen from '../components/WelcomeScreen.vue'
-import { buildConversationMarkdown } from '../lib/exportContent'
+import { buildConversationUrl, buildConversationMarkdown, tryWebShare } from '../lib/exportContent'
 import { useChatStore } from '../stores/chatStore'
 import type { Conversation } from '../types'
 
@@ -101,6 +101,26 @@ async function confirmDelete(): Promise<void> {
   }
 }
 
+async function handleShare(id: string): Promise<void> {
+  // Compartir desde el sidebar: acción rápida con el link de la conversación.
+  // Decisión: NO replicar el menú de 5 opciones (HTML/PDF/MD) acá — eso
+  // requeriría cargar los mensajes de una conversación que puede no estar
+  // activa (pegándole al backend) y abrir un popover dentro de un popover.
+  // Para el export completo el usuario abre la conversación y usa el
+  // ShareMenu in-chat. Acá: Web Share nativo con el link; fallback copy.
+  const link = buildConversationUrl(id)
+  const target = conversations.value.find((c) => c.id === id)
+  const title = target?.title ?? 'Conversación con SAVI'
+  const ok = await tryWebShare({ title, url: link })
+  if (ok) return
+  try {
+    await navigator.clipboard.writeText(link)
+    toast.success('Enlace copiado')
+  } catch {
+    toast.error('No se pudo compartir')
+  }
+}
+
 function handleNewChat(): void {
   if (route.name !== 'home') router.push({ name: 'home' })
   store.clearActive()
@@ -149,6 +169,7 @@ const showConversationShare = computed<boolean>(
       :mobile="isMobile"
       @select="handleSelect"
       @rename="handleRename"
+      @share="handleShare"
       @delete="requestDelete"
       @new-chat="handleNewChat"
       @close="sidebarOpen = false"

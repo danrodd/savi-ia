@@ -21,6 +21,7 @@ defineProps<{
 const emit = defineEmits<{
   select: [id: string]
   rename: [id: string, title: string]
+  share: [id: string]
   delete: [id: string]
   'new-chat': []
   close: []
@@ -59,6 +60,9 @@ function goToProfile(): void {
   void router.push({ name: 'profile' })
 }
 
+function goToUsage(): void {
+  void router.push({ name: 'usage' })
+}
 </script>
 
 <template>
@@ -110,11 +114,21 @@ function goToProfile(): void {
         :active="c.id === activeId"
         @select="emit('select', c.id)"
         @rename="(title) => emit('rename', c.id, title)"
+        @share="emit('share', c.id)"
         @delete="emit('delete', c.id)"
       />
     </nav>
 
     <footer class="sidebar__footer">
+      <button type="button" class="sidebar__nav-link" @click="goToUsage">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+        Consumo
+      </button>
+
       <div v-if="authStore.user" class="sidebar__user" aria-label="Usuario autenticado">
         <Tooltip text="Ver mi perfil" side="top">
           <button
@@ -313,6 +327,28 @@ function goToProfile(): void {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.sidebar__nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.sidebar__nav-link:hover {
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
 .sidebar__user {

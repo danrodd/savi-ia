@@ -8,6 +8,7 @@ const props = defineProps<{ conversation: Conversation; active: boolean }>()
 const emit = defineEmits<{
   select: []
   rename: [title: string]
+  share: []
   delete: []
 }>()
 
@@ -212,6 +213,7 @@ function toggleMenu(e: Event): void {
         :anchor="moreBtnRef"
         @update:open="menuOpen = $event"
         @rename="startEdit"
+        @share="emit('share')"
         @delete="emit('delete')"
       />
     </div>
