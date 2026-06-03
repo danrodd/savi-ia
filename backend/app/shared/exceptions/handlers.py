@@ -3,12 +3,28 @@ from fastapi.responses import JSONResponse
 
 from app.modules.auth.domain.exceptions import (
     AuthError,
+    ModuleAccessDeniedError,
     UserDisabledError,
 )
 from app.shared.exceptions.base import DomainError, NotFoundError, ValidationError
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(ModuleAccessDeniedError)
+    async def _module_access_denied(
+        _: Request, exc: ModuleAccessDeniedError
+    ) -> JSONResponse:
+        # Shape estructurado: el frontend usa `errorCode` para detectar
+        # esto y recargar el bootstrap (caché de módulos stale).
+        return JSONResponse(
+            status_code=403,
+            content={
+                "errorCode": "module_access_denied",
+                "detail": str(exc),
+                "required_module": exc.required_module,
+            },
+        )
+
     @app.exception_handler(NotFoundError)
     async def _not_found(_: Request, exc: NotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})

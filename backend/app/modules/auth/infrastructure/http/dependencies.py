@@ -1,6 +1,7 @@
 """DI del módulo auth + dependency `get_current_user` para proteger rutas."""
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from fastapi import Depends, Header
@@ -13,16 +14,25 @@ from app.modules.auth.application.use_cases import (
     LogoutUseCase,
     RefreshTokensUseCase,
     ResolveUserFromAccessTokenUseCase,
+    ResolveUserModulesUseCase,
 )
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.domain.exceptions import InvalidTokenError
+from app.modules.auth.domain.exceptions import (
+    InvalidTokenError,
+    ModuleAccessDeniedError,
+)
 from app.modules.auth.domain.interfaces import (
     PasswordHasher,
+    PermissionRepository,
     RefreshTokenRepository,
+    SeoPlanRepository,
     TokenService,
     UserRepository,
 )
+from app.modules.auth.domain.value_objects import ModuleCode
 from app.modules.auth.infrastructure.persistence import (
+    ErpPermissionRepository,
+    ErpSeoPlanRepository,
     ErpUserRepository,
     SqlAlchemyRefreshTokenRepository,
 )
@@ -96,11 +106,37 @@ def get_resolve_user_use_case(
     return ResolveUserFromAccessTokenUseCase(tokens)
 
 
+def get_permission_repository() -> PermissionRepository:
+    return ErpPermissionRepository(get_erp_engine())
+
+
+PermissionRepositoryDep = Annotated[
+    PermissionRepository, Depends(get_permission_repository)
+]
+
+
+def get_seo_plan_repository() -> SeoPlanRepository:
+    return ErpSeoPlanRepository(get_erp_engine())
+
+
+SeoPlanRepositoryDep = Annotated[SeoPlanRepository, Depends(get_seo_plan_repository)]
+
+
+def get_resolve_user_modules_use_case(
+    permissions: PermissionRepositoryDep,
+    plan: SeoPlanRepositoryDep,
+) -> ResolveUserModulesUseCase:
+    return ResolveUserModulesUseCase(permissions, plan)
+
+
 LoginUseCaseDep = Annotated[LoginUseCase, Depends(get_login_use_case)]
 RefreshUseCaseDep = Annotated[RefreshTokensUseCase, Depends(get_refresh_use_case)]
 LogoutUseCaseDep = Annotated[LogoutUseCase, Depends(get_logout_use_case)]
 ResolveUserUseCaseDep = Annotated[
     ResolveUserFromAccessTokenUseCase, Depends(get_resolve_user_use_case)
+]
+ResolveUserModulesUseCaseDep = Annotated[
+    ResolveUserModulesUseCase, Depends(get_resolve_user_modules_use_case)
 ]
 
 
@@ -124,3 +160,35 @@ def get_current_user(
 
 
 CurrentUserDep = Annotated[AuthenticatedUser, Depends(get_current_user)]
+
+
+def RequireModule(  # noqa: N802 — factory que produce dependencies; mantenemos PascalCase.
+    code: ModuleCode,
+) -> Callable[..., Awaitable[AuthenticatedUser]]:
+    """Factory que produce una dependency FastAPI que exige acceso a un
+    módulo del ERP.
+
+    El access token solo trae identidad: para chequear módulos hay que
+    resolverlos en BD (rápido — un par de queries triviales). Si querés
+    proteger un endpoint:
+
+        @router.get("/saldos")
+        async def saldos(
+            user: Annotated[AuthenticatedUser, Depends(RequireModule(ModuleCode.CONTABILIDAD))],
+        ):
+            ...
+
+    Si el usuario no tiene el módulo, levanta `ModuleAccessDeniedError`
+    que el handler global mapea a 403 con `errorCode: module_access_denied`.
+    """
+
+    async def _check(
+        user: CurrentUserDep,
+        resolver: ResolveUserModulesUseCaseDep,
+    ) -> AuthenticatedUser:
+        resolution = await resolver.execute(user.id, is_admin=user.is_admin)
+        if code not in resolution.modules:
+            raise ModuleAccessDeniedError(code.value)
+        return user
+
+    return _check

@@ -34,3 +34,16 @@ class UserDisabledError(AuthError):
 class RefreshTokenRevokedError(AuthError):
     def __init__(self) -> None:
         super().__init__("La sesión expiró. Iniciá sesión nuevamente.")
+
+
+class ModuleAccessDeniedError(Exception):
+    """El usuario no tiene acceso al módulo requerido por el endpoint.
+
+    El handler global la mapea a HTTP 403 con `errorCode:
+    module_access_denied` — el frontend ese código lo usa como señal
+    para recargar el bootstrap (su caché de módulos podría estar stale).
+    """
+
+    def __init__(self, required_module: str) -> None:
+        super().__init__(f"Sin acceso al módulo {required_module}")
+        self.required_module = required_module
