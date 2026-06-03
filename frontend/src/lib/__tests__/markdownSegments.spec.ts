@@ -31,8 +31,9 @@ describe('parseSegments', () => {
     const src = 'Texto\n\n```savi-chart\n{"type":"ba'
     const segs = parseSegments(src)
     expect(segs).toHaveLength(1)
-    expect(segs[0]?.type).toBe('prose')
-    expect(segs[0]?.content).toContain('savi-chart')
+    const first = segs[0]
+    expect(first?.type).toBe('prose')
+    if (first?.type === 'prose') expect(first.content).toContain('savi-chart')
   })
 
   it('handles multiple special blocks interleaved with prose', () => {
@@ -41,5 +42,48 @@ describe('parseSegments', () => {
     )
     const segs = parseSegments(src)
     expect(segs.map((s) => s.type)).toEqual(['chart', 'prose', 'mermaid'])
+  })
+
+  it('extracts a markdown table as a table segment with parsed rows', () => {
+    const src = [
+      '| Cliente | Total |',
+      '|---|---|',
+      '| Farmacia X | 100 |',
+      '| Droguería Y | 50 |',
+    ].join('\n')
+    const segs = parseSegments(src)
+    expect(segs).toHaveLength(1)
+    expect(segs[0]).toEqual({
+      type: 'table',
+      rows: [
+        ['Cliente', 'Total'],
+        ['Farmacia X', '100'],
+        ['Droguería Y', '50'],
+      ],
+    })
+  })
+
+  it('keeps prose around a table', () => {
+    const src = [
+      'Top de clientes:',
+      '',
+      '| A | B |',
+      '|---|---|',
+      '| 1 | 2 |',
+      '',
+      'Eso es todo.',
+    ].join('\n')
+    const segs = parseSegments(src)
+    expect(segs.map((s) => s.type)).toEqual(['prose', 'table', 'prose'])
+  })
+
+  it('does not mistake a horizontal rule for a table', () => {
+    const segs = parseSegments('Texto\n\n---\n\nMás texto')
+    expect(segs.every((s) => s.type === 'prose')).toBe(true)
+  })
+
+  it('does not detect a table until the separator row arrives (streaming)', () => {
+    const segs = parseSegments('| A | B |')
+    expect(segs).toEqual([{ type: 'prose', content: '| A | B |' }])
   })
 })

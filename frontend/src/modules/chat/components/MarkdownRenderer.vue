@@ -2,9 +2,11 @@
 import { computed, defineAsyncComponent } from 'vue'
 import { renderMarkdown } from '@/lib/markdown'
 import { parseSegments } from '@/lib/markdownSegments'
+import SaviTable from './SaviTable.vue'
 
 // Lazy: los motores de gráfica/diagrama solo se descargan cuando aparece un
-// segmento que los usa. El chat sin gráficas no paga ese peso.
+// segmento que los usa. El chat sin gráficas no paga ese peso. (SaviTable es
+// liviano y carga normal; su exportador de Excel sí es lazy por dentro.)
 const SaviChart = defineAsyncComponent(() => import('./SaviChart.vue'))
 const MermaidDiagram = defineAsyncComponent(() => import('./MermaidDiagram.vue'))
 
@@ -19,7 +21,8 @@ const segments = computed(() => parseSegments(props.source))
       <!-- Prosa: markdown-it + DOMPurify, igual que antes. -->
       <div v-if="seg.type === 'prose'" v-html="renderMarkdown(seg.content)" />
       <SaviChart v-else-if="seg.type === 'chart'" :source="seg.content" />
-      <MermaidDiagram v-else :source="seg.content" />
+      <MermaidDiagram v-else-if="seg.type === 'mermaid'" :source="seg.content" />
+      <SaviTable v-else :rows="seg.rows" />
     </template>
   </div>
 </template>
