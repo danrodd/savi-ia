@@ -4,6 +4,7 @@ import type { MessageVersion, UIMessage } from '../types'
 import { groupToolCalls } from '../utils/groupToolCalls'
 import BrandMark from './BrandMark.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import ShareMenu from './ShareMenu.vue'
 import ToolPill from './ToolPill.vue'
 import VersionNavigator from './VersionNavigator.vue'
 
@@ -11,6 +12,10 @@ const props = defineProps<{
   message: UIMessage
   canRegenerate: boolean
   versions: MessageVersion[] | null
+  /** ID de la conversación que contiene este mensaje. Lo recibe el menú
+   *  de compartir para armar el deep link `/c/:id`. Null mientras la
+   *  conversación está pendiente de persistirse en backend. */
+  conversationId: string | null
 }>()
 const emit = defineEmits<{ regenerate: [] }>()
 
@@ -18,6 +23,9 @@ const showCaret = computed(() => !props.message.done)
 const showPlaceholder = computed(() => !props.message.done && props.message.text === '')
 const copied = ref(false)
 const versionIdx = ref<number | null>(null)
+// Ref al nodo que contiene el markdown renderizado — lo necesita
+// ShareMenu para exportar a HTML/PDF preservando tablas y listas.
+const contentEl = ref<HTMLElement | null>(null)
 
 const hasVersions = computed(() => (props.versions?.length ?? 0) > 1)
 const totalVersions = computed(() => props.versions?.length ?? 0)
@@ -79,7 +87,7 @@ function next(): void {
         <ToolPill v-for="group in displayedToolGroups" :key="group.label" :group="group" />
       </div>
 
-      <div class="assistant-message__content">
+      <div ref="contentEl" class="assistant-message__content">
         <span v-if="showPlaceholder" class="caret" aria-hidden="true" />
         <template v-else>
           <MarkdownRenderer :source="displayedText" />
@@ -108,6 +116,12 @@ function next(): void {
           </svg>
           <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
         </button>
+        <ShareMenu
+          kind="message"
+          :text="displayedText"
+          :conversation-id="conversationId"
+          :content-ref="contentEl"
+        />
         <button
           v-if="canRegenerate"
           type="button"

@@ -8,8 +8,10 @@ import { toast } from '@/lib/toast'
 import Composer from '../components/Composer.vue'
 import MessageList from '../components/MessageList.vue'
 import MobileTopBar from '../components/MobileTopBar.vue'
+import ShareMenu from '../components/ShareMenu.vue'
 import Sidebar from '../components/Sidebar.vue'
 import WelcomeScreen from '../components/WelcomeScreen.vue'
+import { buildConversationMarkdown } from '../lib/exportContent'
 import { useChatStore } from '../stores/chatStore'
 import type { Conversation } from '../types'
 
@@ -120,6 +122,21 @@ function handleEdit(text: string): void {
 function handleRegenerate(): void {
   store.regenerateLastAssistant()
 }
+
+// ── Share/Download de la conversación completa ────────────────────────
+// Tomamos el DOM del MessageList para HTML/PDF (preserva el render que
+// el usuario está viendo) y armamos un markdown serializado desde los
+// datos para .md (más fiel que recolectar HTML y convertirlo de vuelta).
+const messageListRef = ref<InstanceType<typeof MessageList> | null>(null)
+const conversationContentRef = computed<HTMLElement | null>(
+  () => messageListRef.value?.container ?? null,
+)
+const conversationMarkdown = computed<string>(() =>
+  buildConversationMarkdown(messages.value, activeConversation.value?.title ?? 'Conversación'),
+)
+const showConversationShare = computed<boolean>(
+  () => activeConversationId.value !== null && messages.value.length > 0,
+)
 </script>
 
 <template>
@@ -141,6 +158,9 @@ function handleRegenerate(): void {
       <MobileTopBar
         v-if="isMobile"
         :title="activeConversation?.title ?? 'SAVI'"
+        :share-text="showConversationShare ? conversationMarkdown : undefined"
+        :share-conversation-id="activeConversationId"
+        :share-content-ref="showConversationShare ? conversationContentRef : undefined"
         @menu-open="sidebarOpen = true"
         @new-chat="handleNewChat"
       />
@@ -151,14 +171,34 @@ function handleRegenerate(): void {
 
       <MessageList
         v-else
+        ref="messageListRef"
         :messages="messages"
         :last-user-index="lastUserIndex"
         :can-regenerate="canRegenerate"
         :streaming="streaming"
         :versions-by-active-id="versionsByActiveId"
+        :conversation-id="activeConversationId"
         @edit="handleEdit"
         @regenerate="handleRegenerate"
       />
+
+      <!-- Share de conversación entera — botón flotante top-right.
+           Decisión: ubicarlo acá (in-chat) y NO solo en el ConversationMenu
+           del sidebar para que sea discoverable sin tener que hovear los
+           tres puntos de cada item. Se muestra solo cuando hay mensajes
+           Y la conversación ya está persistida (tiene id). -->
+      <Transition name="fade">
+        <div v-if="showConversationShare && !isMobile" class="chat-main__share">
+          <ShareMenu
+            kind="conversation"
+            placement="bottom-end"
+            :text="conversationMarkdown"
+            :conversation-id="activeConversationId"
+            :content-ref="conversationContentRef"
+            :title="activeConversation?.title ?? 'Conversación con SAVI'"
+          />
+        </div>
+      </Transition>
 
       <Composer :streaming="streaming" @send="handleSend" @stop="store.stopStream" />
     </main>
@@ -210,6 +250,42 @@ function handleRegenerate(): void {
   font-size: 13px;
   font-weight: var(--fw-medium);
   flex-shrink: 0;
+}
+
+/* Botón flotante de "compartir conversación" en desktop. Se posiciona
+   sobre la lista de mensajes pero sin tapar el contenido (top-right). */
+.chat-main__share {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-5);
+  z-index: 10;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+}
+
+.chat-main__share :deep(.share-menu__trigger) {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chat-main__share :deep(.share-menu__trigger:hover) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 </style>

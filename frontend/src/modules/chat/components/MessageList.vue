@@ -12,6 +12,8 @@ const props = defineProps<{
   canRegenerate: boolean
   streaming: boolean
   versionsByActiveId: Record<string, MessageVersion[]>
+  /** ID de la conversación activa — se propaga al ShareMenu de cada mensaje. */
+  conversationId: string | null
 }>()
 const emit = defineEmits<{
   edit: [text: string]
@@ -40,6 +42,10 @@ function isLastDoneAssistant(idx: number): boolean {
   }
   return false
 }
+
+// Exponemos el container hacia ChatView para que ShareMenu pueda exportar
+// la conversación completa a HTML/PDF (necesita el outerHTML del listado).
+defineExpose({ container })
 </script>
 
 <template>
@@ -60,6 +66,7 @@ function isLastDoneAssistant(idx: number): boolean {
             :message="m"
             :can-regenerate="isLastDoneAssistant(i) && canRegenerate"
             :versions="versionsFor(m.id)"
+            :conversation-id="conversationId"
             @regenerate="emit('regenerate')"
           />
         </template>
