@@ -16,6 +16,29 @@
 import { getAuthBridge } from './authBridge'
 import { ENV } from './env'
 
+interface ErrorBody {
+  detail?: string
+  message?: string
+  errorCode?: string
+  required_module?: string
+}
+
+/**
+ * Error tipado para respuestas no-OK del backend. Lleva el status code
+ * y el body parseado para que el caller pueda discriminar (ej. UI que
+ * quiere mostrar el `required_module` de un 403).
+ */
+export class HttpRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly body: ErrorBody = {},
+  ) {
+    super(message)
+    this.name = 'HttpRequestError'
+  }
+}
+
 export interface RequestOptions {
   query?: Record<string, string | number | boolean | null | undefined>
   headers?: Record<string, string>
@@ -26,13 +49,16 @@ interface ReqOptionsWithBody extends RequestOptions {
   body?: unknown
 }
 
-async function extractErrorMessage(res: Response): Promise<string> {
+async function readErrorBody(res: Response): Promise<ErrorBody> {
   try {
-    const data = (await res.json()) as { detail?: string; message?: string }
-    return data.detail ?? data.message ?? `HTTP ${res.status} ${res.statusText}`
+    return (await res.json()) as ErrorBody
   } catch {
-    return `HTTP ${res.status} ${res.statusText}`
+    return {}
   }
+}
+
+function errorMessage(body: ErrorBody, res: Response): string {
+  return body.detail ?? body.message ?? `HTTP ${res.status} ${res.statusText}`
 }
 
 function buildHeaders(
@@ -115,7 +141,17 @@ export class HttpClient {
       opts.headers,
       opts.body,
     )
-    if (!res.ok) throw new Error(await extractErrorMessage(res))
+    if (!res.ok) {
+      const errBody = await readErrorBody(res)
+      // 403 con errorCode module_access_denied → la caché del set de
+      // módulos quedó stale. Disparamos reload en background y propagamos
+      // el error igual: la operación actual falla, pero la próxima ya
+      // trabajará con el set fresco.
+      if (res.status === 403 && errBody.errorCode === 'module_access_denied') {
+        getAuthBridge().reloadPermisos()
+      }
+      throw new HttpRequestError(errorMessage(errBody, res), res.status, errBody)
+    }
     if (res.status === 204) return undefined as T
     return (await res.json()) as T
   }

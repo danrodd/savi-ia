@@ -13,9 +13,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import Button from '@/components/ui/Button.vue'
+import { MODULE_LABELS, type ModuleCode, usePermisosStore } from '@/modules/permisos'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
+const permisosStore = usePermisosStore()
 const router = useRouter()
 
 const refreshing = ref(false)
@@ -31,11 +33,32 @@ const initial = computed(() => {
 
 const roleLabel = computed(() => (user.value?.is_admin ? 'Administrador' : 'Usuario'))
 
+interface ModuleChip {
+  code: string
+  label: string
+}
+
+const moduleChips = computed<ModuleChip[]>(() => {
+  const codes = Array.from(permisosStore.modules) as string[]
+  return codes
+    .map((code) => ({
+      code,
+      label: MODULE_LABELS[code as ModuleCode] ?? code,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+})
+
+const showsModulesSection = computed<boolean>(
+  () => permisosStore.loaded && (permisosStore.isAdmin || moduleChips.value.length > 0),
+)
+
 async function onRefresh(): Promise<void> {
   refreshing.value = true
   refreshError.value = null
   try {
-    await authStore.fetchMe()
+    // Refresca identidad Y módulos en paralelo — el chip de módulos
+    // tiene que reflejar cambios del plan/permisos también.
+    await Promise.all([authStore.fetchMe(), permisosStore.cargarBootstrap()])
   } catch (e) {
     refreshError.value = (e as Error).message || 'No se pudo refrescar la información.'
   } finally {
@@ -98,6 +121,18 @@ onMounted(() => {
             <dd class="profile__fact-value">Seguridad.Usuario (ERP)</dd>
           </div>
         </dl>
+
+        <section v-if="showsModulesSection" class="profile__modules">
+          <h2 class="profile__modules-title">Módulos habilitados</h2>
+          <p v-if="permisosStore.isAdmin" class="profile__modules-admin-note">
+            Tu cuenta tiene acceso total como administrador.
+          </p>
+          <ul v-else class="profile__chips" aria-label="Módulos con acceso">
+            <li v-for="chip in moduleChips" :key="chip.code" class="profile__chip">
+              {{ chip.label }}
+            </li>
+          </ul>
+        </section>
 
         <p v-if="refreshError" class="profile__error" role="alert">{{ refreshError }}</p>
 
@@ -249,6 +284,51 @@ onMounted(() => {
 .profile__fact-value--mono {
   font-family: var(--font-mono, monospace);
   font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.profile__modules {
+  width: 100%;
+  margin: 0 0 var(--space-5);
+}
+
+.profile__modules-title {
+  margin: 0 0 var(--space-3);
+  font-size: 11px;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-medium);
+  text-align: left;
+}
+
+.profile__modules-admin-note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.profile__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile__chip {
+  padding: 4px var(--space-3);
+  border-radius: 999px;
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  color: var(--text);
   letter-spacing: 0.02em;
 }
 

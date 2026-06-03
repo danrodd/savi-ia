@@ -74,6 +74,12 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(payload: LoginPayload): Promise<void> {
     const tokens = await authService.login(payload)
     persist(tokens)
+    // Carga del bootstrap de permisos justo tras el login — evita que
+    // el primer render post-login muestre la UI con set vacío (fail-closed).
+    // Importamos perezosamente para no introducir un ciclo al import-time.
+    const { usePermisosStore } = await import('@/modules/permisos')
+    const permisos = usePermisosStore()
+    await permisos.cargarBootstrap()
   }
 
   async function logout(): Promise<void> {

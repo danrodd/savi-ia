@@ -18,6 +18,12 @@ interface AuthBridge {
   refreshAccessToken(): Promise<string>
   clearSession(): void
   redirectToLogin: RedirectToLogin
+  /**
+   * Recarga el bootstrap de permisos del usuario.
+   * Disparado por el HttpClient cuando un 403 con
+   * `errorCode: module_access_denied` indica caché stale.
+   */
+  reloadPermisos(): void
 }
 
 let bridge: AuthBridge | null = null
