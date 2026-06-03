@@ -2,8 +2,10 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.modules.usage.domain.value_objects import (
+    ConversationStats,
     DailyUsage,
     UsageTotals,
+    UserStats,
     UserUsage,
 )
 
@@ -28,3 +30,29 @@ class SystemUsageReportDTO:
     totals: UsageTotals
     per_user: list[UserUsage]
     daily: list[DailyUsage]
+
+
+@dataclass(frozen=True)
+class UsageKpisDTO:
+    """KPIs de consumo para análisis de tarifa.
+
+    Combina agregados de la BD (totales, stats por conversación/usuario)
+    con derivaciones de negocio (costo por turno, proyección mensual,
+    ratio de caché).
+    """
+
+    period_start: datetime
+    period_end: datetime
+    period_days: int
+    total_cost_usd: float
+    total_tokens: int
+    turns_count: int
+    avg_cost_per_turn_usd: float
+    avg_tokens_per_turn: float
+    conversations: ConversationStats
+    users: UserStats
+    avg_cost_per_day_usd: float
+    projected_monthly_cost_usd: float
+    # cache_read / (input + cache_read + cache_creation). El cache_read
+    # cuesta ~10% del input, así que un ratio alto baja el costo unitario.
+    cache_read_ratio: float

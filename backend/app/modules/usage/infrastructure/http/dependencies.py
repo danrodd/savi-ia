@@ -8,7 +8,9 @@ from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http import CurrentUserDep
 from app.modules.usage.application.use_cases import (
     GetSystemUsageUseCase,
+    GetUsageKpisUseCase,
     GetUserUsageUseCase,
+    ListConversationUsageUseCase,
 )
 from app.modules.usage.domain.interfaces import UsageRepository
 from app.modules.usage.infrastructure.persistence.repositories import (
@@ -43,11 +45,27 @@ def get_system_usage_use_case(repository: UsageRepositoryDep) -> GetSystemUsageU
     return GetSystemUsageUseCase(repository)
 
 
+def get_usage_kpis_use_case(repository: UsageRepositoryDep) -> GetUsageKpisUseCase:
+    return GetUsageKpisUseCase(repository)
+
+
+def get_list_conversation_usage_use_case(
+    repository: UsageRepositoryDep,
+) -> ListConversationUsageUseCase:
+    return ListConversationUsageUseCase(repository)
+
+
 GetUserUsageUseCaseDep = Annotated[
     GetUserUsageUseCase, Depends(get_user_usage_use_case)
 ]
 GetSystemUsageUseCaseDep = Annotated[
     GetSystemUsageUseCase, Depends(get_system_usage_use_case)
+]
+GetUsageKpisUseCaseDep = Annotated[
+    GetUsageKpisUseCase, Depends(get_usage_kpis_use_case)
+]
+ListConversationUsageUseCaseDep = Annotated[
+    ListConversationUsageUseCase, Depends(get_list_conversation_usage_use_case)
 ]
 
 

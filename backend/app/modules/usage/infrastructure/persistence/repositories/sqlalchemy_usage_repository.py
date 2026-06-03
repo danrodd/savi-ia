@@ -24,9 +24,12 @@ from app.modules.conversations.infrastructure.persistence.models.conversation_mo
 )
 from app.modules.usage.domain.interfaces import UsageRepository
 from app.modules.usage.domain.value_objects import (
+    ConversationStats,
+    ConversationUsage,
     DailyUsage,
     UsagePeriod,
     UsageTotals,
+    UserStats,
     UserUsage,
 )
 
@@ -46,6 +49,16 @@ def _token_sum(field: str) -> ColumnElement[Any]:
 
 def _cost_sum() -> ColumnElement[Any]:
     return func.coalesce(func.sum(MessageModel.cost_usd), Decimal("0"))
+
+
+def _total_tokens_sum() -> ColumnElement[Any]:
+    """Suma de las cuatro categorías de tokens en una sola expresión."""
+    return (
+        _token_sum("input_tokens")
+        + _token_sum("output_tokens")
+        + _token_sum("cache_read_input_tokens")
+        + _token_sum("cache_creation_input_tokens")
+    )
 
 
 def _count() -> ColumnElement[Any]:
@@ -158,5 +171,117 @@ class SqlAlchemyUsageRepository(UsageRepository):
         rows = (await self._session.execute(stmt)).mappings().all()
         return [
             UserUsage(user_id=row["user_id"], totals=_row_to_totals(row))
+            for row in rows
+        ]
+
+    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats:
+        # Paso 1: costo/tokens/turnos por conversación (subquery).
+        per_conv = (
+            select(
+                func.coalesce(func.sum(MessageModel.cost_usd), Decimal("0")).label("cost"),
+                _total_tokens_sum().label("tokens"),
+                func.count(MessageModel.id).label("turns"),
+            )
+            .select_from(MessageModel)
+            .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
+            .where(self._scoped(period, user_id=None))
+            .group_by(ConversationModel.id)
+            .subquery()
+        )
+        cost = per_conv.c.cost
+        # Paso 2: percentiles + promedios sobre el costo por conversación.
+        # percentile_cont los calcula Postgres nativo (interpolación lineal).
+        stmt = select(
+            func.count().label("count"),
+            func.coalesce(func.avg(cost), 0).label("avg_cost"),
+            func.coalesce(func.percentile_cont(0.5).within_group(cost), 0).label("p50"),
+            func.coalesce(func.percentile_cont(0.9).within_group(cost), 0).label("p90"),
+            func.coalesce(func.percentile_cont(0.95).within_group(cost), 0).label("p95"),
+            func.coalesce(func.max(cost), 0).label("max_cost"),
+            func.coalesce(func.avg(per_conv.c.tokens), 0).label("avg_tokens"),
+            func.coalesce(func.avg(per_conv.c.turns), 0).label("avg_turns"),
+        )
+        m = (await self._session.execute(stmt)).mappings().one()
+        return ConversationStats(
+            count=int(m["count"]),
+            avg_cost_usd=float(m["avg_cost"]),
+            p50_cost_usd=float(m["p50"]),
+            p90_cost_usd=float(m["p90"]),
+            p95_cost_usd=float(m["p95"]),
+            max_cost_usd=float(m["max_cost"]),
+            avg_tokens=float(m["avg_tokens"]),
+            avg_turns=float(m["avg_turns"]),
+        )
+
+    async def user_stats(self, period: UsagePeriod) -> UserStats:
+        # Excluye conversaciones legadas (user_id NULL): no son usuarios
+        # facturables reales.
+        per_user = (
+            select(
+                ConversationModel.user_id.label("uid"),
+                func.coalesce(func.sum(MessageModel.cost_usd), Decimal("0")).label("cost"),
+                func.count(func.distinct(ConversationModel.id)).label("convs"),
+            )
+            .select_from(MessageModel)
+            .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
+            .where(
+                and_(
+                    self._scoped(period, user_id=None),
+                    ConversationModel.user_id.is_not(None),
+                )
+            )
+            .group_by(ConversationModel.user_id)
+            .subquery()
+        )
+        stmt = select(
+            func.count().label("active"),
+            func.coalesce(func.avg(per_user.c.cost), 0).label("avg_cost"),
+            func.coalesce(func.avg(per_user.c.convs), 0).label("avg_convs"),
+        )
+        m = (await self._session.execute(stmt)).mappings().one()
+        return UserStats(
+            active_count=int(m["active"]),
+            avg_cost_usd=float(m["avg_cost"]),
+            avg_conversations=float(m["avg_convs"]),
+        )
+
+    async def per_conversation(
+        self, period: UsagePeriod, *, limit: int
+    ) -> list[ConversationUsage]:
+        cost = func.coalesce(func.sum(MessageModel.cost_usd), Decimal("0")).label(
+            "cost_usd"
+        )
+        stmt = (
+            select(
+                ConversationModel.id.label("conversation_id"),
+                ConversationModel.user_id.label("user_id"),
+                ConversationModel.title.label("title"),
+                func.count(MessageModel.id).label("turns"),
+                _total_tokens_sum().label("total_tokens"),
+                cost,
+                func.max(MessageModel.created_at).label("last_activity"),
+            )
+            .select_from(MessageModel)
+            .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
+            .where(self._scoped(period, user_id=None))
+            .group_by(
+                ConversationModel.id,
+                ConversationModel.user_id,
+                ConversationModel.title,
+            )
+            .order_by(cost.desc())
+            .limit(limit)
+        )
+        rows = (await self._session.execute(stmt)).mappings().all()
+        return [
+            ConversationUsage(
+                conversation_id=row["conversation_id"],
+                user_id=row["user_id"],
+                title=row["title"],
+                turns=int(row["turns"]),
+                total_tokens=int(row["total_tokens"]),
+                cost_usd=float(row["cost_usd"]),
+                last_activity=row["last_activity"],
+            )
             for row in rows
         ]

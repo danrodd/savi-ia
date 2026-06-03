@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 
 from app.modules.usage.domain.value_objects import (
+    ConversationStats,
+    ConversationUsage,
     DailyUsage,
     UsagePeriod,
     UsageTotals,
+    UserStats,
     UserUsage,
 )
 
@@ -35,3 +38,14 @@ class UsageRepository(ABC):
 
     @abstractmethod
     async def daily_system(self, period: UsagePeriod) -> list[DailyUsage]: ...
+
+    @abstractmethod
+    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats: ...
+
+    @abstractmethod
+    async def user_stats(self, period: UsagePeriod) -> UserStats: ...
+
+    @abstractmethod
+    async def per_conversation(
+        self, period: UsagePeriod, *, limit: int
+    ) -> list[ConversationUsage]: ...

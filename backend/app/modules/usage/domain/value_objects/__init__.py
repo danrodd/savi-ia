@@ -1,3 +1,8 @@
+from app.modules.usage.domain.value_objects.kpis import (
+    ConversationStats,
+    ConversationUsage,
+    UserStats,
+)
 from app.modules.usage.domain.value_objects.period import UsagePeriod
 from app.modules.usage.domain.value_objects.usage_totals import (
     DailyUsage,
@@ -6,8 +11,11 @@ from app.modules.usage.domain.value_objects.usage_totals import (
 )
 
 __all__ = [
+    "ConversationStats",
+    "ConversationUsage",
     "DailyUsage",
     "UsagePeriod",
     "UsageTotals",
+    "UserStats",
     "UserUsage",
 ]

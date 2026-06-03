@@ -6,9 +6,13 @@
 export type { RangeDays } from './stores/usageStore'
 export { useUsageStore } from './stores/usageStore'
 export type {
+  ConversationStats,
+  ConversationUsage,
   DailyUsage,
   SystemUsageReport,
+  UsageKpis,
   UsageTotals,
+  UserStats,
   UserUsage,
   UserUsageReport,
 } from './types'

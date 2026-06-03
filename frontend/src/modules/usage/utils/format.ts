@@ -25,6 +25,11 @@ export function formatCop(usd: number, rate: number): string {
   return COP.format(usd * rate)
 }
 
+/** Formatea un monto que YA está en pesos (no multiplica por la tasa). */
+export function formatCopAmount(cop: number): string {
+  return COP.format(cop)
+}
+
 export function formatUsd(usd: number): string {
   return USD.format(usd)
 }

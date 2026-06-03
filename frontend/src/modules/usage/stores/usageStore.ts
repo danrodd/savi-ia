@@ -11,9 +11,18 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { usageService } from '../services/usageService'
-import type { SystemUsageReport, UsageQuery, UserUsageReport } from '../types'
+import type {
+  ConversationUsage,
+  SystemUsageReport,
+  UsageKpis,
+  UsageQuery,
+  UserUsageReport,
+} from '../types'
 
 export type RangeDays = 7 | 30 | 90
+
+// Tope de filas del detalle por conversación que pedimos al backend.
+const CONVERSATIONS_LIMIT = 500
 
 export const useUsageStore = defineStore('usage', () => {
   const rangeDays = ref<RangeDays>(30)
@@ -26,8 +35,20 @@ export const useUsageStore = defineStore('usage', () => {
   const loadingSystem = ref(false)
   const errorSystem = ref<string | null>(null)
 
+  const kpis = ref<UsageKpis | null>(null)
+  const loadingKpis = ref(false)
+  const errorKpis = ref<string | null>(null)
+
+  const conversations = ref<ConversationUsage[]>([])
+  const loadingConversations = ref(false)
+  const errorConversations = ref<string | null>(null)
+
   const usdToCopRate = computed<number>(
-    () => mine.value?.usd_to_cop_rate ?? system.value?.usd_to_cop_rate ?? 0,
+    () =>
+      kpis.value?.usd_to_cop_rate ??
+      mine.value?.usd_to_cop_rate ??
+      system.value?.usd_to_cop_rate ??
+      0,
   )
 
   function periodQuery(): UsageQuery {
@@ -61,6 +82,34 @@ export const useUsageStore = defineStore('usage', () => {
     }
   }
 
+  async function loadKpis(): Promise<void> {
+    loadingKpis.value = true
+    errorKpis.value = null
+    try {
+      kpis.value = await usageService.kpis(periodQuery())
+    } catch (e) {
+      errorKpis.value = (e as Error).message || 'No se pudieron cargar los KPIs.'
+    } finally {
+      loadingKpis.value = false
+    }
+  }
+
+  async function loadConversations(): Promise<void> {
+    loadingConversations.value = true
+    errorConversations.value = null
+    try {
+      conversations.value = await usageService.conversations({
+        ...periodQuery(),
+        limit: CONVERSATIONS_LIMIT,
+      })
+    } catch (e) {
+      errorConversations.value =
+        (e as Error).message || 'No se pudo cargar el detalle por conversación.'
+    } finally {
+      loadingConversations.value = false
+    }
+  }
+
   /** Cambia el rango y recarga lo que ya estaba cargado. */
   async function setRange(days: RangeDays): Promise<void> {
     if (days === rangeDays.value) return
@@ -68,6 +117,10 @@ export const useUsageStore = defineStore('usage', () => {
     const tasks: Promise<void>[] = []
     if (mine.value || loadingMine.value) tasks.push(loadMine())
     if (system.value || loadingSystem.value) tasks.push(loadSystem())
+    if (kpis.value || loadingKpis.value) tasks.push(loadKpis())
+    if (conversations.value.length > 0 || loadingConversations.value) {
+      tasks.push(loadConversations())
+    }
     await Promise.all(tasks)
   }
 
@@ -79,9 +132,17 @@ export const useUsageStore = defineStore('usage', () => {
     system,
     loadingSystem,
     errorSystem,
+    kpis,
+    loadingKpis,
+    errorKpis,
+    conversations,
+    loadingConversations,
+    errorConversations,
     usdToCopRate,
     loadMine,
     loadSystem,
+    loadKpis,
+    loadConversations,
     setRange,
   }
 })

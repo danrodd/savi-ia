@@ -1,14 +1,19 @@
 from datetime import date, datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.modules.usage.application.dtos import (
     SystemUsageReportDTO,
+    UsageKpisDTO,
     UserUsageReportDTO,
 )
 from app.modules.usage.domain.value_objects import (
+    ConversationStats,
+    ConversationUsage,
     DailyUsage,
     UsageTotals,
+    UserStats,
     UserUsage,
 )
 
@@ -98,4 +103,102 @@ class SystemUsageReportResponse(BaseModel):
             per_user=[UserUsageResponse.from_vo(u) for u in dto.per_user],
             daily=[DailyUsageResponse.from_vo(d) for d in dto.daily],
             usd_to_cop_rate=usd_to_cop_rate,
+        )
+
+
+class ConversationStatsResponse(BaseModel):
+    count: int
+    avg_cost_usd: float
+    p50_cost_usd: float
+    p90_cost_usd: float
+    p95_cost_usd: float
+    max_cost_usd: float
+    avg_tokens: float
+    avg_turns: float
+
+    @classmethod
+    def from_vo(cls, s: ConversationStats) -> "ConversationStatsResponse":
+        return cls(
+            count=s.count,
+            avg_cost_usd=s.avg_cost_usd,
+            p50_cost_usd=s.p50_cost_usd,
+            p90_cost_usd=s.p90_cost_usd,
+            p95_cost_usd=s.p95_cost_usd,
+            max_cost_usd=s.max_cost_usd,
+            avg_tokens=s.avg_tokens,
+            avg_turns=s.avg_turns,
+        )
+
+
+class UserStatsResponse(BaseModel):
+    active_count: int
+    avg_cost_usd: float
+    avg_conversations: float
+
+    @classmethod
+    def from_vo(cls, s: UserStats) -> "UserStatsResponse":
+        return cls(
+            active_count=s.active_count,
+            avg_cost_usd=s.avg_cost_usd,
+            avg_conversations=s.avg_conversations,
+        )
+
+
+class UsageKpisResponse(BaseModel):
+    period_start: datetime
+    period_end: datetime
+    period_days: int
+    total_cost_usd: float
+    total_tokens: int
+    turns_count: int
+    avg_cost_per_turn_usd: float
+    avg_tokens_per_turn: float
+    conversations: ConversationStatsResponse
+    users: UserStatsResponse
+    avg_cost_per_day_usd: float
+    projected_monthly_cost_usd: float
+    cache_read_ratio: float
+    usd_to_cop_rate: float
+
+    @classmethod
+    def from_dto(
+        cls, dto: UsageKpisDTO, *, usd_to_cop_rate: float
+    ) -> "UsageKpisResponse":
+        return cls(
+            period_start=dto.period_start,
+            period_end=dto.period_end,
+            period_days=dto.period_days,
+            total_cost_usd=dto.total_cost_usd,
+            total_tokens=dto.total_tokens,
+            turns_count=dto.turns_count,
+            avg_cost_per_turn_usd=dto.avg_cost_per_turn_usd,
+            avg_tokens_per_turn=dto.avg_tokens_per_turn,
+            conversations=ConversationStatsResponse.from_vo(dto.conversations),
+            users=UserStatsResponse.from_vo(dto.users),
+            avg_cost_per_day_usd=dto.avg_cost_per_day_usd,
+            projected_monthly_cost_usd=dto.projected_monthly_cost_usd,
+            cache_read_ratio=dto.cache_read_ratio,
+            usd_to_cop_rate=usd_to_cop_rate,
+        )
+
+
+class ConversationUsageResponse(BaseModel):
+    conversation_id: UUID
+    user_id: int | None
+    title: str
+    turns: int
+    total_tokens: int
+    cost_usd: float
+    last_activity: datetime
+
+    @classmethod
+    def from_vo(cls, c: ConversationUsage) -> "ConversationUsageResponse":
+        return cls(
+            conversation_id=c.conversation_id,
+            user_id=c.user_id,
+            title=c.title,
+            turns=c.turns,
+            total_tokens=c.total_tokens,
+            cost_usd=c.cost_usd,
+            last_activity=c.last_activity,
         )

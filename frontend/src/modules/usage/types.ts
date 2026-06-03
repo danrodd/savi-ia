@@ -48,3 +48,47 @@ export interface UsageQuery {
   start?: string
   end?: string
 }
+
+export interface ConversationStats {
+  count: number
+  avg_cost_usd: number
+  p50_cost_usd: number
+  p90_cost_usd: number
+  p95_cost_usd: number
+  max_cost_usd: number
+  avg_tokens: number
+  avg_turns: number
+}
+
+export interface UserStats {
+  active_count: number
+  avg_cost_usd: number
+  avg_conversations: number
+}
+
+export interface UsageKpis {
+  period_start: string
+  period_end: string
+  period_days: number
+  total_cost_usd: number
+  total_tokens: number
+  turns_count: number
+  avg_cost_per_turn_usd: number
+  avg_tokens_per_turn: number
+  conversations: ConversationStats
+  users: UserStats
+  avg_cost_per_day_usd: number
+  projected_monthly_cost_usd: number
+  cache_read_ratio: number
+  usd_to_cop_rate: number
+}
+
+export interface ConversationUsage {
+  conversation_id: string
+  user_id: number | null
+  title: string
+  turns: number
+  total_tokens: number
+  cost_usd: number
+  last_activity: string
+}

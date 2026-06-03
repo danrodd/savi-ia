@@ -19,9 +19,12 @@ from app.modules.usage.application.use_cases import (
 )
 from app.modules.usage.domain.interfaces import UsageRepository
 from app.modules.usage.domain.value_objects import (
+    ConversationStats,
+    ConversationUsage,
     DailyUsage,
     UsagePeriod,
     UsageTotals,
+    UserStats,
     UserUsage,
 )
 
@@ -68,6 +71,29 @@ class _FakeUsageRepo(UsageRepository):
     async def daily_system(self, period: UsagePeriod) -> list[DailyUsage]:
         self.calls.append(("daily_system", period))
         return [DailyUsage(day=date(2026, 5, 15), totals=_TOTALS)]
+
+    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats:
+        self.calls.append(("conversation_stats", period))
+        return ConversationStats(
+            count=0,
+            avg_cost_usd=0.0,
+            p50_cost_usd=0.0,
+            p90_cost_usd=0.0,
+            p95_cost_usd=0.0,
+            max_cost_usd=0.0,
+            avg_tokens=0.0,
+            avg_turns=0.0,
+        )
+
+    async def user_stats(self, period: UsagePeriod) -> UserStats:
+        self.calls.append(("user_stats", period))
+        return UserStats(active_count=0, avg_cost_usd=0.0, avg_conversations=0.0)
+
+    async def per_conversation(
+        self, period: UsagePeriod, *, limit: int
+    ) -> list[ConversationUsage]:
+        self.calls.append(("per_conversation", (period, limit)))
+        return []
 
 
 @pytest.mark.asyncio

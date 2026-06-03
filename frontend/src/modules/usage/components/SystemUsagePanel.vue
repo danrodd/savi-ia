@@ -1,0 +1,177 @@
+<script setup lang="ts">
+/**
+ * Panel "Global" (admin) — total del sistema + ranking de consumo por
+ * usuario. Carga con guarda al activarse su tab.
+ */
+import { computed, onMounted } from 'vue'
+
+import { useAuthStore } from '@/modules/auth/stores/authStore'
+import { useUsageStore } from '@/modules/usage'
+import { formatCop, formatTokens, formatUsd } from '../utils/format'
+
+const store = useUsageStore()
+const authStore = useAuthStore()
+const rate = computed(() => store.usdToCopRate)
+
+function userLabel(userId: number | null): string {
+  if (userId === null) return 'Sin usuario (legado)'
+  if (userId === authStore.user?.id) return `#${userId} · vos`
+  return `#${userId}`
+}
+
+onMounted(() => {
+  if (!store.system && !store.loadingSystem) void store.loadSystem()
+})
+</script>
+
+<template>
+  <section class="su" aria-label="Consumo global">
+    <p v-if="store.loadingSystem && !store.system" class="su__hint">Cargando…</p>
+    <p v-else-if="store.errorSystem" class="su__error" role="alert">
+      {{ store.errorSystem }}
+    </p>
+    <template v-else-if="store.system">
+      <div class="su__cards">
+        <article class="su__card su__card--primary">
+          <p class="su__card-label">Costo total del sistema</p>
+          <p class="su__card-value">{{ formatCop(store.system.totals.cost_usd, rate) }}</p>
+          <p class="su__card-foot">{{ formatUsd(store.system.totals.cost_usd) }} USD</p>
+        </article>
+        <article class="su__card">
+          <p class="su__card-label">Tokens totales</p>
+          <p class="su__card-value">{{ formatTokens(store.system.totals.total_tokens) }}</p>
+          <p class="su__card-foot">
+            {{ formatTokens(store.system.totals.message_count) }} respuestas
+          </p>
+        </article>
+      </div>
+
+      <section class="su__ranking" aria-label="Consumo por usuario">
+        <h2 class="su__section-title">Por usuario</h2>
+        <p v-if="store.system.per_user.length === 0" class="su__hint">
+          Sin consumo en este período.
+        </p>
+        <table v-else class="su__table">
+          <thead>
+            <tr>
+              <th scope="col">Usuario</th>
+              <th scope="col" class="su__num">Tokens</th>
+              <th scope="col" class="su__num">Respuestas</th>
+              <th scope="col" class="su__num">Costo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="u in store.system.per_user" :key="u.user_id ?? 'legacy'">
+              <td>{{ userLabel(u.user_id) }}</td>
+              <td class="su__num">{{ formatTokens(u.totals.total_tokens) }}</td>
+              <td class="su__num">{{ formatTokens(u.totals.message_count) }}</td>
+              <td class="su__num su__num--strong">{{ formatCop(u.totals.cost_usd, rate) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </template>
+  </section>
+</template>
+
+<style scoped>
+.su__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.su__card {
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.su__card--primary {
+  background: var(--surface-elev);
+  border-color: var(--border-strong, var(--border));
+}
+
+.su__card-label {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-medium);
+}
+
+.su__card-value {
+  margin: 0;
+  font-family: var(--font-display, var(--font-sans));
+  font-size: 26px;
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.su__card-foot {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.su__section-title {
+  margin: 0 0 var(--space-3);
+  font-size: 12px;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-medium);
+}
+
+.su__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.su__table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: 11px;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: var(--fw-medium);
+  border-bottom: 1px solid var(--border);
+}
+
+.su__table td {
+  padding: var(--space-3);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.su__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.su__num--strong {
+  font-weight: var(--fw-semibold);
+}
+
+.su__hint {
+  margin: var(--space-3) 0;
+  font-size: 13px;
+  color: var(--text-subtle);
+}
+
+.su__error {
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-sm);
+  background: var(--surface-danger, rgba(220, 38, 38, 0.08));
+  color: var(--text-danger, #b91c1c);
+  font-size: 12px;
+}
+</style>
