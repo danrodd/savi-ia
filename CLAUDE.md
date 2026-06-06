@@ -77,6 +77,29 @@ Para los patrones específicos de SAVI (módulo `chat`, MCP por turno,
 soft branches, writers independientes, auto-título), ver
 [`skills/savi-backend-patterns/SKILL.md`](skills/savi-backend-patterns/SKILL.md).
 
+### Regla CRÍTICA sobre tools MCP — leer antes de agregar cualquier tool
+
+**Máximo 4 tools registradas en el MCP server.** Si necesitás más
+funcionalidades, consolidá con el patrón **dispatcher**: una sola tool
+con un campo `tipo` discriminador que rutea internamente a N
+implementaciones.
+
+Por qué: el Claude Agent SDK pasa a modo **"deferred tools"** cuando
+hay más de ~5-6 tools registradas, obligando al LLM a llamar
+`ToolSearch` antes de cualquier tool. Eso cambia el modelo mental del
+modelo y produce alucinaciones tipo *"la herramienta no responde"*
+aunque la tool sí devolvió datos válidos. Costo: una tarde de
+debugging en junio 2026.
+
+**Antes de mergear un PR que agregue una tool MCP**, revisar:
+[`backend/docs/mcp_deferred_tools_gotcha.md`](backend/docs/mcp_deferred_tools_gotcha.md)
+— tiene el checklist completo, cómo detectarlo, cómo aplicar el
+dispatcher, y antecedente histórico.
+
+Tools actualmente registradas (4):
+`info_empresa`, `consultar_datos`, `consultar_libre`,
+`consultar_conocimiento` (dispatcher de 7 tipos del knowledge).
+
 ---
 
 ## 5. Módulos actuales

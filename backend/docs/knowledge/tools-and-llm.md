@@ -228,6 +228,21 @@ El runner emite eventos SSE tipo `tool_use`. El frontend los muestra como pills 
 
 Para debug local, mirá los logs de uvicorn — cada tool call deja rastro.
 
+## ⚠️ Regla crítica del MCP: máximo 4 tools
+
+La tool del knowledge es **UNA sola** (`consultar_conocimiento`) con un
+campo `tipo` que despacha a 7 implementaciones internas. NO son 7 tools
+separadas en el MCP server.
+
+Por qué: el Claude Agent SDK pasa a modo "deferred tools" cuando hay
+muchas tools. Eso confunde al LLM y le hace alucinar que las tools no
+responden. Detalle completo + checklist al agregar tools en
+[`backend/docs/mcp_deferred_tools_gotcha.md`](../mcp_deferred_tools_gotcha.md).
+
+**Si en el futuro alguien quiere "separar" la tool del knowledge en
+varias tools porque le parece más limpio**: leer ese doc primero. Tiene
+el antecedente de la tarde de debugging que esto nos costó.
+
 ## Caveats que aprendí construyendo esto
 
 - **Las tools se construyen por turno, no por proceso**. Importante para `allowed_modules`: si el usuario cambia de módulos entre dos turnos (por upgrade de plan), el siguiente turno ya tiene el set actualizado.
