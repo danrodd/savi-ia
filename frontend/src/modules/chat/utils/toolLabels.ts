@@ -8,10 +8,14 @@
  */
 
 const TOOL_LABELS: Record<string, string> = {
+  // Datos del ERP
   info_empresa: 'Consultando datos de tu empresa',
   mcp__savi__info_empresa: 'Consultando datos de tu empresa',
   mcp__savi__consultar_libre: 'Consultando información del ERP',
   mcp__savi__consultar_datos: 'Consultando información del ERP',
+
+  // Catálogo de conocimiento — una única tool consolidada
+  mcp__savi__consultar_conocimiento: 'Consultando el catálogo del ERP',
 }
 
 const DEFAULT_LABEL = 'Procesando información'
