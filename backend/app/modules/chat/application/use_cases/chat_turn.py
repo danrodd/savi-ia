@@ -13,6 +13,7 @@ Diseño:
   `supersedes_id` para que enlace el nuevo al viejo (`superseded_by_id`)
   en la misma transacción.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -23,6 +24,7 @@ from typing import Any
 from uuid import UUID
 
 from app.infrastructure.config import Settings
+from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.application.requests import ChatAction
 from app.modules.chat.domain.entities import (
     ChatEvent,
@@ -80,10 +82,7 @@ def _format_history_block(messages: list[Message]) -> str:
         body = m.content.strip()
         if len(body) > _HISTORY_CHAR_LIMIT:
             body = body[:_HISTORY_CHAR_LIMIT] + " …"
-        if (
-            m.role == MessageRole.ASSISTANT
-            and m.finish_reason == MessageFinishReason.INTERRUPTED
-        ):
+        if m.role == MessageRole.ASSISTANT and m.finish_reason == MessageFinishReason.INTERRUPTED:
             body += "\n\n[respuesta interrumpida por el usuario]"
         lines.append(f"{who}: {body}")
     lines.append(_NEW_QUERY_MARKER)
@@ -116,9 +115,7 @@ class _TurnAccumulator:
             inv = self.tool_invocations.get(event.tool_use_id)
             if inv is not None:
                 inv.status = (
-                    ToolInvocationStatus.ERROR
-                    if event.is_error
-                    else ToolInvocationStatus.OK
+                    ToolInvocationStatus.ERROR if event.is_error else ToolInvocationStatus.OK
                 )
         elif isinstance(event, DoneEvent):
             if event.usage:
@@ -176,10 +173,7 @@ class ChatTurnUseCase:
             raise ConversationNotFoundError(conversation_id)
         # Ownership: si el endpoint pasa el dueño esperado y no coincide,
         # tratamos como "no existe" (no leak de existencia).
-        if (
-            expected_owner_id is not None
-            and conversation.user_id != expected_owner_id
-        ):
+        if expected_owner_id is not None and conversation.user_id != expected_owner_id:
             raise ConversationNotFoundError(conversation_id)
 
         if action == ChatAction.EDIT_LAST:
@@ -189,8 +183,10 @@ class ChatTurnUseCase:
             last = active[-1]
             if last.role == MessageRole.USER:
                 return
-            if last.role == MessageRole.ASSISTANT and len(active) >= 2 and (
-                active[-2].role == MessageRole.USER
+            if (
+                last.role == MessageRole.ASSISTANT
+                and len(active) >= 2
+                and (active[-2].role == MessageRole.USER)
             ):
                 return
             raise NothingToEditError
@@ -209,6 +205,8 @@ class ChatTurnUseCase:
         conversation_id: UUID,
         action: ChatAction,
         message: str | None,
+        *,
+        allowed_modules: frozenset[ModuleCode] | None = None,
     ) -> AsyncIterator[ChatEvent]:
         # `validate` ya corrió desde el endpoint; aún así re-leemos la
         # conversación para conocer `title_locked` y el título.
@@ -216,24 +214,30 @@ class ChatTurnUseCase:
         if conversation is None or conversation.is_deleted:
             raise ConversationNotFoundError(conversation_id)
 
-        is_renamable = (
-            not conversation.title_locked and conversation.has_default_title
-        )
+        is_renamable = not conversation.title_locked and conversation.has_default_title
 
         if action == ChatAction.SEND:
             assert message is not None  # noqa: S101 — validated by ChatRequest
             async for event in self._execute_send(
-                conversation_id, message, is_renamable=is_renamable
+                conversation_id,
+                message,
+                is_renamable=is_renamable,
+                allowed_modules=allowed_modules,
             ):
                 yield event
         elif action == ChatAction.EDIT_LAST:
             assert message is not None  # noqa: S101
             async for event in self._execute_edit_last(
-                conversation_id, message, is_renamable=is_renamable
+                conversation_id,
+                message,
+                is_renamable=is_renamable,
+                allowed_modules=allowed_modules,
             ):
                 yield event
         elif action == ChatAction.REGENERATE:
-            async for event in self._execute_regenerate(conversation_id):
+            async for event in self._execute_regenerate(
+                conversation_id, allowed_modules=allowed_modules
+            ):
                 yield event
 
     # ── send ──────────────────────────────────────────────────────────────
@@ -243,6 +247,7 @@ class ChatTurnUseCase:
         user_text: str,
         *,
         is_renamable: bool,
+        allowed_modules: frozenset[ModuleCode] | None,
     ) -> AsyncIterator[ChatEvent]:
         history = await self._repository.list_messages(conversation_id)
         user_message = Message(
@@ -258,6 +263,7 @@ class ChatTurnUseCase:
             prompt=prompt,
             supersedes_id=None,
             user_text_for_title=user_text if is_renamable else None,
+            allowed_modules=allowed_modules,
         ):
             yield event
 
@@ -268,6 +274,7 @@ class ChatTurnUseCase:
         new_user_text: str,
         *,
         is_renamable: bool,
+        allowed_modules: frozenset[ModuleCode] | None,
     ) -> AsyncIterator[ChatEvent]:
         active = await self._repository.list_messages(conversation_id)
         if not active:
@@ -296,9 +303,7 @@ class ChatTurnUseCase:
         await self._repository.add_message(new_user)
 
         # 2) Marcar el user viejo como superseded apuntando al nuevo.
-        await self._repository.supersede_messages(
-            [old_user.id], superseded_by_id=new_user.id
-        )
+        await self._repository.supersede_messages([old_user.id], superseded_by_id=new_user.id)
 
         # 3) Si había assistant, también supersede (el link a su versión
         #    nueva lo cierra el writer cuando termine el stream).
@@ -320,6 +325,7 @@ class ChatTurnUseCase:
             prompt=prompt,
             supersedes_id=old_assistant.id if old_assistant else None,
             user_text_for_title=new_user_text if is_renamable else None,
+            allowed_modules=allowed_modules,
         ):
             yield event
 
@@ -327,6 +333,8 @@ class ChatTurnUseCase:
     async def _execute_regenerate(
         self,
         conversation_id: UUID,
+        *,
+        allowed_modules: frozenset[ModuleCode] | None,
     ) -> AsyncIterator[ChatEvent]:
         active = await self._repository.list_messages(conversation_id)
         if not active or active[-1].role != MessageRole.ASSISTANT:
@@ -351,6 +359,7 @@ class ChatTurnUseCase:
             prompt=prompt,
             supersedes_id=old_assistant.id,
             user_text_for_title=None,  # regenerate nunca regenera el título
+            allowed_modules=allowed_modules,
         ):
             yield event
 
@@ -362,20 +371,21 @@ class ChatTurnUseCase:
         prompt: str,
         supersedes_id: UUID | None,
         user_text_for_title: str | None,
+        allowed_modules: frozenset[ModuleCode] | None,
     ) -> AsyncIterator[ChatEvent]:
         title_phase1_task: asyncio.Task[Any] | None = None
         title_phase1_emitted = False
         if user_text_for_title is not None:
             title_phase1_task = _spawn(
-                self._title_updater.update_from_user(
-                    conversation_id, user_text_for_title
-                )
+                self._title_updater.update_from_user(conversation_id, user_text_for_title)
             )
 
         accumulator = _TurnAccumulator()
         try:
             async for event in self._runner.stream_turn(
-                prompt, conversation_id=conversation_id
+                prompt,
+                conversation_id=conversation_id,
+                allowed_modules=allowed_modules,
             ):
                 accumulator.consume(event)
                 yield event
@@ -398,11 +408,7 @@ class ChatTurnUseCase:
         finally:
             if accumulator.has_content():
                 assistant_message = accumulator.build_message(conversation_id)
-                _spawn(
-                    self._safe_write(
-                        assistant_message, supersedes_id=supersedes_id
-                    )
-                )
+                _spawn(self._safe_write(assistant_message, supersedes_id=supersedes_id))
 
         if (
             user_text_for_title is not None
@@ -410,9 +416,7 @@ class ChatTurnUseCase:
             and accumulator.has_content()
         ):
             if title_phase1_task is not None and not title_phase1_emitted:
-                drained = await self._await_title(
-                    title_phase1_task, max_wait_s=3.0
-                )
+                drained = await self._await_title(title_phase1_task, max_wait_s=3.0)
                 title_phase1_emitted = True
                 if drained:
                     yield TitleUpdateEvent(title=drained)
@@ -431,13 +435,9 @@ class ChatTurnUseCase:
             if refined:
                 yield TitleUpdateEvent(title=refined)
 
-    async def _safe_write(
-        self, message: Message, *, supersedes_id: UUID | None
-    ) -> None:
+    async def _safe_write(self, message: Message, *, supersedes_id: UUID | None) -> None:
         try:
-            await self._assistant_writer.write(
-                message, supersedes_id=supersedes_id
-            )
+            await self._assistant_writer.write(message, supersedes_id=supersedes_id)
         except Exception:
             log.exception(
                 "persist_assistant_message_failed conversation_id=%s",
@@ -454,9 +454,7 @@ class ChatTurnUseCase:
         return result if isinstance(result, str) and result else None
 
     @staticmethod
-    async def _await_title(
-        task: asyncio.Task[Any], *, max_wait_s: float
-    ) -> str | None:
+    async def _await_title(task: asyncio.Task[Any], *, max_wait_s: float) -> str | None:
         try:
             async with asyncio.timeout(max_wait_s):
                 result = await asyncio.shield(task)

@@ -8,6 +8,7 @@ El SDK levanta el binario `claude` como subprocess; en Windows necesita
 `CLAUDE_CODE_GIT_BASH_PATH` apuntando a `bash.exe` (lo propagamos desde
 `Settings`).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -29,6 +30,7 @@ from claude_agent_sdk import (
 )
 
 from app.infrastructure.config import Settings
+from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
@@ -68,8 +70,11 @@ def _build_options(
     settings: Settings,
     *,
     conversation_id: UUID | None,
+    allowed_modules: frozenset[ModuleCode] | None,
 ) -> ClaudeAgentOptions:
-    mcp_server = build_savi_mcp_server(conversation_id=conversation_id)
+    mcp_server = build_savi_mcp_server(
+        conversation_id=conversation_id, allowed_modules=allowed_modules
+    )
     return ClaudeAgentOptions(
         model=settings.claude_model,
         system_prompt=SYSTEM_PROMPT,
@@ -114,9 +119,12 @@ class ClaudeAgentRunner(LLMRunner):
         prompt: str,
         *,
         conversation_id: UUID | None = None,
+        allowed_modules: frozenset[ModuleCode] | None = None,
     ) -> AsyncIterator[ChatEvent]:
         options = _build_options(
-            self._settings, conversation_id=conversation_id
+            self._settings,
+            conversation_id=conversation_id,
+            allowed_modules=allowed_modules,
         )
         max_chars = self._settings.max_response_chars
         emitted_chars = 0

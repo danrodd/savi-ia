@@ -5,6 +5,7 @@ para clausurar contexto por turno: hoy solo `conversation_id` (necesario
 para el audit log de SQL libre); mañana se agregará el usuario autenticado
 y sus permisos.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -12,6 +13,7 @@ from uuid import UUID
 
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
+from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.infrastructure.llm.mcp.tools.consultar_datos import (
     build_description,
     consultar_datos_impl,
@@ -22,9 +24,13 @@ from app.modules.chat.infrastructure.llm.mcp.tools.consultar_libre import (
 from app.modules.chat.infrastructure.llm.mcp.tools.info_empresa import (
     info_empresa_impl,
 )
+from app.modules.chat.infrastructure.llm.mcp.tools.knowledge import (
+    build_consultar_conocimiento_impl,
+)
+from app.modules.knowledge.infrastructure.catalog_provider import get_catalog
 
 MCP_SERVER_NAME = "savi"
-MCP_SERVER_VERSION = "0.3.0"
+MCP_SERVER_VERSION = "0.4.0"
 
 
 _CONSULTAR_LIBRE_DESCRIPTION = (
@@ -44,7 +50,7 @@ _CONSULTAR_LIBRE_DESCRIPTION = (
     "- Subqueries: máximo 2 niveles de anidamiento.\n\n"
     "Estilo recomendado: usá nombres entre comillas dobles para schemas, "
     "tablas y columnas si tienen mayúsculas o caracteres especiales "
-    "(ej. \"Empresa\".\"CentroCosto\", \"f.idFactura\"). Postgres distingue "
+    '(ej. "Empresa"."CentroCosto", "f.idFactura"). Postgres distingue '
     "mayúsculas en identifiers quoted.\n\n"
     "Pasá el `pregunta_usuario` original como argumento para auditoría."
 )
@@ -90,7 +96,73 @@ def _build_consultar_libre_tool(conversation_id: UUID | None):
     return _impl
 
 
-def build_savi_mcp_server(conversation_id: UUID | None = None):
+_CONSULTAR_CONOCIMIENTO_DESCRIPTION = (
+    "Tool ÚNICA para consultar el catálogo de conocimiento del ERP "
+    "(módulos, formularios, procesos, workflows, FAQs, glosario). "
+    "Llamala SIEMPRE que el usuario pregunte CÓMO hacer algo, DÓNDE "
+    "está una funcionalidad, QUÉ pasos involucra un proceso, o por "
+    "siglas del dominio.\n\n"
+    "Argumentos:\n"
+    "- `tipo`: discriminador, uno de:\n"
+    "  * 'intencion' (USO POR DEFECTO): busca conceptos del ERP por la "
+    "intención natural del usuario. Pasá la consulta tal como la formuló.\n"
+    "  * 'modulo': descripción de un módulo. `consulta` = código "
+    "(CONTABILIDAD, NÓMINA, INVENTARIO, etc.).\n"
+    "  * 'workflow': detalle de un proceso end-to-end. `consulta` = id "
+    "del workflow (p.ej. 'wf_ciclo_venta').\n"
+    "  * 'faq': pregunta frecuente pre-mapeada. `consulta` = pregunta.\n"
+    "  * 'glosario': sigla o término. `consulta` = el término "
+    "(DIAN, PILA, NIT, PUC).\n"
+    "  * 'modulos_disponibles': lista de módulos del usuario. "
+    "`consulta` = '' (vacío).\n"
+    "  * 'formulario': lookup directo por nombre interno frmXxx. "
+    "`consulta` = nombre del formulario.\n\n"
+    "El response trae `matches` (para intencion), `module`, `workflow`, "
+    "`faqs`, `entry` o `modules` según el tipo. **Si la respuesta trae "
+    "datos, ESOS DATOS SON REALES — usalos para componer tu respuesta. "
+    "NUNCA digas que la herramienta no respondió si trae contenido.**"
+)
+
+
+def _build_knowledge_tool(allowed_modules: frozenset[ModuleCode] | None):
+    """Construye la tool ÚNICA del knowledge con el catálogo singleton y
+    el set de módulos del usuario actual baked-in por clausura.
+
+    Si `allowed_modules` es None, el agente accede a TODO (caso admin
+    bypass). Si es un set, la tool filtra al devolver al LLM.
+
+    Mantenemos UNA SOLA tool porque el Claude Agent SDK pasa a modo
+    'deferred tools' cuando hay muchas — eso fuerza un ciclo extra de
+    discovery y confunde al modelo (síntoma típico: el LLM alucina que
+    'el catálogo no responde' aunque la tool sí devolvió matches).
+    """
+    cat = get_catalog()
+
+    @tool(
+        "consultar_conocimiento",
+        _CONSULTAR_CONOCIMIENTO_DESCRIPTION,
+        {"tipo": str, "consulta": str},
+    )
+    async def _consultar(args: dict[str, Any]) -> dict[str, Any]:
+        impl = build_consultar_conocimiento_impl(cat, allowed_modules)
+        return await impl(args)
+
+    return [_consultar]
+
+
+def build_savi_mcp_server(
+    conversation_id: UUID | None = None,
+    allowed_modules: frozenset[ModuleCode] | None = None,
+):
+    """Construye el MCP server para un turno.
+
+    `allowed_modules` viene del usuario autenticado (vía ChatTurnUseCase).
+    None significa "admin / sin filtro". La tool del knowledge filtra
+    contra este set antes de devolver al LLM.
+
+    Total de tools: 4 (info_empresa, consultar_datos, consultar_libre,
+    consultar_conocimiento). Mantenemos el número BAJO para evitar
+    que el SDK pase a modo 'deferred tools' que confunde al LLM."""
     return create_sdk_mcp_server(
         name=MCP_SERVER_NAME,
         version=MCP_SERVER_VERSION,
@@ -98,6 +170,7 @@ def build_savi_mcp_server(conversation_id: UUID | None = None):
             _build_info_empresa_tool(),
             _build_consultar_datos_tool(),
             _build_consultar_libre_tool(conversation_id),
+            *_build_knowledge_tool(allowed_modules),
         ],
     )
 
@@ -106,4 +179,5 @@ ALLOWED_TOOLS: list[str] = [
     f"mcp__{MCP_SERVER_NAME}__info_empresa",
     f"mcp__{MCP_SERVER_NAME}__consultar_datos",
     f"mcp__{MCP_SERVER_NAME}__consultar_libre",
+    f"mcp__{MCP_SERVER_NAME}__consultar_conocimiento",
 ]
