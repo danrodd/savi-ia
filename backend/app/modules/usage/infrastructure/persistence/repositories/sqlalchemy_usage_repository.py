@@ -11,10 +11,13 @@ tienen costo — incluidos los de conversaciones borradas y los mensajes
 gasto real esa es la cifra correcta.
 """
 
+import math
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo
 
-from sqlalchemy import Integer, RowMapping, and_, cast, func, select
+from sqlalchemy import Integer, RowMapping, Select, and_, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -65,6 +68,39 @@ def _count() -> ColumnElement[Any]:
     return func.count(MessageModel.id)
 
 
+def _as_date(value: Any) -> date:
+    """Normaliza el bucket de día a `date`.
+
+    Postgres devuelve un `date`; SQLite devuelve el texto `YYYY-MM-DD`.
+    `DailyUsage.day` está tipado `date` y es un dataclass frozen (no
+    coerciona), así que sin esto la API serviría un tipo distinto según
+    el motor.
+    """
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    if isinstance(value, datetime):
+        return value.date()
+    return date.fromisoformat(str(value)[:10])
+
+
+def _percentile_cont(sorted_values: list[float], quantile: float) -> float:
+    """Equivalente en Python de `percentile_cont` de Postgres.
+
+    SQLite no tiene agregados ordenados. Misma interpolación lineal que
+    Postgres para que las cifras del dashboard no cambien según el motor.
+    """
+    if not sorted_values:
+        return 0.0
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    position = quantile * (len(sorted_values) - 1)
+    low, high = math.floor(position), math.ceil(position)
+    if low == high:
+        return sorted_values[low]
+    weight = position - low
+    return sorted_values[low] + (sorted_values[high] - sorted_values[low]) * weight
+
+
 # Orden fijo de columnas agregadas — `_row_to_totals` lee por nombre de
 # label, así que el orden solo importa para legibilidad.
 def _totals_columns() -> tuple[ColumnElement[Any], ...]:
@@ -94,9 +130,28 @@ class SqlAlchemyUsageRepository(UsageRepository):
         self._session = session
         self._tz = reporting_timezone
 
+    @property
+    def _is_sqlite(self) -> bool:
+        """SQLite es el motor de la instalación de escritorio.
+
+        Le faltan `timezone()` y los agregados ordenados
+        (`percentile_cont`), así que esas dos operaciones se resuelven por
+        otro camino.
+        """
+        return self._session.get_bind().dialect.name == "sqlite"
+
     def _day_bucket(self) -> ColumnElement[Any]:
         """Fecha local (en la zona de reporte) del turno, para agrupar."""
-        return func.date(func.timezone(self._tz, MessageModel.created_at))
+        if not self._is_sqlite:
+            return func.date(func.timezone(self._tz, MessageModel.created_at))
+        # ponytail: SQLite no conoce la base de datos de zonas horarias, así
+        # que desplazamos por el offset vigente hoy. Exacto para Colombia
+        # (UTC-5 fijo, sin horario de verano). Si algún día se reporta en
+        # una zona con DST, los turnos del otro semestre caen una hora
+        # corridos: ahí toca bucketear en Python o subir a Postgres.
+        offset = ZoneInfo(self._tz).utcoffset(datetime.now(UTC))
+        minutes = int(offset.total_seconds() // 60) if offset else 0
+        return func.date(MessageModel.created_at, f"{minutes} minutes")
 
     def _scoped(
         self, period: UsagePeriod, *, user_id: int | None
@@ -137,7 +192,8 @@ class SqlAlchemyUsageRepository(UsageRepository):
         )
         rows = (await self._session.execute(stmt)).mappings().all()
         return [
-            DailyUsage(day=row["day"], totals=_row_to_totals(row)) for row in rows
+            DailyUsage(day=_as_date(row["day"]), totals=_row_to_totals(row))
+            for row in rows
         ]
 
     async def totals_for_user(
@@ -174,9 +230,9 @@ class SqlAlchemyUsageRepository(UsageRepository):
             for row in rows
         ]
 
-    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats:
-        # Paso 1: costo/tokens/turnos por conversación (subquery).
-        per_conv = (
+    def _per_conversation_aggregate(self, period: UsagePeriod) -> Select[Any]:
+        """Costo/tokens/turnos por conversación. Portable a los dos motores."""
+        return (
             select(
                 func.coalesce(func.sum(MessageModel.cost_usd), Decimal("0")).label("cost"),
                 _total_tokens_sum().label("tokens"),
@@ -186,8 +242,47 @@ class SqlAlchemyUsageRepository(UsageRepository):
             .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
             .where(self._scoped(period, user_id=None))
             .group_by(ConversationModel.id)
-            .subquery()
         )
+
+    async def _conversation_stats_in_python(self, base: Select[Any]) -> ConversationStats:
+        """Percentiles fuera de la BD, para SQLite.
+
+        Trae una fila por conversación del período. En una instalación de
+        escritorio son decenas o cientos de filas: traerlas es más barato
+        que sostener dos dialectos de SQL.
+        """
+        rows = (await self._session.execute(base)).mappings().all()
+        if not rows:
+            return ConversationStats(
+                count=0,
+                avg_cost_usd=0.0,
+                p50_cost_usd=0.0,
+                p90_cost_usd=0.0,
+                p95_cost_usd=0.0,
+                max_cost_usd=0.0,
+                avg_tokens=0.0,
+                avg_turns=0.0,
+            )
+        costs = sorted(float(row["cost"]) for row in rows)
+        tokens = [float(row["tokens"]) for row in rows]
+        turns = [float(row["turns"]) for row in rows]
+        return ConversationStats(
+            count=len(rows),
+            avg_cost_usd=sum(costs) / len(costs),
+            p50_cost_usd=_percentile_cont(costs, 0.5),
+            p90_cost_usd=_percentile_cont(costs, 0.9),
+            p95_cost_usd=_percentile_cont(costs, 0.95),
+            max_cost_usd=costs[-1],
+            avg_tokens=sum(tokens) / len(tokens),
+            avg_turns=sum(turns) / len(turns),
+        )
+
+    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats:
+        base = self._per_conversation_aggregate(period)
+        if self._is_sqlite:
+            return await self._conversation_stats_in_python(base)
+
+        per_conv = base.subquery()
         cost = per_conv.c.cost
         # Paso 2: percentiles + promedios sobre el costo por conversación.
         # percentile_cont los calcula Postgres nativo (interpolación lineal).

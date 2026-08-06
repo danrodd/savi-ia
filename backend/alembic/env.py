@@ -17,7 +17,18 @@ from app.modules.free_query.infrastructure.models import AuditQueryModel  # noqa
 
 config = context.config
 
-if config.config_file_name is not None:
+# `configure_logger` es la convención de Alembic para uso embebido, y acá
+# no es cosmética: `fileConfig()` REEMPLAZA los handlers del root logger
+# por los de alembic.ini (un StreamHandler a stderr, level WARN) y
+# desactiva los loggers ya creados.
+#
+# Cuando alembic corre solo, eso es lo correcto: es dueño del proceso.
+# Pero el launcher de escritorio llama a `ensure_schema()` al arrancar, y
+# ahí el efecto es que el archivo de log del cliente queda mudo desde la
+# migración en adelante — justo antes de que la aplicación empiece a
+# atender peticiones, así que ningún error 500 se llegaba a registrar y
+# soporte se quedaba sin nada que leer.
+if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name)
 
 settings = get_settings()
@@ -39,7 +50,13 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        # SQLite no soporta la mayoría de los `ALTER TABLE`. El modo batch
+        # los emula recreando la tabla; en Postgres no cambia nada.
+        render_as_batch=connection.dialect.name == "sqlite",
+    )
     with context.begin_transaction():
         context.run_migrations()
 
