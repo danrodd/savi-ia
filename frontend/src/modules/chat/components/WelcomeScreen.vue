@@ -24,7 +24,7 @@ const { greeting, subtitle, suggestions, reshuffle } = useWelcome()
 <template>
   <div class="welcome">
     <div class="welcome__inner">
-      <BrandMark :size="64" label="S" class="welcome__mark" />
+      <BrandMark :size="64" class="welcome__mark" />
       <p class="welcome__eyebrow">Asistente del ERP</p>
       <h1 class="welcome__title">{{ greeting }}</h1>
       <p class="welcome__subtitle">{{ subtitle }}</p>

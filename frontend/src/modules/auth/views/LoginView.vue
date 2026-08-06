@@ -52,7 +52,13 @@ async function onSubmit(): Promise<void> {
   <div class="login">
     <div class="login__card">
       <div class="login__brand">
-        <h1 class="login__title">SAVI</h1>
+        <img
+          class="login__logo"
+          src="/savi-logo.png"
+          alt="SAVI — Asistente Virtual Inteligente"
+          width="200"
+          height="159"
+        >
         <p class="login__subtitle">
           Asistente del ERP de SEO Group
         </p>
@@ -115,13 +121,11 @@ async function onSubmit(): Promise<void> {
   margin-bottom: var(--space-7);
 }
 
-.login__title {
-  font-family: var(--font-display, var(--font-sans));
-  font-size: 32px;
-  font-weight: var(--fw-bold);
-  color: var(--brand);
-  letter-spacing: 0.05em;
-  margin: 0 0 var(--space-2) 0;
+.login__logo {
+  width: 200px;
+  height: auto;
+  border-radius: var(--r-md);
+  margin: 0 0 var(--space-3) 0;
 }
 
 .login__subtitle {

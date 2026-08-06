@@ -78,7 +78,7 @@ function goToUsage(): void {
     :aria-hidden="mobile && !open"
   >
     <header class="sidebar__brand">
-      <BrandMark :size="28" label="S" />
+      <BrandMark :size="28" />
       <div class="sidebar__brand-text">
         <p class="sidebar__brand-name">SAVI</p>
         <p class="sidebar__brand-sub">SEO ERP</p>
