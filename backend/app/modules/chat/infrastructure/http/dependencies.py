@@ -12,12 +12,11 @@ from app.modules.chat.domain.interfaces import (
 )
 from app.modules.chat.infrastructure.llm.runner import ClaudeAgentRunner
 from app.modules.chat.infrastructure.persistence import (
+    ShortLivedConversationRepository,
     SqlAlchemyAssistantMessageWriter,
     SqlAlchemyConversationTitleUpdater,
 )
-from app.modules.conversations.infrastructure.http.dependencies import (
-    ConversationRepositoryDep,
-)
+from app.modules.conversations.domain.interfaces import ConversationRepository
 
 
 def get_settings_dep() -> Settings:
@@ -38,9 +37,7 @@ def get_assistant_message_writer() -> AssistantMessageWriter:
     return SqlAlchemyAssistantMessageWriter(get_agent_sessionmaker())
 
 
-AssistantMessageWriterDep = Annotated[
-    AssistantMessageWriter, Depends(get_assistant_message_writer)
-]
+AssistantMessageWriterDep = Annotated[AssistantMessageWriter, Depends(get_assistant_message_writer)]
 
 
 def get_conversation_title_updater(
@@ -57,8 +54,26 @@ ConversationTitleUpdaterDep = Annotated[
 ]
 
 
+def get_turn_conversation_repository() -> ConversationRepository:
+    """Repositorio de transacciones cortas para el turno.
+
+    NO se usa `ConversationRepositoryDep`, que va sobre la sesión del
+    request: FastAPI cierra esa sesión recién cuando termina la respuesta,
+    y en un `StreamingResponse` eso es después de todo el turno. El
+    INSERT del mensaje del usuario quedaba sin commitear todo ese rato y,
+    sobre SQLite —que admite un solo escritor— retenía el lock mientras
+    el auto-título y la auditoría se colgaban esperándolo.
+    """
+    return ShortLivedConversationRepository(get_agent_sessionmaker())
+
+
+TurnConversationRepositoryDep = Annotated[
+    ConversationRepository, Depends(get_turn_conversation_repository)
+]
+
+
 def get_chat_turn_use_case(
-    repository: ConversationRepositoryDep,
+    repository: TurnConversationRepositoryDep,
     runner: LLMRunnerDep,
     assistant_writer: AssistantMessageWriterDep,
     title_updater: ConversationTitleUpdaterDep,
