@@ -42,6 +42,8 @@ def _clean(raw: str) -> str:
 
 
 def _apply_sdk_env(settings: Settings) -> None:
+    if settings.claude_code_oauth_token:
+        os.environ.setdefault("CLAUDE_CODE_OAUTH_TOKEN", settings.claude_code_oauth_token)
     if settings.anthropic_api_key:
         os.environ.setdefault("ANTHROPIC_API_KEY", settings.anthropic_api_key)
     if settings.claude_code_git_bash_path:
