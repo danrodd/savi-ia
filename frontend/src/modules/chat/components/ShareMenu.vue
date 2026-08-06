@@ -17,12 +17,18 @@
  *   Alternativa descartada: dos componentes separados — duplicación
  *   innecesaria y inconsistencia de UX entre los dos contextos.
  *
- * Por qué pasar `contentRef` desde el padre en vez de queryselectorear:
+ * Por qué pasar `contentEl` desde el padre en vez de queryselectorear:
  *   En Vue tener un templateRef explícito es más robusto que adivinar
  *   selectores. Si el DOM cambia, el ref sigue válido sin tocar este
  *   componente.
+ *
+ * Llega como el nodo, no como el `Ref`: Vue desenvuelve los refs al
+ *   bindearlos en el template, así que el padre no tiene forma de pasar el
+ *   `Ref` en sí. Tipar la prop como `Ref` compilaba en el hijo pero dejaba
+ *   `.value` en `undefined` en runtime — exportar a HTML y a PDF fallaban
+ *   siempre con "No pude leer el contenido".
  */
-import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 import { toast } from '@/lib/toast'
 import {
@@ -39,8 +45,8 @@ const props = withDefaults(
     text: string
     /** ID de la conversación. Si es null, "copiar enlace" queda deshabilitado. */
     conversationId: string | null
-    /** Ref al nodo del DOM con el contenido renderizado. Usado para HTML y PDF. */
-    contentRef: Ref<HTMLElement | null>
+    /** Nodo del DOM con el contenido renderizado. Usado para HTML y PDF. */
+    contentEl: HTMLElement | null
     /** Modo del menú: cambia textos y comportamiento del Web Share. */
     kind?: 'message' | 'conversation'
     /** Título corto para el archivo y el Web Share. Default según `kind`. */
@@ -118,7 +124,7 @@ async function handleCopyLink(): Promise<void> {
 
 function handleDownloadHtml(): void {
   close()
-  const node = props.contentRef.value
+  const node = props.contentEl
   if (!node) {
     toast.error('No pude leer el contenido')
     return
@@ -129,7 +135,7 @@ function handleDownloadHtml(): void {
 
 function handlePrintPdf(): void {
   close()
-  const node = props.contentRef.value
+  const node = props.contentEl
   if (!node) {
     toast.error('No pude leer el contenido')
     return

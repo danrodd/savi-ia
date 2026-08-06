@@ -206,7 +206,7 @@ const showConversationShare = computed<boolean>(
         :title="activeConversation?.title ?? 'SAVI'"
         :share-text="showConversationShare ? conversationMarkdown : undefined"
         :share-conversation-id="activeConversationId"
-        :share-content-ref="showConversationShare ? conversationContentRef : undefined"
+        :share-content-el="showConversationShare ? conversationContentRef : undefined"
         @menu-open="sidebarOpen = true"
         @new-chat="handleNewChat"
       />
@@ -245,7 +245,7 @@ const showConversationShare = computed<boolean>(
           placement="bottom-end"
           :text="conversationMarkdown"
           :conversation-id="activeConversationId"
-          :content-ref="conversationContentRef"
+          :content-el="conversationContentRef"
           :title="activeConversation?.title ?? 'Conversación con SAVI'"
         />
       </div>
@@ -282,7 +282,7 @@ const showConversationShare = computed<boolean>(
             placement="bottom-end"
             :text="conversationMarkdown"
             :conversation-id="activeConversationId"
-            :content-ref="conversationContentRef"
+            :content-el="conversationContentRef"
             :title="activeConversation?.title ?? 'Conversación con SAVI'"
           />
         </div>

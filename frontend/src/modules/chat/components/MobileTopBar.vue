@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Ref } from 'vue'
-
 import Tooltip from '@/components/ui/Tooltip.vue'
 import BrandMark from './BrandMark.vue'
 import ShareMenu from './ShareMenu.vue'
@@ -11,7 +9,7 @@ defineProps<{
    *  El padre maneja la lógica de qué pasar (texto, ref, id). */
   shareText?: string
   shareConversationId?: string | null
-  shareContentRef?: Ref<HTMLElement | null>
+  shareContentEl?: HTMLElement | null
 }>()
 const emit = defineEmits<{ 'menu-open': []; 'new-chat': [] }>()
 </script>
@@ -27,7 +25,7 @@ const emit = defineEmits<{ 'menu-open': []; 'new-chat': [] }>()
     </Tooltip>
 
     <div class="topbar__brand">
-      <BrandMark :size="22" label="S" />
+      <BrandMark :size="22" />
       <span class="topbar__title">{{ title ?? 'SAVI' }}</span>
     </div>
 
@@ -36,12 +34,12 @@ const emit = defineEmits<{ 'menu-open': []; 'new-chat': [] }>()
            kind='conversation'. Solo se muestra si el padre nos pasó los
            datos necesarios (es decir, hay conversación activa). -->
       <ShareMenu
-        v-if="shareText && shareContentRef"
+        v-if="shareText && shareContentEl"
         kind="conversation"
         placement="bottom-end"
         :text="shareText"
         :conversation-id="shareConversationId ?? null"
-        :content-ref="shareContentRef"
+        :content-el="shareContentEl"
         :title="title"
       >
         <template #trigger>

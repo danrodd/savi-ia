@@ -79,7 +79,7 @@ function next(): void {
 
 <template>
   <div class="assistant-message" :class="{ 'assistant-message--historical': isViewingHistorical }">
-    <BrandMark :size="32" label="S" class="assistant-message__avatar" />
+    <BrandMark :size="32" class="assistant-message__avatar" />
 
     <div class="assistant-message__body">
       <div class="assistant-message__meta">
@@ -128,7 +128,7 @@ function next(): void {
           placement="top-end"
           :text="displayedText"
           :conversation-id="conversationId"
-          :content-ref="contentEl"
+          :content-el="contentEl"
         />
         <button
           v-if="canRegenerate"
