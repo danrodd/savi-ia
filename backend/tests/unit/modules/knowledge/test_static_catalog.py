@@ -159,8 +159,11 @@ def test_catalogo_real_generado_por_bootstrap_carga() -> None:
     Si falla, indica que el v2 trajo algo que el schema actual no soporta
     o que un archivo se corrompió. Vale como gate de regresión.
     """
-    if not _REAL_DATA_ROOT.exists():
-        pytest.skip("catálogo real no generado todavía (correr bootstrap)")
+    # Se comprueba el contenido y no la existencia del directorio: el
+    # repositorio versiona el esqueleto de `data/` (README y carpetas),
+    # así que "existe" dejó de implicar "tiene catálogo".
+    if not any(_REAL_DATA_ROOT.rglob("*.json")):
+        pytest.skip("catálogo real no generado todavía (correr bootstrap_knowledge)")
     cat = load_static_catalog(_REAL_DATA_ROOT)
 
     # Sanity checks contra el catálogo real.

@@ -102,9 +102,21 @@ pnpm-debug.log*
 # Datos locales / artefactos / backups
 # ─────────────────────────────────────────────────────────────────────
 data/
+# Excepción: el catálogo de conocimiento vive en un directorio llamado
+# `data/`, así que la regla de arriba lo ignoraba entero — por eso nunca
+# llegó al repositorio. Sí tiene que versionarse: el diseño del módulo
+# asume que "los archivos viajan en el repo y los cambios se aplican por
+# deploy" (knowledge/infrastructure/catalog_provider.py).
+!backend/app/modules/knowledge/data/
+!backend/app/modules/knowledge/data/**
+
 *.sqlite
 *.sqlite3
+*.db
 *.db-journal
+# WAL de SQLite (la BD del agente en instalación de escritorio).
+*.db-wal
+*.db-shm
 *.bak
 *.tmp
 *.old
@@ -138,3 +150,14 @@ backend/scripts/db_analysis/
 # PM2 runtime (logs, pids) — pero NO el ecosystem.config.js que sí va al repo.
 .pm2/
 *.pid
+
+# ─────────────────────────────────────────────────────────────────────
+# Empaquetado del instalador de escritorio
+# ─────────────────────────────────────────────────────────────────────
+# Staging del build de Vue que consume el backend (lo genera build.ps1).
+backend/frontend/
+# Salida de PyInstaller y del compilador de Inno Setup.
+installer/build/
+installer/output/
+# Prerrequisitos descargados en tiempo de build (Node, git-bash).
+installer/vendor/
