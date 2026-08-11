@@ -463,26 +463,41 @@ def _cli_runs(claude: str) -> bool:
     return ok
 
 
-def _cli_reports_logged_in(claude: str) -> bool:
-    """`True` si el propio CLI dice que hay sesión.
+def _auth_probe(claude: str) -> tuple[bool, str]:
+    """Le hace una pregunta trivial al modelo y devuelve si contestó.
 
-    Se le pregunta a `claude auth status` en vez de mirar el archivo de
-    credenciales: dónde las guarda es asunto suyo y puede cambiar entre
-    versiones. El archivo queda como respaldo por si el subcomando no
-    existe en la versión instalada.
+    Es el único chequeo honesto de la autenticación. `claude auth status`
+    devuelve `loggedIn: true` y código 0 **con el token de acceso
+    vencido**: informa qué credencial hay guardada, no si sirve. El
+    síntoma era un diagnóstico en verde junto a un chat que fallaba con
+    "401 OAuth access token has expired".
+
+    Cuesta una consulta mínima de la cuota del cliente. Es a pedido, y es
+    la diferencia entre un reporte que da confianza y uno que miente.
     """
     import subprocess
 
     try:
         completed = subprocess.run(  # noqa: S603 - ruta resuelta con shutil.which
-            [claude, "auth", "status"],
+            [claude, "-p", "Responde unicamente: ok", "--max-turns", "1"],
             capture_output=True,
-            timeout=30,
+            text=True,
+            timeout=120,
             check=False,
         )
-    except (OSError, subprocess.SubprocessError):
-        return (Path.home() / ".claude" / ".credentials.json").is_file()
-    return completed.returncode == 0
+    except subprocess.TimeoutExpired:
+        return False, "el CLI no respondió en 2 minutos"
+    except (OSError, subprocess.SubprocessError) as error:
+        return False, f"{type(error).__name__}: {error}"
+
+    if completed.returncode == 0:
+        return True, "el modelo respondió correctamente a una consulta de prueba"
+
+    message = (completed.stderr or completed.stdout).strip()
+    # Sólo la primera línea útil: el CLI a veces escupe un stack largo y
+    # el reporte lo lee una persona, no un parser.
+    first = next((line for line in message.splitlines() if line.strip()), "")
+    return False, first or f"terminó con código {completed.returncode} y sin mensaje"
 
 
 def _login() -> int:
@@ -551,8 +566,10 @@ def _login() -> int:
     except (OSError, subprocess.SubprocessError) as error:
         print(f"[AVISO] No se pudo completar el inicio de sesión: {error}")
 
-    if _cli_reports_logged_in(claude):
-        print("\n[OK] Sesión iniciada. Ya podés usar SAVI.")
+    print("\nVerificando con una consulta de prueba (puede tardar unos segundos)...")
+    logged_in, probe_detail = _auth_probe(claude)
+    if logged_in:
+        print("\n[OK] Sesión iniciada y verificada. Ya podés usar SAVI.")
         print(
             "\nNota: la sesión queda guardada para esta cuenta de Windows. Si SAVI\n"
             "se va a usar desde otra cuenta o como servicio, elegí 'n' abajo y\n"
@@ -560,6 +577,11 @@ def _login() -> int:
         )
         if input("\n¿Terminaste? [S/n]: ").strip().lower() not in ("n", "no"):
             return 0
+    else:
+        # Se distingue "no hay sesión" de "hay una sesión que no sirve".
+        # Con el token vencido, `claude auth status` dice que todo bien y
+        # el usuario no entiende por qué el chat falla.
+        print(f"\n[FALLA] La sesión no quedó usable: {probe_detail}")
 
     print("\n" + "-" * 62)
     print("Vamos por el token de larga duración.")
@@ -735,14 +757,32 @@ def _collect_report() -> Report:
             )
         )
 
+    # La autenticación se PRUEBA con una consulta real, no se deduce de que
+    # haya una credencial guardada: `claude auth status` devuelve
+    # loggedIn:true y código 0 con el token de acceso vencido, así que el
+    # reporte salía en verde mientras el chat fallaba con 401.
     auth_status = _claude_auth_status(settings)
+    if claude_path is None or not auth_status:
+        report.results.append(
+            CheckResult(
+                label="Autenticación de Claude",
+                ok=False,
+                detail=auth_status or "Este equipo no tiene ninguna forma de autenticarse.",
+                remedy="Abrí el acceso directo 'Iniciar sesión en Claude' e iniciá sesión "
+                "con la cuenta de Claude (Pro o Max) del cliente.",
+            )
+        )
+        return report
+
+    works, detail = _auth_probe(claude_path)
     report.results.append(
         CheckResult(
             label="Autenticación de Claude",
-            ok=bool(auth_status),
-            detail=auth_status or "Este equipo no tiene ninguna forma de autenticarse.",
-            remedy="Abrí el acceso directo 'Iniciar sesión en Claude' e iniciá sesión "
-            "con la cuenta de Claude (Pro o Max) del cliente.",
+            ok=works,
+            detail=f"{auth_status}. {detail}",
+            remedy="La credencial existe pero no sirve — lo más común es que el "
+            "token haya vencido. Abrí el acceso directo 'Iniciar sesión en "
+            "Claude' para renovarla.",
         )
     )
     return report
