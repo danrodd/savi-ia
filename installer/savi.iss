@@ -130,6 +130,12 @@ var
   NeedsGit:  Boolean;
   NeedsCli:  Boolean;
   AlreadyLoggedIn: Boolean;
+  // Lo pone VerifyInstallation cuando el diagnostico devuelve el codigo
+  // de problema de autenticacion. Sin esto la casilla de login no
+  // aparecia justo cuando hacia falta: su condicion exigia instalacion
+  // nueva, y daba por buena la credencial con que el archivo existiera
+  // — que es cierto tambien con el token vencido.
+  AuthNeedsAttention: Boolean;
 
 { ── Detección de prerrequisitos ─────────────────────────────────────── }
 
@@ -463,6 +469,13 @@ end;
   hacer. Ofrecerlo igual invita a re-loguear sobre algo que funciona. }
 function NeedsClaudeLogin(): Boolean;
 begin
+  // El diagnostico manda: si probo la credencial y no sirve, se ofrece
+  // renovarla sea instalacion nueva o actualizacion.
+  if AuthNeedsAttention then
+  begin
+    Result := True;
+    Exit;
+  end;
   Result := MustAskConfig() and (not AlreadyLoggedIn) and
             (Trim(ClaudePage.Values[0]) = '') and (Trim(ClaudePage.Values[1]) = '');
 end;
@@ -920,6 +933,24 @@ begin
     MsgBox('No se pudo ejecutar la verificación de la configuración.' + #13#10 +
            'Podés correrla después desde el acceso directo "Diagnosticar SAVI".',
            mbError, MB_OK);
+    Exit;
+  end;
+
+  { Codigo 2 = problema de credencial. Se separa del resto porque el
+    remedio es OTRO: reconfigurar el .env no renueva un token vencido, y
+    mandar a reconfigurar cuando lo que hay que hacer es iniciar sesion
+    hace perder el tiempo y desconfiar del reporte. }
+  if ResultCode = 2 then
+  begin
+    AuthNeedsAttention := True;
+    MsgBox('Falta renovar la credencial de Claude.' + #13#10#13#10 +
+           'Todo lo demás quedó bien: las dos bases de datos responden. Lo único ' +
+           'pendiente es iniciar sesión con la cuenta de Claude, o renovarla si ' +
+           'venció.' + #13#10#13#10 +
+           'Al terminar la instalación queda marcada la casilla para hacerlo. ' +
+           'También podés hacerlo cuando quieras desde el acceso directo ' +
+           '"Iniciar sesión en Claude".',
+           mbInformation, MB_OK);
     Exit;
   end;
 

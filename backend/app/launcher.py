@@ -39,6 +39,10 @@ _LOG_BACKUPS = 3
 _HEALTH_GRACE_S = 8.0
 # Puertos consecutivos a probar desde el configurado.
 _PORT_SCAN_RANGE = 20
+# Codigos de salida de --check-config. El instalador los distingue para
+# dar la instruccion correcta segun QUE fallo.
+_EXIT_CONFIG_PROBLEM = 1
+_EXIT_AUTH_PROBLEM = 2
 
 
 def app_dir() -> Path:
@@ -820,7 +824,24 @@ def _check_config() -> int:
         print(f"\n(No se pudo abrir el navegador; el reporte está en {destination})")
         input("\nEnter para cerrar...")
 
-    return 1 if report.failures else 0
+    # Códigos distintos para fallas distintas: el instalador los usa para
+    # dar la instrucción correcta. Un token vencido no se arregla
+    # reconfigurando el .env, y mandar a reconfigurar cuando lo que hay
+    # que hacer es iniciar sesión hace perder el tiempo y desconfiar del
+    # reporte.
+    auth_failed = any(
+        not r.ok for r in report.results if r.label in ("Autenticación de Claude", "CLI de Claude")
+    )
+    other_failed = any(
+        not r.ok
+        for r in report.results
+        if r.label not in ("Autenticación de Claude", "CLI de Claude")
+    )
+    if other_failed:
+        return _EXIT_CONFIG_PROBLEM
+    if auth_failed:
+        return _EXIT_AUTH_PROBLEM
+    return 0
 
 
 def main() -> None:

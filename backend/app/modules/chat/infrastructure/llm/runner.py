@@ -50,6 +50,40 @@ from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
 
 log = logging.getLogger(__name__)
 
+# Señales de que el problema es la credencial del CLI y no la pregunta.
+#
+# Sin "401" suelto a propósito: aparece en mensajes que no tienen nada que
+# ver ("el planner estima ~401.000 filas") y sugerir renovar la credencial
+# ahí manda a la persona a perder el tiempo en el lugar equivocado. Los
+# mensajes de credencial reales siempre traen alguna de estas palabras.
+_AUTH_ERROR_MARKERS = (
+    "oauth",
+    "authenticate",
+    "authentication",
+    "unauthorized",
+    "api key",
+    "api-key",
+)
+
+
+def _user_facing_error(message: str) -> str:
+    """Agrega el camino de salida cuando el error es de credencial.
+
+    El mensaje del SDK ("401 OAuth access token has expired") describe el
+    problema pero no qué hacer, y quien lo lee es alguien que sólo quería
+    preguntar por una factura. Sin esta línea el usuario queda sin salida
+    dentro del chat, aunque el remedio sea un clic en el menú Inicio.
+    """
+    lowered = message.lower()
+    if any(marker in lowered for marker in _AUTH_ERROR_MARKERS):
+        return (
+            f"{message}\n\nLa credencial de Claude venció o no es válida. "
+            "Para renovarla, abrí 'Iniciar sesión en Claude' desde el menú "
+            "Inicio y volvé a intentar."
+        )
+    return message
+
+
 _TRUNCATION_NOTICE = (
     "\n\n_(Respuesta truncada por límite de tamaño. Si necesitas más "
     "detalle, pídeme una sección específica.)_"
@@ -181,4 +215,4 @@ class ClaudeAgentRunner(LLMRunner):
                 log.info("agent_subprocess_cleanup_noise error=%s", e)
                 return
             log.exception("agent_turn_failed")
-            yield ErrorEvent(message=str(e))
+            yield ErrorEvent(message=_user_facing_error(str(e)))
