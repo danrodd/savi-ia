@@ -143,6 +143,36 @@ def _show_fatal_error(message: str) -> None:
     ctypes.windll.user32.MessageBoxW(0, full_message, "SAVI — Error de arranque", 0x10)  # type: ignore[attr-defined]
 
 
+def _node_directory() -> Path | None:
+    """Directorio donde vive `node.exe`, o `None` si no está instalado.
+
+    Mismo orden que usa el instalador: primero el registro (vista de 64
+    bits, que es donde escribe el MSI de Node), después las dos carpetas
+    de Program Files.
+    """
+    if sys.platform == "win32":
+        try:
+            import winreg
+
+            with winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"SOFTWARE\Node.js",
+                0,
+                winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
+            ) as key:
+                install_path = Path(str(winreg.QueryValueEx(key, "InstallPath")[0]))
+            if (install_path / "node.exe").is_file():
+                return install_path
+        except (ImportError, OSError):
+            pass
+
+    for base in ("PROGRAMFILES", "PROGRAMFILES(X86)"):
+        root = os.environ.get(base)
+        if root and (Path(root) / "nodejs" / "node.exe").is_file():
+            return Path(root) / "nodejs"
+    return None
+
+
 def _ensure_claude_cli_on_path() -> None:
     """Agrega al PATH los directorios donde npm deja el CLI de Claude.
 
@@ -157,6 +187,12 @@ def _ensure_claude_cli_on_path() -> None:
     candidates = [
         Path(program_data) / "npm" if program_data else None,
         Path(app_data) / "npm" if app_data else None,
+        # Node.js también, no solo npm: el CLI instalado con npm es un
+        # `claude.cmd` que invoca `node`. Si el directorio de Node no está
+        # en el PATH de ESTE proceso, el shim arranca y falla solo, con un
+        # mensaje del sistema operativo que no menciona a SAVI ni a Node
+        # y no deja rastro de qué faltaba.
+        _node_directory(),
     ]
     current = os.environ.get("PATH", "")
     known = {entry.lower() for entry in current.split(os.pathsep)}
@@ -394,6 +430,39 @@ def _claude_cli_path() -> str | None:
     return shutil.which("claude")
 
 
+def _cli_probe(claude: str) -> tuple[bool, str]:
+    """Corre `claude --version` y devuelve si anduvo y qué dijo.
+
+    Que el archivo exista no significa que se pueda ejecutar: el CLI
+    instalado con npm es un script que invoca `node`, y sin Node arranca y
+    falla solo. Estar instalado y estar usable son cosas distintas, y
+    hasta ahora sólo se chequeaba lo primero.
+    """
+    import subprocess
+
+    try:
+        completed = subprocess.run(  # noqa: S603 - ruta resuelta con shutil.which
+            [claude, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        return False, f"{type(error).__name__}: {error}"
+
+    output = (completed.stdout + completed.stderr).strip()
+    if completed.returncode == 0:
+        return True, output.splitlines()[0] if output else "sin versión reportada"
+    return False, output or f"terminó con código {completed.returncode} y sin mensaje"
+
+
+def _cli_runs(claude: str) -> bool:
+    ok, detail = _cli_probe(claude)
+    print(f"Prueba:        {'OK — ' if ok else 'FALLA — '}{detail}")
+    return ok
+
+
 def _cli_reports_logged_in(claude: str) -> bool:
     """`True` si el propio CLI dice que hay sesión.
 
@@ -444,10 +513,37 @@ def _login() -> int:
     print("=" * 62)
     print(" SAVI — Iniciar sesión en Claude")
     print("=" * 62)
+    # Qué se va a ejecutar y con qué. Sin esto, cuando el CLI falla por su
+    # cuenta el usuario ve un mensaje del sistema operativo sin contexto
+    # —"no se puede encontrar la ruta especificada"— y no hay forma de
+    # saber qué ruta ni qué faltaba.
+    print(f"\nCLI de Claude: {claude}")
+    node = _node_directory()
+    print(f"Node.js:       {node or 'NO ENCONTRADO'}")
+    if node is None:
+        print(
+            "\n[AVISO] No se encontró Node.js. El CLI instalado con npm es un\n"
+            "        script que lo necesita: sin Node, falla con un error del\n"
+            "        sistema que no menciona ni a SAVI ni a Node.\n"
+            "        Instalalo desde https://nodejs.org/ y volvé a intentar."
+        )
+    if not _cli_runs(claude):
+        print(
+            "\n[FALLA] El CLI de Claude está instalado pero no se puede ejecutar.\n"
+            "        El detalle está arriba. Suele ser Node.js faltante o una\n"
+            "        instalación del CLI a medio hacer; reinstalalo con:\n"
+            "        npm install -g @anthropic-ai/claude-code"
+        )
+        input("\nEnter para cerrar...")
+        return 1
+
     print(
         "\nSe va a abrir el navegador para que inicies sesión con tu cuenta\n"
         "de Claude (Pro o Max). Seguí los pasos que aparezcan ahí y volvé\n"
         "a esta ventana cuando termines.\n"
+        "\nOjo: la sesión de la aplicación Claude Desktop NO sirve acá. El\n"
+        "CLI guarda sus credenciales aparte y necesita su propio inicio de\n"
+        "sesión, aunque sea la misma cuenta.\n"
     )
 
     try:
@@ -606,6 +702,38 @@ def _collect_report() -> Report:
             "APP_PORT en el archivo .env.",
         )
     )
+
+    # Que el CLI se pueda EJECUTAR, no sólo que el archivo exista. El
+    # reporte decía "sesión local de Claude Code" y daba todo por bueno
+    # mientras el chat fallaba con "Command failed with exit code 1",
+    # porque el CLI arrancaba y moría sin poder encontrar Node.
+    claude_path = _claude_cli_path()
+    if claude_path is None:
+        report.results.append(
+            CheckResult(
+                label="CLI de Claude",
+                ok=False,
+                detail="No está instalado en este equipo.",
+                remedy="Instalalo con: npm install -g @anthropic-ai/claude-code",
+            )
+        )
+    else:
+        runs, detail = _cli_probe(claude_path)
+        node = _node_directory()
+        report.results.append(
+            CheckResult(
+                label="CLI de Claude",
+                ok=runs,
+                detail=f"{claude_path} — {detail}",
+                remedy=(
+                    "No se encontró Node.js, y el CLI instalado con npm lo "
+                    "necesita para arrancar. Instalalo desde https://nodejs.org/."
+                    if node is None
+                    else "El CLI está instalado pero no se puede ejecutar. "
+                    "Reinstalalo con: npm install -g @anthropic-ai/claude-code"
+                ),
+            )
+        )
 
     auth_status = _claude_auth_status(settings)
     report.results.append(
