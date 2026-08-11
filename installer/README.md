@@ -67,13 +67,37 @@ Opciones útiles al iterar:
 3. **Base de datos de SAVI** — dónde vive el historial de conversaciones:
    - *Archivo local* (por defecto): SQLite, sin nada que administrar.
    - *Servidor PostgreSQL*: para compartir el historial entre equipos.
-4. **Autenticación de Claude y puerto** — normalmente se dejan los dos
+4. **Autenticación de Claude y puerto** — el puerto viene precargado en
+   **31900** y casi nunca hay que cambiarlo (ver *Puerto local* abajo).
+   Normalmente se dejan los dos
    campos de credencial **vacíos** y la autenticación se resuelve al
    final, en el navegador. Ver [Autenticación contra Claude](#autenticación-contra-claude).
 
 Al terminar descarga e instala los prerrequisitos faltantes, genera el
 archivo `.env`, crea los accesos directos y ofrece iniciar sesión con la
 cuenta de Claude del cliente.
+
+## Puerto local
+
+El asistente precarga **31900** y deja el campo editable. No es 8000 a
+propósito: es de los puertos más disputados que existe, y una colisión
+hacía fallar el arranque en el equipo del cliente. 31900 está en el rango
+de puertos de usuario, lejos de los servicios comunes, y **por debajo de
+49152** — desde ahí arranca el rango dinámico de Windows y el sistema
+puede entregar esos puertos a conexiones de salida, lo que produciría
+fallos intermitentes y sin patrón.
+
+Si aun así el puerto está tomado, el launcher **prueba los 20
+siguientes** y usa el primero libre en vez de abortar. No hace falta que
+nadie sepa el número: el acceso directo lanza el launcher, que abre el
+navegador en la URL correcta.
+
+> Consecuencia a tener presente: el puerto efectivo puede no ser el
+> configurado. Un marcador del navegador guardado a mano puede quedar
+> apuntando al puerto viejo. El acceso directo siempre acierta.
+
+El acceso directo *Diagnosticar SAVI* informa qué puerto está libre, si
+SAVI ya está corriendo, y a cuál va a caer si el configurado está tomado.
 
 ## Actualizaciones
 

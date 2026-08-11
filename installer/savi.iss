@@ -17,6 +17,18 @@
 #define AppPublisher   "SEO Group"
 #define AppExe         "SAVI.exe"
 
+; Puerto local por defecto. NO 8000 a proposito: es de los puertos mas
+; disputados que existe (lo toman los tutoriales de Django y FastAPI,
+; `python -m http.server` y media docena de herramientas), y una colision
+; hacia fallar el arranque en el equipo del cliente.
+;
+; 31900 esta en el rango de puertos de usuario y bien lejos de los
+; servicios comunes. Por debajo de 49152 a proposito: desde ahi arranca
+; el rango dinamico de Windows, y el sistema puede entregar esos puertos
+; a conexiones de salida — un puerto fijo ahi falla de forma intermitente
+; y sin patron, que es el peor tipo de error para soportar por telefono.
+#define DefaultPort    "31900"
+
 ; Versiones fijadas de los prerrequisitos. Al actualizarlas hay que
 ; verificar que la URL siga viva: un 404 rompe la instalación en el
 ; equipo del cliente, no acá.
@@ -404,7 +416,7 @@ begin
       'el navegador para iniciar sesión con esa cuenta, y no hay nada que ' +
       'copiar. Completá un campo solo si te entregaron la credencial ya ' +
       'generada. El puerto es el que usa SAVI en este equipo; cambialo solo ' +
-      'si ya está ocupado.';
+      'si ya está ocupado — está elegido para no chocar con nada.';
 end;
 
 { `True` si en el directorio elegido ya hay una instalación configurada.
@@ -517,7 +529,7 @@ begin
   ClaudePage.Add('Token de Claude Code (recomendado, generado con: claude setup-token):', True);
   ClaudePage.Add('Clave de API de Anthropic (alternativa, console.anthropic.com):', True);
   ClaudePage.Add('Puerto local:', False);
-  ClaudePage.Values[2] := '8000';
+  ClaudePage.Values[2] := '{#DefaultPort}';
 
   DownloadPage := CreateDownloadPage(
     SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
