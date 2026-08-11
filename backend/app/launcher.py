@@ -17,6 +17,7 @@ import os
 import socket
 import sys
 import threading
+import time
 import urllib.error
 import urllib.request
 import webbrowser
@@ -33,6 +34,11 @@ if TYPE_CHECKING:
 _LOG_FILENAME = "savi.log"
 _LOG_MAX_BYTES = 5 * 1024 * 1024
 _LOG_BACKUPS = 3
+# Cuánto se le da a una instancia que está arrancando para contestar
+# /health antes de concluir que el puerto lo tiene otra aplicación.
+_HEALTH_GRACE_S = 8.0
+# Puertos consecutivos a probar desde el configurado.
+_PORT_SCAN_RANGE = 20
 
 
 def app_dir() -> Path:
@@ -238,12 +244,43 @@ def _savi_already_running(url: str) -> bool:
     Hacer doble clic dos veces en el acceso directo es lo más normal del
     mundo; sin este chequeo la segunda vez el usuario ve un stacktrace de
     "address already in use".
+
+    Se reintenta unos segundos en vez de preguntar una sola vez: uvicorn
+    reserva el puerto antes de terminar de levantar la aplicación (cargar
+    el catálogo, preparar la base), y en esa ventana `/health` todavía no
+    contesta. Con un solo intento corto, la segunda instancia concluía
+    que el puerto lo tenía un extraño y mostraba un error de puerto
+    ocupado sobre la instancia propia que estaba arrancando bien.
     """
-    try:
-        with urllib.request.urlopen(f"{url}/health", timeout=2) as response:
-            return b'"status"' in response.read(200)
-    except (urllib.error.URLError, OSError, TimeoutError):
-        return False
+    deadline = time.monotonic() + _HEALTH_GRACE_S
+    while True:
+        try:
+            with urllib.request.urlopen(f"{url}/health", timeout=2) as response:
+                return b'"status"' in response.read(200)
+        except (urllib.error.URLError, OSError, TimeoutError):
+            if time.monotonic() >= deadline:
+                return False
+            threading.Event().wait(0.5)
+
+
+def _resolve_port(host: str, preferred: int) -> int | None:
+    """Devuelve un puerto libre, o `None` si no hay ninguno en el rango.
+
+    Prefiere el configurado. Si lo tiene otra aplicación, sigue con los
+    siguientes en vez de abortar: el 8000 es de los puertos más
+    disputados que existe, y hasta ahora el único remedio era editar el
+    `.env` — un archivo en Program Files, que pide administrador y que el
+    usuario final no va a tocar. Falla la aplicación entera por algo que
+    se resuelve solo.
+
+    No importa que el número cambie: al acceso directo lo abre el
+    launcher, que arranca el navegador en la URL correcta. Nadie escribe
+    el puerto a mano.
+    """
+    for candidate in range(preferred, preferred + _PORT_SCAN_RANGE):
+        if _port_is_free(host, candidate):
+            return candidate
+    return None
 
 
 def _open_browser_when_ready(url: str) -> None:
@@ -541,6 +578,35 @@ def _collect_report() -> Report:
 
     report.results.extend(asyncio.run(probe()))
 
+    # El puerto se chequea acá porque su ausencia era engañosa: el reporte
+    # decía "Todo en orden" mientras el arranque fallaba con "puerto
+    # ocupado", y el técnico se quedaba sin saber a quién creerle.
+    browse_host = "127.0.0.1" if settings.app_host in ("0.0.0.0", "::") else settings.app_host
+    if _port_is_free(browse_host, settings.app_port):
+        port_detail = f"El puerto {settings.app_port} está libre."
+        port_ok = True
+    elif _savi_already_running(f"http://{browse_host}:{settings.app_port}"):
+        port_detail = f"SAVI ya está corriendo en el puerto {settings.app_port}."
+        port_ok = True
+    else:
+        fallback = _resolve_port(browse_host, settings.app_port + 1)
+        port_ok = fallback is not None
+        port_detail = (
+            f"El puerto {settings.app_port} lo tiene otra aplicación; SAVI va a usar el {fallback}."
+            if port_ok
+            else f"El puerto {settings.app_port} está ocupado y no hay ninguno "
+            f"libre en los {_PORT_SCAN_RANGE} siguientes."
+        )
+    report.results.append(
+        CheckResult(
+            label="Puerto local",
+            ok=port_ok,
+            detail=port_detail,
+            remedy="Cerrá la aplicación que está usando esos puertos, o cambiá "
+            "APP_PORT en el archivo .env.",
+        )
+    )
+
     auth_status = _claude_auth_status(settings)
     report.results.append(
         CheckResult(
@@ -639,22 +705,38 @@ def main() -> None:
     url = f"http://{browse_host}:{port}"
 
     if not _port_is_free(browse_host, port):
+        _splash("Verificando si SAVI ya está abierto...")
         if _savi_already_running(url):
             logger.info("SAVI ya estaba corriendo en %s; abriendo el navegador.", url)
             _splash(close=True)
             webbrowser.open(url)
             return
-        logger.error(
-            "El puerto %s está ocupado por otra aplicación. "
-            "Cambiá APP_PORT en el archivo .env de %s y volvé a intentar.",
+
+        # Lo tiene otra aplicación. Se busca otro puerto en vez de abortar:
+        # abortar deja al usuario con la instrucción de editar un archivo
+        # en Program Files, que necesita administrador y que no va a tocar.
+        fallback = _resolve_port(browse_host, port + 1)
+        if fallback is None:
+            logger.error(
+                "El puerto %s está ocupado y no hay ninguno libre en los %s siguientes.",
+                port,
+                _PORT_SCAN_RANGE,
+            )
+            _show_fatal_error(
+                f"El puerto {port} está ocupado por otra aplicación, y tampoco "
+                f"hay ninguno libre en los {_PORT_SCAN_RANGE} siguientes.\n\n"
+                "Cerrá la aplicación que los está usando, o cambiá APP_PORT en "
+                "el archivo .env."
+            )
+            raise SystemExit(1)
+
+        logger.warning(
+            "El puerto %s lo tiene otra aplicación; SAVI usa el %s en esta ejecución.",
             port,
-            app_dir(),
+            fallback,
         )
-        _show_fatal_error(
-            f"El puerto {port} está ocupado por otra aplicación.\n"
-            "Cambiá APP_PORT en el archivo .env y volvé a intentar."
-        )
-        raise SystemExit(1)
+        port = fallback
+        url = f"http://{browse_host}:{port}"
 
     _splash("Preparando la base de datos...")
     logger.info("Preparando la base de datos (%s).", settings.agent_db_engine)
