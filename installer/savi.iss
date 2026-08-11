@@ -940,6 +940,13 @@ begin
     remedio es OTRO: reconfigurar el .env no renueva un token vencido, y
     mandar a reconfigurar cuando lo que hay que hacer es iniciar sesion
     hace perder el tiempo y desconfiar del reporte. }
+  { Codigo 3 = fallan las dos cosas. Se prende la bandera igual que en el
+    caso 2, y despues cae al mensaje de configuracion de abajo: sin esto
+    el tecnico corregia el .env, reinstalaba, y recien en la segunda
+    pasada descubria que tambien faltaba la credencial. }
+  if ResultCode = 3 then
+    AuthNeedsAttention := True;
+
   if ResultCode = 2 then
   begin
     AuthNeedsAttention := True;

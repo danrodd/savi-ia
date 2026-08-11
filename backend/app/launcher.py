@@ -43,6 +43,7 @@ _PORT_SCAN_RANGE = 20
 # dar la instruccion correcta segun QUE fallo.
 _EXIT_CONFIG_PROBLEM = 1
 _EXIT_AUTH_PROBLEM = 2
+_EXIT_BOTH_PROBLEMS = 3
 
 
 def app_dir() -> Path:
@@ -837,6 +838,12 @@ def _check_config() -> int:
         for r in report.results
         if r.label not in ("Autenticación de Claude", "CLI de Claude")
     )
+    # Se informan los dos por separado, y el caso "las dos cosas" tiene su
+    # propio código: si sólo se reportara el problema de configuración, el
+    # instalador no ofrecería renovar la credencial y haría falta una
+    # segunda pasada para descubrir que también faltaba eso.
+    if other_failed and auth_failed:
+        return _EXIT_BOTH_PROBLEMS
     if other_failed:
         return _EXIT_CONFIG_PROBLEM
     if auth_failed:
