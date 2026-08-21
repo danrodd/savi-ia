@@ -741,23 +741,28 @@ def _collect_report() -> Report:
                 label="CLI de Claude",
                 ok=False,
                 detail="No está instalado en este equipo.",
-                remedy="Instalalo con: npm install -g @anthropic-ai/claude-code",
+                remedy=(
+                    "Volvé a correr el instalador de SAVI: instala el CLI "
+                    "de Claude y todo lo que necesita."
+                ),
             )
         )
     else:
         runs, detail = _cli_probe(claude_path)
-        node = _node_directory()
         report.results.append(
             CheckResult(
                 label="CLI de Claude",
                 ok=runs,
                 detail=f"{claude_path} — {detail}",
+                # A mano no: `npm install -g` ve la versión pedida ya
+                # presente y no vuelve a correr el postinstall que baja el
+                # binario, así que no arregla nada. El instalador borra el
+                # árbol roto antes de reinstalar; es el único camino que
+                # sirve, y encima no exige saber usar npm.
                 remedy=(
-                    "No se encontró Node.js, y el CLI instalado con npm lo "
-                    "necesita para arrancar. Instalalo desde https://nodejs.org/."
-                    if node is None
-                    else "El CLI está instalado pero no se puede ejecutar. "
-                    "Reinstalalo con: npm install -g @anthropic-ai/claude-code"
+                    "El CLI quedó a medio instalar y le falta su binario. "
+                    "Volvé a correr el instalador de SAVI: detecta el CLI "
+                    "roto y lo reinstala."
                 ),
             )
         )

@@ -137,6 +137,11 @@ var
   // — que es cierto tambien con el token vencido.
   AuthNeedsAttention: Boolean;
 
+{ El PATH del propio proceso no se puede cambiar desde Pascal Script y
+  hace falta cambiarlo — el porqué está en `PutNodeOnPath`. }
+procedure SetEnvVar(lpName, lpValue: String);
+  external 'SetEnvironmentVariableW@kernel32.dll stdcall';
+
 { ── Detección de prerrequisitos ─────────────────────────────────────── }
 
 // HKLM64 y no HKLM, y las dos carpetas de Program Files, a proposito.
@@ -222,6 +227,26 @@ begin
   Result := ExpandConstant('{commonappdata}\npm');
 end;
 
+{ `True` si ese `claude` arranca de verdad — no si el archivo está.
+
+  El paquete de npm pesa 175 KB: lo único que trae es un `postinstall`
+  (`node install.cjs`) que baja el binario real a `bin\claude.exe`. npm
+  crea el shim ANTES de correr ese postinstall, así que un postinstall
+  fallido deja un `claude.cmd` apuntando a un archivo que no existe, y
+  el sistema contesta "no puede encontrar la ruta especificada".
+
+  Chequeando existencia, ese equipo daba "CLI instalado": el instalador
+  se salteaba la reinstalación y volver a instalar SAVI no lo arreglaba
+  nunca. `--version` tarda menos de un segundo y es la diferencia entre
+  saber que está y saber que sirve. }
+function CliRuns(const CliPath: String): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := Exec(ExpandConstant('{cmd}'), '/C ""' + CliPath + '" --version"',
+                 '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
 { Detección del CLI de Claude.
 
   Replica el orden de búsqueda del SDK (`_find_cli` en
@@ -237,15 +262,18 @@ end;
   instala el CLI de más, que es el error barato de los dos. }
 function ClaudeCliInstalled(): Boolean;
 var
-  Home: String;
+  Home, Found: String;
   Candidates: TArrayOfString;
   I: Integer;
 begin
   Result := True;
 
   { 1. En el PATH — equivale al shutil.which() del SDK. }
-  if (FileSearch('claude.exe', GetEnv('PATH')) <> '') or
-     (FileSearch('claude.cmd', GetEnv('PATH')) <> '') then
+  Found := FileSearch('claude.exe', GetEnv('PATH'));
+  if (Found <> '') and CliRuns(Found) then
+    Exit;
+  Found := FileSearch('claude.cmd', GetEnv('PATH'));
+  if (Found <> '') and CliRuns(Found) then
     Exit;
 
   { 2. Rutas conocidas, incluidas las del instalador nativo. }
@@ -261,7 +289,7 @@ begin
   Candidates[7] := Home + '\.yarn\bin\claude.cmd';
 
   for I := 0 to GetArrayLength(Candidates) - 1 do
-    if FileExists(Candidates[I]) then
+    if FileExists(Candidates[I]) and CliRuns(Candidates[I]) then
       Exit;
 
   Result := False;
@@ -711,6 +739,27 @@ end;
 
 { ── Instalación de los prerrequisitos ───────────────────────────────── }
 
+{ Pone el directorio de Node.js en el PATH de ESTE proceso.
+
+  El instalador heredó su entorno de Explorer al arrancar, o sea antes de
+  instalar Node: `C:\Program Files\nodejs` no está ahí, y todo proceso
+  hijo hereda ese PATH viejo. `npm.cmd` se salva porque encuentra
+  `node.exe` al lado suyo con %~dp0, pero el `postinstall` del CLI corre
+  `cmd /c node install.cjs`, y ahí `node` se resuelve por PATH: muere con
+  "'node' no se reconoce como un comando", npm corta con código 1 y el
+  paquete queda a medio instalar — con el shim creado y sin el binario.
+
+  Por eso la instalación fallaba SIEMPRE en un equipo limpio y nunca en
+  uno que ya tenía Node. }
+procedure PutNodeOnPath();
+var
+  NodeDir: String;
+begin
+  NodeDir := ExtractFileDir(NodeExePath());
+  if (NodeDir <> '') and (Pos(Lowercase(NodeDir), Lowercase(GetEnv('PATH'))) = 0) then
+    SetEnvVar('PATH', NodeDir + ';' + GetEnv('PATH'));
+end;
+
 { Corre `npm install -g` del CLI de Claude Code.
 
   Va por cmd.exe y no por Exec directo: npm.cmd es un archivo por lotes y
@@ -764,6 +813,7 @@ begin
   if NeedsCli then
   begin
     WizardForm.StatusLabel.Caption := 'Instalando el CLI de Claude Code...';
+    PutNodeOnPath();
     { Por ruta completa y no por nombre: si Node acaba de instalarse, el
       PATH de este proceso todavía no lo incluye. }
     NpmCmd := NpmCmdPath();
@@ -772,11 +822,21 @@ begin
       MsgBox('No se encontró npm después de instalar Node.js. ' +
              'Instalá el CLI a mano con: npm install -g @anthropic-ai/claude-code',
              mbError, MB_OK)
-    else if not RunNpmInstall(NpmCmd, LogPath, ResultCode) then
-      MsgBox('La instalación del CLI de Claude Code falló (código ' + IntToStr(ResultCode) + ').' + #13#10 +
-             'Detalle en: ' + LogPath + #13#10#13#10 +
-             'Instalalo a mano con: npm install -g @anthropic-ai/claude-code',
-             mbError, MB_OK);
+    else
+    begin
+      { Un intento anterior pudo dejar el paquete a medio instalar. `npm
+        install -g` vería la versión pedida ya presente y no volvería a
+        correr el postinstall: reinstalar sería un no-op y el equipo
+        seguiría roto. Acá sólo se llega si no hay ningún CLI que ande,
+        así que no hay nada bueno que borrar. }
+      DelTree(NpmGlobalPrefix() + '\node_modules\@anthropic-ai\claude-code',
+              True, True, True);
+      if not RunNpmInstall(NpmCmd, LogPath, ResultCode) then
+        MsgBox('La instalación del CLI de Claude Code falló (código ' + IntToStr(ResultCode) + ').' + #13#10 +
+               'Detalle en: ' + LogPath + #13#10#13#10 +
+               'Instalalo a mano con: npm install -g @anthropic-ai/claude-code',
+               mbError, MB_OK);
+    end;
   end;
 end;
 
