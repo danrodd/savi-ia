@@ -432,9 +432,12 @@ def _write_oauth_token(token: str) -> bool:
 
 
 def _claude_cli_path() -> str | None:
-    import shutil
+    # La misma resolución que usa el runner: si el diagnóstico probara una
+    # ruta distinta de la que el chat termina lanzando, volvería a salir en
+    # verde junto a un chat roto.
+    from app.infrastructure.claude_cli import resolve_cli_path
 
-    return shutil.which("claude")
+    return resolve_cli_path()
 
 
 def _cli_probe(claude: str) -> tuple[bool, str]:

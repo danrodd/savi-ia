@@ -29,6 +29,7 @@ from claude_agent_sdk import (
     query,
 )
 
+from app.infrastructure.claude_cli import resolve_cli_path
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
@@ -90,6 +91,20 @@ _TRUNCATION_NOTICE = (
 )
 
 
+def _log_cli_stderr(line: str) -> None:
+    """Manda al log lo que el CLI escribe en stderr.
+
+    El SDK sólo canaliza stderr si el llamador registra este callback; sin
+    él lo deja ir al stderr del proceso padre, y SAVI empaquetado corre con
+    `console=False`, o sea que no hay ninguno. El resultado era un error
+    que decía textualmente "Check stderr output for details" sin que
+    existiera un stderr donde mirar.
+    """
+    text = line.rstrip()
+    if text:
+        log.warning("claude_cli_stderr %s", text)
+
+
 def _apply_sdk_env(settings: Settings) -> None:
     if settings.claude_code_oauth_token:
         os.environ.setdefault("CLAUDE_CODE_OAUTH_TOKEN", settings.claude_code_oauth_token)
@@ -118,6 +133,11 @@ def _build_options(
         allowed_tools=ALLOWED_TOOLS,
         permission_mode="bypassPermissions",
         max_turns=settings.max_agent_turns,
+        # Por el ejecutable y no por el shim `.cmd` de npm: ver
+        # `resolve_cli_path`. El system prompt viaja por argv y no entra
+        # en el límite de cmd.exe.
+        cli_path=resolve_cli_path(),
+        stderr=_log_cli_stderr,
     )
 
 
