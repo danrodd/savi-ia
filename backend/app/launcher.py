@@ -759,11 +759,11 @@ def _collect_report() -> Report:
                 label="CLI de Claude",
                 ok=runs,
                 detail=f"{claude_path} — {detail}",
-                # A mano no: `npm install -g` ve la versión pedida ya
-                # presente y no vuelve a correr el postinstall que baja el
-                # binario, así que no arregla nada. El instalador borra el
-                # árbol roto antes de reinstalar; es el único camino que
-                # sirve, y encima no exige saber usar npm.
+                # A mano también funciona —`npm install -g` vuelve a
+                # correr el postinstall que baja el binario aunque el
+                # paquete ya esté, comprobado—, pero exige una terminal
+                # elevada y acertar con el prefijo global. El instalador
+                # hace las dos cosas sin pedirle nada a quien lo corre.
                 remedy=(
                     "El CLI quedó a medio instalar y le falta su binario. "
                     "Volvé a correr el instalador de SAVI: detecta el CLI "

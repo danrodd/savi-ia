@@ -824,11 +824,12 @@ begin
              mbError, MB_OK)
     else
     begin
-      { Un intento anterior pudo dejar el paquete a medio instalar. `npm
-        install -g` vería la versión pedida ya presente y no volvería a
-        correr el postinstall: reinstalar sería un no-op y el equipo
-        seguiría roto. Acá sólo se llega si no hay ningún CLI que ande,
-        así que no hay nada bueno que borrar. }
+      { De cero y no encima. npm vuelve a correr el postinstall aunque
+        el paquete ya esté —comprobado—, así que esto no es lo que
+        destraba la reinstalación; es el cinturón: un intento anterior
+        pudo dejar el árbol a medio extraer, y arrancar limpio saca de la
+        ecuación esa familia de estados raros. Acá sólo se llega si no hay
+        ningún CLI que ande, así que no hay nada bueno que borrar. }
       DelTree(NpmGlobalPrefix() + '\node_modules\@anthropic-ai\claude-code',
               True, True, True);
       if not RunNpmInstall(NpmCmd, LogPath, ResultCode) then
