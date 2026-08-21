@@ -20,6 +20,10 @@ dependencies = [
     "anthropic>=0.40",
     "sqlglot>=27",
     "pyjwt>=2.10",
+    # Lo usa `app.tray` para el icono de la bandeja. Llegaba transitivo por
+    # `mcp`, pero un import directo se declara: el día que esa cadena
+    # cambie, SAVI arranca sin forma de cerrarse.
+    "pywin32>=311; sys_platform == 'win32'",
 ]
 
 [dependency-groups]

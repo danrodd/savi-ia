@@ -37,6 +37,8 @@ _LOG_BACKUPS = 3
 # Cuánto se le da a una instancia que está arrancando para contestar
 # /health antes de concluir que el puerto lo tiene otra aplicación.
 _HEALTH_GRACE_S = 8.0
+# Lo que espera "Salir" a que terminen los turnos en curso antes de cortar.
+_SHUTDOWN_GRACE_S = 10
 # Puertos consecutivos a probar desde el configurado.
 _PORT_SCAN_RANGE = 20
 # Codigos de salida de --check-config. El instalador los distingue para
@@ -886,6 +888,7 @@ def main() -> None:
     # tiene que haber ocurrido antes de que se importe la configuración.
     import uvicorn
 
+    from app import tray
     from app.infrastructure.config import get_settings
     from app.infrastructure.database.bootstrap import ensure_schema
 
@@ -969,7 +972,25 @@ def main() -> None:
     # y monta un MCP server in-process por turno.
     from app.main import app as fastapi_app
 
-    uvicorn.run(fastapi_app, host=host, port=port, log_config=None)
+    # `Config` + `Server` en vez de `uvicorn.run()`: es lo mismo, pero deja
+    # a mano el objeto que el icono de la bandeja necesita para poder
+    # apagarlo cuando el usuario elige Salir.
+    server = uvicorn.Server(
+        uvicorn.Config(
+            fastapi_app,
+            host=host,
+            port=port,
+            log_config=None,
+            # Sin esto, 'Salir' no cierra nada mientras haya un turno en
+            # curso: uvicorn espera sin límite a que cierren las conexiones
+            # abiertas, y el chat es un SSE que dura lo que dura la
+            # respuesta. El usuario apretaría Salir, no pasaría nada, y
+            # terminaría en el Administrador de tareas otra vez.
+            timeout_graceful_shutdown=_SHUTDOWN_GRACE_S,
+        )
+    )
+    tray.start(url, server)
+    server.run()
 
 
 if __name__ == "__main__":
