@@ -25,7 +25,7 @@ class GetConversationWithMessagesUseCase:
         # como "no existe" — no le damos pistas al atacante sobre la
         # existencia de conversaciones ajenas.
         if expected_owner is not None and not expected_owner.owns(
-            conversation.user_id, conversation.erp_database_id
+            conversation.user_id, conversation.owner_erp_database_id
         ):
             raise ConversationNotFoundError(conversation_id)
 

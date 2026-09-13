@@ -77,6 +77,7 @@ async def create_conversation(
         title=request.title,
         user_id=user.id,
         erp_database_id=database_id,
+        owner_erp_database_id=_require_database(user),
     )
     result = await use_case.execute(dto)
     return ConversationResponse.from_dto(result)
@@ -92,7 +93,7 @@ async def list_conversations(
     # Filtra siempre por el usuario autenticado.
     results = await use_case.execute(
         user.id,
-        erp_database_id=user.erp_database_id,
+        owner_erp_database_id=user.erp_database_id,
         limit=limit,
         offset=offset,
     )

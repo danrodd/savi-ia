@@ -36,19 +36,22 @@ class SqlAlchemyConversationRepository(ConversationRepository):
         self,
         user_id: int | None,
         *,
-        erp_database_id: UUID | None = None,
+        owner_erp_database_id: UUID | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[Conversation]:
         stmt = select(ConversationModel).where(ConversationModel.deleted_at.is_(None))
         if user_id is not None:
             stmt = stmt.where(ConversationModel.user_id == user_id)
-            # Scope por base: el `idUsuario` se repite entre clientes, así
-            # que sin este filtro el usuario 5 del cliente B vería las
-            # conversaciones del usuario 5 del cliente A.
-            if erp_database_id is not None:
+            # Scope por identidad, NO por la base consultada: el `idUsuario`
+            # se repite entre clientes, así que sin este filtro el usuario 5
+            # del cliente B vería las conversaciones del usuario 5 del
+            # cliente A. Con D10, además, filtrar por la base consultada
+            # ocultaría las conversaciones que el propio dueño abrió contra
+            # OTROS clientes.
+            if owner_erp_database_id is not None:
                 stmt = stmt.where(
-                    ConversationModel.erp_database_id == erp_database_id
+                    ConversationModel.owner_erp_database_id == owner_erp_database_id
                 )
         else:
             stmt = stmt.where(ConversationModel.user_id.is_(None))

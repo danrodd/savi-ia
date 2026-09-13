@@ -12,6 +12,7 @@ class CreateConversationUseCase:
         conversation = Conversation(
             user_id=dto.user_id,
             erp_database_id=dto.erp_database_id,
+            owner_erp_database_id=dto.owner_erp_database_id,
             title=dto.title.strip() if dto.title else "Nueva conversación",
         )
         saved = await self._repository.save(conversation)

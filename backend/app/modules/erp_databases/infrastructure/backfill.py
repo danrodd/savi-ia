@@ -35,7 +35,13 @@ async def backfill_legacy_rows(
 
     Es correcto porque antes del multi-BD **solo existía una** base del
     ERP: toda fila anterior se consultó necesariamente contra la que
-    ahora quedó como default.
+    ahora quedó como default, y su dueño solo pudo haber iniciado sesión
+    en esa misma base.
+
+    Las conversaciones reciben tanto `erp_database_id` (la consultada)
+    como `owner_erp_database_id` (la identidad del dueño) — antes de
+    D10 eran siempre la misma base, así que backfillear las dos con el
+    mismo valor no es una aproximación.
 
     Los `refresh_token` NO se backfillean a propósito: un token viejo se
     rechaza y el usuario vuelve a iniciar sesión una vez. Rellenarlos
@@ -49,7 +55,10 @@ async def backfill_legacy_rows(
             await session.execute(
                 update(ConversationModel)
                 .where(ConversationModel.erp_database_id.is_(None))
-                .values(erp_database_id=default_database_id)
+                .values(
+                    erp_database_id=default_database_id,
+                    owner_erp_database_id=default_database_id,
+                )
             ),
         )
         audits = cast(

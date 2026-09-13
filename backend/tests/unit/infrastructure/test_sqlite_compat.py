@@ -82,6 +82,7 @@ async def _seed(session: AsyncSession) -> ConversationModel:
         id=uuid4(),
         user_id=7,
         erp_database_id=_DATABASE_ID,
+        owner_erp_database_id=_DATABASE_ID,
         title="Consumo del mes",
     )
     session.add(conversation)

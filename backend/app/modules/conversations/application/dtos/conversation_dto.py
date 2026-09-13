@@ -17,6 +17,9 @@ class CreateConversationDTO:
     # Base del ERP contra la que se va a consultar. Inmutable una vez
     # creada la conversación.
     erp_database_id: UUID | None = None
+    # Base de identidad del dueño (con la que inició sesión). Ver el
+    # comentario de `Conversation.owner_erp_database_id`.
+    owner_erp_database_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -28,6 +31,7 @@ class ConversationDTO:
     created_at: datetime
     updated_at: datetime
     erp_database_id: UUID | None = None
+    owner_erp_database_id: UUID | None = None
 
 
 @dataclass(frozen=True)

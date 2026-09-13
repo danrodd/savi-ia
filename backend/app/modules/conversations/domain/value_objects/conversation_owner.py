@@ -17,16 +17,22 @@ from uuid import UUID
 @dataclass(frozen=True, slots=True)
 class ConversationOwner:
     user_id: int
+    # Base de IDENTIDAD (con la que se inició sesión), NO la base que la
+    # conversación consulta — esas son cosas distintas desde D10 (un
+    # usuario puede tener conversaciones de varios clientes a la vez).
+    # `owns()` debe compararse siempre contra
+    # `Conversation.owner_erp_database_id`.
     erp_database_id: UUID
 
-    def owns(self, user_id: int | None, erp_database_id: UUID | None) -> bool:
+    def owns(self, user_id: int | None, owner_erp_database_id: UUID | None) -> bool:
         """`True` si esta identidad es dueña de esos valores.
 
-        Una conversación sin base (anterior al multi-BD) **no** pertenece
-        a nadie bajo esta regla: no se puede saber de qué cliente era, y
-        atribuirla a la base actual es justamente el cruce que se evita.
-        Queda invisible en vez de ser accesible por la persona equivocada.
+        Una conversación sin base de identidad (anterior al multi-BD)
+        **no** pertenece a nadie bajo esta regla: no se puede saber de
+        qué identidad era, y atribuirla a la base actual es justamente
+        el cruce que se evita. Queda invisible en vez de ser accesible
+        por la persona equivocada.
         """
-        if user_id is None or erp_database_id is None:
+        if user_id is None or owner_erp_database_id is None:
             return False
-        return self.user_id == user_id and self.erp_database_id == erp_database_id
+        return self.user_id == user_id and self.erp_database_id == owner_erp_database_id

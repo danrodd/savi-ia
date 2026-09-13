@@ -16,7 +16,7 @@ class ConversationRepository(ABC):
         self,
         user_id: int | None,
         *,
-        erp_database_id: UUID | None = None,
+        owner_erp_database_id: UUID | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[Conversation]: ...

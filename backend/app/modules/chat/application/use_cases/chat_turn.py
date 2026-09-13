@@ -179,7 +179,7 @@ class ChatTurnUseCase:
         # Ownership: si el endpoint pasa el dueño esperado y no coincide,
         # tratamos como "no existe" (no leak de existencia).
         if expected_owner is not None and not expected_owner.owns(
-            conversation.user_id, conversation.erp_database_id
+            conversation.user_id, conversation.owner_erp_database_id
         ):
             raise ConversationNotFoundError(conversation_id)
 

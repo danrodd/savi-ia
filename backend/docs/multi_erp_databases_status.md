@@ -10,10 +10,13 @@
 
 ## Resumen en una línea
 
-**Backend completo y verificado. Falta todo el frontend (Fases 6 y 7).**
+**Backend y frontend completos y verificados end-to-end (Fases 1-8).**
 
 Validación corrida el 2026-09-13 sobre `backend/`:
-`ruff check app` limpio · `pyright app` 0 errores · **162 tests pasando**, 1 skip.
+`ruff check app` limpio · `pyright app` 0 errores · **163 tests pasando**, 1 skip.
+Frontend: `biome lint` limpio · `vue-tsc --build` 0 errores · 34 tests (Vitest),
+1 falla preexistente sin relación (`App.spec.ts`, falta Pinia en el montaje
+del test — no lo introdujo este trabajo).
 
 ---
 
@@ -26,9 +29,38 @@ Validación corrida el 2026-09-13 sobre `backend/`:
 | 3 | API de administración: CRUD + test de conexión + guards de la default | ✅ hecho y verificado |
 | 4 | Permisos por base (D3, sin herencia) + `GET /erp-databases/available` | ✅ hecho y verificado |
 | 5 | Turno del chat multi-base + `409 erp_database_unavailable` | ✅ hecho y verificado |
-| 6 | Frontend: sección administración (`/admin`) + mover consumo global | ⬜ pendiente |
-| 7 | Frontend: selector de base en chat + chip + estado degradado + login `@CODE` | ⬜ pendiente |
+| 6 | Frontend: sección administración (`/admin`) + mover consumo global | ✅ hecho y verificado |
+| 7 | Frontend: selector de base en chat + chip + estado degradado + login `@CODE` | ✅ hecho y verificado |
 | 8 | Instalador: clave Fernet, `SAVI_ADMIN_LOGINS`, `env.template`, docs | ✅ hecho |
+
+---
+
+## Bug encontrado y corregido al verificar la Fase 7 end-to-end (2026-09-13)
+
+**Síntoma:** un usuario que abre una conversación contra un cliente
+distinto al de su login (el caso central de D10 — "atender varios
+clientes sin cerrar sesión") recibía `404` al abrirla, no la veía en el
+listado y no podía mandar turnos.
+
+**Causa:** `conversations.erp_database_id` cumplía dos roles que
+chocan: la base **consultada** (fijada al crear, D2) y la base de
+**identidad** del dueño (usada por `list_for_user`, el ownership check
+de `chat`/`get`/`rename`/`delete`, y "mi consumo"). Mientras una
+instalación atendía un solo cliente los dos roles coincidían y el bug
+quedaba oculto — nunca se había probado una conversación contra una
+base distinta a la de login.
+
+**Corrección:** columna nueva `owner_erp_database_id` (migración
+`d1a4c8f0e921`, con backfill en la propia migración — es una copia de
+una columna existente, no depende de `.env`). `erp_database_id` sigue
+siendo la base consultada; `owner_erp_database_id` es la identidad. Los
+filtros de dueño (`ConversationOwner.owns`, `list_for_user`, "mi
+consumo") pasan a comparar contra la columna nueva. El ranking global
+de consumo por cliente (`usage.per_user`, admin) sigue agrupando por la
+base consultada a propósito — es correcto para facturar por cliente.
+
+Test de regresión: `test_conversation_visible_and_ownable_across_queried_databases`
+en `tests/unit/modules/erp_databases/test_identity_isolation.py`.
 
 > El orden real de ejecución fue 1 → 2 → 3 → 4 → 5 → 8. La Fase 2 va antes
 > de que exista una segunda base porque corrige el defecto latente de
@@ -60,18 +92,33 @@ el frontend.
   sus permisos); usuario inexistente en esa base → sin acceso.
 - **Turno con base no disponible** → `409 erp_database_unavailable` **antes**
   de abrir el SSE.
+- **Frontend (Fases 6-7), con Playwright contra los dos dev servers reales**:
+  CRUD de administración completo (crear, probar conexión con contraseña
+  mala y buena, editar sin pisar la contraseña, desactivar/activar,
+  predeterminar, eliminar); `/admin` con guard para no-admin;
+  `/consumo` redirige según rol; login `ADMIN@NORTE` con la misma
+  respuesta que una contraseña mala para un código inexistente; selector
+  de cliente en una conversación nueva; una conversación abierta contra
+  un cliente **distinto** al de login (D10) responde con datos reales de
+  esa base; chip de solo lectura con el nombre del cliente; banner y
+  Composer deshabilitado cuando la base de la conversación se desactiva.
+  Encontró y motivó la corrección de identidad documentada arriba.
 
 ---
 
 ## Migraciones Alembic
 
-Dos revisiones nuevas, encadenadas sobre `4a8dcb6945b3`:
+Tres revisiones nuevas, encadenadas sobre `4a8dcb6945b3`:
 
 1. `b1f4c27ae903_add_erp_databases_table` — tabla `erp_databases` con los
    tres índices únicos parciales (`code`, `name`, `is_default`).
 2. `c93e5a1d7f42_qualify_identity_with_erp_database` — columnas
    `erp_database_id` en `conversations`, `refresh_token` y `audit_query`,
    índices por usuario recompuestos a `(erp_database_id, user_id)`.
+3. `d1a4c8f0e921_split_conversation_owner_from_queried_database` —
+   columna `owner_erp_database_id` en `conversations` (identidad del
+   dueño, separada de la base consultada), con backfill propio y el
+   índice `(owner_erp_database_id, user_id)`.
 
 Verificadas en los **dos** caminos de SQLite (BD nueva vía `create_all` +
 `stamp`, y BD existente vía `upgrade`) y con `downgrade` real (batch mode).
@@ -116,11 +163,16 @@ Cambios en módulos existentes:
   (valida base activa), `UserRepositoryFactory` + factories de
   permisos/plan por base, `ResolveModulesForDatabaseUseCase` (D3), gate
   `SaviAdminDep`.
-- `conversations`: columna `erp_database_id` (inmutable), value object
-  `ConversationOwner`, scoping de listado y ownership por `(base, usuario)`.
+- `conversations`: columna `erp_database_id` (inmutable, la CONSULTADA) +
+  `owner_erp_database_id` (la de IDENTIDAD del dueño — ver el bug de
+  arriba), value object `ConversationOwner`, scoping de listado y
+  ownership por `(owner_erp_database_id, usuario)`.
 - `chat`: `erp_database_id` a través del turno → runner → tools MCP
-  (siguen siendo **4** tools, sin cambio); `409` antes del SSE.
-- `usage`: agregados scopeados por `(erp_database_id, user_id)`.
+  (siguen siendo **4** tools, sin cambio); `409` antes del SSE. El
+  ownership del chat compara `owner_erp_database_id`.
+- `usage`: "mi consumo" scopeado por `(owner_erp_database_id, user_id)`;
+  el ranking global por cliente (`per_user`, admin) sigue agrupando por
+  `erp_database_id` (la consultada) a propósito.
 - `infrastructure/database/pool.py`: se eliminó el engine global del ERP.
 - `launcher.py`: el diagnóstico arma un engine descartable desde el `.env`.
 
@@ -134,15 +186,15 @@ Tests nuevos en `tests/unit/modules/erp_databases/`:
 
 ## Cómo continuar
 
-1. Leer [`multi_erp_databases_frontend_guide.md`](multi_erp_databases_frontend_guide.md):
-   tiene el contrato del backend ya listo, los patrones del frontend a
-   respetar, y el plan de Fases 6 y 7 con el detalle de cada archivo.
-2. Orden recomendado: **admin primero, chat después** (el chat necesita
-   bases cargadas para probarse con más de una).
-3. Antes de tocar componentes Vue, leer las skills del frontend
-   (`enterprise-frontend-architecture`, `vue-best-practices`,
-   `frontend-shadcn-guide`, `tailwind-4`) — ver tabla de auto-invoke en
-   `CLAUDE.md` §6.
+El requerimiento está completo (Fases 1-8). Pendientes reales:
+
+1. Commitear el trabajo — está esperando confirmación explícita del
+   usuario (regla del proyecto, `CLAUDE.md` §12-13).
+2. Las dos preguntas abiertas de §13 de la spec (pools, limpieza de
+   `ERP_DB_PASSWORD`) — no bloquean nada.
+3. Si se agrega un tercer/cuarto cliente real, repetir al menos el caso
+   D10 (conversación contra un cliente distinto al de login) — es el
+   que reveló el bug de identidad.
 
 ---
 

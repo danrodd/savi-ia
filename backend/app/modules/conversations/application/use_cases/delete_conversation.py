@@ -38,7 +38,7 @@ class DeleteConversationUseCase:
                 conversation is None
                 or conversation.is_deleted
                 or not expected_owner.owns(
-                    conversation.user_id, conversation.erp_database_id
+                    conversation.user_id, conversation.owner_erp_database_id
                 )
             ):
                 raise ConversationNotFoundError(conversation_id)

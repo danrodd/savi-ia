@@ -87,6 +87,7 @@ async def _seed(session: AsyncSession) -> None:
             id=uuid4(),
             user_id=_SHARED_USER_ID,
             erp_database_id=database_id,
+            owner_erp_database_id=database_id,
             title=title,
         )
         session.add(conversation)
@@ -116,10 +117,10 @@ async def test_user_only_sees_conversations_of_their_own_client(
     repository = SqlAlchemyConversationRepository(session)
 
     from_a = await repository.list_for_user(
-        _SHARED_USER_ID, erp_database_id=_DATABASE_A
+        _SHARED_USER_ID, owner_erp_database_id=_DATABASE_A
     )
     from_b = await repository.list_for_user(
-        _SHARED_USER_ID, erp_database_id=_DATABASE_B
+        _SHARED_USER_ID, owner_erp_database_id=_DATABASE_B
     )
 
     assert [c.title for c in from_a] == ["Hilo del cliente A"]
@@ -141,7 +142,7 @@ async def test_owner_of_other_client_cannot_open_the_conversation(
 
     conversation_a = (
         await repository.list_for_user(
-            _SHARED_USER_ID, erp_database_id=_DATABASE_A
+            _SHARED_USER_ID, owner_erp_database_id=_DATABASE_A
         )
     )[0]
     use_case = GetConversationWithMessagesUseCase(repository)
@@ -170,6 +171,47 @@ def test_legacy_conversation_without_database_belongs_to_nobody() -> None:
     assert owner.owns(_SHARED_USER_ID, None) is False
     assert owner.owns(None, _DATABASE_A) is False
     assert owner.owns(_SHARED_USER_ID, _DATABASE_A) is True
+
+
+# ── Identidad vs. base consultada (D10) ─────────────────────────────
+
+
+async def test_conversation_visible_and_ownable_across_queried_databases(
+    session: AsyncSession,
+) -> None:
+    """El escenario de D10: una identidad abre una conversación contra UN
+    cliente y otra contra OTRO, sin cambiar de sesión.
+
+    `erp_database_id` (consultada) y `owner_erp_database_id` (identidad)
+    quedan distintos a propósito. Antes de separarlos, el listado y el
+    ownership comparaban la identidad contra la base consultada y la
+    conversación quedaba invisible/inaccesible para su propio dueño.
+    """
+    repository = SqlAlchemyConversationRepository(session)
+    from app.modules.conversations.application.use_cases import (
+        GetConversationWithMessagesUseCase,
+    )
+
+    cross = ConversationModel(
+        id=uuid4(),
+        user_id=_SHARED_USER_ID,
+        erp_database_id=_DATABASE_B,  # consulta al cliente B...
+        owner_erp_database_id=_DATABASE_A,  # ...con la identidad del cliente A.
+        title="Hilo cruzado",
+    )
+    session.add(cross)
+    await session.commit()
+
+    listed = await repository.list_for_user(
+        _SHARED_USER_ID, owner_erp_database_id=_DATABASE_A
+    )
+    assert "Hilo cruzado" in [c.title for c in listed]
+
+    owner = ConversationOwner(user_id=_SHARED_USER_ID, erp_database_id=_DATABASE_A)
+    use_case = GetConversationWithMessagesUseCase(repository)
+    result = await use_case.execute(cross.id, expected_owner=owner)
+    assert result.conversation.title == "Hilo cruzado"
+    assert result.conversation.erp_database_id == _DATABASE_B
 
 
 # ── Consumo ──────────────────────────────────────────────────────────

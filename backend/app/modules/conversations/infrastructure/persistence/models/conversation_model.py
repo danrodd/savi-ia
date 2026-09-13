@@ -42,6 +42,17 @@ class ConversationModel(Base):
         ForeignKey("erp_databases.id"),
         nullable=True,
     )
+    # Base de IDENTIDAD del dueño (con la que inició sesión), separada de
+    # `erp_database_id` (la base CONSULTADA por esta conversación). Con
+    # D10 un usuario puede tener conversaciones de varios clientes a la
+    # vez sin haber cambiado de sesión: los filtros de dueño (listado,
+    # ownership del chat, "mi consumo") tienen que comparar contra esta
+    # columna, nunca contra la consultada. Ver migración d1a4c8f0e921.
+    owner_erp_database_id: Mapped[UUID | None] = mapped_column(
+        UuidType,
+        ForeignKey("erp_databases.id"),
+        nullable=True,
+    )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     title_locked: Mapped[bool] = mapped_column(
         Boolean,
@@ -73,7 +84,11 @@ class ConversationModel(Base):
     )
 
     __table_args__ = (
+        # Ranking de consumo por cliente (`usage.per_user`): agrupa por la
+        # base CONSULTADA, no por la de identidad.
         Index("ix_conversations_user_id", "erp_database_id", "user_id"),
+        # Filtrado por dueño: listado, ownership del chat, "mi consumo".
+        Index("ix_conversations_owner", "owner_erp_database_id", "user_id"),
         Index("ix_conversations_updated_at", "updated_at"),
     )
 

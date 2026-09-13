@@ -19,6 +19,12 @@ class Conversation:
     # Base del ERP contra la que se consulta. Inmutable una vez creada:
     # ver el comentario del modelo ORM.
     erp_database_id: UUID | None = None
+    # Base de IDENTIDAD del dueño (con la que inició sesión). Distinta de
+    # `erp_database_id` desde D10: un usuario puede abrir conversaciones
+    # de varios clientes sin cambiar de sesión. Los filtros de dueño
+    # (listado, ownership, "mi consumo") comparan contra esta, nunca
+    # contra `erp_database_id`.
+    owner_erp_database_id: UUID | None = None
     title: str = DEFAULT_TITLE
     title_locked: bool = False
     created_at: datetime = field(default_factory=_utc_now)
