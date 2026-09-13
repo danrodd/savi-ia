@@ -72,6 +72,25 @@ class ErpDatabaseDTO:
 
 
 @dataclass(frozen=True, slots=True)
+class ExportPayloadDTO:
+    exported_at: datetime
+    count: int
+    ciphertext: str
+
+
+@dataclass(frozen=True, slots=True)
+class ImportRowResultDTO:
+    code: str
+    status: str  # "created" | "updated" | "failed"
+    detail: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ImportResultDTO:
+    rows: list[ImportRowResultDTO]
+
+
+@dataclass(frozen=True, slots=True)
 class AvailableDatabaseDTO:
     """Lo mínimo para el selector del chat: id y nombre.
 

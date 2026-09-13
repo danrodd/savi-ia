@@ -3,6 +3,8 @@ import type {
   AvailableErpDatabase,
   ConnectionTestResult,
   ErpDatabase,
+  ExportedErpDatabasesFile,
+  ImportErpDatabasesResult,
   SaveErpDatabaseRequest,
 } from '../types'
 
@@ -52,6 +54,16 @@ class ErpDatabaseService {
   /** Bases a las que el usuario autenticado tiene acceso. Cualquier usuario. */
   available(): Promise<AvailableErpDatabase[]> {
     return this.publicHttp.get<AvailableErpDatabase[]>('/available')
+  }
+
+  /** El `payload` viaja cifrado con `passphrase` — el backend no ve la contraseña de las bases. */
+  export(passphrase: string): Promise<ExportedErpDatabasesFile> {
+    return this.admin.post<ExportedErpDatabasesFile>('/export', { passphrase })
+  }
+
+  /** Por `code`: crea las que no existen en esta instalación y actualiza las que sí. */
+  import(passphrase: string, payload: string): Promise<ImportErpDatabasesResult> {
+    return this.admin.post<ImportErpDatabasesResult>('/import', { passphrase, payload })
   }
 }
 

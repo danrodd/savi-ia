@@ -35,3 +35,18 @@ class SaveErpDatabaseRequest(BaseModel):
             password=self.password,
             statement_timeout_ms=self.statement_timeout_ms,
         )
+
+
+class ExportErpDatabasesRequest(BaseModel):
+    """La contraseña de exportación NO es `ERP_CREDENTIALS_KEY` de esta
+    instalación — es una definida acá mismo, para que quien reciba el
+    archivo (otro agente) pueda descifrarlo sin conocer secretos internos
+    de esta máquina."""
+
+    passphrase: str = Field(min_length=8, max_length=200)
+
+
+class ImportErpDatabasesRequest(BaseModel):
+    passphrase: str = Field(min_length=1, max_length=200)
+    # El blob opaco tal como lo devolvió `/export` (campo `payload`).
+    payload: str = Field(min_length=1)

@@ -55,3 +55,20 @@ export interface ErpDatabaseFormValues {
   password: string
   statement_timeout_ms: number
 }
+
+export interface ExportedErpDatabasesFile {
+  version: number
+  exported_at: string
+  count: number
+  payload: string
+}
+
+export interface ImportRowResult {
+  code: string
+  status: 'created' | 'updated' | 'failed'
+  detail: string | null
+}
+
+export interface ImportErpDatabasesResult {
+  rows: ImportRowResult[]
+}

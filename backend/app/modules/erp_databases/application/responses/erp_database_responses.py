@@ -14,6 +14,8 @@ from pydantic import BaseModel
 from app.modules.erp_databases.application.dtos import (
     AvailableDatabaseDTO,
     ErpDatabaseDTO,
+    ExportPayloadDTO,
+    ImportResultDTO,
 )
 from app.modules.erp_databases.domain.interfaces import ConnectionTestResult
 
@@ -71,6 +73,45 @@ class ConnectionTestResponse(BaseModel):
             detail=result.detail,
             razon_social=result.razon_social,
             missing_tables=list(result.missing_tables),
+        )
+
+
+class ExportErpDatabasesResponse(BaseModel):
+    """El campo `payload` es opaco: un blob cifrado con la contraseña de
+    exportación. El frontend lo baja tal cual como archivo; para
+    importarlo en otra instalación hace falta la misma contraseña."""
+
+    version: int
+    exported_at: datetime
+    count: int
+    payload: str
+
+    @classmethod
+    def from_dto(cls, dto: ExportPayloadDTO) -> ExportErpDatabasesResponse:
+        return cls(
+            version=1,
+            exported_at=dto.exported_at,
+            count=dto.count,
+            payload=dto.ciphertext,
+        )
+
+
+class ImportRowResultResponse(BaseModel):
+    code: str
+    status: str
+    detail: str | None = None
+
+
+class ImportErpDatabasesResponse(BaseModel):
+    rows: list[ImportRowResultResponse]
+
+    @classmethod
+    def from_dto(cls, dto: ImportResultDTO) -> ImportErpDatabasesResponse:
+        return cls(
+            rows=[
+                ImportRowResultResponse(code=r.code, status=r.status, detail=r.detail)
+                for r in dto.rows
+            ]
         )
 
 

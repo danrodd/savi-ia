@@ -10,13 +10,15 @@
 
 ## Resumen en una línea
 
-**Backend y frontend completos y verificados end-to-end (Fases 1-8).**
+**Backend y frontend completos y verificados end-to-end (Fases 1-8), más
+la extensión de export/import (D11) para desplegar la misma
+configuración en varios agentes de un call center.**
 
 Validación corrida el 2026-09-13 sobre `backend/`:
-`ruff check app` limpio · `pyright app` 0 errores · **173 tests pasando**, 1 skip.
-Frontend: `biome lint` limpio · `vue-tsc --build` 0 errores · 34 tests (Vitest),
-1 falla preexistente sin relación (`App.spec.ts`, falta Pinia en el montaje
-del test — no lo introdujo este trabajo).
+`ruff check app` limpio · `pyright app` 0 errores · **183 tests pasando**, 1 skip.
+Frontend: `biome lint` limpio · `vue-tsc --build` 0 errores · 39/40 tests
+(Vitest), 1 falla preexistente sin relación (`App.spec.ts`, falta Pinia
+en el montaje del test — no la introdujo este trabajo).
 
 Los 10 tests agregados el mismo día cierran los huecos que dejaba el
 checklist de la §12 de la spec sin cubrir (ver esa sección abajo):
@@ -24,6 +26,62 @@ rechazo real de un Postgres sin el esquema del ERP, `409` antes de abrir
 el SSE, inmutabilidad de la base de una conversación, y las migraciones
 corriendo de verdad sobre SQLite en sus dos caminos (BD nueva y BD
 existente con backfill).
+
+---
+
+## D11 — Export/import de la configuración entre instalaciones (2026-09-13)
+
+**Requerimiento:** un call center tiene varios agentes, cada uno con su
+propia instalación de escritorio de SAVI. Necesitaban poder cargar la
+misma lista de clientes del ERP en todas sin repetir el alta a mano en
+cada máquina.
+
+**El problema de fondo:** cada instalación cifra las contraseñas de
+conexión con su propia `ERP_CREDENTIALS_KEY`, aleatoria (D4) — así que
+copiar la fila cifrada de una máquina a otra no sirve, la destino no
+puede descifrarla.
+
+**Decisiones** (confirmadas con el usuario antes de implementar):
+
+1. **El archivo se protege con una contraseña de exportación**, no con
+   texto plano. Se deriva una clave Fernet vía PBKDF2-HMAC-SHA256
+   (600.000 iteraciones, salt aleatorio embebido en el blob) — igual
+   principio que D4, pero con una clave que el admin define en el
+   momento, no la interna de la instalación. Sin esa contraseña el
+   archivo es ilegible, incluso para SAVI.
+2. **Conflicto por `code` → actualizar**, no rechazar. Es lo que
+   permite propagar un cambio de IP/credenciales de un cliente a todos
+   los agentes sin tocarlos uno por uno.
+
+**Alcance:** solo bases **activas** (una desactivada no le sirve a otro
+agente para trabajar) y con credenciales legibles (sin contraseña no
+hay nada que exportar). El `is_default` del archivo se replica al
+importar. El import es **best-effort por fila**: agentes en redes
+distintas pueden no alcanzar todos los clientes, y que uno falle no
+debe frenar el resto — cada fila queda `created`/`updated`/`failed`
+con el motivo.
+
+**Backend:** `app/modules/erp_databases/infrastructure/security/export_cipher.py`
+(cifrado con passphrase) + `application/use_cases/export_import_erp_databases.py`
+(reutiliza `ManageErpDatabasesUseCase.create`/`update` fila por fila,
+así el import pasa por el mismo camino que el alta manual — se prueba
+la conexión antes de persistir y la contraseña se re-cifra con la clave
+de la instalación destino). Endpoints `POST /admin/erp-databases/export`
+y `/import`, solo admin.
+
+**Tests:** `test_export_cipher.py` (ida y vuelta, contraseña
+incorrecta, blob corrupto) y `test_export_import_use_case.py` (dos
+repositorios con claves Fernet **distintas** simulando dos
+instalaciones reales — round-trip, actualización por código, fila no
+alcanzable no bloquea el resto, contraseña equivocada rechazada,
+credenciales ilegibles se omiten del export).
+
+**Frontend:** botones "Exportar"/"Importar" en `/admin/bases-datos`
+(`ExportDatabasesDialog.vue`, `ImportDatabasesDialog.vue`). Verificado
+end-to-end con Playwright: descarga real del archivo, confirmé que la
+contraseña del ERP **no** viaja en claro en el JSON descargado,
+contraseña de exportación equivocada se rechaza sin romper la UI, y
+reimportar el mismo archivo actualiza en vez de duplicar.
 
 ---
 

@@ -11,12 +11,19 @@ from uuid import UUID
 from fastapi import APIRouter, Query, status
 
 from app.modules.auth.infrastructure.http.admin import SaviAdminDep
-from app.modules.erp_databases.application.requests import SaveErpDatabaseRequest
+from app.modules.erp_databases.application.requests import (
+    ExportErpDatabasesRequest,
+    ImportErpDatabasesRequest,
+    SaveErpDatabaseRequest,
+)
 from app.modules.erp_databases.application.responses import (
     ConnectionTestResponse,
     ErpDatabaseResponse,
+    ExportErpDatabasesResponse,
+    ImportErpDatabasesResponse,
 )
 from app.modules.erp_databases.infrastructure.http.dependencies import (
+    ExportImportErpDatabasesUseCaseDep,
     ManageErpDatabasesUseCaseDep,
 )
 
@@ -75,6 +82,38 @@ async def test_connection(
     """
     result = await use_case.test_connection(request.to_dto(), database_id=database_id)
     return ConnectionTestResponse.from_result(result)
+
+
+@router.post("/export", response_model=ExportErpDatabasesResponse)
+async def export_databases(
+    request: ExportErpDatabasesRequest,
+    use_case: ExportImportErpDatabasesUseCaseDep,
+    _admin: SaviAdminDep,
+) -> ExportErpDatabasesResponse:
+    """Exporta las bases activas para cargarlas en otra instalación (ej.
+    otro agente del call center). El archivo queda cifrado con
+    `passphrase` — sin ella es ilegible, ni siquiera para SAVI."""
+    return ExportErpDatabasesResponse.from_dto(await use_case.export(request.passphrase))
+
+
+@router.post("/import", response_model=ImportErpDatabasesResponse)
+async def import_databases(
+    request: ImportErpDatabasesRequest,
+    use_case: ExportImportErpDatabasesUseCaseDep,
+    _admin: SaviAdminDep,
+) -> ImportErpDatabasesResponse:
+    """Importa el archivo de otra instalación. Por `code`: crea las que
+    no existen acá y actualiza las que sí (host, usuario, contraseña,
+    timeout) para que varios agentes converjan a la misma configuración.
+
+    Best-effort por fila: si una base no es alcanzable desde esta
+    máquina (agentes en redes distintas), esa fila queda `failed` en la
+    respuesta y el resto se importa igual — devuelve `200` siempre que
+    el archivo se haya podido leer; el detalle está en `rows`.
+    """
+    return ImportErpDatabasesResponse.from_dto(
+        await use_case.import_(request.passphrase, request.payload)
+    )
 
 
 @router.get("/{database_id}", response_model=ErpDatabaseResponse)

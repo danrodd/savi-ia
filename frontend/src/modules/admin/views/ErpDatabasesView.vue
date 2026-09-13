@@ -6,6 +6,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { toast } from '@/lib/toast'
 import ErpDatabaseFormDialog from '../components/ErpDatabaseFormDialog.vue'
 import ErpDatabaseTable from '../components/ErpDatabaseTable.vue'
+import ExportDatabasesDialog from '../components/ExportDatabasesDialog.vue'
+import ImportDatabasesDialog from '../components/ImportDatabasesDialog.vue'
 import { useErpDatabaseStore } from '../stores/erpDatabaseStore'
 import type { ErpDatabase } from '../types'
 
@@ -14,6 +16,8 @@ type PendingAction = 'deactivate' | 'remove'
 const store = useErpDatabaseStore()
 
 const formOpen = ref(false)
+const exportOpen = ref(false)
+const importOpen = ref(false)
 const editing = ref<ErpDatabase | null>(null)
 const busyId = ref<string | null>(null)
 const pending = ref<{ action: PendingAction; db: ErpDatabase } | null>(null)
@@ -101,7 +105,11 @@ onMounted(() => {
           Bases del ERP de cada cliente. Cada conversación queda asociada a una base al crearla.
         </p>
       </div>
-      <Button @click="openCreate">Nueva base</Button>
+      <div class="dbview__actions">
+        <Button variant="secondary" @click="importOpen = true">Importar</Button>
+        <Button variant="secondary" @click="exportOpen = true">Exportar</Button>
+        <Button @click="openCreate">Nueva base</Button>
+      </div>
     </header>
 
     <p v-if="store.error" class="dbview__error" role="alert">
@@ -124,6 +132,8 @@ onMounted(() => {
     />
 
     <ErpDatabaseFormDialog v-model:open="formOpen" :database="editing" />
+    <ExportDatabasesDialog v-model:open="exportOpen" />
+    <ImportDatabasesDialog v-model:open="importOpen" />
 
     <ConfirmDialog
       v-model:open="confirmOpen"
@@ -144,6 +154,12 @@ onMounted(() => {
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
+}
+
+.dbview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .dbview__title {

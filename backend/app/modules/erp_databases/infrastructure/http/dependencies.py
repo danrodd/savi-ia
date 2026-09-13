@@ -14,6 +14,7 @@ from app.modules.auth.infrastructure.persistence import (
     ErpUserRepositoryFactory,
 )
 from app.modules.erp_databases.application.use_cases import (
+    ExportImportErpDatabasesUseCase,
     ListAvailableDatabasesUseCase,
     ManageErpDatabasesUseCase,
 )
@@ -65,6 +66,18 @@ def get_manage_use_case(
 
 ManageErpDatabasesUseCaseDep = Annotated[
     ManageErpDatabasesUseCase, Depends(get_manage_use_case)
+]
+
+
+def get_export_import_use_case(
+    repository: ErpDatabaseRepositoryDep,
+    manager: ManageErpDatabasesUseCaseDep,
+) -> ExportImportErpDatabasesUseCase:
+    return ExportImportErpDatabasesUseCase(repository, manager)
+
+
+ExportImportErpDatabasesUseCaseDep = Annotated[
+    ExportImportErpDatabasesUseCase, Depends(get_export_import_use_case)
 ]
 
 

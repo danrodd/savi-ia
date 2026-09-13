@@ -20,6 +20,12 @@ class ErpDatabaseNotFoundError(NotFoundError):
     """La base pedida no existe o fue eliminada. → 404."""
 
 
+class InvalidExportPassphraseError(ValidationError):
+    """El archivo de export/import de bases del ERP no se pudo descifrar:
+    falta la contraseña, es incorrecta, o el archivo está dañado o no es
+    de SAVI. → 422."""
+
+
 class ErpDatabaseUnavailableError(DomainError):
     """La base existe pero no se puede usar: desactivada, eliminada o con
     credenciales ilegibles.
