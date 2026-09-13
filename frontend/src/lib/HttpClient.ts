@@ -16,8 +16,13 @@
 import { getAuthBridge } from './authBridge'
 import { ENV } from './env'
 
+interface ValidationIssue {
+  msg?: string
+}
+
 interface ErrorBody {
-  detail?: string
+  // FastAPI devuelve un arreglo de issues cuando falla la validación del body (422).
+  detail?: string | ValidationIssue[]
   message?: string
   errorCode?: string
   required_module?: string
@@ -58,7 +63,13 @@ async function readErrorBody(res: Response): Promise<ErrorBody> {
 }
 
 function errorMessage(body: ErrorBody, res: Response): string {
-  return body.detail ?? body.message ?? `HTTP ${res.status} ${res.statusText}`
+  if (Array.isArray(body.detail)) {
+    const messages = body.detail.map((issue) => issue.msg).filter(Boolean)
+    if (messages.length > 0) return messages.join(' · ')
+  } else if (body.detail) {
+    return body.detail
+  }
+  return body.message ?? `HTTP ${res.status} ${res.statusText}`
 }
 
 function buildHeaders(

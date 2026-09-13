@@ -2,12 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { type ModuleCode, usePermisosStore } from '@/modules/permisos'
+import { isAdminRouteDenied } from './adminGuard'
 
 const ChatView = () => import('@/modules/chat/views/ChatView.vue')
 const LoginView = () => import('@/modules/auth/views/LoginView.vue')
 const UserProfileView = () => import('@/modules/auth/views/UserProfileView.vue')
-const UsageView = () => import('@/modules/usage/views/UsageView.vue')
 const SinAccesoView = () => import('@/modules/permisos/views/SinAccesoView.vue')
+const AdminLayout = () => import('@/modules/admin/views/AdminLayout.vue')
+const ErpDatabasesView = () => import('@/modules/admin/views/ErpDatabasesView.vue')
+const AdminUsageView = () => import('@/modules/admin/views/AdminUsageView.vue')
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -15,6 +18,7 @@ declare module 'vue-router' {
     hideForAuthed?: boolean
     /** Si está presente, el guard exige que el usuario tenga este módulo. */
     requireModule?: ModuleCode
+    requiresAdmin?: boolean
   }
 }
 
@@ -62,10 +66,21 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      // Enlace histórico: el consumo propio vive en /perfil y el global en admin.
       path: '/consumo',
       name: 'usage',
-      component: UsageView,
-      meta: { requiresAuth: true },
+      redirect: () =>
+        useAuthStore().user?.is_admin ? { name: 'admin-usage' } : { name: 'profile' },
+    },
+    {
+      path: '/admin',
+      component: AdminLayout,
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        { path: '', name: 'admin', redirect: { name: 'admin-databases' } },
+        { path: 'bases-datos', name: 'admin-databases', component: ErpDatabasesView },
+        { path: 'consumo', name: 'admin-usage', component: AdminUsageView },
+      ],
     },
     {
       path: '/sin-acceso',
@@ -87,6 +102,8 @@ const router = createRouter({
  * 3. Rutas con `meta.requireModule` exigen acceso al módulo. Si el store
  *    aún no cargó el bootstrap, espera. Si el usuario no lo tiene,
  *    redirige a `/sin-acceso?modulo=<CODE>`.
+ * 4. Rutas con `meta.requiresAdmin` (en la ruta o en un padre) exigen
+ *    `is_admin`; si no, redirige a `/`.
  */
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
@@ -98,6 +115,10 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
   if (to.meta.hideForAuthed && authStore.isAuthenticated) {
+    next({ name: 'home' })
+    return
+  }
+  if (isAdminRouteDenied(to, authStore.user)) {
     next({ name: 'home' })
     return
   }

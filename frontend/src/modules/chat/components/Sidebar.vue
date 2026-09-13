@@ -14,6 +14,8 @@ defineProps<{
   conversations: Conversation[]
   activeId: string | null
   loading: boolean
+  /** Nombre del cliente por id de conversación; `null` cuando no hace falta mostrarlo. */
+  databaseLabels: Record<string, string> | null
   open: boolean
   mobile: boolean
 }>()
@@ -61,7 +63,11 @@ function goToProfile(): void {
 }
 
 function goToUsage(): void {
-  void router.push({ name: 'usage' })
+  void router.push({ name: 'profile', hash: '#consumo' })
+}
+
+function goToAdmin(): void {
+  void router.push({ name: 'admin' })
 }
 </script>
 
@@ -111,6 +117,7 @@ function goToUsage(): void {
         v-for="c in conversations"
         :key="c.id"
         :conversation="c"
+        :database-label="databaseLabels?.[c.id] ?? null"
         :active="c.id === activeId"
         @select="emit('select', c.id)"
         @rename="(title) => emit('rename', c.id, title)"
@@ -126,7 +133,16 @@ function goToUsage(): void {
           <line x1="12" y1="20" x2="12" y2="4" />
           <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
-        Consumo
+        Mi consumo
+      </button>
+
+      <button v-if="authStore.user?.is_admin" type="button" class="sidebar__nav-link" @click="goToAdmin">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <ellipse cx="12" cy="5" rx="9" ry="3" />
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3" />
+        </svg>
+        Administración
       </button>
 
       <div v-if="authStore.user" class="sidebar__user" aria-label="Usuario autenticado">

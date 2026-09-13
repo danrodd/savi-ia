@@ -6,7 +6,7 @@
 import { computed, onMounted } from 'vue'
 
 import { useAuthStore } from '@/modules/auth/stores/authStore'
-import { useUsageStore } from '@/modules/usage'
+import { useUsageStore } from '../stores/usageStore'
 import { formatCop, formatTokens, formatUsd } from '../utils/format'
 
 const store = useUsageStore()

@@ -8,17 +8,20 @@
  * eso devuelve 401 limpia sesión y redirige a /login (lo hace el
  * HttpClient interceptor → store → bridge).
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import Button from '@/components/ui/Button.vue'
 import { MODULE_LABELS, type ModuleCode, usePermisosStore } from '@/modules/permisos'
+import { MyUsagePanel, UsageRangeSelector } from '@/modules/usage'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
 const permisosStore = usePermisosStore()
 const router = useRouter()
+const route = useRoute()
+const usageSection = ref<HTMLElement | null>(null)
 
 const refreshing = ref(false)
 const refreshError = ref<string | null>(null)
@@ -87,6 +90,9 @@ onMounted(() => {
   // Refresca silenciosamente en cada montaje — barato, mantiene los
   // datos actualizados si cambian en el ERP.
   if (authStore.user) void authStore.fetchMe().catch(() => undefined)
+  if (route.hash === '#consumo') {
+    void nextTick(() => usageSection.value?.scrollIntoView({ block: 'start' }))
+  }
 })
 </script>
 
@@ -151,20 +157,55 @@ onMounted(() => {
         <Button @click="() => router.push({ name: 'login' })">Ir al login</Button>
       </div>
     </div>
+
+    <section v-if="user" id="consumo" ref="usageSection" class="profile__usage" aria-label="Mi consumo">
+      <header class="profile__usage-header">
+        <h2 class="profile__usage-title">Mi consumo</h2>
+        <UsageRangeSelector />
+      </header>
+      <MyUsagePanel />
+    </section>
   </div>
 </template>
 
 <style scoped>
 .profile {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
+  /* El layout global fija `body { overflow: hidden }`: la vista scrollea por dentro. */
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
   background: var(--bg);
   padding: var(--space-6);
 }
 
+.profile__usage {
+  width: min(1000px, 100%);
+  scroll-margin-top: var(--space-6);
+}
+
+.profile__usage-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.profile__usage-title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-sans));
+  font-size: 20px;
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
 .profile__card {
   width: min(520px, 100%);
+  flex-shrink: 0;
   padding: var(--space-7);
   background: var(--surface);
   border: 1px solid var(--border);

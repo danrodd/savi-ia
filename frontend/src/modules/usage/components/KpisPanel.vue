@@ -7,7 +7,7 @@
  */
 import { computed, onMounted } from 'vue'
 
-import { useUsageStore } from '@/modules/usage'
+import { useUsageStore } from '../stores/usageStore'
 import { downloadCsv, toCsv } from '../utils/csv'
 import { formatCop, formatCopAmount, formatDay, formatTokens, formatUsd } from '../utils/format'
 import TariffSimulator from './TariffSimulator.vue'
