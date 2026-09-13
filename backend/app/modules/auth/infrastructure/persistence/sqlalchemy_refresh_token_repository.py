@@ -27,6 +27,7 @@ class SqlAlchemyRefreshTokenRepository(RefreshTokenRepository):
                 RefreshTokenModel(
                     jti=record.jti,
                     user_id=record.user_id,
+                    erp_database_id=record.erp_database_id,
                     user_login=record.user_login,
                     expires_at=record.expires_at,
                     revoked_at=record.revoked_at,
@@ -44,6 +45,7 @@ class SqlAlchemyRefreshTokenRepository(RefreshTokenRepository):
             return RefreshTokenRecord(
                 jti=row.jti,
                 user_id=row.user_id,
+                erp_database_id=_require_database(row),
                 user_login=row.user_login,
                 expires_at=row.expires_at,
                 created_at=row.created_at,
@@ -66,15 +68,34 @@ class SqlAlchemyRefreshTokenRepository(RefreshTokenRepository):
             await session.commit()
             return ok
 
-    async def revoke_all_for_user(self, user_id: int, *, when: datetime) -> None:
+    async def revoke_all_for_user(
+        self, user_id: int, *, erp_database_id: UUID, when: datetime
+    ) -> None:
         async with self._sessionmaker() as session:
             stmt = (
                 update(RefreshTokenModel)
                 .where(
                     RefreshTokenModel.user_id == user_id,
+                    # Scope por base: sin esto, revocar los tokens del
+                    # usuario 5 del cliente A cerraria la sesion del
+                    # usuario 5 de todos los demas clientes.
+                    RefreshTokenModel.erp_database_id == erp_database_id,
                     RefreshTokenModel.revoked_at.is_(None),
                 )
                 .values(revoked_at=when)
             )
             await session.execute(stmt)
             await session.commit()
+
+
+def _require_database(row: RefreshTokenModel) -> UUID:
+    """La columna es nullable por las filas previas al multi-BD.
+
+    Una fila sin base no se puede atribuir a ningun cliente, asi que se
+    trata como token invalido: el usuario vuelve a iniciar sesion una vez.
+    """
+    if row.erp_database_id is None:
+        raise ValueError(
+            "Refresh token anterior al soporte multi-base. Inicia sesion de nuevo."
+        )
+    return row.erp_database_id

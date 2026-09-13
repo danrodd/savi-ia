@@ -7,10 +7,34 @@ from fastapi.responses import FileResponse
 from sqlalchemy import text
 
 from app.infrastructure.config import get_settings
-from app.infrastructure.database import close_engines, get_agent_engine, init_engines
+from app.infrastructure.database import (
+    close_engines,
+    get_agent_engine,
+    get_agent_sessionmaker,
+    init_engines,
+)
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.chat.infrastructure.http import router as chat_router
 from app.modules.conversations.infrastructure.http import router as conversations_router
+from app.modules.erp_databases.infrastructure import (
+    ErpConnectionProvider,
+    backfill_legacy_rows,
+    close_engine_registry,
+    get_engine_registry,
+    init_connection_provider,
+    init_engine_registry,
+    seed_default_database,
+)
+from app.modules.erp_databases.infrastructure.http import (
+    public_router as erp_databases_public_router,
+)
+from app.modules.erp_databases.infrastructure.http import (
+    router as erp_databases_router,
+)
+from app.modules.erp_databases.infrastructure.persistence import (
+    SqlAlchemyErpDatabaseRepository,
+)
+from app.modules.erp_databases.infrastructure.security import FernetCredentialCipher
 from app.modules.knowledge.infrastructure.catalog_provider import init_catalog
 from app.modules.usage.infrastructure.http import router as usage_router
 from app.paths import resource_dir
@@ -24,6 +48,8 @@ _API_PREFIXES = (
     "chat",
     "conversations",
     "usage",
+    "admin",
+    "erp-databases",
     "health",
     "docs",
     "redoc",
@@ -35,6 +61,29 @@ _API_PREFIXES = (
 async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     init_engines(settings)
+
+    # Registry de engines del ERP: uno por base de cliente, creado en su
+    # primer uso. Va antes del seed porque el repositorio de bases ya lo
+    # necesita disponible.
+    init_engine_registry(max_engines=settings.erp_max_open_engines)
+    cipher = FernetCredentialCipher(
+        settings.erp_credentials_key,
+        old_keys=[settings.erp_credentials_key_old],
+    )
+    erp_repository = SqlAlchemyErpDatabaseRepository(get_agent_sessionmaker(), cipher)
+    init_connection_provider(
+        ErpConnectionProvider(erp_repository, get_engine_registry())
+    )
+    # Siembra la base default desde el `.env` la primera vez. Idempotente.
+    await seed_default_database(erp_repository, settings)
+    # Y recién ahí se pueden apuntar las filas anteriores al multi-BD:
+    # antes de sembrar no hay base a la cual asignarlas.
+    default_database = await erp_repository.get_default()
+    if default_database is not None:
+        await backfill_legacy_rows(
+            get_agent_sessionmaker(), default_database.id
+        )
+
     # Carga del catálogo de conocimiento al startup. Si los archivos
     # están corruptos o faltan datos requeridos, falla loud — preferimos
     # crashear que servir respuestas sin knowledge.
@@ -45,6 +94,7 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     try:
         yield
     finally:
+        await close_engine_registry()
         await close_engines()
 
 
@@ -79,6 +129,8 @@ def create_app() -> FastAPI:
     app.include_router(conversations_router)
     app.include_router(chat_router)
     app.include_router(usage_router)
+    app.include_router(erp_databases_router)
+    app.include_router(erp_databases_public_router)
 
     # Va último: la ruta catch-all tiene que perder contra cualquier ruta
     # del API, y FastAPI resuelve por orden de registro.

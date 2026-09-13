@@ -12,6 +12,7 @@ from app.modules.conversations.application.responses import (
     ConversationResponse,
     ConversationWithMessagesResponse,
 )
+from app.modules.conversations.domain.value_objects import ConversationOwner
 from app.modules.conversations.infrastructure.http.dependencies import (
     CreateConversationUseCaseDep,
     DeleteConversationUseCaseDep,
@@ -19,8 +20,32 @@ from app.modules.conversations.infrastructure.http.dependencies import (
     ListConversationsUseCaseDep,
     RenameConversationUseCaseDep,
 )
+from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
+from app.modules.erp_databases.infrastructure.http.dependencies import (
+    ResolveModulesForDatabaseUseCaseDep,
+)
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
+
+
+def _require_database(user: CurrentUserDep) -> UUID:
+    """Base de identidad del usuario. Nunca `None`: el token no se
+    puede decodificar sin ella."""
+    assert user.erp_database_id is not None  # noqa: S101
+    return user.erp_database_id
+
+
+def _owner(user: CurrentUserDep) -> ConversationOwner:
+    """Identidad completa del usuario autenticado.
+
+    `erp_database_id` nunca es `None` acá: el token ya no se puede
+    decodificar sin base (ver `_parse_subject`). El assert documenta esa
+    garantía para el type checker.
+    """
+    assert user.erp_database_id is not None  # noqa: S101
+    return ConversationOwner(
+        user_id=user.id, erp_database_id=user.erp_database_id
+    )
 
 
 @router.post(
@@ -32,10 +57,27 @@ async def create_conversation(
     request: CreateConversationRequest,
     use_case: CreateConversationUseCaseDep,
     user: CurrentUserDep,
+    access_resolver: ResolveModulesForDatabaseUseCaseDep,
 ) -> ConversationResponse:
     # El owner es SIEMPRE el usuario autenticado — no se acepta del body
     # para evitar impersonation.
-    dto = CreateConversationDTO(title=request.title, user_id=user.id)
+    #
+    # La base: la elegida en el body, o la de identidad si no se indicó.
+    # Se valida el acceso con D3 —no se acepta a ciegas—: un usuario no
+    # puede abrir una conversación contra un cliente donde no existe.
+    database_id = request.erp_database_id or _require_database(user)
+    access = await access_resolver.execute(user.login, database_id)
+    if not access.has_access:
+        raise ErpDatabaseUnavailableError(
+            str(database_id),
+            "No tenés acceso a esa base de datos, o no está disponible.",
+        )
+
+    dto = CreateConversationDTO(
+        title=request.title,
+        user_id=user.id,
+        erp_database_id=database_id,
+    )
     result = await use_case.execute(dto)
     return ConversationResponse.from_dto(result)
 
@@ -48,7 +90,12 @@ async def list_conversations(
     offset: int = Query(default=0, ge=0),
 ) -> list[ConversationResponse]:
     # Filtra siempre por el usuario autenticado.
-    results = await use_case.execute(user.id, limit=limit, offset=offset)
+    results = await use_case.execute(
+        user.id,
+        erp_database_id=user.erp_database_id,
+        limit=limit,
+        offset=offset,
+    )
     return [ConversationResponse.from_dto(r) for r in results]
 
 
@@ -68,7 +115,7 @@ async def get_conversation(
 ) -> ConversationWithMessagesResponse:
     result = await use_case.execute(
         conversation_id,
-        expected_owner_id=user.id,
+        expected_owner=_owner(user),
         include_superseded=include_superseded,
     )
     return ConversationWithMessagesResponse.from_dto(result)
@@ -85,7 +132,7 @@ async def rename_conversation(
     (`title_locked=True`). Lo usa el botón de "Renombrar" del sidebar.
     """
     result = await use_case.execute(
-        conversation_id, request.title, expected_owner_id=user.id
+        conversation_id, request.title, expected_owner=_owner(user)
     )
     return ConversationResponse.from_dto(result)
 
@@ -105,4 +152,4 @@ async def delete_conversation(
     `chat` siguen insertando los mensajes pendientes contra la
     conversación, que quedan persistidos pero invisibles al usuario.
     """
-    await use_case.execute(conversation_id, expected_owner_id=user.id)
+    await use_case.execute(conversation_id, expected_owner=_owner(user))

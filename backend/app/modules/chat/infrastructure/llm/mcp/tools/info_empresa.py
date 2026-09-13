@@ -8,10 +8,11 @@ y `statement_timeout`, así que cualquier escritura accidental falla en el motor
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import text
 
-from app.infrastructure.database.pool import get_erp_engine
+from app.modules.erp_databases.infrastructure import get_erp_engine_for
 
 _SQL = """
 SELECT
@@ -30,9 +31,12 @@ LIMIT 1
 """
 
 
-async def info_empresa_impl(_args: dict[str, Any]) -> dict[str, Any]:
+async def info_empresa_impl(
+    _args: dict[str, Any],
+    erp_database_id: UUID | None = None,
+) -> dict[str, Any]:
     try:
-        engine = get_erp_engine()
+        engine = await get_erp_engine_for(erp_database_id)
         async with engine.connect() as conn:
             result = await conn.execute(text(_SQL))
             row = result.mappings().first()

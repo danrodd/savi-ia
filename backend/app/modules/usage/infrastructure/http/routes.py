@@ -1,7 +1,9 @@
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from fastapi import APIRouter, Query
 
+from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http import CurrentUserDep
 from app.modules.usage.application.responses import (
     ConversationUsageResponse,
@@ -48,6 +50,15 @@ def _ensure_utc(value: datetime) -> datetime:
     return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
 
 
+def _require_database(user: AuthenticatedUser) -> UUID:
+    """Base del ERP del usuario autenticado.
+
+    Nunca es `None`: el token ya no se puede decodificar sin base.
+    """
+    assert user.erp_database_id is not None  # noqa: S101
+    return user.erp_database_id
+
+
 @router.get("/me", response_model=UserUsageReportResponse)
 async def my_usage(
     use_case: GetUserUsageUseCaseDep,
@@ -66,7 +77,9 @@ async def my_usage(
     pesos colombianos.
     """
     period = _resolve_period(start, end)
-    report = await use_case.execute(user.id, period)
+    report = await use_case.execute(
+        user.id, period, erp_database_id=_require_database(user)
+    )
     return UserUsageReportResponse.from_dto(
         report, usd_to_cop_rate=settings.usd_to_cop_rate
     )

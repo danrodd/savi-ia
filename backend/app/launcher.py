@@ -653,9 +653,14 @@ def _collect_report() -> Report:
     import asyncio
 
     from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
     from app.infrastructure.config import get_settings
-    from app.infrastructure.database.pool import get_agent_engine, get_erp_engine, init_engines
+    from app.infrastructure.database.pool import get_agent_engine, init_engines
+    from app.modules.erp_databases.infrastructure.seed import (
+        erp_database_from_settings,
+        has_seed_config,
+    )
 
     report = Report(env_path=str(app_dir() / ".env"), generated_at=now_label())
 
@@ -684,10 +689,25 @@ def _collect_report() -> Report:
     async def probe() -> list[CheckResult]:
         init_engines(settings)
         checks: list[CheckResult] = []
-        for label, engine in (
-            ("la base de datos de SAVI", get_agent_engine()),
-            ("la base de datos del ERP", get_erp_engine()),
-        ):
+
+        # El ERP del `.env` se chequea armando un engine descartable: es un
+        # diagnóstico previo al arranque, y el registry de engines por
+        # cliente todavía no existe en este punto. Con el `.env` vacío ya
+        # no es un error — las bases se pueden registrar después desde la
+        # sección de administración.
+        probes: list[tuple[str, AsyncEngine]] = [
+            ("la base de datos de SAVI", get_agent_engine())
+        ]
+        erp_engine: AsyncEngine | None = None
+        if has_seed_config(settings):
+            erp_engine = create_async_engine(
+                erp_database_from_settings(settings).url,
+                echo=False,
+                pool_pre_ping=True,
+            )
+            probes.append(("la base de datos del ERP", erp_engine))
+
+        for label, engine in probes:
             title = label[0].upper() + label[1:]
             try:
                 async with engine.connect() as connection:
@@ -702,6 +722,8 @@ def _collect_report() -> Report:
                         remedy=_connection_remedy(label, error),
                     )
                 )
+        if erp_engine is not None:
+            await erp_engine.dispose()
         return checks
 
     report.results.extend(asyncio.run(probe()))

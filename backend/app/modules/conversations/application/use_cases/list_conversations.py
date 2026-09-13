@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.modules.conversations.application.dtos import ConversationDTO
 from app.modules.conversations.application.mappers import ConversationMapper
 from app.modules.conversations.domain.interfaces import ConversationRepository
@@ -11,11 +13,13 @@ class ListConversationsUseCase:
         self,
         user_id: int | None,
         *,
+        erp_database_id: UUID | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[ConversationDTO]:
         conversations = await self._repository.list_for_user(
             user_id,
+            erp_database_id=erp_database_id,
             limit=limit,
             offset=offset,
         )

@@ -8,7 +8,6 @@ from fastapi import Depends, Header
 
 from app.infrastructure.config import Settings, get_settings
 from app.infrastructure.database import get_agent_sessionmaker
-from app.infrastructure.database.pool import get_erp_engine
 from app.modules.auth.application.use_cases import (
     LoginUseCase,
     LogoutUseCase,
@@ -27,16 +26,27 @@ from app.modules.auth.domain.interfaces import (
     RefreshTokenRepository,
     SeoPlanRepository,
     TokenService,
-    UserRepository,
+    UserRepositoryFactory,
 )
 from app.modules.auth.domain.value_objects import ModuleCode
 from app.modules.auth.infrastructure.persistence import (
     ErpPermissionRepository,
     ErpSeoPlanRepository,
-    ErpUserRepository,
+    ErpUserRepositoryFactory,
     SqlAlchemyRefreshTokenRepository,
 )
 from app.modules.auth.infrastructure.security import JwtTokenService, Md5PasswordHasher
+from app.modules.erp_databases.infrastructure import (
+    get_connection_provider,
+    get_engine_registry,
+    get_erp_engine_for,
+)
+from app.modules.erp_databases.infrastructure.persistence import (
+    SqlAlchemyErpDatabaseRepository,
+)
+from app.modules.erp_databases.infrastructure.security import (
+    FernetCredentialCipher,
+)
 
 
 def _settings() -> Settings:
@@ -60,11 +70,26 @@ def get_password_hasher() -> PasswordHasher:
 PasswordHasherDep = Annotated[PasswordHasher, Depends(get_password_hasher)]
 
 
-def get_user_repository() -> UserRepository:
-    return ErpUserRepository(get_erp_engine())
+def get_user_repository_factory() -> UserRepositoryFactory:
+    """Fábrica de repositorios de usuarios, una por base de cliente.
+
+    Login y refresh no pueden recibir un repositorio ya resuelto: cuál
+    usar depende del login que llega en el request (`JPEREZ@NORTE`), y
+    eso se sabe recién dentro del caso de uso.
+    """
+    cipher = FernetCredentialCipher(
+        get_settings().erp_credentials_key,
+        old_keys=[get_settings().erp_credentials_key_old],
+    )
+    databases = SqlAlchemyErpDatabaseRepository(get_agent_sessionmaker(), cipher)
+    return ErpUserRepositoryFactory(
+        databases, get_engine_registry(), get_connection_provider()
+    )
 
 
-UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
+UserRepositoryFactoryDep = Annotated[
+    UserRepositoryFactory, Depends(get_user_repository_factory)
+]
 
 
 def get_refresh_token_repository() -> RefreshTokenRepository:
@@ -77,7 +102,7 @@ RefreshTokenRepositoryDep = Annotated[
 
 
 def get_login_use_case(
-    users: UserRepositoryDep,
+    users: UserRepositoryFactoryDep,
     refresh: RefreshTokenRepositoryDep,
     hasher: PasswordHasherDep,
     tokens: TokenServiceDep,
@@ -86,7 +111,7 @@ def get_login_use_case(
 
 
 def get_refresh_use_case(
-    users: UserRepositoryDep,
+    users: UserRepositoryFactoryDep,
     refresh: RefreshTokenRepositoryDep,
     tokens: TokenServiceDep,
 ) -> RefreshTokensUseCase:
@@ -106,8 +131,8 @@ def get_resolve_user_use_case(
     return ResolveUserFromAccessTokenUseCase(tokens)
 
 
-def get_permission_repository() -> PermissionRepository:
-    return ErpPermissionRepository(get_erp_engine())
+async def get_permission_repository() -> PermissionRepository:
+    return ErpPermissionRepository(await get_erp_engine_for(None))
 
 
 PermissionRepositoryDep = Annotated[
@@ -115,8 +140,8 @@ PermissionRepositoryDep = Annotated[
 ]
 
 
-def get_seo_plan_repository() -> SeoPlanRepository:
-    return ErpSeoPlanRepository(get_erp_engine())
+async def get_seo_plan_repository() -> SeoPlanRepository:
+    return ErpSeoPlanRepository(await get_erp_engine_for(None))
 
 
 SeoPlanRepositoryDep = Annotated[SeoPlanRepository, Depends(get_seo_plan_repository)]

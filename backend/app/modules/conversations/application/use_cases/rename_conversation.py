@@ -4,6 +4,7 @@ from app.modules.conversations.application.dtos import ConversationDTO
 from app.modules.conversations.application.mappers import ConversationMapper
 from app.modules.conversations.domain.exceptions import ConversationNotFoundError
 from app.modules.conversations.domain.interfaces import ConversationRepository
+from app.modules.conversations.domain.value_objects import ConversationOwner
 
 
 class RenameConversationUseCase:
@@ -21,14 +22,13 @@ class RenameConversationUseCase:
         conversation_id: UUID,
         new_title: str,
         *,
-        expected_owner_id: int | None = None,
+        expected_owner: ConversationOwner | None = None,
     ) -> ConversationDTO:
         conversation = await self._repository.get_by_id(conversation_id)
         if conversation is None or conversation.is_deleted:
             raise ConversationNotFoundError(conversation_id)
-        if (
-            expected_owner_id is not None
-            and conversation.user_id != expected_owner_id
+        if expected_owner is not None and not expected_owner.owns(
+            conversation.user_id, conversation.erp_database_id
         ):
             raise ConversationNotFoundError(conversation_id)
 

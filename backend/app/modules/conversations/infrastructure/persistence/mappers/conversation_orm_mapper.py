@@ -18,6 +18,7 @@ class ConversationOrmMapper:
         return Conversation(
             id=model.id,
             user_id=model.user_id,
+            erp_database_id=model.erp_database_id,
             title=model.title,
             title_locked=model.title_locked,
             created_at=model.created_at,
@@ -30,6 +31,7 @@ class ConversationOrmMapper:
         return ConversationModel(
             id=entity.id,
             user_id=entity.user_id,
+            erp_database_id=entity.erp_database_id,
             title=entity.title,
             title_locked=entity.title_locked,
             deleted_at=entity.deleted_at,

@@ -14,4 +14,5 @@ class LLMRunner(ABC):
         *,
         conversation_id: UUID | None = None,
         allowed_modules: frozenset[ModuleCode] | None = None,
+        erp_database_id: UUID | None = None,
     ) -> AsyncIterator[ChatEvent]: ...

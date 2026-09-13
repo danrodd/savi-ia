@@ -17,3 +17,8 @@ os.environ.setdefault("ERP_DB_HOST", "localhost")
 os.environ.setdefault("ERP_DB_USER", "test")
 os.environ.setdefault("ERP_DB_PASSWORD", "test")
 os.environ.setdefault("ERP_DB_NAME", "test")
+# Clave Fernet fija para la suite: los tests que ejercitan el cifrado
+# generan la suya cuando necesitan una distinta.
+os.environ.setdefault(
+    "ERP_CREDENTIALS_KEY", "sIYQBhcJUxE6vsRRrJvVKa3CtoUj_o8SPDBSAcHDCyM="
+)

@@ -27,12 +27,12 @@ class ResolveUserFromAccessTokenUseCase:
         claims = self._tokens.decode(access_token)
         if claims.purpose != TokenPurpose.ACCESS:
             raise InvalidTokenError("No es un access token")
-        try:
-            user_id = int(claims.sub)
-        except ValueError as e:
-            raise InvalidTokenError("Subject inválido") from e
+        # El parseo y la validación del subject calificado los hace
+        # `decode`: acá los claims ya llegan con la base y el id
+        # separados.
         return AuthenticatedUser(
-            id=user_id,
+            id=claims.user_id,
+            erp_database_id=claims.erp_database_id,
             login=claims.login,
             full_name=claims.full_name,
             is_admin=claims.is_admin,

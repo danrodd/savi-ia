@@ -59,6 +59,30 @@ def register_exception_handlers(app: FastAPI) -> None:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Import local para no crear un ciclo: este módulo lo importa el
+    # paquete `shared.exceptions`, y la excepción vive en un módulo que a
+    # su vez depende de `shared.exceptions.base`.
+    from app.modules.erp_databases.domain.exceptions import (
+        ErpDatabaseUnavailableError,
+    )
+
+    @app.exception_handler(ErpDatabaseUnavailableError)
+    async def _erp_unavailable(
+        _: Request, exc: ErpDatabaseUnavailableError
+    ) -> JSONResponse:
+        # 409 y no 404: la conversación y la base existen, lo que falla es
+        # el estado (desactivada, eliminada o sin acceso). El frontend usa
+        # el `errorCode` para mostrar el banner de solo lectura en lugar de
+        # un error genérico.
+        return JSONResponse(
+            status_code=409,
+            content={
+                "errorCode": "erp_database_unavailable",
+                "detail": exc.reason,
+                "erp_database_id": exc.database_id,
+            },
+        )
+
     @app.exception_handler(DomainError)
     async def _domain(_: Request, exc: DomainError) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})

@@ -56,7 +56,7 @@ _CONSULTAR_LIBRE_DESCRIPTION = (
 )
 
 
-def _build_info_empresa_tool():
+def _build_info_empresa_tool(erp_database_id: UUID | None):
     @tool(
         "info_empresa",
         (
@@ -69,21 +69,23 @@ def _build_info_empresa_tool():
         {},
     )
     async def _impl(args: dict[str, Any]) -> dict[str, Any]:
-        return await info_empresa_impl(args)
+        return await info_empresa_impl(args, erp_database_id=erp_database_id)
 
     return _impl
 
 
-def _build_consultar_datos_tool():
+def _build_consultar_datos_tool(erp_database_id: UUID | None):
     @tool("consultar_datos", build_description(), {"consulta": dict})
     async def _impl(args: dict[str, Any]) -> dict[str, Any]:
-        return await consultar_datos_impl(args)
+        return await consultar_datos_impl(args, erp_database_id=erp_database_id)
 
     return _impl
 
 
-def _build_consultar_libre_tool(conversation_id: UUID | None):
-    impl = build_consultar_libre_impl(conversation_id)
+def _build_consultar_libre_tool(
+    conversation_id: UUID | None, erp_database_id: UUID | None
+):
+    impl = build_consultar_libre_impl(conversation_id, erp_database_id)
 
     @tool(
         "consultar_libre",
@@ -153,6 +155,7 @@ def _build_knowledge_tool(allowed_modules: frozenset[ModuleCode] | None):
 def build_savi_mcp_server(
     conversation_id: UUID | None = None,
     allowed_modules: frozenset[ModuleCode] | None = None,
+    erp_database_id: UUID | None = None,
 ):
     """Construye el MCP server para un turno.
 
@@ -167,9 +170,9 @@ def build_savi_mcp_server(
         name=MCP_SERVER_NAME,
         version=MCP_SERVER_VERSION,
         tools=[
-            _build_info_empresa_tool(),
-            _build_consultar_datos_tool(),
-            _build_consultar_libre_tool(conversation_id),
+            _build_info_empresa_tool(erp_database_id),
+            _build_consultar_datos_tool(erp_database_id),
+            _build_consultar_libre_tool(conversation_id, erp_database_id),
             *_build_knowledge_tool(allowed_modules),
         ],
     )

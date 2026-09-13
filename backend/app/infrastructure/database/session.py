@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.infrastructure.database.pool import get_agent_engine, get_erp_engine
+from app.infrastructure.database.pool import get_agent_engine
 
 
 def get_agent_sessionmaker() -> async_sessionmaker[AsyncSession]:
@@ -34,18 +34,8 @@ async def get_agent_session() -> AsyncIterator[AsyncSession]:
             raise
 
 
-async def get_erp_session() -> AsyncIterator[AsyncSession]:
-    factory = async_sessionmaker(
-        bind=get_erp_engine(),
-        expire_on_commit=False,
-        autoflush=False,
-    )
-    async with factory() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
-
-
 AgentSessionDep = Annotated[AsyncSession, Depends(get_agent_session)]
-ErpSessionDep = Annotated[AsyncSession, Depends(get_erp_session)]
+
+# `get_erp_session` / `ErpSessionDep` se eliminaron: con varias bases de
+# clientes no hay una sesión "del ERP" resoluble sin saber cuál. Los
+# consumidores piden el engine por id vía `ErpConnectionProvider`.

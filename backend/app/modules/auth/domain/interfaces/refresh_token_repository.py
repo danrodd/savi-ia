@@ -25,9 +25,13 @@ class RefreshTokenRepository(ABC):
 
     @abstractmethod
     async def revoke_all_for_user(
-        self, user_id: int, *, when: datetime
+        self, user_id: int, *, erp_database_id: UUID, when: datetime
     ) -> None:
         """Revoca todos los refresh tokens vigentes de un usuario.
+
+        `erp_database_id` no es opcional: el `user_id` solo se repite
+        entre bases de clientes, y sin el scope esto cerraría la sesión
+        del usuario con ese mismo `idUsuario` en todos los clientes.
 
         Útil para logout-everywhere o cambio de contraseña. No se usa
         en el flujo básico actual pero está preparado.

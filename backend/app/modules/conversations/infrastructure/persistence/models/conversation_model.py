@@ -26,6 +26,22 @@ class ConversationModel(Base):
     # `idUsuario` del ERP (entero). Nullable solo por compatibilidad con
     # conversaciones legadas anteriores a auth — las nuevas siempre tienen.
     user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Base del ERP de esta conversacion. Se fija al crearla y NO cambia:
+    # el historial es el contexto que se le manda al LLM en cada turno, y
+    # si la base cambiara a mitad del hilo el modelo razonaria sobre datos
+    # mezclados de dos clientes. Cambiar de cliente = conversacion nueva.
+    #
+    # Junto con `user_id` forma la identidad del dueno: el `idUsuario` se
+    # repite entre bases y filtrar solo por el cruzaria conversaciones
+    # entre clientes.
+    #
+    # Nullable por las conversaciones anteriores al multi-BD; las nuevas
+    # siempre la tienen (lo exige la capa de aplicacion).
+    erp_database_id: Mapped[UUID | None] = mapped_column(
+        UuidType,
+        ForeignKey("erp_databases.id"),
+        nullable=True,
+    )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     title_locked: Mapped[bool] = mapped_column(
         Boolean,
@@ -57,7 +73,7 @@ class ConversationModel(Base):
     )
 
     __table_args__ = (
-        Index("ix_conversations_user_id", "user_id"),
+        Index("ix_conversations_user_id", "erp_database_id", "user_id"),
         Index("ix_conversations_updated_at", "updated_at"),
     )
 

@@ -8,13 +8,14 @@ defensa en profundidad por si algo se escapa.
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import text
 
-from app.infrastructure.database.pool import get_erp_engine
 from app.modules.data_query.application.query_compiler import CompiledQuery
 from app.modules.data_query.domain.query_result import QueryResult
 from app.modules.data_query.domain.semantic_query import QueryMode
+from app.modules.erp_databases.infrastructure import get_erp_engine_for
 
 # Tope absoluto de filas devueltas al modelo, independiente del LIMIT del
 # compilador. Nunca debería alcanzarse (LIMIT máx es aggregate_max_rows=100).
@@ -25,8 +26,10 @@ async def execute_compiled(
     compiled: CompiledQuery,
     entidad: str,
     modo: QueryMode,
+    *,
+    erp_database_id: UUID | None = None,
 ) -> QueryResult:
-    engine = get_erp_engine()
+    engine = await get_erp_engine_for(erp_database_id)
     async with engine.connect() as conn:
         result = await conn.execute(text(compiled.sql), compiled.params)
         mappings = result.mappings()

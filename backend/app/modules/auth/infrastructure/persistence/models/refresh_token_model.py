@@ -22,6 +22,10 @@ class RefreshTokenModel(Base):
     # FK lógica al `idUsuario` del ERP. No es FK física porque el ERP vive
     # en otra BD; se mantiene por integridad lógica del lado de SAVI.
     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Base del ERP donde vive el usuario. Junto con `user_id` forma la
+    # identidad real: sin ella, revocar los tokens del usuario 5 revocaria
+    # los de todos los clientes que tengan un usuario 5.
+    erp_database_id: Mapped[UUID | None] = mapped_column(UuidType, nullable=True)
     # Denormalizamos el login para no tener que joinear cross-db en
     # auditorías rápidas.
     user_login: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -35,7 +39,7 @@ class RefreshTokenModel(Base):
 
     __table_args__ = (
         # Para revocación masiva por usuario.
-        Index("ix_refresh_token_user_id", "user_id"),
+        Index("ix_refresh_token_user_id", "erp_database_id", "user_id"),
         # Para una tarea opcional de purga de tokens viejos.
         Index("ix_refresh_token_expires_at", "expires_at"),
     )

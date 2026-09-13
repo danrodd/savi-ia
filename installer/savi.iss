@@ -876,6 +876,44 @@ begin
   DeleteFile(OutputPath);
 end;
 
+{ La clave de cifrado de las credenciales del ERP (ERP_CREDENTIALS_KEY)
+  es una clave Fernet: 32 bytes en base64 URL-SAFE (con '-' y '_' en vez
+  de '+' y '/'), a diferencia del JWT_SECRET que usa base64 estándar.
+  Fernet valida el alfabeto, así que la diferencia no es cosmética.
+
+  Perderla o cambiarla deja ilegibles TODAS las contraseñas de conexión
+  guardadas; por eso se genera una sola vez por instalación, igual que el
+  JWT_SECRET, y hay que preservarla en una reinstalación. }
+function GenerateFernetKey(): String;
+var
+  ScriptPath, OutputPath: String;
+  Script, Output: TArrayOfString;
+  ResultCode: Integer;
+begin
+  Result := '';
+  OutputPath := ExpandConstant('{tmp}\fernet.txt');
+  ScriptPath := ExpandConstant('{tmp}\fernet.ps1');
+
+  SetArrayLength(Script, 5);
+  Script[0] := '$bytes = New-Object byte[] 32';
+  Script[1] := '$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()';
+  Script[2] := '$rng.GetBytes($bytes)';
+  Script[3] := '$b64 = [Convert]::ToBase64String($bytes).Replace(''+'',''-'').Replace(''/'',''_'')';
+  Script[4] := '$b64 | Out-File -FilePath "' + OutputPath + '" -Encoding ascii -NoNewline';
+
+  if not SaveStringsToFile(ScriptPath, Script, False) then
+    Exit;
+
+  if Exec('powershell.exe',
+          '-NoProfile -ExecutionPolicy Bypass -File "' + ScriptPath + '"',
+          '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0) then
+    if LoadStringsFromFile(OutputPath, Output) and (GetArrayLength(Output) > 0) then
+      Result := Trim(Output[0]);
+
+  DeleteFile(ScriptPath);
+  DeleteFile(OutputPath);
+end;
+
 { Reemplaza un marcador en todas las líneas de la plantilla. Se trabaja
   por líneas porque Inno no expone un cargador de archivo completo que
   respete Unicode; ningún marcador cruza saltos de línea. }
@@ -889,7 +927,7 @@ end;
 
 procedure WriteEnvFile();
 var
-  TemplatePath, EnvPath, Secret: String;
+  TemplatePath, EnvPath, Secret, FernetKey: String;
   Lines: TArrayOfString;
   UseSqlite: Boolean;
 begin
@@ -967,6 +1005,27 @@ begin
     Secret := 'CAMBIAR-ESTE-VALOR';
   end;
   ReplaceToken(Lines, '{{JWT_SECRET}}', Secret);
+
+  FernetKey := GenerateFernetKey();
+  if FernetKey = '' then
+  begin
+    MsgBox('No se pudo generar la clave de cifrado de credenciales del ERP.' +
+           #13#10 + 'Editá ERP_CREDENTIALS_KEY en el archivo .env antes de ' +
+           'usar SAVI: generá una con ' + #13#10 +
+           'python -c "from cryptography.fernet import Fernet; ' +
+           'print(Fernet.generate_key().decode())"',
+           mbError, MB_OK);
+    FernetKey := 'CAMBIAR-ESTE-VALOR';
+  end;
+  ReplaceToken(Lines, '{{ERP_CREDENTIALS_KEY}}', FernetKey);
+
+  { Vacío a propósito: un administrador del ERP ya queda habilitado para
+    la sección de administración por su propio flag. Este campo es el
+    escape para dar acceso a un usuario que NO es admin en el ERP, y su
+    valor es un `codigo` de Seguridad.Usuario — no el usuario de conexión
+    a Postgres que se cargó en el asistente. Se completa a mano en el
+    .env cuando hace falta. }
+  ReplaceToken(Lines, '{{SAVI_ADMIN_LOGINS}}', '');
 
   { Sin BOM: pydantic-settings lee el .env como UTF-8 y un BOM le
     convertiria la primera clave en "﻿APP_NAME". }

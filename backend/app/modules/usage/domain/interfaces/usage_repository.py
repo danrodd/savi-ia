@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 
 from app.modules.usage.domain.value_objects import (
     ConversationStats,
@@ -22,12 +23,12 @@ class UsageRepository(ABC):
 
     @abstractmethod
     async def totals_for_user(
-        self, user_id: int, period: UsagePeriod
+        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
     ) -> UsageTotals: ...
 
     @abstractmethod
     async def daily_for_user(
-        self, user_id: int, period: UsagePeriod
+        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
     ) -> list[DailyUsage]: ...
 
     @abstractmethod

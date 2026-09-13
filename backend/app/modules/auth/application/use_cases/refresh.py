@@ -18,7 +18,7 @@ from app.modules.auth.domain.exceptions import (
 from app.modules.auth.domain.interfaces import (
     RefreshTokenRepository,
     TokenService,
-    UserRepository,
+    UserRepositoryFactory,
 )
 from app.modules.auth.domain.value_objects import TokenPair, TokenPurpose
 
@@ -26,11 +26,11 @@ from app.modules.auth.domain.value_objects import TokenPair, TokenPurpose
 class RefreshTokensUseCase:
     def __init__(
         self,
-        user_repository: UserRepository,
+        user_repository_factory: UserRepositoryFactory,
         refresh_token_repository: RefreshTokenRepository,
         token_service: TokenService,
     ) -> None:
-        self._users = user_repository
+        self._users = user_repository_factory
         self._refresh_tokens = refresh_token_repository
         self._tokens = token_service
 
@@ -49,9 +49,18 @@ class RefreshTokensUseCase:
         if record.expires_at <= datetime.now(UTC):
             raise InvalidTokenError("Token expirado")
 
-        # Re-leemos el usuario del origen — un admin puede haber
-        # deshabilitado la cuenta mientras la sesión seguía abierta.
-        fresh = await self._users.find_by_login(claims.login)
+        # Re-leemos el usuario en SU base — la del token, no la default.
+        # Si la base se desactivó mientras la sesión seguía abierta, el
+        # refresh falla: no se puede sostener una sesión contra un cliente
+        # que ya no se consulta.
+        repository = await self._users.for_database_id(claims.erp_database_id)
+        if repository is None:
+            raise InvalidTokenError(
+                "La base de datos de esta sesión ya no está disponible."
+            )
+
+        # Un admin puede haber deshabilitado la cuenta mientras tanto.
+        fresh = await repository.find_by_login(claims.login)
         if fresh is None:
             raise InvalidTokenError("Usuario no encontrado")
         if not fresh.user.is_active:
@@ -71,6 +80,7 @@ class RefreshTokensUseCase:
             RefreshTokenRecord(
                 jti=new_jti,
                 user_id=fresh.user.id,
+                erp_database_id=claims.erp_database_id,
                 user_login=fresh.user.login,
                 expires_at=new_expires,
                 created_at=now,

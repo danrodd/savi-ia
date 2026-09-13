@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 from typing import Any
+from uuid import UUID
 
 from app.modules.data_query.application.query_compiler import compile_query
 from app.modules.data_query.application.query_parser import parse_semantic_query
@@ -25,7 +26,9 @@ from app.modules.data_query.infrastructure.erp_query_executor import execute_com
 log = logging.getLogger(__name__)
 
 
-async def run_semantic_query(raw: dict[str, Any]) -> str:
+async def run_semantic_query(
+    raw: dict[str, Any], *, erp_database_id: UUID | None = None
+) -> str:
     """Devuelve texto markdown listo para que el LLM lo presente, o un
     mensaje de error accionable (también texto)."""
     try:
@@ -38,7 +41,9 @@ async def run_semantic_query(raw: dict[str, Any]) -> str:
         return f"No pude armar la consulta: {e}"
 
     try:
-        result = await execute_compiled(compiled, query.entidad, query.modo)
+        result = await execute_compiled(
+            compiled, query.entidad, query.modo, erp_database_id=erp_database_id
+        )
     except Exception:
         log.exception("semantic_query_execution_failed entity=%s", query.entidad)
         return (

@@ -16,6 +16,9 @@ class Conversation:
     # conversaciones legadas anónimas, pero todas las nuevas SAVI tienen
     # owner.
     user_id: int | None = None
+    # Base del ERP contra la que se consulta. Inmutable una vez creada:
+    # ver el comentario del modelo ORM.
+    erp_database_id: UUID | None = None
     title: str = DEFAULT_TITLE
     title_locked: bool = False
     created_at: datetime = field(default_factory=_utc_now)

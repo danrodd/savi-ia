@@ -2,6 +2,7 @@ from uuid import UUID
 
 from app.modules.conversations.domain.exceptions import ConversationNotFoundError
 from app.modules.conversations.domain.interfaces import ConversationRepository
+from app.modules.conversations.domain.value_objects import ConversationOwner
 
 
 class DeleteConversationUseCase:
@@ -27,16 +28,18 @@ class DeleteConversationUseCase:
         self,
         conversation_id: UUID,
         *,
-        expected_owner_id: int | None = None,
+        expected_owner: ConversationOwner | None = None,
     ) -> None:
-        if expected_owner_id is not None:
+        if expected_owner is not None:
             # Validamos ownership antes del soft delete: si no es del
             # caller, 404 (no exponer la existencia de la conversación).
             conversation = await self._repository.get_by_id(conversation_id)
             if (
                 conversation is None
                 or conversation.is_deleted
-                or conversation.user_id != expected_owner_id
+                or not expected_owner.owns(
+                    conversation.user_id, conversation.erp_database_id
+                )
             ):
                 raise ConversationNotFoundError(conversation_id)
         existed = await self._repository.soft_delete(conversation_id)

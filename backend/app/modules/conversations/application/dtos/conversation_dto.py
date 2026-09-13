@@ -14,6 +14,9 @@ from app.modules.conversations.domain.value_objects import (
 class CreateConversationDTO:
     title: str | None
     user_id: int | None
+    # Base del ERP contra la que se va a consultar. Inmutable una vez
+    # creada la conversación.
+    erp_database_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -24,6 +27,7 @@ class ConversationDTO:
     title_locked: bool
     created_at: datetime
     updated_at: datetime
+    erp_database_id: UUID | None = None
 
 
 @dataclass(frozen=True)

@@ -13,6 +13,9 @@ from app.modules.conversations.infrastructure.persistence.models import (  # noq
     ConversationModel,
     MessageModel,
 )
+from app.modules.erp_databases.infrastructure.persistence.models import (  # noqa: F401
+    ErpDatabaseModel,
+)
 from app.modules.free_query.infrastructure.models import AuditQueryModel  # noqa: F401
 
 config = context.config

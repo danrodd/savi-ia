@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,9 +43,14 @@ class DailyUsage:
 class UserUsage:
     """Consumo agregado de un usuario en el período consultado.
 
-    `user_id` puede ser `None`: corresponde a conversaciones legadas
-    anteriores a auth, que igual costaron tokens.
+    La identidad es el par `(erp_database_id, user_id)`: el `idUsuario`
+    del ERP se repite entre bases de clientes, y agrupar solo por el
+    entero fusionaria en una sola fila a personas distintas.
+
+    Ambos pueden ser `None`: corresponde a conversaciones legadas
+    anteriores a auth o al multi-BD, que igual costaron tokens.
     """
 
     user_id: int | None
     totals: UsageTotals
+    erp_database_id: UUID | None = None

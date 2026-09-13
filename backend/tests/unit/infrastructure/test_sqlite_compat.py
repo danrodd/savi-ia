@@ -24,6 +24,9 @@ from app.modules.conversations.infrastructure.persistence.models import (
     ConversationModel,
     MessageModel,
 )
+from app.modules.erp_databases.infrastructure.persistence.models import (
+    ErpDatabaseModel,
+)
 from app.modules.usage.domain.value_objects import UsagePeriod
 from app.modules.usage.infrastructure.persistence.repositories.sqlalchemy_usage_repository import (
     SqlAlchemyUsageRepository,
@@ -55,8 +58,32 @@ async def sqlite_sessionmaker(tmp_path: Path) -> Any:
     await engine.dispose()
 
 
+# Base del ERP de la conversación sembrada. El consumo se agrega por el
+# par `(erp_database_id, user_id)`, así que el seed necesita las dos
+# mitades de la identidad.
+_DATABASE_ID = uuid4()
+
+
 async def _seed(session: AsyncSession) -> ConversationModel:
-    conversation = ConversationModel(id=uuid4(), user_id=7, title="Consumo del mes")
+    session.add(
+        ErpDatabaseModel(
+            id=_DATABASE_ID,
+            code="TEST",
+            name="Cliente de prueba",
+            host="localhost",
+            port=5432,
+            database="erp_test",
+            username="postgres",
+            password_encrypted="cifrado",
+        )
+    )
+    await session.flush()
+    conversation = ConversationModel(
+        id=uuid4(),
+        user_id=7,
+        erp_database_id=_DATABASE_ID,
+        title="Consumo del mes",
+    )
     session.add(conversation)
     await session.flush()
     session.add(
@@ -128,7 +155,9 @@ async def test_usage_totals_aggregate_json_tokens(sqlite_sessionmaker: Any) -> N
 
     async with sqlite_sessionmaker() as session:
         repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
-        totals = await repo.totals_for_user(7, _PERIOD)
+        totals = await repo.totals_for_user(
+            7, _PERIOD, erp_database_id=_DATABASE_ID
+        )
         assert totals.input_tokens == 100
         assert totals.output_tokens == 40
         assert totals.message_count == 1
@@ -141,7 +170,9 @@ async def test_usage_daily_buckets_by_local_date(sqlite_sessionmaker: Any) -> No
 
     async with sqlite_sessionmaker() as session:
         repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
-        daily = await repo.daily_for_user(7, _PERIOD)
+        daily = await repo.daily_for_user(
+            7, _PERIOD, erp_database_id=_DATABASE_ID
+        )
         assert len(daily) == 1
         assert str(daily[0].day) == "2026-06-01"
 

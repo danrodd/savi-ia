@@ -1,3 +1,6 @@
+from app.modules.conversations.domain.value_objects.conversation_owner import (
+    ConversationOwner,
+)
 from app.modules.conversations.domain.value_objects.message_finish_reason import (
     MessageFinishReason,
 )
@@ -8,6 +11,7 @@ from app.modules.conversations.domain.value_objects.tool_invocation import (
 )
 
 __all__ = [
+    "ConversationOwner",
     "MessageFinishReason",
     "TokenUsage",
     "ToolInvocation",

@@ -129,12 +129,38 @@ crea los accesos directos.
 |---|---|
 | `APP_HOST=127.0.0.1` | Con `0.0.0.0` el equipo publicaría en toda la red un agente con acceso de lectura al ERP |
 | `JWT_SECRET` generado con el RNG criptográfico de .NET | El generador pseudoaleatorio de Inno no es apto para una clave de firma |
+| `ERP_CREDENTIALS_KEY` (clave Fernet) generada con el mismo RNG | Cifra las contraseñas de conexión de las bases del ERP; base64 **url-safe**, no estándar, porque Fernet valida el alfabeto |
 | El `.env` queda en Program Files | Legible por el usuario, escribible solo por administradores |
 | `AGENT_DB_PATH` se deja vacío en el `.env` | Se resuelve en tiempo de ejecución contra el `%LOCALAPPDATA%` de quien **usa** la aplicación, no de quien la instaló |
 
 Ese último punto importa en empresas: si el área de sistemas instala con
 una cuenta de administrador, su `%LOCALAPPDATA%` no es el del usuario
 final.
+
+> **Clave a preservar en una reinstalación.** `ERP_CREDENTIALS_KEY`
+> descifra las contraseñas de conexión de todas las bases de clientes
+> registradas desde la aplicación. Si se reinstala con una clave nueva
+> —o se restaura un `.env` de otro backup—, esas contraseñas quedan
+> ilegibles y hay que volver a cargarlas una por una desde la sección de
+> Administración. La aplicación **no** se rompe (las bases quedan marcadas
+> "credenciales ilegibles" y el resto funciona), pero es trabajo
+> manual evitable. Al respaldar un equipo, guardar juntos `savi.db` **y**
+> el `.env` — o al menos el valor de `ERP_CREDENTIALS_KEY`.
+
+### Multi-BD del ERP
+
+El instalador sigue pidiendo **una** BD del ERP. Esa conexión se siembra
+como la base **por defecto** la primera vez que arranca SAVI; de ahí en
+más, las demás bases de clientes se agregan desde la aplicación
+(Administración → Bases de datos), sin reinstalar ni reiniciar.
+
+- La contraseña del `.env` se cifra en `savi.db` al sembrar. Queda
+  duplicada (cifrada en la BD, en claro en el `.env`); por higiene se
+  puede vaciar `ERP_DB_PASSWORD` del `.env` una vez confirmado el primer
+  arranque exitoso. La aplicación avisa mientras siga teniendo valor.
+- `SAVI_ADMIN_LOGINS` queda vacío: un administrador del ERP ya tiene la
+  sección de Administración por su flag. Se completa a mano solo para dar
+  acceso a un agente de soporte que **no** es admin en el ERP.
 
 ### Ubicación de cada componente
 

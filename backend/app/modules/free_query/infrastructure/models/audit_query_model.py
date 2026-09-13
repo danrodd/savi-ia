@@ -23,6 +23,10 @@ class AuditQueryModel(Base):
     id: Mapped[UUID] = mapped_column(UuidType, primary_key=True, default=uuid4)
     # Si el turno se hizo fuera de una conversación (futuro), queda NULL.
     conversation_id: Mapped[UUID | None] = mapped_column(UuidType, nullable=True)
+    # Base del ERP contra la que se ejecuto el SQL. Sin ella el registro
+    # no dice de que cliente eran los datos, que es la mitad del valor
+    # de auditar. Nullable por las filas previas al multi-BD.
+    erp_database_id: Mapped[UUID | None] = mapped_column(UuidType, nullable=True)
     # Pregunta del usuario en lenguaje natural, truncada a 500 chars para
     # no inflar la tabla. El LLM la pasa como argumento de la tool.
     user_question: Mapped[str | None] = mapped_column(String(500), nullable=True)

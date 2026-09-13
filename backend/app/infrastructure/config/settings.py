@@ -39,14 +39,35 @@ class Settings(BaseSettings):
     agent_db_name: str | None = Field(default=None)
 
     # ── BD del ERP ───────────────────────────────────────────────────────
-    # Siempre Postgres y siempre obligatoria: es la fuente de datos que
-    # SAVI interpreta, no algo que podamos sustituir por un archivo local.
-    erp_db_host: str
+    # Siempre Postgres. Dejó de ser la fuente de verdad en runtime: es la
+    # **semilla** de la base default en la tabla `erp_databases`, que es
+    # de donde salen todas las conexiones una vez sembrada. Ver
+    # `modules/erp_databases/infrastructure/seed.py`.
+    #
+    # Por eso pasaron a ser opcionales: una instalación puede registrar su
+    # primera base desde la sección de administración sin tocar el `.env`.
+    erp_db_host: str = Field(default="")
     erp_db_port: int = Field(default=5432)
-    erp_db_user: str
-    erp_db_password: str
-    erp_db_name: str
+    erp_db_user: str = Field(default="")
+    erp_db_password: str = Field(default="")
+    erp_db_name: str = Field(default="")
     erp_db_statement_timeout_ms: int = Field(default=60000)
+
+    # ── Cifrado de credenciales de conexión al ERP ───────────────────────
+    # Clave Fernet (32 bytes en base64 urlsafe) con la que se cifran las
+    # contraseñas de `erp_databases`. El instalador genera una al azar por
+    # instalación, igual que `JWT_SECRET`.
+    #
+    # NO se reutiliza `JWT_SECRET`: rotar el de JWT solo invalida sesiones
+    # (molesto pero inofensivo), rotar el de credenciales deja ilegibles
+    # todas las contraseñas guardadas. Mezclarlos convierte una operación
+    # rutinaria en una pérdida de datos.
+    erp_credentials_key: str = Field(default="")
+    # Clave anterior durante una rotación: se descifra con ambas y se
+    # cifra con la nueva. Vacía fuera de una rotación.
+    erp_credentials_key_old: str = Field(default="")
+    # Tope de engines del ERP vivos a la vez (evicción LRU del registry).
+    erp_max_open_engines: int = Field(default=10)
 
     # ── Autenticación del SDK de Claude ─────────────────────────────────
     # El SDK lanza el CLI `claude` como subproceso y lo autentica con lo
@@ -84,6 +105,14 @@ class Settings(BaseSettings):
     refresh_token_ttl_days: int = Field(default=7)
     # Issuer claim del JWT — útil cuando varios servicios firman.
     jwt_issuer: str = Field(default="savi")
+
+    # Códigos de usuario que reciben la sección de administración de SAVI
+    # aunque el ERP no los marque como `administrador`. Vacío por default.
+    #
+    # Alcance limitado a propósito: SOLO habilita esa sección. No otorga
+    # módulos del ERP ni cambia qué datos puede consultar el usuario —
+    # administrar conexiones y tener acceso a datos son cosas distintas.
+    savi_admin_logins: str = Field(default="")
 
     cors_allowed_origins: str = Field(
         default="http://localhost:5173,http://localhost:3000"
@@ -146,15 +175,17 @@ class Settings(BaseSettings):
         )
 
     @property
-    def erp_db_url(self) -> str:
-        return (
-            f"postgresql+asyncpg://{self.erp_db_user}:{self.erp_db_password}"
-            f"@{self.erp_db_host}:{self.erp_db_port}/{self.erp_db_name}"
-        )
-
-    @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_allowed_origins.split(",") if o.strip()]
+
+    @property
+    def savi_admin_logins_set(self) -> frozenset[str]:
+        """Códigos normalizados a mayúsculas, igual que los del ERP."""
+        return frozenset(
+            code.strip().upper()
+            for code in self.savi_admin_logins.split(",")
+            if code.strip()
+        )
 
 
 @lru_cache

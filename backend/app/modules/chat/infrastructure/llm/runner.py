@@ -122,9 +122,12 @@ def _build_options(
     *,
     conversation_id: UUID | None,
     allowed_modules: frozenset[ModuleCode] | None,
+    erp_database_id: UUID | None,
 ) -> ClaudeAgentOptions:
     mcp_server = build_savi_mcp_server(
-        conversation_id=conversation_id, allowed_modules=allowed_modules
+        conversation_id=conversation_id,
+        allowed_modules=allowed_modules,
+        erp_database_id=erp_database_id,
     )
     return ClaudeAgentOptions(
         model=settings.claude_model,
@@ -176,11 +179,13 @@ class ClaudeAgentRunner(LLMRunner):
         *,
         conversation_id: UUID | None = None,
         allowed_modules: frozenset[ModuleCode] | None = None,
+        erp_database_id: UUID | None = None,
     ) -> AsyncIterator[ChatEvent]:
         options = _build_options(
             self._settings,
             conversation_id=conversation_id,
             allowed_modules=allowed_modules,
+            erp_database_id=erp_database_id,
         )
         max_chars = self._settings.max_response_chars
         emitted_chars = 0

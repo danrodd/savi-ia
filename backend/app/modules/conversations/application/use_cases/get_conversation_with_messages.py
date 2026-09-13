@@ -4,6 +4,7 @@ from app.modules.conversations.application.dtos import ConversationWithMessagesD
 from app.modules.conversations.application.mappers import ConversationMapper
 from app.modules.conversations.domain.exceptions import ConversationNotFoundError
 from app.modules.conversations.domain.interfaces import ConversationRepository
+from app.modules.conversations.domain.value_objects import ConversationOwner
 
 
 class GetConversationWithMessagesUseCase:
@@ -14,7 +15,7 @@ class GetConversationWithMessagesUseCase:
         self,
         conversation_id: UUID,
         *,
-        expected_owner_id: int | None = None,
+        expected_owner: ConversationOwner | None = None,
         include_superseded: bool = False,
     ) -> ConversationWithMessagesDTO:
         conversation = await self._repository.get_by_id(conversation_id)
@@ -23,9 +24,8 @@ class GetConversationWithMessagesUseCase:
         # Ownership: si se pasa el owner esperado y no coincide, tratamos
         # como "no existe" — no le damos pistas al atacante sobre la
         # existencia de conversaciones ajenas.
-        if (
-            expected_owner_id is not None
-            and conversation.user_id != expected_owner_id
+        if expected_owner is not None and not expected_owner.owns(
+            conversation.user_id, conversation.erp_database_id
         ):
             raise ConversationNotFoundError(conversation_id)
 

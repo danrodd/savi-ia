@@ -21,7 +21,14 @@ class TokenClaims:
     autenticar y autorizar sin pegarle a la BD en cada request.
     """
 
-    sub: str             # idUsuario como string (estándar JWT)
+    # Identidad calificada: `"<erp_database_id>:<idUsuario>"`. El
+    # `idUsuario` solo no alcanza — se repite entre bases de clientes.
+    sub: str
+    # La base del ERP, ya parseada del `sub`. Se expone aparte para no
+    # tener que partir el string en cada uso.
+    erp_database_id: UUID
+    # `idUsuario` del ERP, ya parseado del `sub`.
+    user_id: int
     login: str           # codigo del usuario
     full_name: str       # nombre para mostrar
     is_admin: bool

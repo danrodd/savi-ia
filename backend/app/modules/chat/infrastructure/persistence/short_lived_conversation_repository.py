@@ -58,12 +58,16 @@ class ShortLivedConversationRepository(ConversationRepository):
         self,
         user_id: int | None,
         *,
+        erp_database_id: UUID | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[Conversation]:
         async with self._sessionmaker() as session:
             return await SqlAlchemyConversationRepository(session).list_for_user(
-                user_id, limit=limit, offset=offset
+                user_id,
+                erp_database_id=erp_database_id,
+                limit=limit,
+                offset=offset,
             )
 
     async def update_title(

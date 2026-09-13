@@ -11,6 +11,7 @@ desincronizarse del modelo.
 from __future__ import annotations
 
 from typing import Any, cast
+from uuid import UUID
 
 from app.modules.data_query.application.run_semantic_query import run_semantic_query
 from app.modules.data_query.infrastructure.catalog import list_entities
@@ -71,7 +72,9 @@ def build_description() -> str:
     return "\n".join(lines)
 
 
-async def consultar_datos_impl(args: dict[str, Any]) -> dict[str, Any]:
+async def consultar_datos_impl(
+    args: dict[str, Any], *, erp_database_id: UUID | None = None
+) -> dict[str, Any]:
     consulta = args.get("consulta")
     if not isinstance(consulta, dict):
         return {
@@ -86,5 +89,7 @@ async def consultar_datos_impl(args: dict[str, Any]) -> dict[str, Any]:
             ],
             "isError": True,
         }
-    text = await run_semantic_query(cast(dict[str, Any], consulta))
+    text = await run_semantic_query(
+        cast(dict[str, Any], consulta), erp_database_id=erp_database_id
+    )
     return {"content": [{"type": "text", "text": text}]}

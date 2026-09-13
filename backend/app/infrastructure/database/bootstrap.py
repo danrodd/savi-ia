@@ -26,6 +26,9 @@ from app.modules.conversations.infrastructure.persistence.models import (
     ConversationModel,
     MessageModel,
 )
+from app.modules.erp_databases.infrastructure.persistence.models import (
+    ErpDatabaseModel,
+)
 from app.modules.free_query.infrastructure.models import AuditQueryModel
 from app.paths import resource_dir
 
@@ -36,6 +39,7 @@ logger = logging.getLogger(__name__)
 # import quede referenciado y no lo borre un linter. Mismo conjunto que
 # declara `alembic/env.py`.
 _REGISTERED_MODELS = (
+    ErpDatabaseModel,
     RefreshTokenModel,
     ConversationModel,
     MessageModel,

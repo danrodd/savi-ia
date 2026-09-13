@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from uuid import UUID
 
 import pytest
 
@@ -43,18 +44,23 @@ _TOTALS = UsageTotals(
 )
 
 
+_DATABASE_A = UUID("11111111-1111-1111-1111-111111111111")
+
+
 class _FakeUsageRepo(UsageRepository):
     def __init__(self) -> None:
         self.calls: list[tuple[str, object]] = []
 
-    async def totals_for_user(self, user_id: int, period: UsagePeriod) -> UsageTotals:
-        self.calls.append(("totals_for_user", (user_id, period)))
+    async def totals_for_user(
+        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
+    ) -> UsageTotals:
+        self.calls.append(("totals_for_user", (user_id, period, erp_database_id)))
         return _TOTALS
 
     async def daily_for_user(
-        self, user_id: int, period: UsagePeriod
+        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
     ) -> list[DailyUsage]:
-        self.calls.append(("daily_for_user", (user_id, period)))
+        self.calls.append(("daily_for_user", (user_id, period, erp_database_id)))
         return [DailyUsage(day=date(2026, 5, 15), totals=_TOTALS)]
 
     async def system_totals(self, period: UsagePeriod) -> UsageTotals:
@@ -101,7 +107,9 @@ async def test_user_usage_arma_reporte_con_totales_y_serie() -> None:
     repo = _FakeUsageRepo()
     use_case = GetUserUsageUseCase(repo)
 
-    report = await use_case.execute(user_id=42, period=_PERIOD)
+    report = await use_case.execute(
+        user_id=42, period=_PERIOD, erp_database_id=_DATABASE_A
+    )
 
     assert report.user_id == 42
     assert report.period_start == _PERIOD.start
@@ -116,11 +124,13 @@ async def test_user_usage_propaga_scope_de_usuario_al_repo() -> None:
     repo = _FakeUsageRepo()
     use_case = GetUserUsageUseCase(repo)
 
-    await use_case.execute(user_id=99, period=_PERIOD)
+    await use_case.execute(user_id=99, period=_PERIOD, erp_database_id=_DATABASE_A)
 
-    # Ambas consultas reciben el mismo user_id y período.
-    assert ("totals_for_user", (99, _PERIOD)) in repo.calls
-    assert ("daily_for_user", (99, _PERIOD)) in repo.calls
+    # Ambas consultas reciben el mismo user_id, período y base. La base no
+    # es opcional: sin ella el consumo del usuario 99 sumaría el de todos
+    # los usuarios 99 de los demás clientes.
+    assert ("totals_for_user", (99, _PERIOD, _DATABASE_A)) in repo.calls
+    assert ("daily_for_user", (99, _PERIOD, _DATABASE_A)) in repo.calls
 
 
 @pytest.mark.asyncio

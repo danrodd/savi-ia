@@ -10,6 +10,8 @@ tokens internos, etc.) — el `select` es explícito.
 """
 from __future__ import annotations
 
+from uuid import UUID
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -32,8 +34,14 @@ LIMIT 1
 
 
 class ErpUserRepository(UserRepository):
-    def __init__(self, erp_engine: AsyncEngine) -> None:
+    def __init__(
+        self, erp_engine: AsyncEngine, *, erp_database_id: UUID | None = None
+    ) -> None:
         self._engine = erp_engine
+        # Califica la identidad: el `idUsuario` solo no es único entre
+        # bases de clientes. Sin esto, el usuario 5 del cliente A y el 5
+        # del cliente B serían la misma persona para SAVI.
+        self._erp_database_id = erp_database_id
 
     async def find_by_login(self, login: str) -> UserWithHash | None:
         async with self._engine.connect() as conn:
@@ -44,6 +52,7 @@ class ErpUserRepository(UserRepository):
         return UserWithHash(
             user=AuthenticatedUser(
                 id=int(row["idUsuario"]),
+                erp_database_id=self._erp_database_id,
                 login=str(row["codigo"]),
                 full_name=str(row["nombre"]),
                 is_admin=bool(row["administrador"]),

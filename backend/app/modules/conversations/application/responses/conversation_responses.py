@@ -37,6 +37,9 @@ class TokenUsageResponse(BaseModel):
 class ConversationResponse(BaseModel):
     id: UUID
     user_id: int | None
+    # Base del ERP de la conversación. La barra lateral la usa para
+    # mostrar de qué cliente es cada hilo.
+    erp_database_id: UUID | None
     title: str
     title_locked: bool
     created_at: datetime
@@ -47,6 +50,7 @@ class ConversationResponse(BaseModel):
         return cls(
             id=dto.id,
             user_id=dto.user_id,
+            erp_database_id=dto.erp_database_id,
             title=dto.title,
             title_locked=dto.title_locked,
             created_at=dto.created_at,

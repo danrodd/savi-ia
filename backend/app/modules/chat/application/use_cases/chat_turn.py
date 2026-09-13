@@ -49,6 +49,7 @@ from app.modules.conversations.domain.entities import Message, MessageRole
 from app.modules.conversations.domain.exceptions import ConversationNotFoundError
 from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.domain.value_objects import (
+    ConversationOwner,
     MessageFinishReason,
     TokenUsage,
     ToolInvocation,
@@ -160,20 +161,26 @@ class ChatTurnUseCase:
         conversation_id: UUID,
         action: ChatAction,
         *,
-        expected_owner_id: int | None = None,
-    ) -> None:
+        expected_owner: ConversationOwner | None = None,
+    ) -> UUID | None:
         """Chequea precondiciones antes de devolver el StreamingResponse.
 
         Si algo falla, levanta una excepción de dominio que el handler
         global convierte a 4xx — esto se hace fuera del SSE para que
         FastAPI pueda emitir el status code correcto (dentro del stream
-        los headers HTTP ya están enviados con 200)."""
+        los headers HTTP ya están enviados con 200).
+
+        Devuelve el `erp_database_id` de la conversación: el endpoint lo
+        necesita para chequear que la base siga disponible y para resolver
+        los módulos contra ella, ambas cosas antes de abrir el SSE."""
         conversation = await self._repository.get_by_id(conversation_id)
         if conversation is None or conversation.is_deleted:
             raise ConversationNotFoundError(conversation_id)
         # Ownership: si el endpoint pasa el dueño esperado y no coincide,
         # tratamos como "no existe" (no leak de existencia).
-        if expected_owner_id is not None and conversation.user_id != expected_owner_id:
+        if expected_owner is not None and not expected_owner.owns(
+            conversation.user_id, conversation.erp_database_id
+        ):
             raise ConversationNotFoundError(conversation_id)
 
         if action == ChatAction.EDIT_LAST:
@@ -182,13 +189,13 @@ class ChatTurnUseCase:
                 raise NothingToEditError
             last = active[-1]
             if last.role == MessageRole.USER:
-                return
+                return conversation.erp_database_id
             if (
                 last.role == MessageRole.ASSISTANT
                 and len(active) >= 2
                 and (active[-2].role == MessageRole.USER)
             ):
-                return
+                return conversation.erp_database_id
             raise NothingToEditError
         elif action == ChatAction.REGENERATE:
             active = await self._repository.list_messages(conversation_id)
@@ -200,6 +207,8 @@ class ChatTurnUseCase:
             ):
                 raise NoAssistantToRegenerateError
 
+        return conversation.erp_database_id
+
     async def execute(
         self,
         conversation_id: UUID,
@@ -207,6 +216,7 @@ class ChatTurnUseCase:
         message: str | None,
         *,
         allowed_modules: frozenset[ModuleCode] | None = None,
+        erp_database_id: UUID | None = None,
     ) -> AsyncIterator[ChatEvent]:
         # `validate` ya corrió desde el endpoint; aún así re-leemos la
         # conversación para conocer `title_locked` y el título.
@@ -223,6 +233,7 @@ class ChatTurnUseCase:
                 message,
                 is_renamable=is_renamable,
                 allowed_modules=allowed_modules,
+                erp_database_id=erp_database_id,
             ):
                 yield event
         elif action == ChatAction.EDIT_LAST:
@@ -232,11 +243,14 @@ class ChatTurnUseCase:
                 message,
                 is_renamable=is_renamable,
                 allowed_modules=allowed_modules,
+                erp_database_id=erp_database_id,
             ):
                 yield event
         elif action == ChatAction.REGENERATE:
             async for event in self._execute_regenerate(
-                conversation_id, allowed_modules=allowed_modules
+                conversation_id,
+                allowed_modules=allowed_modules,
+                erp_database_id=erp_database_id,
             ):
                 yield event
 
@@ -248,6 +262,7 @@ class ChatTurnUseCase:
         *,
         is_renamable: bool,
         allowed_modules: frozenset[ModuleCode] | None,
+        erp_database_id: UUID | None = None,
     ) -> AsyncIterator[ChatEvent]:
         history = await self._repository.list_messages(conversation_id)
         user_message = Message(
@@ -264,6 +279,7 @@ class ChatTurnUseCase:
             supersedes_id=None,
             user_text_for_title=user_text if is_renamable else None,
             allowed_modules=allowed_modules,
+            erp_database_id=erp_database_id,
         ):
             yield event
 
@@ -275,6 +291,7 @@ class ChatTurnUseCase:
         *,
         is_renamable: bool,
         allowed_modules: frozenset[ModuleCode] | None,
+        erp_database_id: UUID | None = None,
     ) -> AsyncIterator[ChatEvent]:
         active = await self._repository.list_messages(conversation_id)
         if not active:
@@ -326,6 +343,7 @@ class ChatTurnUseCase:
             supersedes_id=old_assistant.id if old_assistant else None,
             user_text_for_title=new_user_text if is_renamable else None,
             allowed_modules=allowed_modules,
+            erp_database_id=erp_database_id,
         ):
             yield event
 
@@ -335,6 +353,7 @@ class ChatTurnUseCase:
         conversation_id: UUID,
         *,
         allowed_modules: frozenset[ModuleCode] | None,
+        erp_database_id: UUID | None = None,
     ) -> AsyncIterator[ChatEvent]:
         active = await self._repository.list_messages(conversation_id)
         if not active or active[-1].role != MessageRole.ASSISTANT:
@@ -360,6 +379,7 @@ class ChatTurnUseCase:
             supersedes_id=old_assistant.id,
             user_text_for_title=None,  # regenerate nunca regenera el título
             allowed_modules=allowed_modules,
+            erp_database_id=erp_database_id,
         ):
             yield event
 
@@ -372,6 +392,7 @@ class ChatTurnUseCase:
         supersedes_id: UUID | None,
         user_text_for_title: str | None,
         allowed_modules: frozenset[ModuleCode] | None,
+        erp_database_id: UUID | None = None,
     ) -> AsyncIterator[ChatEvent]:
         title_phase1_task: asyncio.Task[Any] | None = None
         title_phase1_emitted = False
@@ -386,6 +407,7 @@ class ChatTurnUseCase:
                 prompt,
                 conversation_id=conversation_id,
                 allowed_modules=allowed_modules,
+                erp_database_id=erp_database_id,
             ):
                 accumulator.consume(event)
                 yield event

@@ -18,7 +18,7 @@ from uuid import UUID
 
 from app.infrastructure.config import get_settings
 from app.infrastructure.database import get_agent_sessionmaker
-from app.infrastructure.database.pool import get_erp_engine
+from app.modules.erp_databases.infrastructure import get_erp_engine_for
 from app.modules.free_query.application.formatter import format_result
 from app.modules.free_query.application.use_cases import ExecuteFreeQueryUseCase
 from app.modules.free_query.domain.errors import FreeQueryError
@@ -31,7 +31,10 @@ from app.modules.free_query.infrastructure.sqlalchemy_query_executor import (
 )
 
 
-def build_consultar_libre_impl(conversation_id: UUID | None):
+def build_consultar_libre_impl(
+    conversation_id: UUID | None,
+    erp_database_id: UUID | None = None,
+):
     """Devuelve el handler de la tool, clausurando `conversation_id`.
 
     El MCP server arma una clausura nueva por turno (ver
@@ -61,7 +64,9 @@ def build_consultar_libre_impl(conversation_id: UUID | None):
             user_question = None
 
         use_case = ExecuteFreeQueryUseCase(
-            executor=SqlAlchemyQueryExecutor(get_erp_engine()),
+            executor=SqlAlchemyQueryExecutor(
+                await get_erp_engine_for(erp_database_id)
+            ),
             auditor=SqlAlchemyQueryAuditor(get_agent_sessionmaker()),
             policy=policy,
         )

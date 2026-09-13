@@ -8,6 +8,7 @@ class ConversationMapper:
         return ConversationDTO(
             id=entity.id,
             user_id=entity.user_id,
+            erp_database_id=entity.erp_database_id,
             title=entity.title,
             title_locked=entity.title_locked,
             created_at=entity.created_at,
