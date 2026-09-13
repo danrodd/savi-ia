@@ -13,10 +13,17 @@
 **Backend y frontend completos y verificados end-to-end (Fases 1-8).**
 
 Validación corrida el 2026-09-13 sobre `backend/`:
-`ruff check app` limpio · `pyright app` 0 errores · **163 tests pasando**, 1 skip.
+`ruff check app` limpio · `pyright app` 0 errores · **173 tests pasando**, 1 skip.
 Frontend: `biome lint` limpio · `vue-tsc --build` 0 errores · 34 tests (Vitest),
 1 falla preexistente sin relación (`App.spec.ts`, falta Pinia en el montaje
 del test — no lo introdujo este trabajo).
+
+Los 10 tests agregados el mismo día cierran los huecos que dejaba el
+checklist de la §12 de la spec sin cubrir (ver esa sección abajo):
+rechazo real de un Postgres sin el esquema del ERP, `409` antes de abrir
+el SSE, inmutabilidad de la base de una conversación, y las migraciones
+corriendo de verdad sobre SQLite en sus dos caminos (BD nueva y BD
+existente con backfill).
 
 ---
 
@@ -61,6 +68,23 @@ base consultada a propósito — es correcto para facturar por cliente.
 
 Test de regresión: `test_conversation_visible_and_ownable_across_queried_databases`
 en `tests/unit/modules/erp_databases/test_identity_isolation.py`.
+
+---
+
+## Huecos del checklist de testing (§12 de la spec) cerrados el 2026-09-13
+
+Auditando la spec contra el código se encontró que cuatro puntos del
+"mínimo exigible" de §12 funcionaban (verificados a mano o por E2E) pero
+no tenían test automatizado. Se cerraron los cuatro:
+
+| Punto de §12 | Test nuevo |
+|---|---|
+| Test de conexión rechaza un Postgres sin el esquema del ERP | `tests/unit/modules/erp_databases/test_postgres_connection_tester.py` — contra un Postgres real (se salta si no hay uno alcanzable), crea y borra su propia base de prueba |
+| Base inactiva: `POST /chat` da `409` antes de abrir el SSE | `tests/unit/modules/chat/test_database_unavailable_before_stream.py` — llama al handler HTTP directo con dobles mínimos |
+| Inmutabilidad de la base de una conversación (D2, R1) | `tests/unit/modules/conversations/test_database_immutability.py` (módulo nuevo — `conversations` no tenía tests) |
+| Migración aplica sobre SQLite nueva y existente | `tests/unit/infrastructure/test_ensure_schema_migration_paths.py` — corre `ensure_schema()` de verdad en los dos caminos, no `create_all` directo |
+
+Con estos, la suite pasó de 163 a **173 tests**.
 
 > El orden real de ejecución fue 1 → 2 → 3 → 4 → 5 → 8. La Fase 2 va antes
 > de que exista una segunda base porque corrige el defecto latente de
