@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { HttpRequestError } from '@/lib/HttpClient'
+import { type AvailableErpDatabase, erpDatabaseService } from '@/modules/admin'
 import { agentService } from '../services/agentService'
 import { conversationService } from '../services/conversationService'
 import type {
@@ -148,6 +150,10 @@ function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
   return next
 }
 
+function isDatabaseUnavailable(e: unknown): boolean {
+  return e instanceof HttpRequestError && e.body.errorCode === 'erp_database_unavailable'
+}
+
 function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
   for (let i = arr.length - 1; i >= 0; i--) {
     if (arr[i] !== undefined && predicate(arr[i] as T)) return i
@@ -165,10 +171,38 @@ export const useChatStore = defineStore('chat', () => {
   const streaming = ref(false)
   const error = ref<string | null>(null)
 
+  // Bases del ERP a las que el usuario tiene acceso. La de una conversación
+  // se fija al crearla y no cambia; la selección solo aplica a la próxima.
+  const availableDatabases = ref<AvailableErpDatabase[]>([])
+  const availableDatabasesLoaded = ref(false)
+  const selectedDatabaseId = ref<string | null>(null)
+  const unavailableDatabaseIds = ref<Set<string>>(new Set())
+
   let abortController: AbortController | null = null
 
   const activeConversation = computed(
     () => conversations.value.find((c) => c.id === activeConversationId.value) ?? null,
+  )
+
+  const databaseNameById = computed(
+    () => new Map(availableDatabases.value.map((db) => [db.id, db.name])),
+  )
+
+  function isDatabaseUsable(id: string | null): boolean {
+    if (!id || !availableDatabasesLoaded.value) return true
+    return databaseNameById.value.has(id) && !unavailableDatabaseIds.value.has(id)
+  }
+
+  const activeDatabaseUnavailable = computed(
+    () => activeConversation.value !== null && !isDatabaseUsable(activeConversation.value.erp_database_id),
+  )
+
+  // Con un solo cliente el nombre en cada conversación es ruido; se muestra
+  // en cuanto hay más de una base o alguna conversación quedó sin la suya.
+  const showsDatabaseContext = computed(
+    () =>
+      availableDatabases.value.length > 1 ||
+      conversations.value.some((c) => !isDatabaseUsable(c.erp_database_id)),
   )
 
   const lastUserIndex = computed(() => findLastIndex(messages.value, (m) => m.role === 'user'))
@@ -303,8 +337,26 @@ export const useChatStore = defineStore('chat', () => {
     // versionar hasta el próximo refetch). Es el menor mal posible.
   }
 
+  async function loadAvailableDatabases(): Promise<void> {
+    try {
+      availableDatabases.value = await erpDatabaseService.available()
+      availableDatabasesLoaded.value = true
+      const selected = selectedDatabaseId.value
+      if (selected && !databaseNameById.value.has(selected)) selectedDatabaseId.value = null
+    } catch {
+      // Sin la lista el chat sigue funcionando contra la base de inicio de sesión.
+    }
+  }
+
+  function markDatabaseUnavailable(id: string): void {
+    unavailableDatabaseIds.value = new Set([...unavailableDatabaseIds.value, id])
+  }
+
   async function createConversation(title?: string): Promise<Conversation> {
-    const conv = await conversationService.create(title)
+    const conv = await conversationService.create({
+      title,
+      erpDatabaseId: selectedDatabaseId.value,
+    })
     conversations.value = [conv, ...conversations.value]
     activeConversationId.value = conv.id
     messages.value = []
@@ -398,6 +450,13 @@ export const useChatStore = defineStore('chat', () => {
             { ...last, done: true, interrupted: true },
           ]
         }
+      } else if (isDatabaseUnavailable(err)) {
+        // El backend corta antes de abrir el stream: no se persistió nada,
+        // así que se quitan los placeholders del turno.
+        messages.value = messages.value.filter((m) => m.id !== null)
+        const conv = conversations.value.find((c) => c.id === targetConvId)
+        if (conv?.erp_database_id) markDatabaseUnavailable(conv.erp_database_id)
+        void loadAvailableDatabases()
       } else {
         error.value = err.message
         messages.value = applyEvent(messages.value, { type: 'error', message: err.message })
@@ -417,8 +476,14 @@ export const useChatStore = defineStore('chat', () => {
 
     let convId = activeConversationId.value
     if (!convId) {
-      const conv = await createConversation()
-      convId = conv.id
+      try {
+        const conv = await createConversation()
+        convId = conv.id
+      } catch (e) {
+        error.value = (e as Error).message || 'No se pudo crear la conversación.'
+        if (isDatabaseUnavailable(e)) void loadAvailableDatabases()
+        return
+      }
     }
     const targetConvId = convId
 
@@ -487,6 +552,13 @@ export const useChatStore = defineStore('chat', () => {
     lastUserIndex,
     lastAssistantIndex,
     canRegenerate,
+    availableDatabases,
+    selectedDatabaseId,
+    databaseNameById,
+    activeDatabaseUnavailable,
+    showsDatabaseContext,
+    isDatabaseUsable,
+    loadAvailableDatabases,
     loadConversations,
     loadConversation,
     createConversation,

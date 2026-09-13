@@ -7,6 +7,7 @@ import { useBreakpoint } from '@/composables/useBreakpoint'
 import { toast } from '@/lib/toast'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import Composer from '../components/Composer.vue'
+import DatabasePicker from '../components/DatabasePicker.vue'
 import MessageList from '../components/MessageList.vue'
 import MobileTopBar from '../components/MobileTopBar.vue'
 import ShareMenu from '../components/ShareMenu.vue'
@@ -54,7 +55,31 @@ const {
   lastUserIndex,
   canRegenerate,
   versionsByActiveId,
+  availableDatabases,
+  selectedDatabaseId,
+  databaseNameById,
+  activeDatabaseUnavailable,
+  showsDatabaseContext,
 } = storeToRefs(store)
+
+const showsDatabasePicker = computed(
+  () => activeConversationId.value === null && availableDatabases.value.length > 1,
+)
+
+const activeDatabaseName = computed<string | null>(() => {
+  const id = activeConversation.value?.erp_database_id
+  return id ? (databaseNameById.value.get(id) ?? null) : null
+})
+
+const conversationDatabaseLabels = computed<Record<string, string> | null>(() => {
+  if (!showsDatabaseContext.value) return null
+  const labels: Record<string, string> = {}
+  for (const c of conversations.value) {
+    const name = c.erp_database_id ? databaseNameById.value.get(c.erp_database_id) : undefined
+    labels[c.id] = name && store.isDatabaseUsable(c.erp_database_id) ? name : 'Base no disponible'
+  }
+  return labels
+})
 
 const { isMobile } = useBreakpoint()
 const sidebarOpen = ref(false)
@@ -69,7 +94,7 @@ async function syncWithRoute(id: string | undefined): Promise<void> {
 }
 
 onMounted(async () => {
-  await store.loadConversations()
+  await Promise.all([store.loadConversations(), store.loadAvailableDatabases()])
   const routeId = route.params.id as string | undefined
   if (routeId) await store.loadConversation(routeId)
 })
@@ -190,6 +215,7 @@ const showConversationShare = computed<boolean>(
       :conversations="conversations"
       :active-id="activeConversationId"
       :loading="loadingConversations"
+      :database-labels="conversationDatabaseLabels"
       :open="sidebarVisible"
       :mobile="isMobile"
       @select="handleSelect"
@@ -252,6 +278,23 @@ const showConversationShare = computed<boolean>(
 
       <div v-if="error" class="chat-main__banner" role="alert">{{ error }}</div>
 
+      <div
+        v-if="activeDatabaseUnavailable && !isReadOnly"
+        class="chat-main__banner"
+        role="alert"
+      >
+        La base de datos de esta conversación ya no está disponible. Puedes leer el historial,
+        pero no enviar mensajes nuevos. Inicia una conversación nueva con otro cliente.
+      </div>
+      <div
+        v-else-if="activeConversation && showsDatabaseContext && activeDatabaseName"
+        class="chat-main__context"
+      >
+        <span class="chat-main__context-chip" title="La base de una conversación no se puede cambiar">
+          Cliente: {{ activeDatabaseName }}
+        </span>
+      </div>
+
       <WelcomeScreen v-if="messages.length === 0" @suggest="handleSend" />
 
       <MessageList
@@ -291,9 +334,16 @@ const showConversationShare = computed<boolean>(
       <!-- Composer oculto en modo solo-lectura (vista compartida de una
            conversación ajena). Cuando es tuya, el composer aparece igual
            y podés seguir escribiendo aunque la URL sea /share/:id. -->
+      <DatabasePicker
+        v-if="showsDatabasePicker && !isReadOnly"
+        v-model="selectedDatabaseId"
+        :databases="availableDatabases"
+      />
+
       <Composer
         v-if="!isReadOnly"
         :streaming="streaming"
+        :disabled="activeDatabaseUnavailable"
         @send="handleSend"
         @stop="store.stopStream"
       />
@@ -346,6 +396,23 @@ const showConversationShare = computed<boolean>(
   font-size: 13px;
   font-weight: var(--fw-medium);
   flex-shrink: 0;
+}
+
+.chat-main__context {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) var(--space-5);
+  flex-shrink: 0;
+}
+
+.chat-main__context-chip {
+  padding: 3px var(--space-3);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: var(--fw-medium);
 }
 
 /* Banner identificador de "vista compartida". Variante suave por default

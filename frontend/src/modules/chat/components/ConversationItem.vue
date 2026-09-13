@@ -4,7 +4,11 @@ import Tooltip from '@/components/ui/Tooltip.vue'
 import type { Conversation } from '../types'
 import ConversationMenu from './ConversationMenu.vue'
 
-const props = defineProps<{ conversation: Conversation; active: boolean }>()
+const props = defineProps<{
+  conversation: Conversation
+  active: boolean
+  databaseLabel: string | null
+}>()
 const emit = defineEmits<{
   select: []
   rename: [title: string]
@@ -149,11 +153,12 @@ function toggleMenu(e: Event): void {
           @blur="commit"
           @click.stop
         />
-        <template v-else>
+        <span v-else class="item__text">
           <span class="item__title">
             {{ displayedTitle }}<span v-if="animating" class="item__caret" aria-hidden="true" />
           </span>
-        </template>
+          <span v-if="databaseLabel" class="item__database">{{ databaseLabel }}</span>
+        </span>
         <svg
           v-if="conversation.title_locked && !editing && !animating"
           class="item__lock"
@@ -317,6 +322,21 @@ function toggleMenu(e: Event): void {
   letter-spacing: -0.005em;
   min-width: 0;
   flex: 1;
+}
+
+.item__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.item__database {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-subtle);
 }
 
 .item__caret {

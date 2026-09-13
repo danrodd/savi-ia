@@ -1,4 +1,4 @@
-import { HttpClient } from '@/lib/HttpClient'
+import { HttpClient, HttpRequestError } from '@/lib/HttpClient'
 import { readSseJson } from '@/lib/streamSse'
 import type { ChatEvent, SendChatBody } from '../types'
 
@@ -14,14 +14,20 @@ class AgentService {
     })
 
     if (!res.ok) {
-      let detail = ''
+      let data: { detail?: string; message?: string; errorCode?: string } = {}
       try {
-        const data = (await res.json()) as { detail?: string; message?: string }
-        detail = data.detail ?? data.message ?? ''
+        data = await res.json()
       } catch {
         // body no JSON
       }
-      throw new Error(detail || `chat error: ${res.status} ${res.statusText}`)
+      const detail = typeof data.detail === 'string' ? data.detail : (data.message ?? '')
+      // HttpRequestError conserva `errorCode` para que el store detecte
+      // `erp_database_unavailable` (409 antes de abrir el stream).
+      throw new HttpRequestError(
+        detail || `chat error: ${res.status} ${res.statusText}`,
+        res.status,
+        data,
+      )
     }
     if (!res.body) {
       throw new Error('chat error: respuesta sin cuerpo')

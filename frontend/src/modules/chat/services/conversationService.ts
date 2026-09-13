@@ -10,8 +10,13 @@ class ConversationService {
     return this.http.get<Conversation[]>('', { query: params })
   }
 
-  create(title?: string): Promise<Conversation> {
-    return this.http.post<Conversation>('', { title: title ?? null, user_id: null })
+  /** Sin `erpDatabaseId` el backend usa la base con la que inició sesión el usuario. */
+  create(options: { title?: string; erpDatabaseId?: string | null } = {}): Promise<Conversation> {
+    return this.http.post<Conversation>('', {
+      title: options.title ?? null,
+      user_id: null,
+      erp_database_id: options.erpDatabaseId ?? null,
+    })
   }
 
   get(id: string): Promise<ConversationDetail> {

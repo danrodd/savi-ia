@@ -6,13 +6,18 @@
  * el querystring para devolverlo a la vista que quería visitar. Si no
  * hay `next`, vuelve a la home `/`.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useRoute, useRouter } from 'vue-router'
 
 import Button from '@/components/ui/Button.vue'
 import { AuthRequestError } from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
+import {
+  loginSuggestions,
+  readRememberedCodes,
+  rememberCodeFromLogin,
+} from '../utils/loginDatabaseCodes'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +28,9 @@ const password = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref<string | null>(null)
 
+const rememberedCodes = readRememberedCodes()
+const suggestions = computed(() => loginSuggestions(login.value, rememberedCodes))
+
 async function onSubmit(): Promise<void> {
   errorMessage.value = null
   if (!login.value.trim() || !password.value) {
@@ -32,6 +40,7 @@ async function onSubmit(): Promise<void> {
   isSubmitting.value = true
   try {
     await authStore.login({ login: login.value.trim(), password: password.value })
+    rememberCodeFromLogin(login.value)
     const next = (route.query.next as string | undefined) ?? '/'
     await router.replace(next)
   } catch (err) {
@@ -74,8 +83,16 @@ async function onSubmit(): Promise<void> {
             autofocus
             :disabled="isSubmitting"
             placeholder="Tu código de usuario"
+            list="login-suggestions"
+            :aria-describedby="rememberedCodes.length === 0 ? 'login-code-hint' : undefined"
           />
+          <datalist id="login-suggestions">
+            <option v-for="s in suggestions" :key="s" :value="s" />
+          </datalist>
         </label>
+        <p v-if="rememberedCodes.length === 0" id="login-code-hint" class="login__hint">
+          Si atiendes varios clientes, agrega su código: <code>USUARIO@CODIGO</code>.
+        </p>
         <label class="login__field">
           <span class="login__label">Contraseña</span>
           <input
@@ -184,5 +201,17 @@ async function onSubmit(): Promise<void> {
   background: var(--surface-danger, rgba(220, 38, 38, 0.08));
   color: var(--text-danger, #b91c1c);
   font-size: 13px;
+}
+
+.login__hint {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  font-size: 12px;
+  color: var(--text-subtle);
+  line-height: 1.4;
+}
+
+.login__hint code {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
 }
 </style>

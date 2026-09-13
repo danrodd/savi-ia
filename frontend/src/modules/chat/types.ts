@@ -1,6 +1,7 @@
 export interface Conversation {
   id: string
   user_id: string | null
+  erp_database_id: string | null
   title: string
   title_locked: boolean
   created_at: string
