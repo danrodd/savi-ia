@@ -1,13 +1,14 @@
-# PRD — Proveedores de IA configurables (Claude + Gemini)
+# PRD — Proveedores de IA configurables (Claude + Gemini + OpenAI)
 
 > Estado: **propuesta** — pendiente de aprobación antes de implementar.
 > Fecha: 2026-09-13.
 > Specs por fase: [Fase 1](01-fase-tools-neutrales.md) ·
 > [Fase 2](02-fase-configuracion-proveedores.md) ·
-> [Fase 3](03-fase-gemini.md) · [Fase 4](04-fase-interfaz-admin-y-e2e.md)
+> [Fase 3](03-fase-gemini.md) · [Fase 4](04-fase-interfaz-admin-y-e2e.md) ·
+> [Fase 5](05-fase-openai.md)
 
 SAVI deja de estar atado a Claude: un administrador elige desde la
-interfaz qué proveedor de IA usa la instalación (Claude o Gemini, para
+interfaz qué proveedor de IA usa la instalación (Claude, Gemini u OpenAI, para
 empezar), con qué modelo y con qué API key. Todo lo que el chat hace hoy
 —tools del ERP, permisos por base, multi-cliente, auto-título, consumo—
 funciona igual con cualquiera de los dos. La arquitectura deja lugar para
@@ -21,8 +22,8 @@ sumar otros proveedores sin tocar el caso de uso del chat.
 |---|---|
 | Dónde se configura | **Interfaz de administración** (`/admin/proveedores-ia`), guardado en la BD del agente. El `.env` solo siembra la configuración inicial de Claude para no romper instalaciones existentes. |
 | Qué se configura | Proveedor activo, modelo de chat, modelo de títulos, API key y precios por modelo. |
-| Primer proveedor nuevo | **Gemini** vía SDK oficial `google-genai`, por API key. |
-| Cómo se integra Gemini | Loop manual de *function calling* con streaming. No se usa el soporte MCP del SDK de Google: es experimental y ejecuta las tools sin dejarnos emitir eventos ni aplicar límites. |
+| Proveedores nuevos | **Gemini** vía `google-genai` y **OpenAI** vía `openai` + Responses API, ambos por API key. |
+| Cómo se integran los proveedores API | Cada adaptador traduce el registro neutral de tools a su API y controla su propio loop de function calling. No se delega la ejecución al proveedor. |
 | Claude | Sigue con `claude-agent-sdk` (decisión vigente en `CLAUDE.md` §10). Solo se desacopla de las tools y de la configuración por `.env`. |
 | Tools del ERP | **Una sola definición neutral** compartida por todos los proveedores. Se siguen respetando las 4 tools con dispatcher. |
 | API keys | Cifradas en reposo con el mismo esquema Fernet que ya protege las credenciales de las bases del ERP. Nunca salen del backend. |
@@ -45,7 +46,7 @@ sumar otros proveedores sin tocar el caso de uso del chat.
 
 1. Configurar el proveedor de IA **desde una interfaz**, sin tocar el `.env`
    ni reiniciar.
-2. Soportar **Gemini** con paridad funcional completa respecto de Claude.
+2. Soportar **Gemini y OpenAI** con paridad funcional completa respecto de Claude.
 3. Dejar un punto de extensión claro: agregar un tercer proveedor debe
    implicar escribir un adaptador, no modificar el caso de uso del chat.
 4. Mantener la trazabilidad de consumo y costo por proveedor y modelo.
@@ -56,7 +57,7 @@ sumar otros proveedores sin tocar el caso de uso del chat.
   selección por tipo de pregunta).
 - Elegir proveedor **por conversación** o **por usuario**: es una
   configuración global de la instalación.
-- Proveedores distintos de Claude y Gemini (quedan preparados, no
+- Proveedores distintos de Claude, Gemini y OpenAI (quedan preparados, no
   implementados).
 - Migrar Claude del `claude-agent-sdk` a la API directa.
 - Volver opcionales los prerrequisitos de Claude en el instalador (Node,
@@ -65,6 +66,7 @@ sumar otros proveedores sin tocar el caso de uso del chat.
   cuando Gemini esté validado en producción.
 - Vertex AI (Gemini empresarial con credenciales de GCP): solo API key del
   Gemini Developer API.
+- Azure OpenAI, endpoints compatibles de terceros y autenticación Entra ID.
 
 ## 4. Usuarios
 
@@ -92,6 +94,8 @@ sumar otros proveedores sin tocar el caso de uso del chat.
 | RF-10 | Cada mensaje del asistente persiste `provider`, `model`, `usage` y `cost_usd`. | 3 |
 | RF-11 | Una instalación existente sigue funcionando con Claude después de actualizar, sin configurar nada (seed desde `.env`). | 2 |
 | RF-12 | El diagnóstico ("Diagnosticar SAVI") informa el proveedor activo y valida sus requisitos (CLI solo si es Claude). | 4 |
+| RF-13 | El chat con OpenAI soporta las tres acciones, las 4 tools, streaming, títulos, usage, costo y trazabilidad por mensaje. | 5 |
+| RF-14 | OpenAI lista modelos visibles para la API key, recomienda uno generalista y permite fallback configurable ante indisponibilidad. | 5 |
 
 ## 6. Requerimientos no funcionales
 
@@ -115,6 +119,7 @@ flowchart LR
     F --> R{Proveedor activo}
     R -->|claude| CR[ClaudeRunner<br/>claude-agent-sdk]
     R -->|gemini| GR[GeminiRunner<br/>google-genai]
+    R -->|openai| OR[OpenAIRunner<br/>Responses API]
     CR --> TA[Adaptador MCP]
     GR --> TG[Adaptador FunctionDeclaration]
     TA --> T[Registro neutral de tools<br/>ToolSpec x4]
@@ -149,6 +154,7 @@ Detalle de cada pieza en las specs de fase.
 | R5 | La credencial de Claude hoy se inyecta al entorno una sola vez por proceso (`os.environ.setdefault`). | Cambio de key sin efecto hasta reiniciar | Pasar la credencial por turno al SDK (Fase 2, con verificación previa). |
 | R6 | Mezclar costos de proveedores en los KPIs de consumo. | Reportes engañosos | `provider` y `model` por mensaje (Fase 3). |
 | R7 | Una key cifrada se vuelve ilegible si cambia `ERP_CREDENTIALS_KEY`. | Chat caído | Mismo manejo que las bases del ERP: marcar `credentials_unreadable` y pedir re-ingresar, sin tumbar la app. |
+| R8 | Responses exige conservar items de razonamiento durante tool loops. | El siguiente request puede ser rechazado o perder calidad. | Conservar output items completos y probar un segundo request con tools; nunca exponer reasoning privado. |
 
 ## 9. Preguntas abiertas
 
@@ -182,8 +188,9 @@ Cada fase es entregable, verificable y commiteable por separado.
 | 2 | [Configuración de proveedores](02-fase-configuracion-proveedores.md) | Módulo `llm_providers`: tabla, cifrado, seed desde `.env`, API admin y resolución del proveedor por turno. | Claude configurable por API |
 | 3 | [Integración de Gemini](03-fase-gemini.md) | `GeminiRunner`, título, cálculo de costo, `provider`/`model` por mensaje. | Gemini funcional por API |
 | 4 | [Interfaz admin y verificación E2E](04-fase-interfaz-admin-y-e2e.md) | Pantalla `/admin/proveedores-ia`, diagnóstico y E2E en ambos proveedores. | Todo desde la UI |
+| 5 | [Integración de OpenAI](05-fase-openai.md) | `OpenAIRunner`, Responses API, catálogo de modelos, tools, resiliencia, consumo y E2E completo. | OpenAI configurable desde la UI |
 
-Orden obligatorio: 1 → 2 → 3 → 4. La Fase 1 va primero porque cualquier
+Orden obligatorio: 1 → 2 → 3 → 4 → 5. La Fase 1 va primero porque cualquier
 proveedor nuevo sobre el acoplamiento actual obligaría a duplicar las
 tools y a reabrir el caso de uso del chat.
 
