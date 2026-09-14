@@ -66,12 +66,35 @@ class _Client:
 def _chunk(*parts: types.Part, usage: object | None = None) -> object:
     return SimpleNamespace(
         candidates=[
-            SimpleNamespace(
-                content=SimpleNamespace(parts=list(parts)), finish_reason=None
-            )
+            SimpleNamespace(content=SimpleNamespace(parts=list(parts)), finish_reason=None)
         ],
         usage_metadata=usage,
     )
+
+
+class _StatusError(Exception):
+    def __init__(self, code: int) -> None:
+        super().__init__(f"status {code}")
+        self.code = code
+
+
+class _ScriptedModels:
+    def __init__(self, scripts: list[tuple[str, object]]) -> None:
+        self.scripts = scripts
+        self.calls: list[str] = []
+
+    async def generate_content_stream(self, **kwargs: object):
+        model = str(kwargs["model"])
+        self.calls.append(model)
+        expected_model, result = self.scripts.pop(0)
+        assert model == expected_model
+
+        async def iterator():
+            if isinstance(result, Exception):
+                raise result
+            yield result
+
+        return iterator()
 
 
 @pytest.mark.asyncio
@@ -85,15 +108,11 @@ async def test_runner_streams_text_and_usage(monkeypatch: pytest.MonkeyPatch) ->
             [
                 _chunk(
                     types.Part.from_text(text="Hola "),
-                    usage=SimpleNamespace(
-                        prompt_token_count=5, candidates_token_count=2
-                    ),
+                    usage=SimpleNamespace(prompt_token_count=5, candidates_token_count=2),
                 ),
                 _chunk(
                     types.Part.from_text(text="mundo"),
-                    usage=SimpleNamespace(
-                        prompt_token_count=5, candidates_token_count=2
-                    ),
+                    usage=SimpleNamespace(prompt_token_count=5, candidates_token_count=2),
                 ),
             ]
         ]
@@ -209,6 +228,108 @@ async def test_runner_retries_rate_limit_before_first_token_and_surfaces_auth_er
 
 
 @pytest.mark.asyncio
+async def test_runner_retries_three_times_before_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools",
+        lambda **_: [],
+    )
+    models = _ScriptedModels(
+        [
+            ("gemini-test", _StatusError(503)),
+            ("gemini-test", _StatusError(503)),
+            ("gemini-test", _StatusError(503)),
+            ("gemini-test", _chunk(types.Part.from_text(text="ok"))),
+        ]
+    )
+    monkeypatch.setattr("asyncio.sleep", lambda _: _noop())
+    events = [
+        event
+        async for event in GeminiRunner(
+            Settings(gemini_retry_base_delay_s=0),
+            _provider(),
+            client=SimpleNamespace(aio=SimpleNamespace(models=models)),
+        ).stream_turn("consulta")
+    ]
+    assert models.calls == ["gemini-test"] * 4
+    assert any(isinstance(event, DoneEvent) for event in events)
+
+
+async def _noop() -> None:
+    return None
+
+
+@pytest.mark.asyncio
+async def test_runner_falls_back_after_primary_is_exhausted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools",
+        lambda **_: [],
+    )
+    models = _ScriptedModels(
+        [
+            ("gemini-test", _StatusError(503)),
+            ("gemini-test", _StatusError(503)),
+            ("fallback", _chunk(types.Part.from_text(text="ok"))),
+        ]
+    )
+    settings = Settings(
+        gemini_retry_attempts=1,
+        gemini_retry_base_delay_s=0,
+        gemini_fallback_models="fallback, gemini-test, fallback",
+    )
+    events = [
+        event
+        async for event in GeminiRunner(
+            settings,
+            ActiveProvider(
+                kind="gemini",
+                chat_model="gemini-test",
+                title_model="title",
+                credential_kind="api_key",
+                credential="test-key",
+                pricing={"fallback": ModelPrice(input=3, output=4)},
+            ),
+            client=SimpleNamespace(aio=SimpleNamespace(models=models)),
+        ).stream_turn("consulta")
+    ]
+    assert models.calls == ["gemini-test", "gemini-test", "fallback"]
+    assert next(event for event in events if isinstance(event, DoneEvent)).model == "fallback"
+
+
+@pytest.mark.asyncio
+async def test_runner_emits_neutral_error_when_all_models_are_exhausted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools",
+        lambda **_: [],
+    )
+    models = _ScriptedModels(
+        [
+            ("gemini-test", _StatusError(429)),
+            ("gemini-test", _StatusError(429)),
+            ("fallback", _StatusError(503)),
+            ("fallback", _StatusError(503)),
+        ]
+    )
+    events = [
+        event
+        async for event in GeminiRunner(
+            Settings(
+                gemini_retry_attempts=1,
+                gemini_retry_base_delay_s=0,
+                gemini_fallback_models="fallback",
+            ),
+            _provider(),
+            client=SimpleNamespace(aio=SimpleNamespace(models=models)),
+        ).stream_turn("consulta")
+    ]
+    error = next(event for event in events if isinstance(event, ErrorEvent))
+    assert error.message == "No pude generar una respuesta para esa consulta."
+
+
+@pytest.mark.asyncio
 async def test_runner_surfaces_gemini_credential_remedy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -216,6 +337,7 @@ async def test_runner_surfaces_gemini_credential_remedy(
         "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools",
         lambda **_: [],
     )
+
     class AuthModels:
         async def generate_content_stream(self, **_: object):
             class AuthError(Exception):

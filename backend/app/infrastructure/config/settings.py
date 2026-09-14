@@ -90,6 +90,11 @@ class Settings(BaseSettings):
     # Si tarda más, dejamos el de la fase 1 (que ya está en BD) y seguimos.
     title_phase2_timeout_s: float = Field(default=4.0)
 
+    # Resiliencia de Gemini antes de emitir texto visible.
+    gemini_retry_attempts: int = Field(default=3)
+    gemini_retry_base_delay_s: float = Field(default=0.5)
+    gemini_fallback_models: str = Field(default="gemini-3.1-flash-lite,gemini-flash-lite-latest")
+
     # ── Free SQL query (Nivel D) ─────────────────────────────────────────
     # Tope absoluto de filas devueltas por consulta libre del LLM.
     free_query_max_rows: int = Field(default=50)
@@ -114,9 +119,7 @@ class Settings(BaseSettings):
     # administrar conexiones y tener acceso a datos son cosas distintas.
     savi_admin_logins: str = Field(default="")
 
-    cors_allowed_origins: str = Field(
-        default="http://localhost:5173,http://localhost:3000"
-    )
+    cors_allowed_origins: str = Field(default="http://localhost:5173,http://localhost:3000")
 
     # ── Usage / consumo ──────────────────────────────────────────────────
     # El consumo se ALMACENA siempre en USD (lo que reporta el SDK). Esta
@@ -182,9 +185,16 @@ class Settings(BaseSettings):
     def savi_admin_logins_set(self) -> frozenset[str]:
         """Códigos normalizados a mayúsculas, igual que los del ERP."""
         return frozenset(
-            code.strip().upper()
-            for code in self.savi_admin_logins.split(",")
-            if code.strip()
+            code.strip().upper() for code in self.savi_admin_logins.split(",") if code.strip()
+        )
+
+    @property
+    def gemini_fallback_models_list(self) -> tuple[str, ...]:
+        """Return non-empty fallback IDs, preserving order and uniqueness."""
+        return tuple(
+            dict.fromkeys(
+                model.strip() for model in self.gemini_fallback_models.split(",") if model.strip()
+            )
         )
 
 

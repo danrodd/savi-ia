@@ -116,9 +116,10 @@ class GeminiRunner(LLMRunner):
         client: _Client,
         contents: list[types.Content],
         config: types.GenerateContentConfig,
+        model: str,
     ) -> AsyncIterator[types.GenerateContentResponse]:
         stream = client.aio.models.generate_content_stream(
-            model=self._provider.chat_model, contents=contents, config=config
+            model=model, contents=contents, config=config
         )
         if inspect.isawaitable(stream):
             stream = await stream
@@ -144,8 +145,16 @@ class GeminiRunner(LLMRunner):
         truncator = ResponseTruncator(self._settings.max_response_chars)
         thinking = True
         first_token = False
-        tried_retry = False
         thinking_retry = False
+        models = [self._provider.chat_model]
+        models.extend(
+            model
+            for model in self._settings.gemini_fallback_models_list
+            if model != self._provider.chat_model
+        )
+        model_index = 0
+        selected_model = models[model_index]
+        retry_attempt = 0
         iteration = 0
 
         while iteration < self._settings.max_agent_turns:
@@ -159,6 +168,7 @@ class GeminiRunner(LLMRunner):
                     cast(_Client, client),
                     contents,
                     self._config(tools, thinking=thinking),
+                    selected_model,
                 )
                 async for chunk in stream:
                     if chunk.usage_metadata is not None:
@@ -190,15 +200,49 @@ class GeminiRunner(LLMRunner):
                         )
                     )
                     return
-                if code in _RETRYABLE_STATUS and not first_token and not tried_retry:
-                    tried_retry = True
-                    await asyncio.sleep(0.25)
-                    continue
+                if code in _RETRYABLE_STATUS and not first_token:
+                    retry_attempt += 1
+                    if retry_attempt <= self._settings.gemini_retry_attempts:
+                        log.warning(
+                            "gemini_retry model=%s status=%s attempt=%s",
+                            selected_model,
+                            code,
+                            retry_attempt,
+                        )
+                        await asyncio.sleep(
+                            self._settings.gemini_retry_base_delay_s * (2 ** (retry_attempt - 1))
+                        )
+                        continue
+                    model_index += 1
+                    if model_index < len(models):
+                        selected_model = models[model_index]
+                        retry_attempt = 0
+                        log.warning(
+                            "gemini_retry model=%s status=%s attempt=%s",
+                            selected_model,
+                            code,
+                            retry_attempt,
+                        )
+                        continue
+                if code in _RETRYABLE_STATUS and not first_token:
+                    log.warning(
+                        "gemini_retry model=%s status=%s attempt=%s",
+                        selected_model,
+                        code,
+                        retry_attempt,
+                    )
+                    yield ErrorEvent(message="No pude generar una respuesta para esa consulta.")
+                    return
                 if _is_thinking_error(error) and not first_token and not thinking_retry:
                     thinking_retry = True
                     thinking = False
                     continue
-                log.exception("gemini_turn_failed")
+                log.error(
+                    "gemini_turn_failed model=%s status=%s attempt=%s",
+                    selected_model,
+                    code,
+                    retry_attempt,
+                )
                 yield ErrorEvent(
                     message=(
                         str(error)
@@ -216,8 +260,7 @@ class GeminiRunner(LLMRunner):
                     input_tokens=usage.input_tokens + iteration_usage.input_tokens,
                     output_tokens=usage.output_tokens + iteration_usage.output_tokens,
                     cache_read_input_tokens=(
-                        usage.cache_read_input_tokens
-                        + iteration_usage.cache_read_input_tokens
+                        usage.cache_read_input_tokens + iteration_usage.cache_read_input_tokens
                     ),
                     cache_creation_input_tokens=(
                         usage.cache_creation_input_tokens
@@ -228,12 +271,10 @@ class GeminiRunner(LLMRunner):
                 finish = "truncated" if last_reason == "MAX_TOKENS" else "complete"
                 yield DoneEvent(
                     usage=usage.to_dict(),
-                    cost_usd=compute_cost_usd(
-                        usage, self._provider.pricing.get(self._provider.chat_model)
-                    ),
+                    cost_usd=compute_cost_usd(usage, self._provider.pricing.get(selected_model)),
                     finish_reason=finish,
                     provider=self._provider.kind,
-                    model=self._provider.chat_model,
+                    model=selected_model,
                 )
                 return
 
@@ -262,8 +303,8 @@ class GeminiRunner(LLMRunner):
         yield TextDeltaEvent(text="\n\nRespuesta truncada por límite de iteraciones.")
         yield DoneEvent(
             usage=usage.to_dict(),
-            cost_usd=compute_cost_usd(usage, self._provider.pricing.get(self._provider.chat_model)),
+            cost_usd=compute_cost_usd(usage, self._provider.pricing.get(selected_model)),
             finish_reason="truncated",
             provider=self._provider.kind,
-            model=self._provider.chat_model,
+            model=selected_model,
         )
