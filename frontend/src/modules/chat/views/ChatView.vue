@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import { toast } from '@/lib/toast'
@@ -13,7 +13,7 @@ import MobileTopBar from '../components/MobileTopBar.vue'
 import ShareMenu from '../components/ShareMenu.vue'
 import Sidebar from '../components/Sidebar.vue'
 import WelcomeScreen from '../components/WelcomeScreen.vue'
-import { buildConversationUrl, buildConversationMarkdown, tryWebShare } from '../lib/exportContent'
+import { buildConversationMarkdown, buildConversationUrl, tryWebShare } from '../lib/exportContent'
 import { useChatStore } from '../stores/chatStore'
 import type { Conversation } from '../types'
 
@@ -278,6 +278,11 @@ const showConversationShare = computed<boolean>(
 
       <div v-if="error" class="chat-main__banner" role="alert">{{ error }}</div>
 
+      <div v-if="store.llmProviderUnavailable" class="chat-main__banner" role="alert">
+        El asistente no está disponible en este momento. Contacta al administrador de SAVI.
+        <RouterLink v-if="authStore.user?.is_admin" class="chat-main__admin-link" :to="{ name: 'admin-llm-providers' }">Ir a Proveedores de IA</RouterLink>
+      </div>
+
       <div
         v-if="activeDatabaseUnavailable && !isReadOnly"
         class="chat-main__banner"
@@ -343,7 +348,7 @@ const showConversationShare = computed<boolean>(
       <Composer
         v-if="!isReadOnly"
         :streaming="streaming"
-        :disabled="activeDatabaseUnavailable"
+        :disabled="activeDatabaseUnavailable || store.llmProviderUnavailable"
         @send="handleSend"
         @stop="store.stopStream"
       />
@@ -397,6 +402,8 @@ const showConversationShare = computed<boolean>(
   font-weight: var(--fw-medium);
   flex-shrink: 0;
 }
+
+.chat-main__admin-link { margin-left: var(--space-3); color: inherit; font-weight: var(--fw-semibold); text-decoration: underline; }
 
 .chat-main__context {
   display: flex;

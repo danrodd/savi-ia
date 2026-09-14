@@ -154,6 +154,10 @@ function isDatabaseUnavailable(e: unknown): boolean {
   return e instanceof HttpRequestError && e.body.errorCode === 'erp_database_unavailable'
 }
 
+function isLlmProviderUnavailable(e: unknown): boolean {
+  return e instanceof HttpRequestError && e.body.errorCode === 'llm_provider_unavailable'
+}
+
 function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
   for (let i = arr.length - 1; i >= 0; i--) {
     if (arr[i] !== undefined && predicate(arr[i] as T)) return i
@@ -170,6 +174,7 @@ export const useChatStore = defineStore('chat', () => {
   const loadingMessages = ref(false)
   const streaming = ref(false)
   const error = ref<string | null>(null)
+  const llmProviderUnavailable = ref(false)
 
   // Bases del ERP a las que el usuario tiene acceso. La de una conversación
   // se fija al crearla y no cambia; la selección solo aplica a la próxima.
@@ -194,7 +199,9 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   const activeDatabaseUnavailable = computed(
-    () => activeConversation.value !== null && !isDatabaseUsable(activeConversation.value.erp_database_id),
+    () =>
+      activeConversation.value !== null &&
+      !isDatabaseUsable(activeConversation.value.erp_database_id),
   )
 
   // Con un solo cliente el nombre en cada conversación es ruido; se muestra
@@ -457,6 +464,11 @@ export const useChatStore = defineStore('chat', () => {
         const conv = conversations.value.find((c) => c.id === targetConvId)
         if (conv?.erp_database_id) markDatabaseUnavailable(conv.erp_database_id)
         void loadAvailableDatabases()
+      } else if (isLlmProviderUnavailable(err)) {
+        // La respuesta se rechaza antes de abrir el SSE, por lo que ningún
+        // placeholder del turno debe quedar visible en el hilo local.
+        llmProviderUnavailable.value = true
+        messages.value = messages.value.filter((m) => m.id !== null)
       } else {
         error.value = err.message
         messages.value = applyEvent(messages.value, { type: 'error', message: err.message })
@@ -472,7 +484,7 @@ export const useChatStore = defineStore('chat', () => {
 
   async function sendMessage(text: string): Promise<void> {
     const trimmed = text.trim()
-    if (!trimmed || streaming.value) return
+    if (!trimmed || streaming.value || llmProviderUnavailable.value) return
 
     let convId = activeConversationId.value
     if (!convId) {
@@ -482,6 +494,7 @@ export const useChatStore = defineStore('chat', () => {
       } catch (e) {
         error.value = (e as Error).message || 'No se pudo crear la conversación.'
         if (isDatabaseUnavailable(e)) void loadAvailableDatabases()
+        if (isLlmProviderUnavailable(e)) llmProviderUnavailable.value = true
         return
       }
     }
@@ -549,6 +562,7 @@ export const useChatStore = defineStore('chat', () => {
     loadingMessages,
     streaming,
     error,
+    llmProviderUnavailable,
     lastUserIndex,
     lastAssistantIndex,
     canRegenerate,

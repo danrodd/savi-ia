@@ -23,7 +23,7 @@ import urllib.request
 import webbrowser
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app._version import __version__
 from app.diagnostics import CheckResult, Report, now_label, render_html
@@ -662,6 +662,10 @@ def _collect_report() -> Report:
         erp_database_from_settings,
         has_seed_config,
     )
+    from app.modules.llm_providers.infrastructure.http.dependencies import (
+        build_llm_provider_repository,
+    )
+    from app.modules.llm_providers.infrastructure.probes import GeminiProbe
 
     report = Report(
         env_path=str(app_dir() / ".env"),
@@ -691,7 +695,10 @@ def _collect_report() -> Report:
         )
     )
 
+    active_provider_kind = cast(str, "none")
+
     async def probe() -> list[CheckResult]:
+        nonlocal active_provider_kind
         init_engines(settings)
         checks: list[CheckResult] = []
 
@@ -729,6 +736,56 @@ def _collect_report() -> Report:
                 )
         if erp_engine is not None:
             await erp_engine.dispose()
+
+        provider_repository = build_llm_provider_repository(settings)
+        active_provider = await provider_repository.get_active()
+        if active_provider is None:
+            checks.append(
+                CheckResult(
+                    label="Proveedor de IA",
+                    ok=False,
+                    detail="No hay un proveedor de IA activo.",
+                    remedy="Configura un proveedor en Administración → Proveedores de IA.",
+                )
+            )
+        else:
+            active_provider_kind = active_provider.provider.value
+            descriptor_ok = active_provider.is_usable
+            credential_detail = (
+                "Credencial legible."
+                if descriptor_ok
+                else "La credencial falta o no se puede leer."
+            )
+            checks.append(
+                CheckResult(
+                    label="Proveedor de IA",
+                    ok=descriptor_ok,
+                    detail=(
+                        f"Activo: {active_provider.provider.value}; "
+                        f"modelo: {active_provider.chat_model}. {credential_detail}"
+                    ),
+                    remedy=(
+                        "Configura nuevamente la credencial en Administración → "
+                        "Proveedores de IA."
+                        if not descriptor_ok
+                        else ""
+                    ),
+                )
+            )
+            if descriptor_ok and active_provider.provider.value == "gemini":
+                probe_result = await GeminiProbe().test(active_provider)
+                checks.append(
+                    CheckResult(
+                        label="Conexión de Gemini",
+                        ok=probe_result.ok,
+                        detail=probe_result.detail,
+                        remedy=(
+                            "Probá la credencial desde Administración → Proveedores de IA."
+                            if not probe_result.ok
+                            else ""
+                        ),
+                    )
+                )
         return checks
 
     report.results.extend(asyncio.run(probe()))
@@ -761,6 +818,20 @@ def _collect_report() -> Report:
             "APP_PORT en el archivo .env.",
         )
     )
+
+    if active_provider_kind != "claude":
+        detail = (
+            "No aplica: el proveedor activo es Gemini."
+            if active_provider_kind == "gemini"
+            else "No aplica: Claude no es el proveedor activo."
+        )
+        report.results.extend(
+            [
+                CheckResult(label="CLI de Claude", ok=True, detail=detail),
+                CheckResult(label="Autenticación de Claude", ok=True, detail=detail),
+            ]
+        )
+        return report
 
     # Que el CLI se pueda EJECUTAR, no sólo que el archivo exista. El
     # reporte decía "sesión local de Claude Code" y daba todo por bueno

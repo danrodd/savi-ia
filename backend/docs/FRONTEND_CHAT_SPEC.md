@@ -43,6 +43,8 @@ type Message = {
   tool_invocations: ToolInvocation[]; // [] si no hubo tools
   usage: TokenUsage | null;
   cost_usd: string | null; // Decimal serializado como string
+  provider: "claude" | "gemini" | null; // null en mensajes históricos
+  model: string | null;                   // null en mensajes históricos
   // Revisiones: si superseded_at != null, este mensaje ya no es parte
   // del hilo activo. superseded_by_id apunta al que lo reemplazó.
   superseded_at: string | null;       // ISO 8601 UTC
@@ -195,7 +197,13 @@ type ChatBody =
 - `action: "regenerate"` — regenera la última respuesta del asistente
   sin tocar el mensaje del usuario. NO requiere `message`.
 
-**Errores antes del stream** (status 422 con `detail`):
+**Errores antes del stream**:
+
+- `409` con `{ "errorCode": "llm_provider_unavailable" }`: no hay un
+  proveedor activo o su credencial no se puede usar. Conserva el historial,
+  muestra un banner y deshabilita el composer; a los administradores ofrece
+  un enlace a `/admin/proveedores-ia`.
+- `422` con `detail`: errores de validación de la acción, como los siguientes:
 - `edit_last` sin nada que editar: "No hay un mensaje del usuario que
   se pueda editar en esta conversación".
 - `regenerate` sin respuesta del asistente: "No hay una respuesta del

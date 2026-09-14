@@ -3,6 +3,7 @@ import { RouterLink, RouterView } from 'vue-router'
 
 const NAV = [
   { to: { name: 'admin-databases' }, label: 'Bases de datos' },
+  { to: { name: 'admin-llm-providers' }, label: 'Proveedores de IA' },
   { to: { name: 'admin-usage' }, label: 'Consumo' },
 ] as const
 </script>

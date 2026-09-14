@@ -23,6 +23,11 @@ usar `python installer/bump_version.py <version>` — ver
   lista de clientes), protegido con una contraseña de exportación.
 - Versión de la aplicación visible en `GET /health`, el log de arranque
   y el reporte de "Diagnosticar SAVI".
+- Proveedores de IA configurables desde administración, con integración de
+  Claude y Gemini, configuración de modelos/precios, activación en caliente
+  y persistencia del proveedor por mensaje.
+- Pantalla administrativa de proveedores de IA, confirmación al cambiar de
+  proveedor y banner del chat cuando no hay un proveedor disponible.
 
 ### Corregido
 

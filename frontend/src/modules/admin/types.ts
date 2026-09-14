@@ -72,3 +72,49 @@ export interface ImportRowResult {
 export interface ImportErpDatabasesResult {
   rows: ImportRowResult[]
 }
+
+export type LlmProviderKind = 'claude' | 'gemini'
+export type LlmCredentialKind = 'api_key' | 'oauth_token' | 'local_session'
+
+export interface ModelPricing {
+  input: number
+  output: number
+  cache_read: number
+  cache_write: number
+}
+
+export interface LlmProvider {
+  provider: LlmProviderKind
+  display_name: string
+  implemented: boolean
+  credential_kinds: LlmCredentialKind[]
+  supports_model_listing: boolean
+  configured: boolean
+  credential_kind: LlmCredentialKind | null
+  has_credential: boolean
+  credentials_unreadable: boolean
+  chat_model: string | null
+  title_model: string | null
+  pricing: Record<string, ModelPricing>
+  is_active: boolean
+  last_test_ok_at: string | null
+}
+
+export interface SaveLlmProviderRequest {
+  credential_kind: LlmCredentialKind
+  credential?: string
+  chat_model: string
+  title_model: string
+  pricing?: Record<string, ModelPricing>
+}
+
+export interface ProviderModel {
+  id: string
+  display_name: string
+}
+
+export interface ProviderTestResponse {
+  ok: boolean
+  detail: string
+  models: ProviderModel[]
+}

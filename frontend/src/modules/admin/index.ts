@@ -4,10 +4,19 @@
  */
 
 export { erpDatabaseService } from './services/erpDatabaseService'
+export { llmProviderService } from './services/llmProviderService'
 export { useErpDatabaseStore } from './stores/erpDatabaseStore'
+export { useLlmProviderStore } from './stores/llmProviderStore'
 export type {
   AvailableErpDatabase,
   ConnectionTestResult,
   ErpDatabase,
+  LlmCredentialKind,
+  LlmProvider,
+  LlmProviderKind,
+  ModelPricing,
+  ProviderModel,
+  ProviderTestResponse,
   SaveErpDatabaseRequest,
+  SaveLlmProviderRequest,
 } from './types'

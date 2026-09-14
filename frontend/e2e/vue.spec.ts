@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
 
-test('visits the app root url', async ({ page }) => {
+test('redirects unauthenticated users to login', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('SAVI')
-  await expect(page.getByText('Sistema de Asistente Virtual Inteligente')).toBeVisible()
+  await expect(page).toHaveURL(/\/login/)
+  await expect(page.getByLabel('Usuario')).toBeVisible()
+  await expect(page.getByLabel('Contraseña')).toBeVisible()
 })
