@@ -118,8 +118,14 @@ imagen, audio, realtime, preview y moderación, y reconocer familias `gpt` y
 ### Prueba de credencial
 
 Con modelos vacíos, `test` valida la API key mediante `models.list()` y devuelve
-el catálogo. Con un modelo seleccionado, puede ejecutar una solicitud mínima
-de Responses para comprobar que ese modelo está habilitado para la cuenta.
+el catálogo. Con un modelo seleccionado, **debe** ejecutar además una solicitud
+mínima de Responses (texto corto, sin tools): es el único modo de detectar a
+tiempo un modelo que figura en el catálogo pero no está habilitado para la
+organización, y devolver un error accionable antes de activarlo.
+
+Toda operación del probe corre con `asyncio.timeout(90)`, igual que el probe de
+Claude: un API colgado no puede dejar el diagnóstico de SAVI esperando
+indefinidamente.
 
 Resultados esperados:
 
@@ -245,8 +251,16 @@ repetir hasta max_agent_turns:
 | `response.output_item.added`/`done` para function call | preparación interna de `ToolUseEvent` |
 | `response.function_call_arguments.done` | `ToolUseEvent` |
 | handler terminado | `ToolResultEvent` |
-| `response.completed` | `DoneEvent` |
-| error HTTP, stream o safety | `ErrorEvent` |
+| `response.completed` / `response.incomplete` | `DoneEvent` según finish reason |
+| `response.refusal.delta` / `response.refusal.done` | `ErrorEvent` con el mensaje neutro de seguridad |
+| `response.failed` / `error` | `ErrorEvent`; el detalle vive en `event.response.error`, no en un atributo `message` |
+
+**Contrato que no se puede perder:** un turno OpenAI **nunca** termina en un
+`DoneEvent` con texto vacío. Si la respuesta es un refusal o el stream cae con
+`response.failed`/`error`, se emite un `ErrorEvent` —neutral o con remedio de
+credencial, según el caso—, igual que con el bloqueo de seguridad de Gemini.
+Pensado para pruebas: el caso "todo se compila bien pero el usuario ve un
+mensaje vacío" es el modo de falla más engañoso de los proveedores por API.
 
 ---
 
@@ -333,6 +347,15 @@ El runner sigue el patrón de Gemini, pero sin fallback cruzado:
 - `429` agotado devuelve indisponibilidad temporal, no un 500;
 - ningún retry incluye la API key en el mensaje de error.
 
+Semántica exacta de `OPENAI_RETRY_ATTEMPTS`, para que nadie se sorprenda con la
+factura: el número es **reintentos** y vale por modelo. Cada modelo del plan
+(primario y cada fallback) recibe un intento inicial **más** N reintentos antes
+de caer al siguiente. Con `attempts=3` y un primario más un fallback, el peor
+caso son 8 llamadas facturables. Al cambiar de modelo el contador reinicia.
+Los errores `429`/`5xx` **después** del primer token no se reintentan: el texto
+parcial queda persistido con `finish_reason="error"` (comportamiento existente
+del acumulador del turno).
+
 ---
 
 ## 8. Integración de aplicación
@@ -372,7 +395,8 @@ reales.
 | `test_openai_runner_multiple_tools.py` | orden y `call_id` de varias llamadas |
 | `test_openai_runner_reasoning.py` | preservación de items de razonamiento sin filtrarlos al usuario |
 | `test_openai_runner_max_turns.py` | truncamiento después del límite |
-| `test_openai_runner_errors.py` | auth, 400, safety, 429, 5xx y retries |
+| `test_openai_runner_errors.py` | auth, 400, 429, 5xx, retries y reintento solo antes del primer token |
+| `test_openai_runner_refusal.py` | `response.refusal` y `response.failed` → `ErrorEvent`; nunca un `DoneEvent` con texto vacío |
 | `test_openai_runner_fallback.py` | fallback solo antes del primer token y modelo efectivo |
 | `test_openai_usage_mapping.py` | input, output, reasoning incluido y cache read |
 | `test_openai_title_generator.py` | prompt, modelo, limpieza y error → `None` |
@@ -441,7 +465,8 @@ de conservar Claude y Gemini.
 | Riesgo | Mitigación / decisión requerida |
 |---|---|
 | Responses exige conservar items de razonamiento para tool loops | Test de segundo request con razonamiento y preservación completa de output items |
-| `models.list` no garantiza capacidades por modelo | Filtrado conservador más prueba explícita del modelo seleccionado |
+| Un refusal o `response.failed` termina como mensaje vacío si el runner los ignora | `ErrorEvent` neutral persistido; test que prohíbe `DoneEvent` sin texto ante estos eventos |
+| `models.list` no garantiza capacidades por modelo | Filtrado conservador más prueba explícita del modelo seleccionado (solicitud mínima) |
 | Schemas neutrales no cumplen strict mode | Empezar con `strict=false` y cubrir compatibilidad antes de endurecer |
 | Reasoning tokens pueden elevar costos | Mapearlos dentro de output y exigir precio cargado antes de activar KPIs |
 | Modelos futuros con IDs nuevos | No usar whitelist cerrada; excluir solo familias claramente incompatibles |
