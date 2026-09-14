@@ -1,6 +1,6 @@
 [project]
 name = "savi"
-version = "0.1.0"
+dynamic = ["version"]
 description = "SAVI - Agente de IA corporativo de SEO Group"
 requires-python = ">=3.12"
 dependencies = [
@@ -50,6 +50,9 @@ package = true
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "app/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]

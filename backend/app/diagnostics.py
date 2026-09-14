@@ -29,6 +29,7 @@ class CheckResult:
 class Report:
     env_path: str
     generated_at: str
+    app_version: str
     results: list[CheckResult] = field(default_factory=list["CheckResult"])
 
     @property
@@ -37,7 +38,7 @@ class Report:
 
     def as_text(self) -> str:
         """Versión de consola, para el log y para el modo sin navegador."""
-        lines = [f"Configuración leída de: {self.env_path}"]
+        lines = [f"SAVI {self.app_version}", f"Configuración leída de: {self.env_path}"]
         for r in self.results:
             mark = "[OK]   " if r.ok else "[FALLA]"
             lines.append(f"{mark} {r.label}: {r.detail}")
@@ -139,7 +140,7 @@ def render_html(report: Report) -> str:
         "<title>Diagnóstico de SAVI</title>"
         f"<style>{_STYLES}</style></head><body>"
         '<div class="card">'
-        "<header><h1>Diagnóstico de SAVI</h1>"
+        f"<header><h1>Diagnóstico de SAVI {html.escape(report.app_version)}</h1>"
         f"<p>{html.escape(report.generated_at)}</p></header>"
         f'<div class="summary {summary_class}">{html.escape(summary)}</div>'
         f"<ul>{''.join(rows)}</ul>"

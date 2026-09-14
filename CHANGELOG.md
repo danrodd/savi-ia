@@ -1,0 +1,31 @@
+# Changelog
+
+Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
+SAVI sigue [SemVer](https://semver.org/lang/es/): `MAJOR.MINOR.PATCH`.
+
+La fuente de la versión actual es `backend/app/_version.py`. Para subirla,
+usar `python installer/bump_version.py <version>` — ver
+`installer/README.md#versionado`.
+
+## [Unreleased]
+
+### Agregado
+
+- Multi-BD del ERP: registrar y administrar N bases de clientes desde
+  `/admin/bases-datos` (CRUD, prueba de conexión, activar/desactivar,
+  predeterminar), con identidad calificada `(base, usuario)` para que
+  el mismo `idUsuario` no se cruce entre clientes.
+- Chat multi-cliente: selector de base al iniciar una conversación,
+  chip de solo lectura, banner cuando la base deja de estar disponible,
+  y login `USUARIO@CODE`.
+- Exportar/importar la configuración de bases entre instalaciones
+  (pensado para varios agentes de un call center compartiendo la misma
+  lista de clientes), protegido con una contraseña de exportación.
+- Versión de la aplicación visible en `GET /health`, el log de arranque
+  y el reporte de "Diagnosticar SAVI".
+
+### Corregido
+
+- La identidad de una conversación (quién es el dueño) se separó de la
+  base que consulta: antes, abrir una conversación contra un cliente
+  distinto al de la sesión de login la dejaba inaccesible.

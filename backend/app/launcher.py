@@ -25,6 +25,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from app._version import __version__
 from app.diagnostics import CheckResult, Report, now_label, render_html
 from app.paths import data_dir, is_frozen
 
@@ -662,7 +663,11 @@ def _collect_report() -> Report:
         has_seed_config,
     )
 
-    report = Report(env_path=str(app_dir() / ".env"), generated_at=now_label())
+    report = Report(
+        env_path=str(app_dir() / ".env"),
+        generated_at=now_label(),
+        app_version=__version__,
+    )
 
     try:
         settings = get_settings()

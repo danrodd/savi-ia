@@ -99,11 +99,40 @@ navegador en la URL correcta.
 El acceso directo *Diagnosticar SAVI* informa qué puerto está libre, si
 SAVI ya está corriendo, y a cuál va a caer si el configurado está tomado.
 
+## Versionado
+
+`backend/app/_version.py` es la **fuente única** de la versión en todo
+el monorepo — SemVer (`MAJOR.MINOR.PATCH`). De ahí toman el número:
+
+- `pyproject.toml`, vía `[tool.hatch.version]` (dinámico, sin tocarlo a mano).
+- El backend en runtime: `GET /health`, el log de arranque, y el
+  reporte de "Diagnosticar SAVI" — es lo primero que hay que pedirle a
+  un cliente que reporta un problema.
+- `savi.iss`, vía `build.ps1`, que lo lee y se lo pasa a Inno Setup con
+  `/DAppVersion=...`. **Nunca se edita `AppVersion` en `savi.iss` a
+  mano** — el `#ifndef` que tiene ahí es solo para poder compilar el
+  `.iss` suelto durante el desarrollo del instalador.
+
+Para subir la versión:
+
+```powershell
+uv run python installer\bump_version.py 0.2.0
+```
+
+Actualiza `_version.py`, `frontend/package.json` (cosmético, nada lo
+lee en runtime) y antepone una entrada a `CHANGELOG.md` para completar
+a mano. No commitea ni tagea — eso lo decide quien hace el release:
+
+```powershell
+git commit -am "chore(release): v0.2.0"
+git tag v0.2.0
+```
+
 ## Actualizaciones
 
 No hay servidor ni botón de "buscar actualizaciones": **el mecanismo de
-actualización es el mismo instalador**. Se sube `AppVersion` en
-`savi.iss`, se compila, y el cliente corre el nuevo
+actualización es el mismo instalador**. Se sube la versión (ver arriba),
+se compila con `build.ps1`, y el cliente corre el nuevo
 `SAVI-Setup-<version>.exe`.
 
 Inno reconoce la instalación previa por el `AppId` fijo y actualiza en el

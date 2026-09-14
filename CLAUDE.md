@@ -364,6 +364,10 @@ fases, soft branches, etc.) en la skill — no los repito acá.
   más allá del API que expone.
 - **`uvicorn` invocado como módulo Python** (`python -m uvicorn`) por
   el bug del trampoline de uv en este Windows.
+- **Versionado**: `backend/app/_version.py` es la fuente única (SemVer).
+  Subirla con `uv run python installer/bump_version.py <version>` —
+  nunca a mano en `pyproject.toml`, `savi.iss` ni `package.json`. Ver
+  `installer/README.md#versionado` y `CHANGELOG.md`.
 
 ---
 

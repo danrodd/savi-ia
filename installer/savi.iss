@@ -13,7 +13,14 @@
 ; ─────────────────────────────────────────────────────────────────────
 
 #define AppName        "SAVI"
-#define AppVersion     "0.1.0"
+; `build.ps1` pasa el número real con /DAppVersion=X.Y.Z, leído de
+; `backend/app/_version.py` (fuente única del monorepo — ver
+; installer/README.md#versionado). El `#ifndef` es solo para poder
+; compilar este .iss suelto (`ISCC.exe installer\savi.iss`, sin pasar
+; por build.ps1) durante el desarrollo del propio instalador.
+#ifndef AppVersion
+  #define AppVersion   "0.0.0-dev"
+#endif
 #define AppPublisher   "SEO Group"
 #define AppExe         "SAVI.exe"
 

@@ -38,6 +38,20 @@ function Write-Step([string]$Message) {
     Write-Host "`n=== $Message ===" -ForegroundColor Cyan
 }
 
+# `backend/app/_version.py` es la fuente única del monorepo (ver
+# installer/README.md#versionado). Se lee acá con una expresión regular
+# y no importando el módulo: build.ps1 puede correr sin el venv de uv
+# todavía creado, y este archivo es texto plano de proyecto, no un
+# script que haga falta ejecutar.
+function Get-AppVersion {
+    $versionFile = Join-Path $Backend 'app\_version.py'
+    $match = Select-String -Path $versionFile -Pattern '__version__\s*=\s*"([^"]+)"'
+    if (-not $match) {
+        throw "No se pudo leer __version__ de $versionFile"
+    }
+    return $match.Matches[0].Groups[1].Value
+}
+
 function Assert-Command([string]$Name, [string]$HowToInstall) {
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
         throw "No se encontró '$Name' en el PATH. $HowToInstall"
@@ -153,8 +167,9 @@ if ($SkipInstaller) {
     return
 }
 
-Write-Step 'Compilando el instalador con Inno Setup'
-& $Iscc (Join-Path $InstallerDir 'savi.iss')
+$AppVersion = Get-AppVersion
+Write-Step "Compilando el instalador con Inno Setup (versión $AppVersion)"
+& $Iscc "/DAppVersion=$AppVersion" (Join-Path $InstallerDir 'savi.iss')
 if ($LASTEXITCODE -ne 0) { throw 'La compilación de Inno Setup falló.' }
 
 Write-Step 'Listo'

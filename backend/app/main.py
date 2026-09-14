@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -6,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy import text
 
+from app._version import __version__
 from app.infrastructure.config import get_settings
 from app.infrastructure.database import (
     close_engines,
@@ -57,9 +59,15 @@ _API_PREFIXES = (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
+    # Primera línea del log de cada arranque: es lo primero que un
+    # técnico de soporte busca para saber qué build tiene el cliente.
+    logger.info("SAVI %s arrancando (env=%s)", __version__, settings.app_env)
     init_engines(settings)
 
     # Registry de engines del ERP: uno por base de cliente, creado en su
@@ -103,7 +111,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title=settings.app_name,
-        version="0.1.0",
+        version=__version__,
         debug=settings.app_debug,
         lifespan=lifespan,
     )
@@ -123,7 +131,12 @@ def create_app() -> FastAPI:
     async def health() -> dict[str, str]:
         async with get_agent_engine().connect() as conn:
             await conn.execute(text("SELECT 1"))
-        return {"status": "ok", "app": settings.app_name, "env": settings.app_env}
+        return {
+            "status": "ok",
+            "app": settings.app_name,
+            "env": settings.app_env,
+            "version": __version__,
+        }
 
     app.include_router(auth_router)
     app.include_router(conversations_router)
