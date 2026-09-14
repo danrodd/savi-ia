@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import { ChartColumn, ChevronLeft, Database, Sparkles } from 'lucide-vue-next'
 import { RouterLink, RouterView } from 'vue-router'
 
 import AppVersion from '@/components/AppVersion.vue'
 
 const NAV = [
-  { to: { name: 'admin-databases' }, label: 'Bases de datos' },
-  { to: { name: 'admin-llm-providers' }, label: 'Proveedores de IA' },
-  { to: { name: 'admin-usage' }, label: 'Consumo' },
+  { to: { name: 'admin-databases' }, label: 'Bases de datos', icon: Database },
+  { to: { name: 'admin-llm-providers' }, label: 'Proveedores de IA', icon: Sparkles },
+  { to: { name: 'admin-usage' }, label: 'Consumo', icon: ChartColumn },
 ] as const
 </script>
 
@@ -15,9 +16,7 @@ const NAV = [
     <aside class="admin__nav" aria-label="Administración">
       <div class="admin__identity"><span class="admin__identity-mark">S</span><div><strong>SAVI</strong><small>Centro de control</small></div></div>
       <RouterLink :to="{ name: 'home' }" class="admin__back">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
+        <ChevronLeft :size="14" aria-hidden="true" />
         Volver al chat
       </RouterLink>
       <p class="admin__section">Administración</p>
@@ -29,6 +28,7 @@ const NAV = [
         active-class="admin__link--active"
         :aria-current="$route.name === item.to.name ? 'page' : undefined"
       >
+        <component :is="item.icon" :size="16" aria-hidden="true" />
         {{ item.label }}
       </RouterLink>
       <AppVersion class="admin__version" />
@@ -95,6 +95,9 @@ const NAV = [
 }
 
 .admin__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--r-sm);
   color: var(--text-muted);

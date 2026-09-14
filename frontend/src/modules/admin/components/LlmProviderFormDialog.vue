@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { FlaskConical } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
+import { recommendModel } from '../lib/modelRecommendation'
 import type {
   LlmCredentialKind,
   LlmProvider,
@@ -9,8 +11,8 @@ import type {
   ProviderModel,
   SaveLlmProviderRequest,
 } from '../types'
-import { recommendModel } from '../lib/modelRecommendation'
 import ModelPricingTable from './ModelPricingTable.vue'
+import ProviderIcon from './ProviderIcon.vue'
 
 const props = defineProps<{
   open: boolean
@@ -123,11 +125,14 @@ defineExpose({ applyTestResult })
 
 <template>
   <Dialog :open="open" :title="`${provider?.configured ? 'Editar' : 'Configurar'} ${provider?.display_name ?? 'proveedor'}`" :max-width="760" @update:open="emit('update:open', $event)">
+    <template #leading>
+      <ProviderIcon v-if="provider" :kind="provider.provider" :size="24" />
+    </template>
     <form class="form" @submit.prevent="handleSave">
       <label>Tipo de credencial<select v-model="credentialKind"><option v-for="kind in provider?.credential_kinds" :key="kind" :value="kind">{{ kind }}</option></select></label>
       <div v-if="isLocalSession" class="form__note">Claude usará el login local de este equipo. No necesitas introducir una credencial aquí.</div>
       <label v-else>Credencial<input v-model="credential" type="password" autocomplete="new-password" placeholder="Déjala vacía para conservar la actual" /></label>
-       <div class="form__test"><Button type="button" variant="secondary" :loading="testing" :disabled="!provider?.implemented" @click="handleTest">Probar credencial</Button><span v-if="testDetail" :class="{ 'form__ok': testResult?.ok }">{{ testDetail }}</span></div>
+       <div class="form__test"><Button type="button" variant="secondary" :loading="testing" :disabled="!provider?.implemented" @click="handleTest"><FlaskConical :size="15" aria-hidden="true" /> Probar credencial</Button><span v-if="testDetail" data-testid="provider-test-detail" :class="{ 'form__ok': testResult?.ok }">{{ testDetail }}</span></div>
       <div v-if="models.length > 0" class="form__models">
         <div class="form__catalog-head">
           <div><strong>Catálogo de modelos</strong><span>{{ models.length }} disponibles</span></div>

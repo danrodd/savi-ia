@@ -57,10 +57,15 @@ function onUpdateOpen(value: boolean): void {
       >
         <header v-if="title || $slots.header" class="dialog-header">
           <slot name="header">
-            <DialogTitle class="dialog-title">{{ title }}</DialogTitle>
-            <DialogDescription v-if="description" class="dialog-description">
-              {{ description }}
-            </DialogDescription>
+            <div class="dialog-header__row">
+              <slot name="leading" />
+              <div>
+                <DialogTitle class="dialog-title">{{ title }}</DialogTitle>
+                <DialogDescription v-if="description" class="dialog-description">
+                  {{ description }}
+                </DialogDescription>
+              </div>
+            </div>
           </slot>
         </header>
 
@@ -125,6 +130,12 @@ function onUpdateOpen(value: boolean): void {
 
 .dialog-header {
   margin-bottom: var(--space-4);
+}
+
+.dialog-header__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
 }
 
 .dialog-title {
