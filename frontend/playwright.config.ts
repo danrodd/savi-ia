@@ -25,8 +25,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Un solo worker siempre: los specs autenticados corren contra el
+   * backend real (login "admin" compartido, proveedor de IA activo
+   * global, subprocess `claude.exe` único) — no un entorno aislado por
+   * test, así que correrlos en paralelo produce contención real
+   * (timeouts espurios), no fallas del código bajo prueba. */
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
