@@ -64,6 +64,27 @@ class _OpenAIClient(Protocol):
 ClientFactory = Callable[[str], _OpenAIClient]
 
 
+def _quota_exhausted(error: APIStatusError) -> bool:
+    """`429` por saldo agotado no es un límite temporal: reintentar no ayuda.
+
+    OpenAI lo devuelve con `code=credit_balance_exhausted` y
+    `type=insufficient_quota` dentro del body, no en `error.code`.
+    """
+    body: object = error.body
+    if isinstance(body, dict):
+        data = cast("dict[str, object]", body)
+        code = data.get("code")
+        etype = data.get("type")
+        if code in ("credit_balance_exhausted", "insufficient_quota"):
+            return True
+        if etype == "insufficient_quota":
+            return True
+    return getattr(error, "code", None) in (
+        "credit_balance_exhausted",
+        "insufficient_quota",
+    )
+
+
 class OpenAIProbe(ProviderProbe):
     def __init__(self, *, client_factory: ClientFactory | None = None) -> None:
         self._client_factory = client_factory
@@ -121,6 +142,14 @@ class OpenAIProbe(ProviderProbe):
                     detail="La API key de OpenAI no es válida o no tiene permisos.",
                 )
             if error.status_code == 429:
+                if _quota_exhausted(error):
+                    return ProbeResult(
+                        ok=False,
+                        detail=(
+                            "La cuenta de OpenAI no tiene créditos. Cargá saldo en la "
+                            "plataforma de OpenAI para poder usar el chat."
+                        ),
+                    )
                 return ProbeResult(
                     ok=False,
                     detail="OpenAI rechazó la solicitud por límite de uso. Intentá de nuevo.",

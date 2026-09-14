@@ -234,6 +234,45 @@ def test_usage_mapping_subtracts_cached_from_input() -> None:
 
 
 @pytest.mark.asyncio
+async def test_runner_does_not_retry_when_quota_is_exhausted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [],
+    )
+
+    class _QuotaResponses:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        async def create(self, **_: object):
+            self.calls += 1
+            error = RuntimeError("no credits")
+            error.status_code = 429  # type: ignore[attr-defined]
+            error.body = {  # type: ignore[attr-defined]
+                "code": "credit_balance_exhausted",
+                "type": "insufficient_quota",
+            }
+            raise error
+
+    responses = _QuotaResponses()
+    client = SimpleNamespace(responses=responses)
+    settings = Settings(openai_retry_attempts=3, openai_fallback_models="gpt-5.6-luna")
+
+    events = [
+        event
+        async for event in OpenAIRunner(settings, _provider(), client=client).stream_turn(
+            "consulta"
+        )
+    ]
+
+    error = next(e for e in events if isinstance(e, ErrorEvent))
+    assert "créditos" in error.message
+    assert responses.calls == 1
+
+
+@pytest.mark.asyncio
 async def test_title_generator_cleans_output() -> None:
     class _TitleResponses:
         async def create(self, **_: object):

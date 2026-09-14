@@ -118,6 +118,30 @@ async def test_invalid_key_is_ok_false_without_raising() -> None:
 
 
 @pytest.mark.asyncio
+async def test_quota_exhausted_reports_credits_not_rate_limit() -> None:
+    class _QuotaModels:
+        async def list(self):
+            response = httpx.Response(
+                429, request=httpx.Request("GET", "https://api.openai.com/v1/models")
+            )
+            raise APIStatusError(
+                "no credits",
+                response=response,
+                body={
+                    "code": "credit_balance_exhausted",
+                    "type": "insufficient_quota",
+                },
+            )
+
+    probe = OpenAIProbe(client_factory=lambda _: SimpleNamespace(models=_QuotaModels()))
+
+    result = await probe.test(_config())
+
+    assert result.ok is False
+    assert "créditos" in result.detail
+
+
+@pytest.mark.asyncio
 async def test_network_failure_returns_empty_catalog() -> None:
     class _FailingModels:
         async def list(self):

@@ -72,6 +72,27 @@ def _status(error: Exception) -> int | None:
     return value if isinstance(value, int) else None
 
 
+def _quota_exhausted(error: Exception) -> bool:
+    """`429` por saldo agotado no se reintenta: no es un límite temporal.
+
+    Duplicado a propósito del helper del probe: `llm_providers` importa
+    `chat`, así que compartirlo invertiría la dependencia en ciclo.
+    """
+    body: Any = getattr(error, "body", None)
+    if isinstance(body, dict):
+        data = cast("dict[str, Any]", body)
+        code = data.get("code")
+        etype = data.get("type")
+        if code in ("credit_balance_exhausted", "insufficient_quota"):
+            return True
+        if etype == "insufficient_quota":
+            return True
+    return getattr(error, "code", None) in (
+        "credit_balance_exhausted",
+        "insufficient_quota",
+    )
+
+
 def _failure_code(event: Any) -> int | None:
     """Código de un evento `response.failed`/`error`.
 
@@ -206,6 +227,16 @@ class OpenAIRunner(LLMRunner):
                         return
             except Exception as error:  # noqa: BLE001
                 code = _status(error)
+                if code == 429 and _quota_exhausted(error):
+                    log.error("openai_quota_exhausted model=%s", selected_model)
+                    yield ErrorEvent(
+                        message=(
+                            "La cuenta de OpenAI no tiene créditos. Un administrador "
+                            "debe cargar saldo en la plataforma para que el asistente "
+                            "pueda responder."
+                        )
+                    )
+                    return
                 if code in _AUTH_STATUS:
                     yield ErrorEvent(
                         message=user_facing_error(
