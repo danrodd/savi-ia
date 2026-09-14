@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Construye el instalador de escritorio de SAVI.
 
@@ -17,13 +17,19 @@
 .PARAMETER SkipInstaller
     Se detiene después de PyInstaller, sin compilar el .exe del instalador.
 
+.PARAMETER AllowDirty
+    Permite construir con cambios sin commitear. La versión queda marcada
+    con "-sucio". Solo para pruebas locales: un instalador que se entrega
+    tiene que corresponder a un commit exacto.
+
 .EXAMPLE
     .\installer\build.ps1
 #>
 [CmdletBinding()]
 param(
     [switch]$SkipFrontend,
-    [switch]$SkipInstaller
+    [switch]$SkipInstaller,
+    [switch]$AllowDirty
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,18 +44,14 @@ function Write-Step([string]$Message) {
     Write-Host "`n=== $Message ===" -ForegroundColor Cyan
 }
 
-# `backend/app/_version.py` es la fuente única del monorepo (ver
-# installer/README.md#versionado). Se lee acá con una expresión regular
-# y no importando el módulo: build.ps1 puede correr sin el venv de uv
-# todavía creado, y este archivo es texto plano de proyecto, no un
-# script que haga falta ejecutar.
-function Get-AppVersion {
-    $versionFile = Join-Path $Backend 'app\_version.py'
-    $match = Select-String -Path $versionFile -Pattern '__version__\s*=\s*"([^"]+)"'
-    if (-not $match) {
-        throw "No se pudo leer __version__ de $versionFile"
-    }
-    return $match.Matches[0].Groups[1].Value
+# La versión es el tag de git y `scripts/version.py` es la única fuente
+# (ver installer/README.md#versionado). Se resuelve UNA vez por build y de
+# acá sale para el frontend, el backend y el instalador: si alguna vez se
+# contradicen, alguien construyó a mano.
+function Get-BuildVersion {
+    $json = uv run --no-project python (Join-Path $Root 'scripts\version.py') --json
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo calcular la versión con scripts/version.py.' }
+    return $json | ConvertFrom-Json
 }
 
 function Assert-Command([string]$Name, [string]$HowToInstall) {
@@ -68,6 +70,17 @@ if ((Test-Path (Join-Path $UvLocal 'uv.exe')) -and ($env:Path -notlike "*$UvLoca
 }
 Assert-Command 'uv'   'Instalalo desde https://docs.astral.sh/uv/'
 Assert-Command 'npm'  'Instalá Node.js 22 o superior desde https://nodejs.org/'
+Assert-Command 'git'  'Instalá Git desde https://git-scm.com/'
+
+$Build = Get-BuildVersion
+if ($Build.sucio -and -not $AllowDirty) {
+    throw @"
+Hay cambios sin commitear. Un instalador que se entrega tiene que
+corresponder a un commit exacto: commiteá o descartá los cambios.
+Para una prueba local, repetí con -AllowDirty (la versión dirá "-sucio").
+"@
+}
+Write-Host "Versión: $($Build.version)  (commit $($Build.commit))"
 
 $Iscc = $null
 if (-not $SkipInstaller) {
@@ -121,6 +134,8 @@ if (-not $SkipFrontend) {
         # que las llamadas al API no llevan host. Los dos consumidores
         # (HttpClient y authService) recortan la barra final.
         $env:VITE_API_BASE_URL = '/'
+        # Queda incrustada en el bundle: es lo que muestra el pie del sidebar.
+        $env:VITE_APP_VERSION = $Build.version
         npm run build
         if ($LASTEXITCODE -ne 0) { throw 'El build del frontend falló.' }
     }
@@ -136,9 +151,25 @@ if (-not $SkipFrontend) {
 if (-not (Test-Path (Join-Path $Staging 'index.html'))) {
     throw "No hay build del frontend en $Staging. Corré sin -SkipFrontend."
 }
+if ($SkipFrontend) {
+    Write-Warning "Se reutiliza un build de Vue anterior: la versión que muestra la interfaz puede no ser $($Build.version)."
+}
 
 # ── 2. Backend ────────────────────────────────────────────────────────
 Write-Step 'Empaquetando el backend con PyInstaller'
+# El equipo del cliente no tiene `.git`: la versión viaja incrustada en este
+# módulo, que `app/_version.py` lee primero. Se borra al terminar —está
+# gitignorado, pero si quedara en disco el backend de desarrollo seguiría
+# reportando la versión de este build en lugar de la de git.
+$BuildVersionFile = Join-Path $Backend 'app\_build_version.py'
+$BuiltAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+$BuildVersionContent = @"
+# Generado por installer/build.ps1. No editar ni commitear.
+VERSION = "$($Build.version)"
+COMMIT = "$($Build.commit)"
+BUILT_AT = "$BuiltAt"
+"@
+[System.IO.File]::WriteAllText($BuildVersionFile, $BuildVersionContent + "`n", (New-Object System.Text.UTF8Encoding $false))
 Push-Location $Backend
 try {
     uv sync
@@ -153,6 +184,7 @@ try {
 }
 finally {
     Pop-Location
+    Remove-Item $BuildVersionFile -ErrorAction SilentlyContinue
 }
 
 $AppDir = Join-Path $InstallerDir 'build\dist\SAVI'
@@ -167,9 +199,10 @@ if ($SkipInstaller) {
     return
 }
 
-$AppVersion = Get-AppVersion
-Write-Step "Compilando el instalador con Inno Setup (versión $AppVersion)"
-& $Iscc "/DAppVersion=$AppVersion" (Join-Path $InstallerDir 'savi.iss')
+Write-Step "Compilando el instalador con Inno Setup (versión $($Build.version))"
+# AppVersion admite texto (v1.4.0-14-gbf8eee7); VersionInfoVersion, el recurso
+# de versión del .exe, exige un número puro: sale del último tag.
+& $Iscc "/DAppVersion=$($Build.version)" "/DAppVersionNumber=$($Build.numero)" (Join-Path $InstallerDir 'savi.iss')
 if ($LASTEXITCODE -ne 0) { throw 'La compilación de Inno Setup falló.' }
 
 Write-Step 'Listo'

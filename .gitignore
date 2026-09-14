@@ -16,6 +16,8 @@
 # Python / backend
 # ─────────────────────────────────────────────────────────────────────
 __pycache__/
+# Versión incrustada por installer/build.ps1 (ver backend/app/_version.py).
+backend/app/_build_version.py
 *.py[cod]
 *$py.class
 .venv/

@@ -21,7 +21,7 @@ completo del chat en **ambos** proveedores contra el ERP real.
 - [ ] El chat maneja `409 llm_provider_unavailable` con un banner y el Composer deshabilitado.
 - [ ] "Diagnosticar SAVI" muestra el proveedor y el modelo activos, y solo valida el CLI de Claude si Claude está activo.
 - [ ] E2E con Playwright del checklist completo en Claude y en Gemini.
-- [ ] Documentación y `CHANGELOG.md` actualizados.
+- [ ] Documentación actualizada (el `CHANGELOG.md` se reemplazó luego por notas en el tag de git).
 
 ## Fuera de alcance
 
@@ -214,7 +214,7 @@ Cada caso se marca en ambas columnas.
 | `backend/docs/FRONTEND_CHAT_SPEC.md` | `409 llm_provider_unavailable`; `provider` y `model` por mensaje. |
 | `backend/docs/mcp_deferred_tools_gotcha.md` | Aclarar que el límite es del SDK de Claude y por qué se mantiene igual con el registro compartido. |
 | `installer/README.md` y `DISTRIBUCION.md` | El `.env` solo siembra Claude; el proveedor se administra desde la app; `ERP_CREDENTIALS_KEY` también protege las keys de IA. |
-| `CHANGELOG.md` | Entrada en `[Unreleased]`. |
+| ~~`CHANGELOG.md`~~ | Reemplazado (2026-09-14): las notas de versión se generan en el tag anotado de git. Ver `installer/README.md#versionado`. |
 | Este PRD y sus fases | Estado **implementado**, con lo verificado. |
 
 ## Verificación final

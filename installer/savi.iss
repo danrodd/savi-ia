@@ -13,13 +13,17 @@
 ; ─────────────────────────────────────────────────────────────────────
 
 #define AppName        "SAVI"
-; `build.ps1` pasa el número real con /DAppVersion=X.Y.Z, leído de
-; `backend/app/_version.py` (fuente única del monorepo — ver
-; installer/README.md#versionado). El `#ifndef` es solo para poder
-; compilar este .iss suelto (`ISCC.exe installer\savi.iss`, sin pasar
-; por build.ps1) durante el desarrollo del propio instalador.
+; La versión es el tag de git: `build.ps1` la calcula con
+; scripts/version.py y la pasa con /DAppVersion (texto, p. ej.
+; v1.4.0-14-gbf8eee7) y /DAppVersionNumber (X.Y.Z del último tag). Ver
+; installer/README.md#versionado. Los `#ifndef` son solo para compilar
+; este .iss suelto (`ISCC.exe installer\savi.iss`) durante el desarrollo
+; del propio instalador — y por eso dicen 0.0.0-dev, no un número real.
 #ifndef AppVersion
   #define AppVersion   "0.0.0-dev"
+#endif
+#ifndef AppVersionNumber
+  #define AppVersionNumber "0.0.0"
 #endif
 #define AppPublisher   "SEO Group"
 #define AppExe         "SAVI.exe"
@@ -48,6 +52,10 @@
 AppId={{7D1C4E82-3B96-4A17-9E5D-2F8A6C0B4D31}
 AppName={#AppName}
 AppVersion={#AppVersion}
+; El recurso de versión del .exe del instalador exige N.N.N.N: no acepta
+; el texto de git describe.
+VersionInfoVersion={#AppVersionNumber}
+VersionInfoProductTextVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}

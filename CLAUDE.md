@@ -364,10 +364,14 @@ fases, soft branches, etc.) en la skill — no los repito acá.
   más allá del API que expone.
 - **`uvicorn` invocado como módulo Python** (`python -m uvicorn`) por
   el bug del trampoline de uv en este Windows.
-- **Versionado**: `backend/app/_version.py` es la fuente única (SemVer).
-  Subirla con `uv run python installer/bump_version.py <version>` —
-  nunca a mano en `pyproject.toml`, `savi.iss` ni `package.json`. Ver
-  `installer/README.md#versionado` y `CHANGELOG.md`.
+- **Versionado**: la versión es el **tag de git** (`vX.Y.Z`, solo en
+  `main`); `scripts/version.py` es la única fuente y `build.ps1` la
+  incrusta en backend, frontend e instalador. **NUNCA** escribas un
+  número de versión a mano en `_version.py`, `pyproject.toml`,
+  `package.json` ni `savi.iss`, y no hay `CHANGELOG.md`: las notas
+  quedan en el tag anotado. Crear el tag (`--crear`) y hacer push
+  requieren OK explícito del usuario, igual que un commit. Ver
+  `installer/README.md#versionado`.
 
 ---
 

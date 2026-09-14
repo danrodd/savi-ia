@@ -101,32 +101,96 @@ SAVI ya está corriendo, y a cuál va a caer si el configurado está tomado.
 
 ## Versionado
 
-`backend/app/_version.py` es la **fuente única** de la versión en todo
-el monorepo — SemVer (`MAJOR.MINOR.PATCH`). De ahí toman el número:
+**La versión es el tag de git. No existe en ningún otro lado.** No hay
+un número escrito en `_version.py`, `pyproject.toml` ni `package.json`
+que haya que acordarse de subir: un número escrito en dos lugares
+termina desincronizado, y la aplicación afirma ser una versión que no es.
 
-- `pyproject.toml`, vía `[tool.hatch.version]` (dinámico, sin tocarlo a mano).
-- El backend en runtime: `GET /health`, el log de arranque, y el
-  reporte de "Diagnosticar SAVI" — es lo primero que hay que pedirle a
-  un cliente que reporta un problema.
-- `savi.iss`, vía `build.ps1`, que lo lee y se lo pasa a Inno Setup con
-  `/DAppVersion=...`. **Nunca se edita `AppVersion` en `savi.iss` a
-  mano** — el `#ifndef` que tiene ahí es solo para poder compilar el
-  `.iss` suelto durante el desarrollo del instalador.
+### De dónde sale
 
-Para subir la versión:
+`scripts/version.py` (raíz del monorepo) es la única fuente. Usa
+`git describe --tags --always --dirty`:
 
-```powershell
-uv run python installer\bump_version.py 0.2.0
+| Muestra | Significa |
+|---|---|
+| `v1.4.0` | exactamente esa versión publicada |
+| `v1.4.0-14-gbf8eee7` | 14 commits después de `v1.4.0`, en el commit `bf8eee7` |
+| `fa9e698` | todavía no hay ningún tag |
+| `…-sucio` | construido con cambios sin commitear |
+
+Sin git (y sin build) la aplicación dice `0.0.0-dev`, nunca un número
+que parezca real.
+
+### Cómo llega a la aplicación
+
+`build.ps1` la resuelve **una vez** y de ahí sale todo:
+
+```
+scripts/version.py
+      └── build.ps1
+            ├── frontend  → VITE_APP_VERSION, incrustada en el bundle
+            ├── backend   → genera app/_build_version.py antes de PyInstaller
+            │               (el equipo del cliente no tiene .git) y lo borra al terminar
+            └── Inno Setup → /DAppVersion (texto) y /DAppVersionNumber (X.Y.Z,
+                             que exige el recurso de versión del .exe)
 ```
 
-Actualiza `_version.py`, `frontend/package.json` (cosmético, nada lo
-lee en runtime) y antepone una entrada a `CHANGELOG.md` para completar
-a mano. No commitea ni tagea — eso lo decide quien hace el release:
+`build.ps1` **se niega a construir con cambios sin commitear**: un
+instalador que se entrega tiene que corresponder a un commit exacto.
+Para una prueba local: `.\installer\build.ps1 -AllowDirty`.
+
+En desarrollo no hace falta nada: el backend y Vite calculan la versión
+con git al arrancar.
+
+### Dónde se ve
+
+| Superficie | Cómo |
+|---|---|
+| API | `GET /version` → `{version, commit, compilado, entorno}`, sin autenticación |
+| API | `GET /health` y el log de arranque: `SAVI v1.4.0 arrancando` |
+| Launcher | Reporte de "Diagnosticar SAVI" |
+| Interfaz | Pie del sidebar del chat (dentro del cajón en móvil), pie del menú de Administración y la pantalla de login |
+
+Es lo primero que hay que pedirle a un cliente que reporta un problema.
+
+### Crear una versión
 
 ```powershell
-git commit -am "chore(release): v0.2.0"
-git tag v0.2.0
+python scripts/version.py --proponer      # calcula la siguiente y muestra las notas
+python scripts/version.py --crear         # crea el tag anotado calculado
+python scripts/version.py --crear v2.0.0  # o el número que decida una persona
+git push origin v1.5.0
 ```
+
+El salto sale de los conventional commits desde el último tag:
+
+| En los commits | Salto |
+|---|---|
+| `tipo!:` o `BREAKING CHANGE:` | mayor (antes de 1.0.0: menor) |
+| `feat:` | menor |
+| `fix:` / `perf:` | parche |
+| solo `docs`, `chore`, `ci`, `test`, `style`, `refactor` | ninguno: se niega a versionar |
+
+La primera versión no se calcula —no hay tag previo desde el cual
+medir—: se crea con un número explícito.
+
+`--crear` exige estar en `main`, con el árbol limpio y en un commit
+que no tenga ya un tag. **No hace push**: publicar el tag es una acción
+explícita.
+
+### Notas de versión
+
+Las genera el script desde los conventional commits, agrupadas por tipo,
+y quedan en el mensaje del tag anotado: `git show v1.4.0`. No hay
+`CHANGELOG.md` a propósito: uno mantenido a mano se desactualiza; uno
+generado del historial no puede.
+
+### Flujo
+
+Los tags viven solo en `main`. El orden es **merge → tag → build**:
+taguear antes del merge apunta a un árbol que no se publica, y construir
+antes del tag deja el instalador con la distancia (`-3-gabc1234`) en
+lugar del número limpio.
 
 ## Actualizaciones
 

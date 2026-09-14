@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useRouter } from 'vue-router'
 
+import AppVersion from '@/components/AppVersion.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import type { Conversation } from '../types'
@@ -177,6 +178,7 @@ function goToAdmin(): void {
         </Tooltip>
       </div>
       <ThemeToggle />
+      <AppVersion />
     </footer>
   </aside>
 </template>

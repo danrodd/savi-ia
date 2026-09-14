@@ -1,6 +1,8 @@
 [project]
 name = "savi"
-dynamic = ["version"]
+# La versión real es el tag de git (scripts/version.py). SAVI no se publica
+# como paquete: este número no se usa y no hay que subirlo nunca.
+version = "0.0.0"
 description = "SAVI - Agente de IA corporativo de SEO Group"
 requires-python = ">=3.12"
 dependencies = [
@@ -51,9 +53,6 @@ package = true
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.version]
-path = "app/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]

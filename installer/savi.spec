@@ -77,6 +77,10 @@ datas += collect_data_files("alembic")
 datas += collect_data_files("tzdata", include_py_files=False)
 
 hiddenimports = [
+    # La versión incrustada por build.ps1 (tag de git). Se importa dentro de
+    # un try en app/_version.py: explícito para no depender del análisis
+    # estático — sin ella, el .exe diría 0.0.0-dev.
+    "app._build_version",
     # uvicorn resuelve estos por string en runtime; el análisis estático
     # de PyInstaller no los ve.
     "uvicorn.logging",

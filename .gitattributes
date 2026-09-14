@@ -1,0 +1,8 @@
+# Fines de línea LF en todo el monorepo, en el repositorio Y en la copia
+# de trabajo, sin importar `core.autocrlf` de cada equipo.
+#
+# Sin esto, en Windows un editor reescribía archivos con CRLF: git los
+# marcaba como modificados sin ningún cambio real, y `git describe
+# --dirty` —de donde sale la versión de la aplicación— reportaba el
+# árbol como sucio aunque no hubiera nada pendiente.
+* text=auto eol=lf

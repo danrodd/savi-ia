@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy import text
 
-from app._version import __version__
+from app._version import __built_at__, __commit__, __version__
 from app.infrastructure.config import get_settings
 from app.infrastructure.database import (
     close_engines,
@@ -61,6 +61,7 @@ _API_PREFIXES = (
     "admin",
     "erp-databases",
     "health",
+    "version",
     "docs",
     "redoc",
     "openapi.json",
@@ -151,6 +152,17 @@ def create_app() -> FastAPI:
             "app": settings.app_name,
             "env": settings.app_env,
             "version": __version__,
+        }
+
+    @app.get("/version", tags=["system"])
+    async def version() -> dict[str, str | None]:
+        """Qué build está corriendo. Sin autenticación, como `/health`:
+        es lo primero que pregunta soporte y no expone nada sensible."""
+        return {
+            "version": __version__,
+            "commit": __commit__,
+            "compilado": __built_at__,
+            "entorno": settings.app_env,
         }
 
     app.include_router(auth_router)

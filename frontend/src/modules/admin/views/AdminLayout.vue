@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 
+import AppVersion from '@/components/AppVersion.vue'
+
 const NAV = [
   { to: { name: 'admin-databases' }, label: 'Bases de datos' },
   { to: { name: 'admin-llm-providers' }, label: 'Proveedores de IA' },
@@ -29,6 +31,7 @@ const NAV = [
       >
         {{ item.label }}
       </RouterLink>
+      <AppVersion class="admin__version" />
     </aside>
 
     <main class="admin__main">
@@ -111,6 +114,12 @@ const NAV = [
   box-shadow: inset 3px 0 0 var(--brand);
 }
 
+/* Empujada al fondo de la columna: siempre visible sin competir con la navegación. */
+.admin__version {
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
 .admin__main {
   flex: 1;
   min-width: 0;
@@ -146,6 +155,12 @@ const NAV = [
 
   .admin__section {
     display: none;
+  }
+
+  .admin__version {
+    margin-top: 0;
+    margin-left: auto;
+    padding-top: 0;
   }
 }
 </style>

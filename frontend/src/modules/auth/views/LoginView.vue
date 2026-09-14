@@ -10,6 +10,7 @@ import { computed, ref } from 'vue'
 
 import { useRoute, useRouter } from 'vue-router'
 
+import AppVersion from '@/components/AppVersion.vue'
 import Button from '@/components/ui/Button.vue'
 import { AuthRequestError } from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
@@ -116,6 +117,9 @@ async function onSubmit(): Promise<void> {
           Entrar
         </Button>
       </form>
+      <!-- Visible antes de iniciar sesión: quien no puede entrar es
+           justamente quien llama a soporte. -->
+      <AppVersion class="login__version" />
     </div>
   </div>
 </template>
@@ -246,6 +250,11 @@ async function onSubmit(): Promise<void> {
   font-size: 12px;
   color: var(--text-subtle);
   line-height: 1.4;
+}
+
+.login__version {
+  margin-top: var(--space-6);
+  text-align: center;
 }
 
 .login__hint code {
