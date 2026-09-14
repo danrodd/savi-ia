@@ -173,7 +173,12 @@ En `system_prompt.py` hay una sección dedicada al uso del catálogo. Las reglas
 
 (Para Tipo B de [`extending-guide.md`](./extending-guide.md), pero específico para tools.)
 
-1. **Implementación** en `app/modules/chat/infrastructure/llm/mcp/tools/knowledge.py`:
+> El agente tiene un máximo de **4 tools** (ver
+> `backend/docs/mcp_deferred_tools_gotcha.md`). Una capacidad nueva del
+> catálogo se agrega como un **`tipo` más** de `consultar_conocimiento`,
+> no como tool aparte.
+
+1. **Implementación** en `app/modules/chat/infrastructure/llm/tools/knowledge.py`:
 
    ```python
    def build_describir_rol_impl(catalog, allowed_modules=None):
@@ -188,28 +193,19 @@ En `system_prompt.py` hay una sección dedicada al uso del catálogo. Las reglas
        return impl
    ```
 
-2. **Registro** en `app/modules/chat/infrastructure/llm/mcp/server.py`:
+2. **Dispatcher**, en el mismo archivo: agregar `"rol"` a `KNOWLEDGE_TIPOS`
+   (el JSON Schema de la tool lo toma de ahí) y la rama en
+   `build_consultar_conocimiento_impl`:
 
    ```python
-   @tool(
-       "describir_rol",
-       "Describe un rol del ERP (atribuciones, formularios típicos, reportes). "
-       "Argumento: 'rol' como código (contador, cajero, vendedor, etc.).",
-       {"rol": str},
-   )
-   async def _describir_rol(args):
-       impl = build_describir_rol_impl(cat, allowed_modules)
-       return await impl(args)
+   if tipo == "rol":
+       return await rol({"rol": consulta})
    ```
 
-3. **Agregar a `ALLOWED_TOOLS`**:
-
-   ```python
-   ALLOWED_TOOLS: list[str] = [
-       ...,
-       f"mcp__{MCP_SERVER_NAME}__describir_rol",
-   ]
-   ```
+3. **Descripción** en `_CONSULTAR_CONOCIMIENTO_DESCRIPTION`
+   (`app/modules/chat/infrastructure/llm/tools/registry.py`): agregar el
+   tipo nuevo y cuándo usarlo. El registro es común a todos los
+   proveedores de IA.
 
 4. **Mencionar en el system prompt** cuándo usarla.
 

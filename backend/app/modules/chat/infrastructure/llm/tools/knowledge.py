@@ -350,6 +350,18 @@ def build_listar_modulos_impl(
 # internamente por `tipo`. El comportamiento del catálogo no cambia,
 # solo la fachada hacia el LLM.
 
+# Fuente única de los valores de `tipo`: la usan el dispatcher y el JSON
+# Schema de la tool (`tools/schemas.py`).
+KNOWLEDGE_TIPOS: tuple[str, ...] = (
+    "intencion",
+    "modulo",
+    "workflow",
+    "faq",
+    "glosario",
+    "modulos_disponibles",
+    "formulario",
+)
+
 
 def build_consultar_conocimiento_impl(
     catalog: KnowledgeCatalog,
@@ -391,8 +403,7 @@ def build_consultar_conocimiento_impl(
         return {
             "error": (
                 f"Tipo '{tipo}' no reconocido. Valores válidos: "
-                "intencion, modulo, workflow, faq, glosario, "
-                "modulos_disponibles, formulario."
+                f"{', '.join(KNOWLEDGE_TIPOS)}."
             ),
         }
 

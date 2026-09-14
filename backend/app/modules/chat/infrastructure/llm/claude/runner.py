@@ -1,25 +1,21 @@
 """Runner del agente SAVI sobre el Claude Agent SDK.
 
-Cada turno construye un nuevo MCP server in-process (para poder, más
-adelante, atar las tools al usuario actual por clausura) y emite eventos
-tipados listos para serializar como SSE.
-
-El SDK levanta el binario `claude` como subprocess; en Windows necesita
-`CLAUDE_CODE_GIT_BASH_PATH` apuntando a `bash.exe` (lo propagamos desde
-`Settings`).
+Cada turno construye las tools neutrales y un MCP server in-process nuevo
+(las clausuras atan el contexto del turno) y emite eventos tipados listos
+para serializar como SSE.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from collections.abc import AsyncIterator
 from uuid import UUID
 
 from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
+    Message,
     ResultMessage,
     TextBlock,
     ThinkingBlock,
@@ -36,58 +32,27 @@ from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
-    TextDeltaEvent,
     ThinkingDeltaEvent,
     ToolResultEvent,
     ToolUseEvent,
 )
 from app.modules.chat.domain.interfaces import LLMRunner
-from app.modules.chat.infrastructure.llm.mcp.server import (
-    ALLOWED_TOOLS,
+from app.modules.chat.infrastructure.llm.claude.mcp_adapter import (
     MCP_SERVER_NAME,
-    build_savi_mcp_server,
+    allowed_tool_names,
+    build_mcp_server,
 )
+from app.modules.chat.infrastructure.llm.claude.sdk_env import apply_sdk_env
+from app.modules.chat.infrastructure.llm.errors import user_facing_error
 from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
+from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
+from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
 
 log = logging.getLogger(__name__)
 
-# Señales de que el problema es la credencial del CLI y no la pregunta.
-#
-# Sin "401" suelto a propósito: aparece en mensajes que no tienen nada que
-# ver ("el planner estima ~401.000 filas") y sugerir renovar la credencial
-# ahí manda a la persona a perder el tiempo en el lugar equivocado. Los
-# mensajes de credencial reales siempre traen alguna de estas palabras.
-_AUTH_ERROR_MARKERS = (
-    "oauth",
-    "authenticate",
-    "authentication",
-    "unauthorized",
-    "api key",
-    "api-key",
-)
-
-
-def _user_facing_error(message: str) -> str:
-    """Agrega el camino de salida cuando el error es de credencial.
-
-    El mensaje del SDK ("401 OAuth access token has expired") describe el
-    problema pero no qué hacer, y quien lo lee es alguien que sólo quería
-    preguntar por una factura. Sin esta línea el usuario queda sin salida
-    dentro del chat, aunque el remedio sea un clic en el menú Inicio.
-    """
-    lowered = message.lower()
-    if any(marker in lowered for marker in _AUTH_ERROR_MARKERS):
-        return (
-            f"{message}\n\nLa credencial de Claude venció o no es válida. "
-            "Para renovarla, abrí 'Iniciar sesión en Claude' desde el menú "
-            "Inicio y volvé a intentar."
-        )
-    return message
-
-
-_TRUNCATION_NOTICE = (
-    "\n\n_(Respuesta truncada por límite de tamaño. Si necesitas más "
-    "detalle, pídeme una sección específica.)_"
+CREDENTIAL_REMEDY = (
+    "La credencial de Claude venció o no es válida. Para renovarla, abrí "
+    "'Iniciar sesión en Claude' desde el menú Inicio y volvé a intentar."
 )
 
 
@@ -105,18 +70,6 @@ def _log_cli_stderr(line: str) -> None:
         log.warning("claude_cli_stderr %s", text)
 
 
-def _apply_sdk_env(settings: Settings) -> None:
-    if settings.claude_code_oauth_token:
-        os.environ.setdefault("CLAUDE_CODE_OAUTH_TOKEN", settings.claude_code_oauth_token)
-    if settings.anthropic_api_key:
-        os.environ.setdefault("ANTHROPIC_API_KEY", settings.anthropic_api_key)
-    if settings.claude_code_git_bash_path:
-        os.environ.setdefault(
-            "CLAUDE_CODE_GIT_BASH_PATH",
-            settings.claude_code_git_bash_path,
-        )
-
-
 def _build_options(
     settings: Settings,
     *,
@@ -124,7 +77,7 @@ def _build_options(
     allowed_modules: frozenset[ModuleCode] | None,
     erp_database_id: UUID | None,
 ) -> ClaudeAgentOptions:
-    mcp_server = build_savi_mcp_server(
+    tools = build_savi_tools(
         conversation_id=conversation_id,
         allowed_modules=allowed_modules,
         erp_database_id=erp_database_id,
@@ -132,8 +85,8 @@ def _build_options(
     return ClaudeAgentOptions(
         model=settings.claude_model,
         system_prompt=SYSTEM_PROMPT,
-        mcp_servers={MCP_SERVER_NAME: mcp_server},
-        allowed_tools=ALLOWED_TOOLS,
+        mcp_servers={MCP_SERVER_NAME: build_mcp_server(tools)},
+        allowed_tools=allowed_tool_names(tools),
         permission_mode="bypassPermissions",
         max_turns=settings.max_agent_turns,
         # Por el ejecutable y no por el shim `.cmd` de npm: ver
@@ -144,7 +97,7 @@ def _build_options(
     )
 
 
-async def _open_query_stream(prompt: str, options: ClaudeAgentOptions):
+async def _open_query_stream(prompt: str, options: ClaudeAgentOptions) -> AsyncIterator[Message]:
     """Wrap `query()` with a single retry on initialize-timeout errors.
 
     El CLI empaquetado tarda en arrancar bajo carga; el SDK lanza
@@ -171,7 +124,7 @@ async def _open_query_stream(prompt: str, options: ClaudeAgentOptions):
 class ClaudeAgentRunner(LLMRunner):
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        _apply_sdk_env(settings)
+        apply_sdk_env(settings)
 
     async def stream_turn(
         self,
@@ -187,9 +140,7 @@ class ClaudeAgentRunner(LLMRunner):
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
         )
-        max_chars = self._settings.max_response_chars
-        emitted_chars = 0
-        truncated = False
+        truncator = ResponseTruncator(self._settings.max_response_chars)
         done_yielded = False
 
         try:
@@ -197,23 +148,8 @@ class ClaudeAgentRunner(LLMRunner):
                 if isinstance(msg, AssistantMessage):
                     for block in msg.content:
                         if isinstance(block, TextBlock):
-                            if truncated:
-                                continue
-                            text = block.text
-                            remaining = max_chars - emitted_chars
-                            if remaining <= 0:
-                                truncated = True
-                                yield TextDeltaEvent(text=_TRUNCATION_NOTICE)
-                                continue
-                            if len(text) > remaining:
-                                text = text[:remaining]
-                                truncated = True
-                                emitted_chars += len(text)
-                                yield TextDeltaEvent(text=text)
-                                yield TextDeltaEvent(text=_TRUNCATION_NOTICE)
-                                continue
-                            emitted_chars += len(text)
-                            yield TextDeltaEvent(text=text)
+                            for event in truncator.feed(block.text):
+                                yield event
                         elif isinstance(block, ThinkingBlock):
                             yield ThinkingDeltaEvent(text=block.thinking)
                         elif isinstance(block, ToolUseBlock):
@@ -240,4 +176,4 @@ class ClaudeAgentRunner(LLMRunner):
                 log.info("agent_subprocess_cleanup_noise error=%s", e)
                 return
             log.exception("agent_turn_failed")
-            yield ErrorEvent(message=_user_facing_error(str(e)))
+            yield ErrorEvent(message=user_facing_error(str(e), credential_remedy=CREDENTIAL_REMEDY))

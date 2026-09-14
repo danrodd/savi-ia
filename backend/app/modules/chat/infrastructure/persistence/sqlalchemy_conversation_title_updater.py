@@ -1,9 +1,9 @@
 """Implementación de `ConversationTitleUpdater` con sesión independiente.
 
-Genera el título con `title_generator.generate_title` (Haiku) y lo
-persiste vía un `SqlAlchemyConversationRepository` armado sobre una
-sesión nueva del sessionmaker. La sesión se cierra dentro del método,
-así la persistencia sobrevive a la cancelación del request.
+Genera el título con el `TitleGenerator` del proveedor y lo persiste vía
+un `SqlAlchemyConversationRepository` armado sobre una sesión nueva del
+sessionmaker. La sesión se cierra dentro del método, así la persistencia
+sobrevive a la cancelación del request.
 """
 from __future__ import annotations
 
@@ -12,9 +12,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.infrastructure.config import Settings
-from app.modules.chat.domain.interfaces import ConversationTitleUpdater
-from app.modules.chat.infrastructure.llm.title_generator import generate_title
+from app.modules.chat.domain.interfaces import ConversationTitleUpdater, TitleGenerator
 from app.modules.conversations.infrastructure.persistence.repositories import (
     SqlAlchemyConversationRepository,
 )
@@ -26,10 +24,10 @@ class SqlAlchemyConversationTitleUpdater(ConversationTitleUpdater):
     def __init__(
         self,
         sessionmaker: async_sessionmaker[AsyncSession],
-        settings: Settings,
+        title_generator: TitleGenerator,
     ) -> None:
         self._sessionmaker = sessionmaker
-        self._settings = settings
+        self._title_generator = title_generator
 
     async def update_from_user(
         self,
@@ -57,7 +55,7 @@ class SqlAlchemyConversationTitleUpdater(ConversationTitleUpdater):
         *,
         assistant_msg: str,
     ) -> str | None:
-        title = await generate_title(self._settings, user_msg, assistant_msg)
+        title = await self._title_generator.generate(user_msg, assistant_msg)
         if title is None:
             return None
         async with self._sessionmaker() as session:

@@ -10,9 +10,14 @@ from __future__ import annotations
 
 import pytest
 
-from app.modules.chat.infrastructure.llm.runner import _user_facing_error
+from app.modules.chat.infrastructure.llm.claude.runner import CREDENTIAL_REMEDY
+from app.modules.chat.infrastructure.llm.errors import user_facing_error
 
 _HINT = "Iniciar sesión en Claude"
+
+
+def _user_facing_error(message: str) -> str:
+    return user_facing_error(message, credential_remedy=CREDENTIAL_REMEDY)
 
 
 @pytest.mark.parametrize(

@@ -330,7 +330,7 @@ Forzar sobre todos los archivos: `pre-commit run --all-files`.
 
 ## 9. Cómo se construye el agente
 
-El runner está en `app/modules/chat/infrastructure/llm/runner.py` y
+El runner está en `app/modules/chat/infrastructure/llm/claude/runner.py` y
 sigue los patrones documentados en
 [`skills/savi-backend-patterns/SKILL.md`](skills/savi-backend-patterns/SKILL.md)
 (hard rules + decision gates + anatomía del módulo `chat`).

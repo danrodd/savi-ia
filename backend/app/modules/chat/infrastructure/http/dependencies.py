@@ -10,7 +10,8 @@ from app.modules.chat.domain.interfaces import (
     ConversationTitleUpdater,
     LLMRunner,
 )
-from app.modules.chat.infrastructure.llm.runner import ClaudeAgentRunner
+from app.modules.chat.infrastructure.llm.claude.runner import ClaudeAgentRunner
+from app.modules.chat.infrastructure.llm.claude.title_generator import ClaudeTitleGenerator
 from app.modules.chat.infrastructure.persistence import (
     ShortLivedConversationRepository,
     SqlAlchemyAssistantMessageWriter,
@@ -45,7 +46,7 @@ def get_conversation_title_updater(
 ) -> ConversationTitleUpdater:
     return SqlAlchemyConversationTitleUpdater(
         sessionmaker=get_agent_sessionmaker(),
-        settings=settings,
+        title_generator=ClaudeTitleGenerator(settings),
     )
 
 

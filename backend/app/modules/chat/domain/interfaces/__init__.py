@@ -5,9 +5,11 @@ from app.modules.chat.domain.interfaces.conversation_title_updater import (
     ConversationTitleUpdater,
 )
 from app.modules.chat.domain.interfaces.llm_runner import LLMRunner
+from app.modules.chat.domain.interfaces.title_generator import TitleGenerator
 
 __all__ = [
     "AssistantMessageWriter",
     "ConversationTitleUpdater",
     "LLMRunner",
+    "TitleGenerator",
 ]

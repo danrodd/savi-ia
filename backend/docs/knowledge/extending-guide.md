@@ -57,7 +57,7 @@ El equipo SEO te pide: *"queremos documentar el tiempo estimado de cada proceso 
    - **Tipo `| None`** con `default=None` → es opcional.
    - **NO modifiques** campos existentes. Eso es Tipo C.
 
-2. **Opcionalmente, actualizás el serializer** en `app/modules/chat/infrastructure/llm/mcp/tools/knowledge.py` para que el LLM lo vea:
+2. **Opcionalmente, actualizás el serializer** en `app/modules/chat/infrastructure/llm/tools/knowledge.py` para que el LLM lo vea:
 
    ```python
    def _form_to_payload(form: FormEntry) -> dict[str, Any]:
@@ -172,7 +172,9 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
    return StaticKnowledgeCatalog(..., roles=roles)
    ```
 
-7. **Creás la tool MCP**. Editás `app/modules/chat/infrastructure/llm/mcp/tools/knowledge.py`:
+7. **Sumás un `tipo` al dispatcher, NO una tool nueva.** El agente tiene
+   un máximo de 4 tools (ver `backend/docs/mcp_deferred_tools_gotcha.md`).
+   Editás `app/modules/chat/infrastructure/llm/tools/knowledge.py`:
 
    ```python
    def build_describir_rol_impl(catalog: KnowledgeCatalog) -> Callable[[dict[str, Any]], Any]:
@@ -187,21 +189,16 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
        return impl
    ```
 
-8. **Registrás la tool en el server**. Editás `app/modules/chat/infrastructure/llm/mcp/server.py`:
+   Y en el mismo archivo:
+   - agregás `"rol"` a `KNOWLEDGE_TIPOS` (el JSON Schema de la tool lo
+     toma de ahí automáticamente);
+   - agregás la rama en `build_consultar_conocimiento_impl`:
+     `if tipo == "rol": return await rol({"rol": consulta})`.
 
-   ```python
-   @tool(
-       "describir_rol",
-       "Devuelve atribuciones y formularios típicos de un rol del ERP "
-       "(contador, cajero, vendedor, almacenista, etc.).",
-       {"rol": str},
-   )
-   async def _describir_rol(args: dict[str, Any]) -> dict[str, Any]:
-       impl = build_describir_rol_impl(cat)
-       return await impl(args)
-   ```
-
-   Y la agregás a `ALLOWED_TOOLS`.
+8. **Documentás el tipo nuevo** en `_CONSULTAR_CONOCIMIENTO_DESCRIPTION`
+   (`app/modules/chat/infrastructure/llm/tools/registry.py`), que es lo que
+   lee el modelo para saber cuándo usarlo. El registro sirve igual para
+   todos los proveedores de IA: no hay nada que registrar por proveedor.
 
 9. **Actualizás el system prompt** para que el LLM sepa que la tool existe.
 

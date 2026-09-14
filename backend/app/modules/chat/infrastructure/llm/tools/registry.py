@@ -1,0 +1,175 @@
+"""Registro neutral de las tools del agente, construido por turno.
+
+Por turno y no una sola vez: las clausuras atan el contexto del turno
+(conversación para la auditoría de SQL libre, módulos permitidos del
+usuario en la base consultada —D3— y la base del ERP). Reutilizar tools
+entre turnos cruzaría ese contexto.
+
+Siguen siendo exactamente 4 tools, con el patrón dispatcher en el
+knowledge. Ver `backend/docs/mcp_deferred_tools_gotcha.md`.
+"""
+
+import json
+import logging
+from collections.abc import Awaitable, Callable
+from typing import Any, cast
+from uuid import UUID
+
+from app.modules.auth.domain.value_objects.module_code import ModuleCode
+from app.modules.chat.domain.entities import ToolResult, ToolSpec
+from app.modules.chat.infrastructure.llm.tools.consultar_datos import (
+    build_description,
+    consultar_datos_impl,
+)
+from app.modules.chat.infrastructure.llm.tools.consultar_libre import (
+    build_consultar_libre_impl,
+)
+from app.modules.chat.infrastructure.llm.tools.info_empresa import info_empresa_impl
+from app.modules.chat.infrastructure.llm.tools.knowledge import (
+    build_consultar_conocimiento_impl,
+)
+from app.modules.chat.infrastructure.llm.tools.schemas import (
+    CONSULTAR_CONOCIMIENTO_SCHEMA,
+    CONSULTAR_DATOS_SCHEMA,
+    CONSULTAR_LIBRE_SCHEMA,
+    INFO_EMPRESA_SCHEMA,
+)
+from app.modules.knowledge.infrastructure.catalog_provider import get_catalog
+
+log = logging.getLogger(__name__)
+
+_RawHandler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
+
+_INFO_EMPRESA_DESCRIPTION = (
+    "Devuelve los datos básicos de la empresa registrada en el ERP: "
+    "NIT, razón social, dirección, teléfono, correo y representante "
+    "legal. Úsala cuando el usuario pregunte por la información de "
+    '"mi empresa", "los datos de la empresa", "quién es el '
+    'representante legal" o similares.'
+)
+
+_CONSULTAR_LIBRE_DESCRIPTION = (
+    "Ejecuta un SELECT SQL contra la base de datos del ERP del cliente. "
+    "Úsalo SOLO cuando `consultar_datos` (semantic layer) no cubra el "
+    "caso: preguntas puntuales sobre tablas no modeladas, joins "
+    "específicos, agregados ad-hoc.\n\n"
+    "Reglas DURAS — si no las respetás, la consulta se rechaza:\n"
+    "- Solo UN SELECT por llamada (sin ; multi-statement).\n"
+    "- Sin OFFSET. Si necesitás otro subconjunto, afiná filtros.\n"
+    "- Sin CTE (WITH), UNION, INTERSECT, EXCEPT, LATERAL.\n"
+    "- Sin SELECT * en la raíz: listá las columnas que necesitás.\n"
+    "- LIMIT obligatorio ≤ 50 (si lo omitís se inyecta 50; si pones más, "
+    "se baja a 50).\n"
+    "- El planner debe estimar ≤ 1000 filas; si no, se rechaza por "
+    "demasiado amplia.\n"
+    "- Subqueries: máximo 2 niveles de anidamiento.\n\n"
+    "Estilo recomendado: usá nombres entre comillas dobles para schemas, "
+    "tablas y columnas si tienen mayúsculas o caracteres especiales "
+    '(ej. "Empresa"."CentroCosto", "f.idFactura"). Postgres distingue '
+    "mayúsculas en identifiers quoted.\n\n"
+    "Pasá el `pregunta_usuario` original como argumento para auditoría."
+)
+
+_CONSULTAR_CONOCIMIENTO_DESCRIPTION = (
+    "Tool ÚNICA para consultar el catálogo de conocimiento del ERP "
+    "(módulos, formularios, procesos, workflows, FAQs, glosario). "
+    "Llamala SIEMPRE que el usuario pregunte CÓMO hacer algo, DÓNDE "
+    "está una funcionalidad, QUÉ pasos involucra un proceso, o por "
+    "siglas del dominio.\n\n"
+    "Argumentos:\n"
+    "- `tipo`: discriminador, uno de:\n"
+    "  * 'intencion' (USO POR DEFECTO): busca conceptos del ERP por la "
+    "intención natural del usuario. Pasá la consulta tal como la formuló.\n"
+    "  * 'modulo': descripción de un módulo. `consulta` = código "
+    "(CONTABILIDAD, NÓMINA, INVENTARIO, etc.).\n"
+    "  * 'workflow': detalle de un proceso end-to-end. `consulta` = id "
+    "del workflow (p.ej. 'wf_ciclo_venta').\n"
+    "  * 'faq': pregunta frecuente pre-mapeada. `consulta` = pregunta.\n"
+    "  * 'glosario': sigla o término. `consulta` = el término "
+    "(DIAN, PILA, NIT, PUC).\n"
+    "  * 'modulos_disponibles': lista de módulos del usuario. "
+    "`consulta` = '' (vacío).\n"
+    "  * 'formulario': lookup directo por nombre interno frmXxx. "
+    "`consulta` = nombre del formulario.\n\n"
+    "El response trae `matches` (para intencion), `module`, `workflow`, "
+    "`faqs`, `entry` o `modules` según el tipo. **Si la respuesta trae "
+    "datos, ESOS DATOS SON REALES — usalos para componer tu respuesta. "
+    "NUNCA digas que la herramienta no respondió si trae contenido.**"
+)
+
+
+def to_tool_result(raw: dict[str, Any]) -> ToolResult:
+    """Normaliza la respuesta de un handler a `ToolResult`.
+
+    Conviven dos formas:
+    - Formato MCP (`info_empresa`, `consultar_datos`, `consultar_libre`):
+      `{"content": [{"type": "text", "text": ...}], "isError": bool}`.
+    - Dict de datos crudo (`consultar_conocimiento`): `{"matches": [...]}`,
+      o `{"error": ...}` para un `tipo` desconocido.
+
+    El SDK de Claude solo convertía la primera forma y leía `is_error`: el
+    knowledge le llegaba vacío al modelo y ningún error se marcaba como
+    tal. Normalizar acá corrige las dos cosas para todos los proveedores.
+    """
+    content = raw.get("content")
+    if isinstance(content, list):
+        items = cast(list[Any], content)
+        texts = [
+            str(cast(dict[str, Any], item).get("text", ""))
+            for item in items
+            if isinstance(item, dict) and cast(dict[str, Any], item).get("type") == "text"
+        ]
+        is_error = bool(raw.get("isError") or raw.get("is_error"))
+        return ToolResult(text="\n".join(texts), is_error=is_error)
+    return ToolResult(
+        text=json.dumps(raw, ensure_ascii=False, default=str),
+        is_error="error" in raw,
+    )
+
+
+def _spec(name: str, description: str, parameters: dict[str, Any], raw: _RawHandler) -> ToolSpec:
+    async def handler(args: dict[str, Any]) -> ToolResult:
+        try:
+            return to_tool_result(await raw(args))
+        except Exception as e:  # noqa: BLE001
+            # Un fallo inesperado vuelve al modelo como error y no corta
+            # el turno: puede corregir el argumento y reintentar.
+            log.exception("tool_failed name=%s", name)
+            return ToolResult(text=f"La herramienta falló: {e}", is_error=True)
+
+    return ToolSpec(name=name, description=description, parameters=parameters, handler=handler)
+
+
+def build_savi_tools(
+    *,
+    conversation_id: UUID | None,
+    allowed_modules: frozenset[ModuleCode] | None,
+    erp_database_id: UUID | None,
+) -> list[ToolSpec]:
+    """`allowed_modules=None` significa admin sin filtro (D3)."""
+
+    async def info_empresa(args: dict[str, Any]) -> dict[str, Any]:
+        return await info_empresa_impl(args, erp_database_id=erp_database_id)
+
+    async def consultar_datos(args: dict[str, Any]) -> dict[str, Any]:
+        return await consultar_datos_impl(args, erp_database_id=erp_database_id)
+
+    consultar_libre = build_consultar_libre_impl(conversation_id, erp_database_id)
+    consultar_conocimiento = build_consultar_conocimiento_impl(get_catalog(), allowed_modules)
+
+    return [
+        _spec("info_empresa", _INFO_EMPRESA_DESCRIPTION, INFO_EMPRESA_SCHEMA, info_empresa),
+        _spec("consultar_datos", build_description(), CONSULTAR_DATOS_SCHEMA, consultar_datos),
+        _spec(
+            "consultar_libre",
+            _CONSULTAR_LIBRE_DESCRIPTION,
+            CONSULTAR_LIBRE_SCHEMA,
+            consultar_libre,
+        ),
+        _spec(
+            "consultar_conocimiento",
+            _CONSULTAR_CONOCIMIENTO_DESCRIPTION,
+            CONSULTAR_CONOCIMIENTO_SCHEMA,
+            consultar_conocimiento,
+        ),
+    ]

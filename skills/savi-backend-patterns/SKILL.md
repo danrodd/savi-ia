@@ -33,8 +33,9 @@ Cuando varias skills aplican al mismo cambio:
 - **Dos pools de BD aislados** (`app/infrastructure/database/pool.py`):
   - `agent_db`: RW, datos del agente (conversaciones, mensajes, futuro auth).
   - `erp_db`: **read-only forzado** con `default_transaction_read_only=on` + `statement_timeout=60s`. Todas las tools de negocio van por este pool.
-- **MCP server in-process construido por turno**: `build_savi_mcp_server()` se llama por cada `query()` para permitir clausuras con contexto del usuario (auth futura). NUNCA reusar un server entre turnos.
-- **`allowed_tools` whitelist explícito**: declara cada tool MCP con prefijo `mcp__savi__<name>`. No usar `allowed_tools=[]` ni `["*"]`.
+- **Tools neutrales construidas por turno**: `build_savi_tools()` (`llm/tools/registry.py`) devuelve `ToolSpec`s con clausuras del contexto del turno (conversación, módulos D3, base del ERP). NUNCA reusar tools entre turnos. Cada proveedor las adapta: Claude con `claude/mcp_adapter.py` (MCP in-process). Ver `docs/llm_providers/`.
+- **Resultados de tools normalizados**: todo handler pasa por `to_tool_result` → `ToolResult(text, is_error)`. No devolver dicts sueltos esperando que el SDK los serialice: el SDK de Claude descarta lo que no traiga `content`.
+- **`allowed_tools` derivado del registro**: `allowed_tool_names(tools)` genera `mcp__savi__<name>`. No usar `allowed_tools=[]` ni `["*"]`.
 - **`permission_mode="bypassPermissions"`**: las tools están curadas en el código, no las aprueba el modelo.
 - **Sessionmaker independiente para escrituras que deben sobrevivir a la cancelación del cliente**: `AssistantMessageWriter` y `ConversationTitleUpdater` reciben un `async_sessionmaker[AsyncSession]` (vía `get_agent_sessionmaker()`) en lugar de la `AsyncSession` del request. Se invocan con `asyncio.create_task` desde el use case y mantienen referencias fuertes en un `set[Task]` para evitar GC.
 - **Soft branches, NUNCA delete físico**: editar/regenerar pone `superseded_at=now()` y `superseded_by_id=<nuevo>`. Filtrar hilo activo con `WHERE superseded_at IS NULL`. El frontend pide `?include_superseded=true` cuando quiere reconstruir versiones.
@@ -50,7 +51,7 @@ Cuando varias skills aplican al mismo cambio:
 
 | Decisión | Acción |
 |----------|--------|
-| ¿Nueva tool MCP de negocio? | Crear en `chat/infrastructure/llm/mcp/tools/<nombre>.py` con `info_empresa_impl()` como plantilla. Registrar en `mcp/server.py` y agregar a `ALLOWED_TOOLS` con prefijo `mcp__savi__`. SQL va por `get_erp_engine()` (read-only). |
+| ¿Nueva tool de negocio? | Primero leer `docs/mcp_deferred_tools_gotcha.md` (máximo 4: preferir sumar un `tipo` a un dispatcher). Si corresponde: impl en `chat/infrastructure/llm/tools/<nombre>.py` con `info_empresa_impl()` como plantilla, JSON Schema en `tools/schemas.py` (enums desde el dominio) y registro en `tools/registry.py`. SQL va por el engine read-only de la base del turno. |
 | ¿Nuevo evento del stream? | Dataclass nueva en `chat/domain/entities/chat_event.py` + variante en `ChatEventType` + agregar al union `ChatEvent` + manejar en `_TurnAccumulator.consume(...)` si afecta metadata persistida. |
 | ¿Nuevo campo persistido por turno? | Añadir a `Message` (entity + ORM model con JSONB/columnas tipadas) + mapper + DTO + Response. Migración Alembic. Acumularlo en `_TurnAccumulator` y pasarlo a `build_message(...)`. |
 | ¿Escritura que debe sobrevivir cancelación? | Crear puerto en `chat/domain/interfaces/` + impl con sessionmaker independiente en `chat/infrastructure/persistence/`. Invocar con `asyncio.create_task` y mantener ref en `_BG_TASKS`. |
@@ -78,6 +79,7 @@ app/modules/chat/
 │   ├── exceptions/exceptions.py          # NothingToEditError, NoAssistantToRegenerateError
 │   └── interfaces/
 │       ├── llm_runner.py                 # Puerto del runner
+│       ├── title_generator.py            # Puerto del auto-título
 │       ├── assistant_message_writer.py   # Puerto persistencia indep.
 │       └── conversation_title_updater.py # Puerto auto-título indep.
 └── infrastructure/
@@ -85,13 +87,19 @@ app/modules/chat/
     │   ├── routes.py                     # POST /chat con SSE
     │   └── dependencies.py
     ├── llm/
-    │   ├── runner.py                     # ClaudeAgentRunner — query() loop
     │   ├── system_prompt.py              # SYSTEM_PROMPT (no tocar a la ligera)
-    │   ├── title_generator.py            # generate_title(settings, user, asst)
-    │   └── mcp/
-    │       ├── server.py                 # build_savi_mcp_server() + ALLOWED_TOOLS
-    │       └── tools/
-    │           └── info_empresa.py       # Plantilla para tools de negocio
+    │   ├── title_prompt.py               # prompt + limpieza del título (compartido)
+    │   ├── truncation.py                 # ResponseTruncator (compartido)
+    │   ├── errors.py                     # user_facing_error (compartido)
+    │   ├── tools/
+    │   │   ├── registry.py               # build_savi_tools() + to_tool_result
+    │   │   ├── schemas.py                # JSON Schema de las 4 tools
+    │   │   └── info_empresa.py           # Plantilla para tools de negocio
+    │   └── claude/
+    │       ├── runner.py                 # ClaudeAgentRunner — query() loop
+    │       ├── title_generator.py        # ClaudeTitleGenerator
+    │       ├── mcp_adapter.py            # ToolSpec → MCP in-process
+    │       └── sdk_env.py                # entorno del CLI
     └── persistence/
         ├── sqlalchemy_assistant_message_writer.py     # sessionmaker indep.
         └── sqlalchemy_conversation_title_updater.py   # sessionmaker indep.
@@ -101,7 +109,7 @@ app/modules/chat/
 
 Cuando apliques esta skill, entrega:
 
-- Tools nuevas en `mcp/tools/<x>.py` siguiendo la plantilla de `info_empresa`.
+- Tools nuevas en `llm/tools/<x>.py` siguiendo la plantilla de `info_empresa`, con schema en `tools/schemas.py` y registro en `tools/registry.py`.
 - Eventos nuevos como dataclass + variante de `ChatEventType` + manejo en `_TurnAccumulator`.
 - Acciones nuevas con su validación pre-stream + caso `_execute_<action>` + persistencia con writer independiente.
 - Migración Alembic cuando cambies el schema, aplicada y verificada.
@@ -120,8 +128,8 @@ Cuando apliques esta skill, entrega:
 ## References
 
 - `app/modules/chat/application/use_cases/chat_turn.py` — Use case completo con tres acciones.
-- `app/modules/chat/infrastructure/llm/runner.py` — Runner con accumulator y retry.
-- `app/modules/chat/infrastructure/llm/mcp/tools/info_empresa.py` — Plantilla de tool MCP.
+- `app/modules/chat/infrastructure/llm/claude/runner.py` — Runner de Claude con truncado y retry.
+- `app/modules/chat/infrastructure/llm/tools/info_empresa.py` — Plantilla de tool.
 - `app/modules/chat/infrastructure/persistence/sqlalchemy_assistant_message_writer.py` — Patrón sessionmaker independiente.
 - `backend/docs/FRONTEND_CHAT_SPEC.md` — Contrato del API hacia el frontend (eventos SSE, body discriminado, etc.).
 - `CLAUDE.md` raíz — Sección 6 (auto-invoke), 9 (cómo se construye el agente), 13 (reglas estrictas).

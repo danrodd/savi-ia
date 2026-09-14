@@ -157,5 +157,5 @@ Resuelto en: PR de la Fase 1 del knowledge (junio 2026).
 ## Referencias
 
 - Sección 5.2 de `CLAUDE.md` (raíz) — política de tools MCP en SAVI.
-- `app/modules/chat/infrastructure/llm/mcp/server.py` — implementación actual del MCP server.
-- `app/modules/chat/infrastructure/llm/mcp/tools/knowledge.py` — patrón dispatcher implementado.
+- `app/modules/chat/infrastructure/llm/tools/registry.py` — registro neutral de las tools (`claude/mcp_adapter.py` lo expone como MCP).
+- `app/modules/chat/infrastructure/llm/tools/knowledge.py` — patrón dispatcher implementado.
