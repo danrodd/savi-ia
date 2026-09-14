@@ -72,6 +72,20 @@ def _status(error: Exception) -> int | None:
     return value if isinstance(value, int) else None
 
 
+def _failure_code(event: Any) -> int | None:
+    """Código de un evento `response.failed`/`error`.
+
+    La SDK expone el detalle en `event.response.error`, no en un atributo
+    `message`; buscamos ambas rutas para no perderlo.
+    """
+    response = getattr(event, "response", None)
+    error = getattr(response, "error", None) if response is not None else None
+    if error is None:
+        error = getattr(event, "error", None)
+    code = getattr(error, "code", None)
+    return code if isinstance(code, int) else None
+
+
 class OpenAIRunner(LLMRunner):
     def __init__(
         self,
@@ -144,6 +158,7 @@ class OpenAIRunner(LLMRunner):
             function_calls: list[Any] = []
             iteration_usage: TokenUsage | None = None
             incomplete_reason: str | None = None
+            refusal_seen = False
             try:
                 async for event in self._stream(client, selected_model, input_items, tools):
                     event_type = str(getattr(event, "type", "") or "")
@@ -169,14 +184,25 @@ class OpenAIRunner(LLMRunner):
                             incomplete_reason = (
                                 getattr(details, "reason", None) if details else None
                             )
+                    elif event_type in ("response.refusal.delta", "response.refusal.done"):
+                        refusal_seen = True
                     elif event_type in ("response.failed", "error"):
-                        message = str(getattr(event, "message", "") or _SECURITY_MESSAGE)
+                        code = _failure_code(event)
                         log.error(
-                            "openai_stream_failed model=%s attempt=%s",
+                            "openai_stream_failed model=%s status=%s attempt=%s",
                             selected_model,
+                            code,
                             retry_attempt,
                         )
-                        yield ErrorEvent(message=message)
+                        if code in _AUTH_STATUS:
+                            yield ErrorEvent(
+                                message=user_facing_error(
+                                    "La API key de OpenAI no es válida o no tiene permisos.",
+                                    credential_remedy=_CREDENTIAL_REMEDY,
+                                )
+                            )
+                        else:
+                            yield ErrorEvent(message=_SECURITY_MESSAGE)
                         return
             except Exception as error:  # noqa: BLE001
                 code = _status(error)
@@ -229,6 +255,13 @@ class OpenAIRunner(LLMRunner):
                         else "No pude generar una respuesta para esa consulta."
                     )
                 )
+                return
+
+            if refusal_seen:
+                # Un refusal no es una respuesta: nunca termina en DoneEvent
+                # vacío, que el usuario leería como "el asistente no responde".
+                log.warning("openai_refusal model=%s", selected_model)
+                yield ErrorEvent(message=_SECURITY_MESSAGE)
                 return
 
             if iteration_usage is not None:

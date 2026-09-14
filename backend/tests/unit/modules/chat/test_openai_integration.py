@@ -255,3 +255,156 @@ async def test_title_generator_returns_none_on_error() -> None:
     generator = OpenAITitleGenerator(Settings(), _provider(), client=client)
 
     assert await generator.generate("¿facturas?") is None
+
+
+@pytest.mark.asyncio
+async def test_runner_refusal_becomes_error_not_empty_done(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [],
+    )
+    refusal = SimpleNamespace(type="response.refusal.done", refusal="no puedo")
+    client = _Client([[refusal, _completed()]])
+
+    events = [
+        event
+        async for event in OpenAIRunner(Settings(), _provider(), client=client).stream_turn(
+            "consulta"
+        )
+    ]
+
+    assert any(isinstance(e, ErrorEvent) for e in events)
+    assert not any(isinstance(e, DoneEvent) for e in events)
+
+
+@pytest.mark.asyncio
+async def test_runner_response_failed_reads_response_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [],
+    )
+    failed = SimpleNamespace(
+        type="response.failed",
+        response=SimpleNamespace(error=SimpleNamespace(code=400, message="bad request")),
+    )
+    client = _Client([[failed]])
+
+    events = [
+        event
+        async for event in OpenAIRunner(Settings(), _provider(), client=client).stream_turn(
+            "consulta"
+        )
+    ]
+
+    assert any(isinstance(e, ErrorEvent) for e in events)
+    assert not any(isinstance(e, DoneEvent) for e in events)
+
+
+@pytest.mark.asyncio
+async def test_runner_multiple_tools_keep_order_and_call_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def handler(args: dict[str, object]):
+        from app.modules.chat.domain.entities import ToolResult
+
+        return ToolResult(f"ok-{args['n']}")
+
+    tool = ToolSpec("lookup", "lookup", {"type": "object"}, handler)
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [tool],
+    )
+    client = _Client(
+        [
+            [
+                _function_call("lookup", "call_a", '{"n": 1}'),
+                _function_call("lookup", "call_b", '{"n": 2}'),
+                _completed(),
+            ],
+            [_text("listo"), _completed()],
+        ]
+    )
+
+    events = [
+        event
+        async for event in OpenAIRunner(Settings(), _provider(), client=client).stream_turn(
+            "consulta"
+        )
+    ]
+
+    uses = [e for e in events if isinstance(e, ToolUseEvent)]
+    assert [u.id for u in uses] == ["call_a", "call_b"]
+    second = client.responses.calls[1]["input"]
+    outputs = [
+        item
+        for item in second
+        if isinstance(item, dict) and item.get("type") == "function_call_output"
+    ]
+    assert [item["call_id"] for item in outputs] == ["call_a", "call_b"]
+
+
+@pytest.mark.asyncio
+async def test_runner_preserves_reasoning_items_in_next_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def handler(args: dict[str, object]):
+        from app.modules.chat.domain.entities import ToolResult
+
+        return ToolResult("ok")
+
+    tool = ToolSpec("lookup", "lookup", {"type": "object"}, handler)
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [tool],
+    )
+    reasoning = SimpleNamespace(
+        type="response.output_item.done",
+        item=SimpleNamespace(type="reasoning", id="rs_1"),
+    )
+    client = _Client(
+        [
+            [reasoning, _function_call("lookup", "call_1", "{}"), _completed()],
+            [_text("listo"), _completed()],
+        ]
+    )
+
+    _ = [
+        event
+        async for event in OpenAIRunner(Settings(), _provider(), client=client).stream_turn(
+            "consulta"
+        )
+    ]
+
+    second = client.responses.calls[1]["input"]
+    assert second[1].type == "reasoning"
+    assert second[2].type == "function_call"
+
+
+@pytest.mark.asyncio
+async def test_runner_max_turns_truncates(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def handler(args: dict[str, object]):
+        from app.modules.chat.domain.entities import ToolResult
+
+        return ToolResult("ok")
+
+    tool = ToolSpec("lookup", "lookup", {"type": "object"}, handler)
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [tool],
+    )
+    client = _Client(
+        [
+            [_function_call("lookup", "call_1", "{}"), _completed()],
+            [_function_call("lookup", "call_2", "{}"), _completed()],
+        ]
+    )
+    runner = OpenAIRunner(Settings(max_agent_turns=2), _provider(), client=client)
+
+    events = [event async for event in runner.stream_turn("consulta")]
+
+    done = next(e for e in events if isinstance(e, DoneEvent))
+    assert done.finish_reason == "truncated"
