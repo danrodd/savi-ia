@@ -89,7 +89,7 @@ async def test_list_includes_every_descriptor_even_unconfigured() -> None:
     items = await use_case.list()
 
     kinds = {item.provider for item in items}
-    assert kinds == {"claude", "gemini"}
+    assert kinds == {"claude", "gemini", "openai"}
 
 
 async def test_save_never_leaks_the_credential_in_the_dto() -> None:

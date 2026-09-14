@@ -95,6 +95,12 @@ class Settings(BaseSettings):
     gemini_retry_base_delay_s: float = Field(default=0.5)
     gemini_fallback_models: str = Field(default="gemini-3.1-flash-lite,gemini-flash-lite-latest")
 
+    # Resiliencia de OpenAI: mismo patrón que Gemini, sin fallback cruzado.
+    # Arranca vacío a propósito: un modelo fallback debe elegirlo una persona.
+    openai_retry_attempts: int = Field(default=3)
+    openai_retry_base_delay_s: float = Field(default=0.5)
+    openai_fallback_models: str = Field(default="")
+
     # ── Free SQL query (Nivel D) ─────────────────────────────────────────
     # Tope absoluto de filas devueltas por consulta libre del LLM.
     free_query_max_rows: int = Field(default=50)
@@ -194,6 +200,15 @@ class Settings(BaseSettings):
         return tuple(
             dict.fromkeys(
                 model.strip() for model in self.gemini_fallback_models.split(",") if model.strip()
+            )
+        )
+
+    @property
+    def openai_fallback_models_list(self) -> tuple[str, ...]:
+        """Return non-empty fallback IDs, preserving order and uniqueness."""
+        return tuple(
+            dict.fromkeys(
+                model.strip() for model in self.openai_fallback_models.split(",") if model.strip()
             )
         )
 

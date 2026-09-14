@@ -27,6 +27,7 @@ dependencies = [
     # `mcp`, pero un import directo se declara: el día que esa cadena
     # cambie, SAVI arranca sin forma de cerrarse.
     "pywin32>=311; sys_platform == 'win32'",
+    "openai==3.13.0",
 ]
 
 [dependency-groups]

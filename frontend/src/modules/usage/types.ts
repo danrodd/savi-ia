@@ -47,7 +47,7 @@ export interface SystemUsageReport {
 export interface UsageQuery {
   start?: string
   end?: string
-  provider?: 'claude' | 'gemini'
+  provider?: 'claude' | 'gemini' | 'openai'
   model?: string
 }
 

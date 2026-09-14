@@ -8,10 +8,11 @@ from enum import StrEnum
 class ProviderKind(StrEnum):
     CLAUDE = "claude"
     GEMINI = "gemini"
+    OPENAI = "openai"
 
 
 class CredentialKind(StrEnum):
-    API_KEY = "api_key"  # Claude y Gemini
+    API_KEY = "api_key"  # Claude, Gemini y OpenAI
     OAUTH_TOKEN = "oauth_token"  # solo Claude (CLAUDE_CODE_OAUTH_TOKEN)
     # Solo Claude: la sesión de `claude login` del equipo. No guarda nada.
     LOCAL_SESSION = "local_session"

@@ -73,7 +73,7 @@ export interface ImportErpDatabasesResult {
   rows: ImportRowResult[]
 }
 
-export type LlmProviderKind = 'claude' | 'gemini'
+export type LlmProviderKind = 'claude' | 'gemini' | 'openai'
 export type LlmCredentialKind = 'api_key' | 'oauth_token' | 'local_session'
 
 export interface ModelPricing {

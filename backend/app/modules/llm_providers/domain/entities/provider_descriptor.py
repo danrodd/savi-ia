@@ -41,6 +41,14 @@ PROVIDER_DESCRIPTORS: tuple[ProviderDescriptor, ...] = (
         supports_model_listing=True,
         implemented=True,
     ),
+    ProviderDescriptor(
+        kind=ProviderKind.OPENAI,
+        display_name="OpenAI",
+        credential_kinds=(CredentialKind.API_KEY,),
+        # `GET /v1/models` lista los modelos visibles para la API key.
+        supports_model_listing=True,
+        implemented=True,
+    ),
 )
 
 

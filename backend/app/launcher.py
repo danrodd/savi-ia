@@ -665,7 +665,7 @@ def _collect_report() -> Report:
     from app.modules.llm_providers.infrastructure.http.dependencies import (
         build_llm_provider_repository,
     )
-    from app.modules.llm_providers.infrastructure.probes import GeminiProbe
+    from app.modules.llm_providers.infrastructure.probes import GeminiProbe, OpenAIProbe
 
     report = Report(
         env_path=str(app_dir() / ".env"),
@@ -786,6 +786,20 @@ def _collect_report() -> Report:
                         ),
                     )
                 )
+            if descriptor_ok and active_provider.provider.value == "openai":
+                openai_result = await OpenAIProbe().test(active_provider)
+                checks.append(
+                    CheckResult(
+                        label="Conexión de OpenAI",
+                        ok=openai_result.ok,
+                        detail=openai_result.detail,
+                        remedy=(
+                            "Probá la credencial desde Administración → Proveedores de IA."
+                            if not openai_result.ok
+                            else ""
+                        ),
+                    )
+                )
         return checks
 
     report.results.extend(asyncio.run(probe()))
@@ -821,8 +835,8 @@ def _collect_report() -> Report:
 
     if active_provider_kind != "claude":
         detail = (
-            "No aplica: el proveedor activo es Gemini."
-            if active_provider_kind == "gemini"
+            f"No aplica: el proveedor activo es {active_provider_kind}."
+            if active_provider_kind not in ("none", "")
             else "No aplica: Claude no es el proveedor activo."
         )
         report.results.extend(

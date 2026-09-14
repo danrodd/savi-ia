@@ -101,6 +101,7 @@ hiddenimports = [
     # SDK y utilidades que se importan de forma indirecta.
     "claude_agent_sdk",
     "anthropic",
+    "openai",
     "jwt",
     "tzdata",
 ]

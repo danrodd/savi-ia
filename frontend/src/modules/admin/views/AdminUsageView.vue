@@ -17,6 +17,7 @@ const providerOptions = [
   { value: undefined, label: 'Todos los proveedores' },
   { value: 'claude' as const, label: 'Claude' },
   { value: 'gemini' as const, label: 'Gemini' },
+  { value: 'openai' as const, label: 'OpenAI' },
 ]
 </script>
 
@@ -45,7 +46,7 @@ const providerOptions = [
           {{ t.label }}
         </button>
       </div>
-      <label class="ausage__filter">Proveedor<select :value="store.provider ?? ''" @change="store.setProvider(($event.target as HTMLSelectElement).value === '' ? undefined : (($event.target as HTMLSelectElement).value as 'claude' | 'gemini'))"><option v-for="option in providerOptions" :key="option.label" :value="option.value ?? ''">{{ option.label }}</option></select></label>
+      <label class="ausage__filter">Proveedor<select :value="store.provider ?? ''" @change="store.setProvider(($event.target as HTMLSelectElement).value === '' ? undefined : (($event.target as HTMLSelectElement).value as 'claude' | 'gemini' | 'openai'))"><option v-for="option in providerOptions" :key="option.label" :value="option.value ?? ''">{{ option.label }}</option></select></label>
       <UsageRangeSelector />
     </div>
 
