@@ -1,7 +1,12 @@
 # Fase 5 — Integración de OpenAI
 
 > Parte de: [PRD — Proveedores de IA configurables](00-prd.md)
-> Estado: **propuesta** · Depende de: [Fase 4](04-fase-interfaz-admin-y-e2e.md)
+> Estado: **implementada — verificación real pendiente** · Depende de: [Fase 4](04-fase-interfaz-admin-y-e2e.md)
+>
+> Código, tests unitarios y UI terminados (commits `f009d3f`…`34749e8`,
+> versión `v1.1.0`). Falta la prueba con una API key real de OpenAI: la
+> cuenta de pruebas no tiene saldo (mínimo de recarga: USD 5). Ver
+> [Estado de verificación](#estado-de-verificación-2026-09-14).
 
 OpenAI se suma como tercer proveedor con la misma paridad funcional que
 Gemini: las tres acciones del chat, las cuatro tools del ERP, el auto-título,
@@ -17,22 +22,28 @@ después de que el runner emita los eventos de auditoría del turno.
 
 ## Resultado esperado
 
-- [ ] `OpenAIRunner` implementa `LLMRunner`.
-- [ ] `OpenAITitleGenerator` implementa `TitleGenerator`.
-- [ ] `OpenAIProbe` valida la API key y lista modelos disponibles.
-- [ ] El catálogo excluye modelos claramente incompatibles con texto y tools
+- [x] `OpenAIRunner` implementa `LLMRunner`.
+- [x] `OpenAITitleGenerator` implementa `TitleGenerator`.
+- [x] `OpenAIProbe` valida la API key y lista modelos disponibles.
+- [x] El catálogo excluye modelos claramente incompatibles con texto y tools
       (embeddings, imágenes, audio, realtime, moderación y transcripción), pero
       conserva modelos desconocidos para no romperse cuando OpenAI agregue IDs.
-- [ ] La interfaz marca un modelo recomendado y permite cambiarlo.
-- [ ] Las cuatro tools funcionan con function calling controlado.
-- [ ] `send`, `edit_last` y `regenerate` emiten los mismos eventos SSE que los
-      proveedores existentes.
-- [ ] Los items de razonamiento necesarios para continuar un tool loop se
+- [x] La interfaz marca un modelo recomendado y permite cambiarlo.
+- [~] Las cuatro tools funcionan con function calling controlado — cubierto
+      con cliente simulado (loop de tools, varias llamadas, `call_id`); falta
+      la prueba contra la API real.
+- [~] `send`, `edit_last` y `regenerate` emiten los mismos eventos SSE que los
+      proveedores existentes — el runner no depende de la acción (la resuelve
+      `ChatTurnUseCase`, compartido); falta la prueba real.
+- [x] Los items de razonamiento necesarios para continuar un tool loop se
       conservan, pero nunca se envía chain-of-thought al usuario.
-- [ ] `usage`, `cost_usd`, `provider` y `model` se persisten igual que con
+- [x] `usage`, `cost_usd`, `provider` y `model` se persisten igual que con
       Gemini.
-- [ ] El proveedor se puede activar y desactivar sin reiniciar.
-- [ ] El checklist E2E completo pasa con OpenAI activo.
+- [x] El proveedor se puede activar y desactivar sin reiniciar.
+- [ ] El checklist E2E completo pasa con OpenAI activo — **bloqueado** sin
+      API key con saldo.
+
+`[~]` = implementado y cubierto por tests unitarios, pendiente de prueba real.
 
 ## Fuera de alcance
 
@@ -478,12 +489,60 @@ de conservar Claude y Gemini.
 
 ## 12. Verificación final
 
-- [ ] Dependencia fijada y `uv.lock` actualizado.
-- [ ] Backend lint, Pyright strict y suite completa en verde.
-- [ ] Frontend type-check, tests de recomendación y build en verde.
-- [ ] Tests unitarios de probe, runner, mapping, títulos y no-filtración.
+- [x] Dependencia fijada (`openai==3.13.0`) y `uv.lock` actualizado.
+- [x] Backend lint, Pyright strict y suite completa en verde (290 passed).
+- [x] Frontend type-check, tests de recomendación y build en verde (48 passed).
+- [~] Tests unitarios de probe, runner, mapping, títulos y no-filtración —
+      ver la tabla de abajo: faltan strict mode por tool y la no-filtración
+      específica de OpenAI.
 - [ ] E2E completo en OpenAI, Gemini y Claude.
 - [ ] Prueba real con API key de OpenAI sin registrar la key.
-- [ ] `build.ps1` completo y smoke test del bundle.
+- [ ] `build.ps1` completo y smoke test del bundle con un turno OpenAI.
 - [ ] Documentación de precios y modelos actualizada con datos verificados de
       la cuenta usada en la prueba.
+
+---
+
+## Estado de verificación (2026-09-14)
+
+### Cubierto por tests unitarios (cliente OpenAI simulado)
+
+| Spec (§9) | Test real | Estado |
+|---|---|---|
+| `test_openai_probe.py` | catálogo filtrado y ordenado, IDs futuros, key inválida sin excepción, saldo agotado, red caída, validación del modelo elegido y modelo no disponible | ✅ |
+| texto y `DoneEvent` | `test_runner_streams_text_and_done` | ✅ |
+| loop de tools | `test_runner_executes_tool_and_resends_output_items` | ✅ |
+| varias tools | `test_runner_multiple_tools_keep_order_and_call_ids` | ✅ |
+| razonamiento | `test_runner_preserves_reasoning_items_in_next_request` | ✅ |
+| max turns | `test_runner_max_turns_truncates` | ✅ |
+| errores | `test_runner_surfaces_credential_error`, `test_runner_does_not_retry_when_quota_is_exhausted` | ✅ |
+| refusal / failed | `test_runner_refusal_becomes_error_not_empty_done`, `test_runner_response_failed_reads_response_error` | ✅ |
+| fallback | `test_runner_falls_back_before_first_token` | ✅ |
+| usage | `test_usage_mapping_subtracts_cached_from_input` | ✅ |
+| títulos | `test_title_generator_cleans_output`, `test_title_generator_returns_none_on_error` | ✅ |
+| strict mode por tool (§3) | — | ❌ pendiente: sigue `strict=False` |
+| no-filtración de la key de OpenAI | cubierto de forma genérica por `test_no_credential_leak.py` | ⚠️ sin caso específico de OpenAI |
+
+Los tests viven agrupados en `tests/unit/modules/chat/test_openai_integration.py`
+y `tests/unit/modules/llm_providers/test_openai_probe.py`, no en un archivo por
+caso como proponía la tabla de §9.
+
+Además de la spec, se agregó durante la implementación:
+
+- **Saldo agotado ≠ límite temporal**: un `429` con `insufficient_quota` no se
+  reintenta ni cae al fallback, y el probe y el chat dicen que hay que cargar
+  créditos (commit `5bad293`).
+- **Diagnóstico del launcher**: "Diagnosticar SAVI" prueba la conexión de
+  OpenAI cuando es el proveedor activo.
+
+### Bloqueado: sin API key con saldo
+
+La cuenta de pruebas no tiene créditos y la recarga mínima es USD 5. Queda
+pendiente, en este orden, cuando haya una key:
+
+1. Probe real: catálogo y validación del modelo elegido.
+2. Chat contra el ERP con las cuatro tools, `send`, `edit_last` y `regenerate`.
+3. Usage y costo con precio cargado, y filtro de consumo por OpenAI.
+4. Checklist E2E de §10 con OpenAI activo, más Claude y Gemini.
+5. `build.ps1` completo y un turno OpenAI desde el bundle.
+6. Precios y modelos verificados con la cuenta usada.

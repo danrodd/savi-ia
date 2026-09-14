@@ -1,8 +1,18 @@
 # Informe de avance: proveedores de IA
 
+> Última actualización: 2026-09-14 · Versión `v1.1.0`
+
+## Resumen
+
+| Proveedor | Estado | Prueba real contra el ERP |
+|---|---|---|
+| Claude | Implementado, **activo** | ✅ verificado |
+| Gemini | Implementado | ✅ verificado (key de pruebas hoy sin cuota) |
+| OpenAI | Implementado, tests unitarios completos | ⏳ **pendiente**: no hay API key con saldo |
+
 ## Proveedores de IA
 
-SAVI ahora soporta proveedores configurables de Claude y Gemini:
+SAVI ahora soporta proveedores configurables de Claude, Gemini y OpenAI:
 
 - Arquitectura desacoplada mediante adaptadores.
 - Tools neutrales compartidas entre proveedores.
@@ -36,6 +46,42 @@ SAVI ahora soporta proveedores configurables de Claude y Gemini:
 - Fallback manual para `local_session`, porque el CLI local no expone un catálogo.
 - Prueba de credencial sin exigir modelos previamente seleccionados.
 
+## OpenAI
+
+Detalle en [`llm_providers/05-fase-openai.md`](llm_providers/05-fase-openai.md).
+
+- Integración mediante el SDK oficial `openai` (fijado en `3.13.0`) y la
+  **Responses API**, sin `store` ni `previous_response_id`: el historial
+  sigue siendo de SAVI.
+- Runner con loop manual de tools (las cuatro del ERP), streaming y
+  preservación de los items de razonamiento entre vueltas, sin mostrarlos
+  al usuario.
+- Auto-títulos.
+- Catálogo de modelos filtrado (excluye embeddings, imagen, audio, realtime y
+  moderación, conserva IDs futuros) con recomendación de familias `gpt`/`o`.
+- Validación del modelo elegido con una solicitud mínima antes de activarlo.
+- Refusal y `response.failed` terminan en error, nunca en un mensaje vacío.
+- Retries con backoff solo antes del primer token y fallback configurable
+  (`OPENAI_FALLBACK_MODELS`).
+- **Saldo agotado se distingue de límite temporal**: `insufficient_quota` no se
+  reintenta y avisa que hay que cargar créditos.
+- Diagnóstico del launcher prueba la conexión cuando OpenAI es el activo.
+
+**Pendiente:** la prueba real con una API key con saldo (chat contra el ERP,
+las cuatro tools, costo, E2E y bundle). La recarga mínima de OpenAI es USD 5.
+
+## Versionado
+
+La versión de la aplicación es el tag de git (ver
+`installer/README.md#versionado`):
+
+- `scripts/version.py` es la única fuente; `--proponer` y `--crear` calculan
+  la siguiente versión desde los conventional commits.
+- `build.ps1` la incrusta en frontend, backend e instalador.
+- Visible en `GET /version`, `/health`, diagnóstico, login, sidebar del chat y
+  menú de administración.
+- Tags publicados: `v1.0.0`, `v1.0.1` y `v1.1.0` (integración de OpenAI).
+
 ## Interfaz administrativa
 
 Se creó y mejoró `/admin/proveedores-ia` con:
@@ -62,18 +108,18 @@ Se renovaron las principales áreas de la aplicación:
 
 Se agregaron filtros reales por proveedor y modelo:
 
-- Filtros para Claude y Gemini.
+- Filtros para Claude, Gemini y OpenAI.
 - Aplicación en backend sobre totales, series diarias, KPIs, usuarios y conversaciones.
 - Filtrado en base de datos, no solo en frontend.
 - Compatibilidad con el comportamiento anterior cuando no hay filtros.
 
 ## Pruebas
 
+Estado al 2026-09-14 (`v1.1.0`):
+
 Backend:
 
-- Suite completa: `247 passed, 1 skipped`.
-- Tests específicos de proveedores: `34 passed`.
-- Tests de resiliencia de Gemini: `12 passed`.
+- Suite completa: `290 passed, 1 skipped`.
 - Ruff correcto.
 - Pyright estricto correcto.
 
@@ -81,8 +127,9 @@ Frontend:
 
 - Type-check correcto.
 - Build de producción correcto.
-- E2E base aprobado en Chromium, Firefox y WebKit.
-- Vitest: `42 passed` y una falla preexistente en `App.spec.ts` por montar la aplicación sin Pinia activa.
+- Vitest: `48 passed`.
+- E2E autenticado de administración y chat: `12 passed` en Chromium, Firefox y
+  WebKit (corrida del 2026-09-14, antes de OpenAI; no se volvió a correr).
 
 ## Prueba real de Gemini
 
@@ -109,6 +156,14 @@ afefd41 feat(gemini): integrar proveedor de IA
 419a3f6 feat(llm-providers): fase 4 - interfaz admin, manejo de indisponibilidad y diagnostico multi-proveedor
 eac668b feat(ui): mejorar proveedores y consumo
 2973ba8 fix(gemini): mejorar resiliencia ante saturacion
+2d1f499 feat(versioning): basar version en tags de git            (v1.0.0)
+d620053 fix(installer): corregir compilacion de Inno Setup        (v1.0.1)
+f009d3f docs(llm-providers): especificar integracion de OpenAI
+ad23c50 feat(llm-providers): integrar proveedor OpenAI
+827baab docs(llm-providers): endurecer contrato de errores y resiliencia de OpenAI
+3e9ad8d fix(openai): manejar refusal y validar el modelo elegido
+5bad293 fix(openai): distinguir saldo agotado de limite temporal
+34749e8 feat(frontend): agregar iconos de proveedores y navegacion
 ```
 
 ## Seguimiento (2026-09-14)
@@ -162,7 +217,7 @@ eac668b feat(ui): mejorar proveedores y consumo
   rotarla/eliminarla como ya estaba planeado.
 
 - **Comparación empírica Claude vs. Gemini** — ver
-  [`llm_providers/05-comparacion-claude-gemini.md`](llm_providers/05-comparacion-claude-gemini.md).
+  [`llm_providers/anexo-comparacion-claude-gemini.md`](llm_providers/anexo-comparacion-claude-gemini.md).
   Con las salvedades metodológicas ahí documentadas (Claude por
   `local_session`, Gemini con su modelo fallback por cuota agotada),
   ambos respondieron correcto; se detectó y corrigió una diferencia
@@ -175,6 +230,12 @@ eac668b feat(ui): mejorar proveedores y consumo
 
 ## Pendientes
 
+- **OpenAI con una API key con saldo** (recarga mínima USD 5): probe real,
+  chat contra el ERP con las cuatro tools, costo, checklist E2E y turno desde el
+  bundle. Orden detallado en `05-fase-openai.md` → "Estado de verificación".
+- OpenAI: test de strict mode por tool antes de pasar a `strict=True`.
+- Volver a correr el E2E en los tres navegadores después de la integración de
+  OpenAI.
 - Rotar o eliminar la API key de Gemini utilizada en las pruebas (ya
   agotando cuota, y hoy dejó de responder del todo); el usuario la
   eliminará directamente.
@@ -182,9 +243,10 @@ eac668b feat(ui): mejorar proveedores y consumo
   del system prompt mejoró la respuesta de Gemini a "decime la razón
   social" (debería incluir el NIT, igual que Claude).
 - Repetir la comparación de velocidad en igualdad de condiciones:
-  Claude por `api_key` (no `local_session`) y Gemini con el modelo
-  principal (no el fallback).
-- Cargar el precio de los modelos de Gemini en `/admin/proveedores-ia`
-  para que el costo se registre (hoy `cost_usd` queda `null`).
+  Claude por `api_key` (no `local_session`), Gemini con el modelo
+  principal (no el fallback) y, cuando haya key, OpenAI.
+- Cargar el precio de los modelos de Gemini y OpenAI en
+  `/admin/proveedores-ia` para que el costo se registre (sin precio,
+  `cost_usd` queda `null`).
 - Medir varias preguntas reales con tiempos y calidad de forma más
   sistemática (lo de hoy fue puntual, no un benchmark).

@@ -1,6 +1,7 @@
-# Comparación empírica: Claude vs. Gemini
+# Anexo — Comparación empírica: Claude vs. Gemini
 
-> Parte de: [PRD — Proveedores de IA configurables](00-prd.md)
+> Parte de: [PRD — Proveedores de IA configurables](00-prd.md) · Anexo, no
+> es una fase (la [Fase 5](05-fase-openai.md) es la integración de OpenAI).
 > Fecha: 2026-09-14 · Método: mismas 3 preguntas, contra el ERP real
 > (`farmacias_similares`), conversaciones nuevas por pregunta, sin
 > ninguna otra carga corriendo en simultáneo.
