@@ -25,6 +25,7 @@ from app.modules.auth.application.use_cases.resolve_modules_for_database import 
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.chat.application.requests import ChatAction, ChatRequest
 from app.modules.chat.application.use_cases import ChatTurnUseCase
+from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver
 from app.modules.chat.infrastructure.http.routes import chat
 from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
 
@@ -52,6 +53,18 @@ class _StubModulesResolver:
 
     async def execute(self, login: str, database_id: UUID) -> DatabaseAccess:
         return self._access
+
+
+class _StubProviderResolver:
+    """Siempre hay proveedor: no es lo que se está probando acá."""
+
+    async def resolve(self) -> ActiveProvider:
+        return ActiveProvider(
+            kind="claude",
+            chat_model="claude-sonnet-4-6",
+            title_model="claude-haiku-4-5",
+            credential_kind="local_session",
+        )
 
 
 def _user() -> AuthenticatedUser:
@@ -83,8 +96,10 @@ async def test_raises_409_before_returning_the_streaming_response() -> None:
         _StubModulesResolver(DatabaseAccess(has_access=False, modules=frozenset())),
     )
 
+    provider_resolver = cast(ActiveProviderResolver, _StubProviderResolver())
+
     with pytest.raises(ErpDatabaseUnavailableError) as excinfo:
-        await chat(_request(), use_case, _user(), resolver)
+        await chat(_request(), use_case, _user(), resolver, provider_resolver)
 
     assert str(_DATABASE_ID) == excinfo.value.database_id
 
@@ -99,6 +114,8 @@ async def test_streams_when_the_database_is_available() -> None:
         ),
     )
 
-    response = await chat(_request(), use_case, _user(), resolver)
+    provider_resolver = cast(ActiveProviderResolver, _StubProviderResolver())
+
+    response = await chat(_request(), use_case, _user(), resolver, provider_resolver)
 
     assert response.media_type == "text/event-stream"

@@ -33,8 +33,8 @@ from app.modules.erp_databases.infrastructure.engine_registry import ErpEngineRe
 from app.modules.erp_databases.infrastructure.persistence import (
     SqlAlchemyErpDatabaseRepository,
 )
-from app.modules.erp_databases.infrastructure.security import FernetCredentialCipher
 from app.shared.exceptions import ValidationError
+from app.shared.security import FernetCredentialCipher
 
 _PASSPHRASE = "clave-compartida-del-call-center"
 

@@ -17,6 +17,9 @@ from app.modules.erp_databases.infrastructure.persistence.models import (  # noq
     ErpDatabaseModel,
 )
 from app.modules.free_query.infrastructure.models import AuditQueryModel  # noqa: F401
+from app.modules.llm_providers.infrastructure.persistence.models import (  # noqa: F401
+    LlmProviderConfigModel,
+)
 
 config = context.config
 

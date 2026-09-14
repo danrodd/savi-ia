@@ -4,9 +4,10 @@ import logging
 
 from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, TextBlock, query
 
+from app.infrastructure.claude_cli import resolve_cli_path
+from app.infrastructure.claude_env import build_claude_env
 from app.infrastructure.config import Settings
-from app.modules.chat.domain.interfaces import TitleGenerator
-from app.modules.chat.infrastructure.llm.claude.sdk_env import apply_sdk_env
+from app.modules.chat.domain.interfaces import ActiveProvider, TitleGenerator
 from app.modules.chat.infrastructure.llm.title_prompt import (
     TITLE_SYSTEM_PROMPT,
     build_title_prompt,
@@ -17,17 +18,23 @@ log = logging.getLogger(__name__)
 
 
 class ClaudeTitleGenerator(TitleGenerator):
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, provider: ActiveProvider) -> None:
         self._settings = settings
+        self._provider = provider
 
     async def generate(self, user_msg: str, assistant_msg: str = "") -> str | None:
-        apply_sdk_env(self._settings)
         options = ClaudeAgentOptions(
-            model=self._settings.claude_title_model,
+            model=self._provider.title_model,
             system_prompt=TITLE_SYSTEM_PROMPT,
             allowed_tools=[],
             permission_mode="bypassPermissions",
             max_turns=1,
+            cli_path=resolve_cli_path(),
+            env=build_claude_env(
+                credential_kind=self._provider.credential_kind,
+                credential=self._provider.credential,
+                git_bash_path=self._settings.claude_code_git_bash_path,
+            ),
         )
         prompt = build_title_prompt(user_msg, assistant_msg)
         parts: list[str] = []

@@ -62,9 +62,22 @@ def register_exception_handlers(app: FastAPI) -> None:
     # Import local para no crear un ciclo: este módulo lo importa el
     # paquete `shared.exceptions`, y la excepción vive en un módulo que a
     # su vez depende de `shared.exceptions.base`.
+    from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
     from app.modules.erp_databases.domain.exceptions import (
         ErpDatabaseUnavailableError,
     )
+
+    @app.exception_handler(LlmProviderUnavailableError)
+    async def _llm_provider_unavailable(
+        _: Request, exc: LlmProviderUnavailableError
+    ) -> JSONResponse:
+        # 409 como la base no disponible: el pedido es válido, lo que
+        # falla es la configuración. El frontend usa el `errorCode` para
+        # mandar al administrador a configurar la IA.
+        return JSONResponse(
+            status_code=409,
+            content={"errorCode": "llm_provider_unavailable", "detail": exc.reason},
+        )
 
     @app.exception_handler(ErpDatabaseUnavailableError)
     async def _erp_unavailable(

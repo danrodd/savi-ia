@@ -1,4 +1,18 @@
-from app.shared.exceptions.base import ValidationError
+from app.shared.exceptions.base import DomainError, ValidationError
+
+
+class LlmProviderUnavailableError(DomainError):
+    """No hay proveedor de IA activo, o el activo no se puede usar
+    (credencial ilegible, sin modelos).
+
+    Se mapea a **409** con `errorCode: "llm_provider_unavailable"` y se
+    levanta ANTES de abrir el SSE: adentro del stream ya no se puede
+    cambiar el status code.
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
 
 
 class EmptyMessageError(ValidationError):

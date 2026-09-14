@@ -30,6 +30,9 @@ from app.modules.erp_databases.infrastructure.persistence.models import (
     ErpDatabaseModel,
 )
 from app.modules.free_query.infrastructure.models import AuditQueryModel
+from app.modules.llm_providers.infrastructure.persistence.models import (
+    LlmProviderConfigModel,
+)
 from app.paths import resource_dir
 
 logger = logging.getLogger(__name__)
@@ -44,6 +47,7 @@ _REGISTERED_MODELS = (
     ConversationModel,
     MessageModel,
     AuditQueryModel,
+    LlmProviderConfigModel,
 )
 
 

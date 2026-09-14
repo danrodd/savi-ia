@@ -36,11 +36,19 @@ from app.modules.erp_databases.infrastructure.http import (
 from app.modules.erp_databases.infrastructure.persistence import (
     SqlAlchemyErpDatabaseRepository,
 )
-from app.modules.erp_databases.infrastructure.security import FernetCredentialCipher
 from app.modules.knowledge.infrastructure.catalog_provider import init_catalog
+from app.modules.llm_providers.infrastructure.active_provider_resolver import (
+    init_active_provider_resolver,
+)
+from app.modules.llm_providers.infrastructure.http import router as llm_providers_router
+from app.modules.llm_providers.infrastructure.http.dependencies import (
+    build_llm_provider_repository,
+)
+from app.modules.llm_providers.infrastructure.seed import seed_llm_providers
 from app.modules.usage.infrastructure.http import router as usage_router
 from app.paths import resource_dir
 from app.shared.exceptions import register_exception_handlers
+from app.shared.security import FernetCredentialCipher
 
 # Prefijos que pertenecen al API. Una ruta desconocida bajo alguno de
 # ellos es un 404 del API, no la SPA: devolver HTML ahí convierte un
@@ -91,6 +99,13 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
         await backfill_legacy_rows(
             get_agent_sessionmaker(), default_database.id
         )
+
+    # Proveedor de IA: la primera vez se siembra Claude desde el `.env`; a
+    # partir de ahí se administra desde la aplicación y el chat lo resuelve
+    # por turno.
+    llm_repository = build_llm_provider_repository(settings)
+    await seed_llm_providers(llm_repository, settings)
+    init_active_provider_resolver(llm_repository)
 
     # Carga del catálogo de conocimiento al startup. Si los archivos
     # están corruptos o faltan datos requeridos, falla loud — preferimos
@@ -144,6 +159,7 @@ def create_app() -> FastAPI:
     app.include_router(usage_router)
     app.include_router(erp_databases_router)
     app.include_router(erp_databases_public_router)
+    app.include_router(llm_providers_router)
 
     # Va último: la ruta catch-all tiene que perder contra cualquier ruta
     # del API, y FastAPI resuelve por orden de registro.

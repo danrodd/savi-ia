@@ -6,18 +6,26 @@ from app.infrastructure.config import Settings, get_settings
 from app.infrastructure.database import get_agent_sessionmaker
 from app.modules.chat.application.use_cases import ChatTurnUseCase
 from app.modules.chat.domain.interfaces import (
+    ActiveProviderResolver,
     AssistantMessageWriter,
     ConversationTitleUpdater,
     LLMRunner,
 )
-from app.modules.chat.infrastructure.llm.claude.runner import ClaudeAgentRunner
-from app.modules.chat.infrastructure.llm.claude.title_generator import ClaudeTitleGenerator
+from app.modules.chat.infrastructure.llm.factory import (
+    LLMRunnerFactory,
+    ResolvingLLMRunner,
+    ResolvingTitleGenerator,
+    TitleGeneratorFactory,
+)
 from app.modules.chat.infrastructure.persistence import (
     ShortLivedConversationRepository,
     SqlAlchemyAssistantMessageWriter,
     SqlAlchemyConversationTitleUpdater,
 )
 from app.modules.conversations.domain.interfaces import ConversationRepository
+from app.modules.llm_providers.infrastructure.active_provider_resolver import (
+    get_active_provider_resolver,
+)
 
 
 def get_settings_dep() -> Settings:
@@ -27,8 +35,17 @@ def get_settings_dep() -> Settings:
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
 
 
-def get_llm_runner(settings: SettingsDep) -> LLMRunner:
-    return ClaudeAgentRunner(settings)
+def get_provider_resolver() -> ActiveProviderResolver:
+    return get_active_provider_resolver()
+
+
+ActiveProviderResolverDep = Annotated[ActiveProviderResolver, Depends(get_provider_resolver)]
+
+
+def get_llm_runner(
+    settings: SettingsDep, resolver: ActiveProviderResolverDep
+) -> LLMRunner:
+    return ResolvingLLMRunner(resolver, LLMRunnerFactory(settings))
 
 
 LLMRunnerDep = Annotated[LLMRunner, Depends(get_llm_runner)]
@@ -42,11 +59,11 @@ AssistantMessageWriterDep = Annotated[AssistantMessageWriter, Depends(get_assist
 
 
 def get_conversation_title_updater(
-    settings: SettingsDep,
+    settings: SettingsDep, resolver: ActiveProviderResolverDep
 ) -> ConversationTitleUpdater:
     return SqlAlchemyConversationTitleUpdater(
         sessionmaker=get_agent_sessionmaker(),
-        title_generator=ClaudeTitleGenerator(settings),
+        title_generator=ResolvingTitleGenerator(resolver, TitleGeneratorFactory(settings)),
     )
 
 

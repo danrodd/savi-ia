@@ -22,8 +22,8 @@ from app.modules.erp_databases.infrastructure.persistence import (
     ErpDatabaseModel,
     SqlAlchemyErpDatabaseRepository,
 )
-from app.modules.erp_databases.infrastructure.security import FernetCredentialCipher
 from app.modules.erp_databases.infrastructure.seed import seed_default_database
+from app.shared.security import FernetCredentialCipher
 
 _KEY = Fernet.generate_key().decode()
 _OTHER_KEY = Fernet.generate_key().decode()

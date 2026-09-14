@@ -32,7 +32,7 @@ from app.modules.erp_databases.infrastructure.persistence import (
 from app.modules.erp_databases.infrastructure.postgres_connection_tester import (
     PostgresConnectionTester,
 )
-from app.modules.erp_databases.infrastructure.security import FernetCredentialCipher
+from app.shared.security import FernetCredentialCipher
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 

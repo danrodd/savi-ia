@@ -44,9 +44,7 @@ from app.modules.erp_databases.infrastructure import (
 from app.modules.erp_databases.infrastructure.persistence import (
     SqlAlchemyErpDatabaseRepository,
 )
-from app.modules.erp_databases.infrastructure.security import (
-    FernetCredentialCipher,
-)
+from app.shared.security import FernetCredentialCipher
 
 
 def _settings() -> Settings:

@@ -93,13 +93,19 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
     assert {"erp_database_id", "owner_erp_database_id"}.issubset(columns)
     assert "ix_conversations_owner" in _index_names(db_path, "conversations")
 
+    llm_columns = _table_columns(db_path, "llm_provider_configs")
+    assert {"provider", "credential_encrypted", "is_active"}.issubset(llm_columns)
+    assert "uq_llm_provider_configs_active" in _index_names(
+        db_path, "llm_provider_configs"
+    )
+
     engine = create_engine(f"sqlite:///{db_path.as_posix()}")
     try:
         with engine.connect() as conn:
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     finally:
         engine.dispose()
-    assert version == "d1a4c8f0e921"
+    assert version == "e7b2d9a4c613"
 
 
 def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
@@ -195,6 +201,12 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert "owner_erp_database_id" in columns
     assert "ix_conversations_owner" in _index_names(db_path, "conversations")
 
+    llm_columns = _table_columns(db_path, "llm_provider_configs")
+    assert {"provider", "credential_encrypted", "is_active"}.issubset(llm_columns)
+    assert "uq_llm_provider_configs_active" in _index_names(
+        db_path, "llm_provider_configs"
+    )
+
     engine = create_engine(f"sqlite:///{db_path.as_posix()}")
     try:
         with engine.connect() as conn:
@@ -215,4 +227,4 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert row.erp_database_id == queried_database_id
     # ...y la identidad se backfillea desde la base consultada.
     assert row.owner_erp_database_id == queried_database_id
-    assert version == "d1a4c8f0e921"
+    assert version == "e7b2d9a4c613"

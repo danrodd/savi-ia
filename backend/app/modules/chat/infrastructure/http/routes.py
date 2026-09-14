@@ -23,7 +23,10 @@ from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http.dependencies import CurrentUserDep
 from app.modules.chat.application.requests import ChatRequest
 from app.modules.chat.domain.entities import ChatEvent
-from app.modules.chat.infrastructure.http.dependencies import ChatTurnUseCaseDep
+from app.modules.chat.infrastructure.http.dependencies import (
+    ActiveProviderResolverDep,
+    ChatTurnUseCaseDep,
+)
 from app.modules.conversations.domain.value_objects import ConversationOwner
 from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
 from app.modules.erp_databases.infrastructure.http.dependencies import (
@@ -63,6 +66,7 @@ async def chat(
     use_case: ChatTurnUseCaseDep,
     user: CurrentUserDep,
     modules_resolver: ResolveModulesForDatabaseUseCaseDep,
+    provider_resolver: ActiveProviderResolverDep,
 ) -> StreamingResponse:
     # Validaciones de dominio ANTES de devolver StreamingResponse: si
     # algo falla, el handler global emite el 4xx limpio (dentro del
@@ -89,6 +93,11 @@ async def chat(
             "La base de datos de esta conversación no está disponible o ya no "
             "tenés acceso a ella.",
         )
+
+    # Sin proveedor de IA usable, 409 `llm_provider_unavailable` acá, antes
+    # del SSE. Va después de auth y ownership para no revelar el estado de
+    # la configuración a quien no puede usar esta conversación.
+    await provider_resolver.resolve()
 
     # Las tools del knowledge filtran contra este set. Un admin de la base
     # consultada pasa None = sin filtro.

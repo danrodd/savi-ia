@@ -18,14 +18,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.modules.erp_databases.domain.entities import ErpDatabase
 from app.modules.erp_databases.domain.exceptions import DuplicateErpDatabaseError
-from app.modules.erp_databases.domain.interfaces import (
-    CredentialCipher,
-    CredentialDecryptError,
-    ErpDatabaseRepository,
-)
+from app.modules.erp_databases.domain.interfaces import ErpDatabaseRepository
 from app.modules.erp_databases.infrastructure.persistence.models import (
     ErpDatabaseModel,
 )
+from app.shared.security import CredentialCipher, CredentialDecryptError
 
 logger = logging.getLogger(__name__)
 

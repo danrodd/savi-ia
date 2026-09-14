@@ -32,8 +32,8 @@ from app.modules.erp_databases.infrastructure.persistence import (
     ErpDatabaseModel,
     SqlAlchemyErpDatabaseRepository,
 )
-from app.modules.erp_databases.infrastructure.security import FernetCredentialCipher
 from app.shared.exceptions import ValidationError
+from app.shared.security import FernetCredentialCipher
 
 _KEY = Fernet.generate_key().decode()
 

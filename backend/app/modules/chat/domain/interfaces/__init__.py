@@ -1,3 +1,8 @@
+from app.modules.chat.domain.interfaces.active_provider import (
+    ActiveProvider,
+    ActiveProviderResolver,
+    ModelPrice,
+)
 from app.modules.chat.domain.interfaces.assistant_message_writer import (
     AssistantMessageWriter,
 )
@@ -8,7 +13,10 @@ from app.modules.chat.domain.interfaces.llm_runner import LLMRunner
 from app.modules.chat.domain.interfaces.title_generator import TitleGenerator
 
 __all__ = [
+    "ActiveProvider",
+    "ActiveProviderResolver",
     "AssistantMessageWriter",
+    "ModelPrice",
     "ConversationTitleUpdater",
     "LLMRunner",
     "TitleGenerator",

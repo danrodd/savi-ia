@@ -26,6 +26,7 @@ from claude_agent_sdk import (
 )
 
 from app.infrastructure.claude_cli import resolve_cli_path
+from app.infrastructure.claude_env import build_claude_env
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
@@ -36,13 +37,12 @@ from app.modules.chat.domain.entities import (
     ToolResultEvent,
     ToolUseEvent,
 )
-from app.modules.chat.domain.interfaces import LLMRunner
+from app.modules.chat.domain.interfaces import ActiveProvider, LLMRunner
 from app.modules.chat.infrastructure.llm.claude.mcp_adapter import (
     MCP_SERVER_NAME,
     allowed_tool_names,
     build_mcp_server,
 )
-from app.modules.chat.infrastructure.llm.claude.sdk_env import apply_sdk_env
 from app.modules.chat.infrastructure.llm.errors import user_facing_error
 from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
@@ -72,6 +72,7 @@ def _log_cli_stderr(line: str) -> None:
 
 def _build_options(
     settings: Settings,
+    provider: ActiveProvider,
     *,
     conversation_id: UUID | None,
     allowed_modules: frozenset[ModuleCode] | None,
@@ -83,7 +84,7 @@ def _build_options(
         erp_database_id=erp_database_id,
     )
     return ClaudeAgentOptions(
-        model=settings.claude_model,
+        model=provider.chat_model,
         system_prompt=SYSTEM_PROMPT,
         mcp_servers={MCP_SERVER_NAME: build_mcp_server(tools)},
         allowed_tools=allowed_tool_names(tools),
@@ -94,6 +95,13 @@ def _build_options(
         # en el límite de cmd.exe.
         cli_path=resolve_cli_path(),
         stderr=_log_cli_stderr,
+        # La credencial viaja por consulta y no por `os.environ`: cambiarla
+        # desde administración aplica al turno siguiente sin reiniciar.
+        env=build_claude_env(
+            credential_kind=provider.credential_kind,
+            credential=provider.credential,
+            git_bash_path=settings.claude_code_git_bash_path,
+        ),
     )
 
 
@@ -122,9 +130,9 @@ async def _open_query_stream(prompt: str, options: ClaudeAgentOptions) -> AsyncI
 
 
 class ClaudeAgentRunner(LLMRunner):
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, provider: ActiveProvider) -> None:
         self._settings = settings
-        apply_sdk_env(settings)
+        self._provider = provider
 
     async def stream_turn(
         self,
@@ -136,6 +144,7 @@ class ClaudeAgentRunner(LLMRunner):
     ) -> AsyncIterator[ChatEvent]:
         options = _build_options(
             self._settings,
+            self._provider,
             conversation_id=conversation_id,
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,

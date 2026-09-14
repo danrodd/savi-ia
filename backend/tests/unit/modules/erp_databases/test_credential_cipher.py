@@ -14,8 +14,8 @@ from __future__ import annotations
 import pytest
 from cryptography.fernet import Fernet
 
-from app.modules.erp_databases.domain.interfaces import CredentialDecryptError
-from app.modules.erp_databases.infrastructure.security import (
+from app.shared.security import (
+    CredentialDecryptError,
     FernetCredentialCipher,
     InvalidCredentialsKeyError,
 )

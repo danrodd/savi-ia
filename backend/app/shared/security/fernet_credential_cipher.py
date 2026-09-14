@@ -22,10 +22,7 @@ from __future__ import annotations
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
-from app.modules.erp_databases.domain.interfaces import (
-    CredentialCipher,
-    CredentialDecryptError,
-)
+from app.shared.security.credential_cipher import CredentialCipher, CredentialDecryptError
 
 
 class InvalidCredentialsKeyError(ValueError):
