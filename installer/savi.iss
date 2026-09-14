@@ -1024,9 +1024,8 @@ begin
   FernetKey := GenerateFernetKey();
   if FernetKey = '' then
   begin
-    MsgBox('No se pudo generar la clave de cifrado de credenciales del ERP.' +
-           #13#10 + 'Editá ERP_CREDENTIALS_KEY en el archivo .env antes de ' +
-           'usar SAVI: generá una con ' + #13#10 +
+    MsgBox('No se pudo generar la clave de cifrado de credenciales del ERP.' + #13#10 +
+           'Editá ERP_CREDENTIALS_KEY en el archivo .env antes de usar SAVI: generá una con ' + #13#10 +
            'python -c "from cryptography.fernet import Fernet; ' +
            'print(Fernet.generate_key().decode())"',
            mbError, MB_OK);
