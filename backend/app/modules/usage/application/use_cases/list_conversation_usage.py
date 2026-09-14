@@ -1,5 +1,9 @@
 from app.modules.usage.domain.interfaces import UsageRepository
-from app.modules.usage.domain.value_objects import ConversationUsage, UsagePeriod
+from app.modules.usage.domain.value_objects import (
+    ConversationUsage,
+    UsageFilters,
+    UsagePeriod,
+)
 
 
 class ListConversationUsageUseCase:
@@ -13,6 +17,10 @@ class ListConversationUsageUseCase:
         self._repository = repository
 
     async def execute(
-        self, period: UsagePeriod, *, limit: int
+        self,
+        period: UsagePeriod,
+        *,
+        limit: int,
+        filters: UsageFilters | None = None,
     ) -> list[ConversationUsage]:
-        return await self._repository.per_conversation(period, limit=limit)
+        return await self._repository.per_conversation(period, limit=limit, filters=filters)

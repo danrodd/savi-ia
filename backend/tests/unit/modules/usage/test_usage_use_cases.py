@@ -23,6 +23,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
     DailyUsage,
+    UsageFilters,
     UsagePeriod,
     UsageTotals,
     UserStats,
@@ -52,34 +53,52 @@ class _FakeUsageRepo(UsageRepository):
         self.calls: list[tuple[str, object]] = []
 
     async def totals_for_user(
-        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
     ) -> UsageTotals:
-        self.calls.append(("totals_for_user", (user_id, period, erp_database_id)))
+        self.calls.append(("totals_for_user", (user_id, period, erp_database_id, filters)))
         return _TOTALS
 
     async def daily_for_user(
-        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
     ) -> list[DailyUsage]:
-        self.calls.append(("daily_for_user", (user_id, period, erp_database_id)))
+        self.calls.append(("daily_for_user", (user_id, period, erp_database_id, filters)))
         return [DailyUsage(day=date(2026, 5, 15), totals=_TOTALS)]
 
-    async def system_totals(self, period: UsagePeriod) -> UsageTotals:
-        self.calls.append(("system_totals", period))
+    async def system_totals(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UsageTotals:
+        self.calls.append(("system_totals", (period, filters)))
         return _TOTALS
 
-    async def per_user(self, period: UsagePeriod) -> list[UserUsage]:
-        self.calls.append(("per_user", period))
+    async def per_user(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[UserUsage]:
+        self.calls.append(("per_user", (period, filters)))
         return [
             UserUsage(user_id=7, totals=_TOTALS),
             UserUsage(user_id=None, totals=_TOTALS),
         ]
 
-    async def daily_system(self, period: UsagePeriod) -> list[DailyUsage]:
-        self.calls.append(("daily_system", period))
+    async def daily_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DailyUsage]:
+        self.calls.append(("daily_system", (period, filters)))
         return [DailyUsage(day=date(2026, 5, 15), totals=_TOTALS)]
 
-    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats:
-        self.calls.append(("conversation_stats", period))
+    async def conversation_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> ConversationStats:
+        self.calls.append(("conversation_stats", (period, filters)))
         return ConversationStats(
             count=0,
             avg_cost_usd=0.0,
@@ -91,14 +110,20 @@ class _FakeUsageRepo(UsageRepository):
             avg_turns=0.0,
         )
 
-    async def user_stats(self, period: UsagePeriod) -> UserStats:
-        self.calls.append(("user_stats", period))
+    async def user_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UserStats:
+        self.calls.append(("user_stats", (period, filters)))
         return UserStats(active_count=0, avg_cost_usd=0.0, avg_conversations=0.0)
 
     async def per_conversation(
-        self, period: UsagePeriod, *, limit: int
+        self,
+        period: UsagePeriod,
+        *,
+        limit: int,
+        filters: UsageFilters | None = None,
     ) -> list[ConversationUsage]:
-        self.calls.append(("per_conversation", (period, limit)))
+        self.calls.append(("per_conversation", (period, limit, filters)))
         return []
 
 
@@ -107,9 +132,7 @@ async def test_user_usage_arma_reporte_con_totales_y_serie() -> None:
     repo = _FakeUsageRepo()
     use_case = GetUserUsageUseCase(repo)
 
-    report = await use_case.execute(
-        user_id=42, period=_PERIOD, erp_database_id=_DATABASE_A
-    )
+    report = await use_case.execute(user_id=42, period=_PERIOD, erp_database_id=_DATABASE_A)
 
     assert report.user_id == 42
     assert report.period_start == _PERIOD.start
@@ -129,8 +152,25 @@ async def test_user_usage_propaga_scope_de_usuario_al_repo() -> None:
     # Ambas consultas reciben el mismo user_id, período y base. La base no
     # es opcional: sin ella el consumo del usuario 99 sumaría el de todos
     # los usuarios 99 de los demás clientes.
-    assert ("totals_for_user", (99, _PERIOD, _DATABASE_A)) in repo.calls
-    assert ("daily_for_user", (99, _PERIOD, _DATABASE_A)) in repo.calls
+    assert ("totals_for_user", (99, _PERIOD, _DATABASE_A, None)) in repo.calls
+    assert ("daily_for_user", (99, _PERIOD, _DATABASE_A, None)) in repo.calls
+
+
+@pytest.mark.asyncio
+async def test_user_usage_propaga_filtros() -> None:
+    repo = _FakeUsageRepo()
+    use_case = GetUserUsageUseCase(repo)
+    filters = UsageFilters(provider="Claude", model=" claude-sonnet ")
+
+    await use_case.execute(
+        user_id=99,
+        period=_PERIOD,
+        erp_database_id=_DATABASE_A,
+        filters=filters,
+    )
+
+    assert ("totals_for_user", (99, _PERIOD, _DATABASE_A, filters)) in repo.calls
+    assert ("daily_for_user", (99, _PERIOD, _DATABASE_A, filters)) in repo.calls
 
 
 @pytest.mark.asyncio

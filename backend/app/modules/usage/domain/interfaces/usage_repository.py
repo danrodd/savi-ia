@@ -5,6 +5,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
     DailyUsage,
+    UsageFilters,
     UsagePeriod,
     UsageTotals,
     UserStats,
@@ -23,30 +24,54 @@ class UsageRepository(ABC):
 
     @abstractmethod
     async def totals_for_user(
-        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
     ) -> UsageTotals: ...
 
     @abstractmethod
     async def daily_for_user(
-        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
     ) -> list[DailyUsage]: ...
 
     @abstractmethod
-    async def system_totals(self, period: UsagePeriod) -> UsageTotals: ...
+    async def system_totals(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UsageTotals: ...
 
     @abstractmethod
-    async def per_user(self, period: UsagePeriod) -> list[UserUsage]: ...
+    async def per_user(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[UserUsage]: ...
 
     @abstractmethod
-    async def daily_system(self, period: UsagePeriod) -> list[DailyUsage]: ...
+    async def daily_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DailyUsage]: ...
 
     @abstractmethod
-    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats: ...
+    async def conversation_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> ConversationStats: ...
 
     @abstractmethod
-    async def user_stats(self, period: UsagePeriod) -> UserStats: ...
+    async def user_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UserStats: ...
 
     @abstractmethod
     async def per_conversation(
-        self, period: UsagePeriod, *, limit: int
+        self,
+        period: UsagePeriod,
+        *,
+        limit: int,
+        filters: UsageFilters | None = None,
     ) -> list[ConversationUsage]: ...

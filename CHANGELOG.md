@@ -28,6 +28,12 @@ usar `python installer/bump_version.py <version>` — ver
   y persistencia del proveedor por mensaje.
 - Pantalla administrativa de proveedores de IA, confirmación al cambiar de
   proveedor y banner del chat cuando no hay un proveedor disponible.
+- Catálogos de modelos para Claude y Gemini con búsqueda y recomendación
+  dinámica, además de selección manual cuando el proveedor no expone catálogo.
+- Rediseño visual del login, la administración y el espacio de chat, con
+  mejoras responsive y soporte consistente para temas claro y oscuro.
+- Filtros de consumo por proveedor aplicados en el backend para totales, KPIs,
+  series diarias y detalle de conversaciones.
 
 ### Corregido
 

@@ -80,7 +80,7 @@ async function test(provider: LlmProvider, body: SaveLlmProviderRequest): Promis
 
 <template>
   <section class="providers-view">
-    <header class="providers-view__header"><div><p class="eyebrow">Administración</p><h1>Proveedores de IA</h1><p>Configura la conexión que usará SAVI para responder y consultar el ERP.</p></div><button class="refresh" :disabled="store.loading" @click="store.load">Actualizar</button></header>
+    <header class="providers-view__header"><div><p class="eyebrow">Administración / Integraciones</p><h1>Proveedores de IA</h1><p>Configura la conexión que usará SAVI para responder y consultar el ERP.</p></div><button class="refresh" :disabled="store.loading" @click="store.load">Actualizar</button></header>
     <div v-if="store.error || formError" class="providers-view__error" role="alert">{{ store.error ?? formError }}</div>
     <div v-if="store.loading && store.providers.length === 0" class="providers-view__loading">Cargando proveedores…</div>
     <div v-else class="providers-view__grid"><LlmProviderCard v-for="provider in store.providers" :key="provider.provider" :provider="provider" :can-activate="canActivate(provider)" activate-reason="Configura credencial y modelos antes de activar" @configure="configure(provider)" @activate="requestActivation(provider)" /></div>

@@ -46,3 +46,20 @@ class SaveLlmProviderRequest(BaseModel):
                 }
             ),
         )
+
+
+class TestLlmProviderRequest(BaseModel):
+    credential_kind: str = Field(min_length=1, max_length=32)
+    # Vacía = conservar la guardada.
+    credential: str = Field(default="", max_length=4096)
+    # El catálogo puede probarse antes de elegir los modelos.
+    chat_model: str = Field(default="", max_length=120)
+    title_model: str = Field(default="", max_length=120)
+
+    def to_dto(self) -> SaveLlmProviderDTO:
+        return SaveLlmProviderDTO(
+            credential_kind=self.credential_kind,
+            credential=self.credential.strip(),
+            chat_model=self.chat_model.strip(),
+            title_model=self.title_model.strip(),
+        )

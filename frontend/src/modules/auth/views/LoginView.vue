@@ -59,6 +59,8 @@ async function onSubmit(): Promise<void> {
 
 <template>
   <div class="login">
+    <div class="login__glow login__glow--top" aria-hidden="true" />
+    <div class="login__glow login__glow--bottom" aria-hidden="true" />
     <div class="login__card">
       <div class="login__brand">
         <img
@@ -82,9 +84,10 @@ async function onSubmit(): Promise<void> {
             autocomplete="username"
             autofocus
             :disabled="isSubmitting"
+            :aria-invalid="errorMessage ? 'true' : undefined"
+            :aria-describedby="errorMessage ? 'login-error' : (rememberedCodes.length === 0 ? 'login-code-hint' : undefined)"
             placeholder="Tu código de usuario"
             list="login-suggestions"
-            :aria-describedby="rememberedCodes.length === 0 ? 'login-code-hint' : undefined"
           />
           <datalist id="login-suggestions">
             <option v-for="s in suggestions" :key="s" :value="s" />
@@ -101,10 +104,12 @@ async function onSubmit(): Promise<void> {
             type="password"
             autocomplete="current-password"
             :disabled="isSubmitting"
+            :aria-invalid="errorMessage ? 'true' : undefined"
+            :aria-describedby="errorMessage ? 'login-error' : undefined"
             placeholder="••••••••"
           />
         </label>
-        <p v-if="errorMessage" class="login__error" role="alert">
+        <p v-if="errorMessage" id="login-error" class="login__error" role="alert">
           {{ errorMessage }}
         </p>
         <Button type="submit" :loading="isSubmitting" full-width>
@@ -117,20 +122,50 @@ async function onSubmit(): Promise<void> {
 
 <style scoped>
 .login {
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: var(--bg);
+  background: var(--surface);
   padding: var(--space-6);
+  overflow: hidden;
+}
+
+.login__glow {
+  position: absolute;
+  z-index: -1;
+  width: 42vw;
+  height: 42vw;
+  max-width: 560px;
+  max-height: 560px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  filter: blur(4px);
+  opacity: 0.8;
+}
+
+.login__glow--top { top: -24%; right: -12%; }
+.login__glow--bottom { bottom: -30%; left: -15%; background: var(--navy-soft); }
+
+.login::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(rgba(128, 128, 128, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(128, 128, 128, 0.06) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
 }
 
 .login__card {
   width: min(420px, 100%);
-  padding: var(--space-8) var(--space-7);
-  background: var(--surface);
+  padding: clamp(var(--space-7), 6vw, var(--space-9)) clamp(var(--space-6), 6vw, var(--space-8));
+  background: color-mix(in srgb, var(--surface-elev) 92%, transparent);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(14px);
 }
 
 .login__brand {
@@ -186,8 +221,10 @@ async function onSubmit(): Promise<void> {
 .login__input:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-ring);
+  box-shadow: var(--focus-ring);
 }
+
+.login__input::placeholder { color: var(--text-subtle); }
 
 .login__input:disabled {
   opacity: 0.6;
@@ -198,9 +235,10 @@ async function onSubmit(): Promise<void> {
   margin: 0;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--r-sm);
-  background: var(--surface-danger, rgba(220, 38, 38, 0.08));
-  color: var(--text-danger, #b91c1c);
+  background: var(--surface-danger);
+  color: var(--danger);
   font-size: 13px;
+  border-left: 3px solid var(--danger);
 }
 
 .login__hint {
@@ -213,5 +251,10 @@ async function onSubmit(): Promise<void> {
 .login__hint code {
   font-family: var(--font-mono, monospace);
   font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .login { padding: var(--space-4); }
+  .login__card { border-radius: var(--r-xl); }
 }
 </style>

@@ -189,7 +189,7 @@ function goToAdmin(): void {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: var(--surface-sidebar);
+  background: linear-gradient(180deg, var(--surface-sidebar), var(--surface));
   border-right: 1px solid var(--border);
 }
 
@@ -232,6 +232,7 @@ function goToAdmin(): void {
   gap: var(--space-3);
   padding: var(--space-5) var(--space-5) var(--space-4);
   flex-shrink: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .sidebar__brand-text {
@@ -304,6 +305,8 @@ function goToAdmin(): void {
   transition: all var(--duration-fast) var(--ease-out);
 }
 
+.sidebar__new:focus-visible, .sidebar__nav-link:focus-visible, .sidebar__logout:focus-visible, .sidebar__close:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
 .sidebar__new:hover {
   background: var(--surface-hover);
   border-color: var(--border-strong);
@@ -334,6 +337,7 @@ function goToAdmin(): void {
   margin: var(--space-2) var(--space-4);
   font-size: 12px;
   color: var(--text-subtle);
+  line-height: 1.5;
 }
 
 .sidebar__footer {

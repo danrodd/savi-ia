@@ -1,6 +1,6 @@
 from app.modules.usage.application.dtos import UsageKpisDTO
 from app.modules.usage.domain.interfaces import UsageRepository
-from app.modules.usage.domain.value_objects import UsagePeriod
+from app.modules.usage.domain.value_objects import UsageFilters, UsagePeriod
 
 # Días "comerciales" usados para anualizar/proyectar el costo mensual.
 _DAYS_PER_MONTH = 30
@@ -18,10 +18,12 @@ class GetUsageKpisUseCase:
     def __init__(self, repository: UsageRepository):
         self._repository = repository
 
-    async def execute(self, period: UsagePeriod) -> UsageKpisDTO:
-        totals = await self._repository.system_totals(period)
-        conversations = await self._repository.conversation_stats(period)
-        users = await self._repository.user_stats(period)
+    async def execute(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UsageKpisDTO:
+        totals = await self._repository.system_totals(period, filters=filters)
+        conversations = await self._repository.conversation_stats(period, filters=filters)
+        users = await self._repository.user_stats(period, filters=filters)
 
         total_cost = float(totals.cost_usd)
         turns = totals.message_count
@@ -39,9 +41,7 @@ class GetUsageKpisUseCase:
             + totals.cache_read_input_tokens
             + totals.cache_creation_input_tokens
         )
-        cache_read_ratio = (
-            totals.cache_read_input_tokens / input_like if input_like else 0.0
-        )
+        cache_read_ratio = totals.cache_read_input_tokens / input_like if input_like else 0.0
 
         return UsageKpisDTO(
             period_start=period.start,

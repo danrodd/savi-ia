@@ -11,6 +11,7 @@ const NAV = [
 <template>
   <div class="admin">
     <aside class="admin__nav" aria-label="Administración">
+      <div class="admin__identity"><span class="admin__identity-mark">S</span><div><strong>SAVI</strong><small>Centro de control</small></div></div>
       <RouterLink :to="{ name: 'home' }" class="admin__back">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="15 18 9 12 15 6" />
@@ -24,6 +25,7 @@ const NAV = [
         :to="item.to"
         class="admin__link"
         active-class="admin__link--active"
+        :aria-current="$route.name === item.to.name ? 'page' : undefined"
       >
         {{ item.label }}
       </RouterLink>
@@ -41,7 +43,7 @@ const NAV = [
 .admin {
   display: flex;
   height: 100%;
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .admin__nav {
@@ -50,10 +52,16 @@ const NAV = [
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: var(--space-5) var(--space-3);
+  padding: var(--space-5) var(--space-4);
   background: var(--surface-sidebar);
   border-right: 1px solid var(--border);
 }
+
+.admin__identity { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-6); }
+.admin__identity-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--text-on-brand); background: var(--brand); font-family: var(--font-display); font-weight: var(--fw-bold); box-shadow: var(--shadow-brand); }
+.admin__identity div { display: grid; gap: 1px; }
+.admin__identity strong { font-family: var(--font-display); letter-spacing: .05em; }
+.admin__identity small { color: var(--text-subtle); font-size: 10px; }
 
 .admin__back {
   display: inline-flex;
@@ -98,16 +106,16 @@ const NAV = [
 }
 
 .admin__link--active {
-  background: var(--surface-elev);
-  color: var(--text);
-  box-shadow: var(--shadow-xs);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  box-shadow: inset 3px 0 0 var(--brand);
 }
 
 .admin__main {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  padding: var(--space-6);
+  padding: clamp(var(--space-5), 4vw, var(--space-8));
 }
 
 .admin__container {
@@ -129,6 +137,8 @@ const NAV = [
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
+
+  .admin__identity { display: none; }
 
   .admin__back {
     margin-bottom: 0;

@@ -94,7 +94,10 @@ class ManageLlmProvidersUseCase:
         descriptor = self._implemented(provider)
         stored = await self._repository.get(descriptor.kind)
         candidate = self._candidate(descriptor, dto, stored)
-        if not candidate.is_usable:
+        if (
+            candidate.credential_kind != CredentialKind.LOCAL_SESSION
+            and not candidate.has_credential
+        ):
             return ProbeResult(ok=False, detail="Ingresá la credencial para probarla.")
 
         result = await self._probe(descriptor).test(candidate)

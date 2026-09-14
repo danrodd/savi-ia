@@ -1,3 +1,4 @@
+from app.modules.usage.domain.value_objects.filters import UsageFilters
 from app.modules.usage.domain.value_objects.kpis import (
     ConversationStats,
     ConversationUsage,
@@ -15,6 +16,7 @@ __all__ = [
     "ConversationUsage",
     "DailyUsage",
     "UsagePeriod",
+    "UsageFilters",
     "UsageTotals",
     "UserStats",
     "UserUsage",

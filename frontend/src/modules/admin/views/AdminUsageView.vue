@@ -13,6 +13,11 @@ const TABS: { value: Tab; label: string }[] = [
 const store = useUsageStore()
 const tab = ref<Tab>('system')
 const rate = computed(() => store.usdToCopRate)
+const providerOptions = [
+  { value: undefined, label: 'Todos los proveedores' },
+  { value: 'claude' as const, label: 'Claude' },
+  { value: 'gemini' as const, label: 'Gemini' },
+]
 </script>
 
 <template>
@@ -40,6 +45,7 @@ const rate = computed(() => store.usdToCopRate)
           {{ t.label }}
         </button>
       </div>
+      <label class="ausage__filter">Proveedor<select :value="store.provider ?? ''" @change="store.setProvider(($event.target as HTMLSelectElement).value === '' ? undefined : (($event.target as HTMLSelectElement).value as 'claude' | 'gemini'))"><option v-for="option in providerOptions" :key="option.label" :value="option.value ?? ''">{{ option.label }}</option></select></label>
       <UsageRangeSelector />
     </div>
 
@@ -84,6 +90,10 @@ const rate = computed(() => store.usdToCopRate)
   margin-bottom: var(--space-5);
 }
 
+.ausage__filter { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: 12px; font-weight: var(--fw-medium); }
+.ausage__filter select { min-height: 34px; padding: 0 var(--space-6) 0 var(--space-3); color: var(--text); background: var(--surface-elev); border: 1px solid var(--border); border-radius: var(--r-md); font: inherit; }
+.ausage__filter select:focus-visible { outline: var(--focus-ring); border-color: var(--brand); }
+
 .ausage__tabs {
   display: inline-flex;
   gap: 2px;
@@ -121,5 +131,12 @@ const rate = computed(() => store.usdToCopRate)
   font-size: 11px;
   color: var(--text-subtle);
   line-height: 1.5;
+}
+
+@media (max-width: 620px) {
+  .ausage__controls { align-items: stretch; }
+  .ausage__tabs, .ausage__filter, .ausage__controls :deep(.ranges) { width: 100%; }
+  .ausage__filter { justify-content: space-between; }
+  .ausage__filter select { flex: 1; }
 }
 </style>

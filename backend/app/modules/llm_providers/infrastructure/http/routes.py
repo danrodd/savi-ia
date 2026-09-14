@@ -8,7 +8,10 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.modules.auth.infrastructure.http.admin import SaviAdminDep
-from app.modules.llm_providers.application.requests import SaveLlmProviderRequest
+from app.modules.llm_providers.application.requests import (
+    SaveLlmProviderRequest,
+    TestLlmProviderRequest,
+)
 from app.modules.llm_providers.application.responses import (
     LlmProviderResponse,
     ModelInfoResponse,
@@ -44,7 +47,7 @@ async def save_provider(
 @router.post("/{provider}/test", response_model=ProviderTestResponse)
 async def test_provider(
     provider: str,
-    request: SaveLlmProviderRequest,
+    request: TestLlmProviderRequest,
     use_case: ManageLlmProvidersUseCaseDep,
     _admin: SaviAdminDep,
 ) -> ProviderTestResponse:

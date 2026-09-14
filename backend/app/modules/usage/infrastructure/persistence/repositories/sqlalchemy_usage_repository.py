@@ -31,6 +31,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
     DailyUsage,
+    UsageFilters,
     UsagePeriod,
     UsageTotals,
     UserStats,
@@ -46,9 +47,7 @@ def _token_sum(field: str) -> ColumnElement[Any]:
     Usa el operador `->>` (texto) + cast a Integer en vez de `.astext`
     para mantener el tipado limpio bajo Pyright strict.
     """
-    return func.coalesce(
-        func.sum(cast(MessageModel.usage.op("->>")(field), Integer)), 0
-    )
+    return func.coalesce(func.sum(cast(MessageModel.usage.op("->>")(field), Integer)), 0)
 
 
 def _cost_sum() -> ColumnElement[Any]:
@@ -160,6 +159,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
         *,
         user_id: int | None,
         owner_erp_database_id: UUID | None = None,
+        filters: UsageFilters | None = None,
     ) -> ColumnElement[bool]:
         """Predicado común: turnos del asistente dentro del período."""
         conditions: list[ColumnElement[bool]] = [
@@ -176,9 +176,12 @@ class SqlAlchemyUsageRepository(UsageRepository):
             # afuera el consumo de las conversaciones que este mismo dueño
             # abrió contra otros clientes (D10).
             if owner_erp_database_id is not None:
-                conditions.append(
-                    ConversationModel.owner_erp_database_id == owner_erp_database_id
-                )
+                conditions.append(ConversationModel.owner_erp_database_id == owner_erp_database_id)
+        if filters is not None:
+            if filters.provider is not None:
+                conditions.append(MessageModel.provider == filters.provider)
+            if filters.model is not None:
+                conditions.append(MessageModel.model == filters.model)
         return and_(*conditions)
 
     async def _totals(
@@ -187,6 +190,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
         *,
         user_id: int | None,
         owner_erp_database_id: UUID | None = None,
+        filters: UsageFilters | None = None,
     ) -> UsageTotals:
         stmt = (
             select(*_totals_columns())
@@ -194,7 +198,10 @@ class SqlAlchemyUsageRepository(UsageRepository):
             .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
             .where(
                 self._scoped(
-                    period, user_id=user_id, owner_erp_database_id=owner_erp_database_id
+                    period,
+                    user_id=user_id,
+                    owner_erp_database_id=owner_erp_database_id,
+                    filters=filters,
                 )
             )
         )
@@ -207,6 +214,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
         *,
         user_id: int | None,
         owner_erp_database_id: UUID | None = None,
+        filters: UsageFilters | None = None,
     ) -> list[DailyUsage]:
         day = self._day_bucket().label("day")
         stmt = (
@@ -215,39 +223,61 @@ class SqlAlchemyUsageRepository(UsageRepository):
             .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
             .where(
                 self._scoped(
-                    period, user_id=user_id, owner_erp_database_id=owner_erp_database_id
+                    period,
+                    user_id=user_id,
+                    owner_erp_database_id=owner_erp_database_id,
+                    filters=filters,
                 )
             )
             .group_by(day)
             .order_by(day)
         )
         rows = (await self._session.execute(stmt)).mappings().all()
-        return [
-            DailyUsage(day=_as_date(row["day"]), totals=_row_to_totals(row))
-            for row in rows
-        ]
+        return [DailyUsage(day=_as_date(row["day"]), totals=_row_to_totals(row)) for row in rows]
 
     async def totals_for_user(
-        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
     ) -> UsageTotals:
         return await self._totals(
-            period, user_id=user_id, owner_erp_database_id=erp_database_id
+            period,
+            user_id=user_id,
+            owner_erp_database_id=erp_database_id,
+            filters=filters,
         )
 
     async def daily_for_user(
-        self, user_id: int, period: UsagePeriod, *, erp_database_id: UUID
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
     ) -> list[DailyUsage]:
         return await self._daily(
-            period, user_id=user_id, owner_erp_database_id=erp_database_id
+            period,
+            user_id=user_id,
+            owner_erp_database_id=erp_database_id,
+            filters=filters,
         )
 
-    async def system_totals(self, period: UsagePeriod) -> UsageTotals:
-        return await self._totals(period, user_id=None)
+    async def system_totals(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UsageTotals:
+        return await self._totals(period, user_id=None, filters=filters)
 
-    async def daily_system(self, period: UsagePeriod) -> list[DailyUsage]:
-        return await self._daily(period, user_id=None)
+    async def daily_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DailyUsage]:
+        return await self._daily(period, user_id=None, filters=filters)
 
-    async def per_user(self, period: UsagePeriod) -> list[UserUsage]:
+    async def per_user(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[UserUsage]:
         uid = ConversationModel.user_id.label("user_id")
         db_id = ConversationModel.erp_database_id.label("erp_database_id")
         cost = _cost_sum().label("cost_usd")
@@ -255,7 +285,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
             select(uid, db_id, *_totals_columns())
             .select_from(MessageModel)
             .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
-            .where(self._scoped(period, user_id=None))
+            .where(self._scoped(period, user_id=None, filters=filters))
             # Agrupa por el par, no solo por el entero: dos usuarios con
             # el mismo `idUsuario` en clientes distintos son personas
             # distintas y el ranking los fusionaría en una sola fila.
@@ -273,7 +303,9 @@ class SqlAlchemyUsageRepository(UsageRepository):
             for row in rows
         ]
 
-    def _per_conversation_aggregate(self, period: UsagePeriod) -> Select[Any]:
+    def _per_conversation_aggregate(
+        self, period: UsagePeriod, filters: UsageFilters | None = None
+    ) -> Select[Any]:
         """Costo/tokens/turnos por conversación. Portable a los dos motores."""
         return (
             select(
@@ -283,7 +315,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
             )
             .select_from(MessageModel)
             .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
-            .where(self._scoped(period, user_id=None))
+            .where(self._scoped(period, user_id=None, filters=filters))
             .group_by(ConversationModel.id)
         )
 
@@ -320,8 +352,10 @@ class SqlAlchemyUsageRepository(UsageRepository):
             avg_turns=sum(turns) / len(turns),
         )
 
-    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats:
-        base = self._per_conversation_aggregate(period)
+    async def conversation_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> ConversationStats:
+        base = self._per_conversation_aggregate(period, filters)
         if self._is_sqlite:
             return await self._conversation_stats_in_python(base)
 
@@ -351,7 +385,9 @@ class SqlAlchemyUsageRepository(UsageRepository):
             avg_turns=float(m["avg_turns"]),
         )
 
-    async def user_stats(self, period: UsagePeriod) -> UserStats:
+    async def user_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UserStats:
         # Excluye conversaciones legadas (user_id NULL): no son usuarios
         # facturables reales.
         per_user = (
@@ -364,7 +400,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
             .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
             .where(
                 and_(
-                    self._scoped(period, user_id=None),
+                    self._scoped(period, user_id=None, filters=filters),
                     ConversationModel.user_id.is_not(None),
                 )
             )
@@ -384,11 +420,13 @@ class SqlAlchemyUsageRepository(UsageRepository):
         )
 
     async def per_conversation(
-        self, period: UsagePeriod, *, limit: int
+        self,
+        period: UsagePeriod,
+        *,
+        limit: int,
+        filters: UsageFilters | None = None,
     ) -> list[ConversationUsage]:
-        cost = func.coalesce(func.sum(MessageModel.cost_usd), Decimal("0")).label(
-            "cost_usd"
-        )
+        cost = func.coalesce(func.sum(MessageModel.cost_usd), Decimal("0")).label("cost_usd")
         stmt = (
             select(
                 ConversationModel.id.label("conversation_id"),
@@ -401,7 +439,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
             )
             .select_from(MessageModel)
             .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
-            .where(self._scoped(period, user_id=None))
+            .where(self._scoped(period, user_id=None, filters=filters))
             .group_by(
                 ConversationModel.id,
                 ConversationModel.user_id,

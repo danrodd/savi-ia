@@ -47,6 +47,8 @@ export interface SystemUsageReport {
 export interface UsageQuery {
   start?: string
   end?: string
+  provider?: 'claude' | 'gemini'
+  model?: string
 }
 
 export interface ConversationStats {

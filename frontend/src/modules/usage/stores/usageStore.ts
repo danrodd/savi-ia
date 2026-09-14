@@ -26,6 +26,8 @@ const CONVERSATIONS_LIMIT = 500
 
 export const useUsageStore = defineStore('usage', () => {
   const rangeDays = ref<RangeDays>(30)
+  const provider = ref<UsageQuery['provider']>()
+  const model = ref('')
 
   const mine = ref<UserUsageReport | null>(null)
   const loadingMine = ref(false)
@@ -55,7 +57,12 @@ export const useUsageStore = defineStore('usage', () => {
     const end = new Date()
     const start = new Date()
     start.setDate(start.getDate() - rangeDays.value)
-    return { start: start.toISOString(), end: end.toISOString() }
+    return {
+      start: start.toISOString(),
+      end: end.toISOString(),
+      provider: provider.value,
+      model: model.value.trim() || undefined,
+    }
   }
 
   async function loadMine(): Promise<void> {
@@ -124,8 +131,34 @@ export const useUsageStore = defineStore('usage', () => {
     await Promise.all(tasks)
   }
 
+  async function setProvider(value: UsageQuery['provider']): Promise<void> {
+    if (value === provider.value) return
+    provider.value = value
+    await reloadLoadedReports()
+  }
+
+  async function setModel(value: string): Promise<void> {
+    const next = value.trim()
+    if (next === model.value) return
+    model.value = next
+    await reloadLoadedReports()
+  }
+
+  async function reloadLoadedReports(): Promise<void> {
+    const tasks: Promise<void>[] = []
+    if (mine.value || loadingMine.value) tasks.push(loadMine())
+    if (system.value || loadingSystem.value) tasks.push(loadSystem())
+    if (kpis.value || loadingKpis.value) tasks.push(loadKpis())
+    if (conversations.value.length > 0 || loadingConversations.value) {
+      tasks.push(loadConversations())
+    }
+    await Promise.all(tasks)
+  }
+
   return {
     rangeDays,
+    provider,
+    model,
     mine,
     loadingMine,
     errorMine,
@@ -144,5 +177,7 @@ export const useUsageStore = defineStore('usage', () => {
     loadKpis,
     loadConversations,
     setRange,
+    setProvider,
+    setModel,
   }
 })

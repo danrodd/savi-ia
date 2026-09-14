@@ -85,8 +85,11 @@ Una tarjeta por proveedor soportado, en el orden que devuelve la API.
    - Si falla, muestra el `detail`.
    - Si funciona y el proveedor lista modelos, carga los selectores de
      modelo con la respuesta.
-   - Si el proveedor no lista modelos (Claude), los modelos se escriben a
-     mano.
+   - Para Claude con `api_key` u `oauth_token`, el resultado carga los
+     selectores con los modelos disponibles. Si la consulta falla, permite
+     escribir los IDs a mano.
+   - Para Claude con `local_session`, no existe un catálogo directo y los
+     IDs se escriben a mano.
 4. **Modelo de chat** y **modelo de títulos**.
 5. **Precios**: una fila por modelo elegido (entrada, salida, lectura y
    escritura de caché, en USD por millón de tokens). Sin valores por

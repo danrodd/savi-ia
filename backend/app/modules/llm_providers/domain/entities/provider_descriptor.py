@@ -30,8 +30,8 @@ PROVIDER_DESCRIPTORS: tuple[ProviderDescriptor, ...] = (
             CredentialKind.OAUTH_TOKEN,
             CredentialKind.LOCAL_SESSION,
         ),
-        # El SDK no expone un listado de modelos: se ingresan a mano.
-        supports_model_listing=False,
+        # API key y OAuth token usan el catálogo directo de Anthropic.
+        supports_model_listing=True,
         implemented=True,
     ),
     ProviderDescriptor(

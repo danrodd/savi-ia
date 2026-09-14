@@ -6,6 +6,7 @@
   --surface-subtle: #efeeea;
   --surface-hover: #e8e7e2;
   --surface-inverse: #1a1d24;
+  --surface-danger: #fff1f2;
 
   /* Borders */
   --border: #e5e3de;
@@ -32,6 +33,7 @@
   --success-soft: #e7f5ec;
   --warning: #d97706;
   --danger: #c8202b;
+  --focus-ring: 0 0 0 3px var(--brand-ring);
 
   /* Shadows — subtle, dual layer */
   --shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.03);
@@ -94,6 +96,7 @@
   --surface-subtle: #24272f;
   --surface-hover: #2d3038;
   --surface-inverse: #f7f6f2;
+  --surface-danger: rgba(232, 58, 72, 0.12);
 
   /* Borders */
   --border: #2a2e36;
@@ -119,6 +122,7 @@
   --success: #4ade80;
   --success-soft: rgba(74, 222, 128, 0.12);
   --warning: #fb923c;
+  --danger: #f25563;
 
   /* Shadows — amplified for dark */
   --shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.15);

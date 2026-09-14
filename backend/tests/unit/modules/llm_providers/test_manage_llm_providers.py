@@ -113,6 +113,14 @@ async def test_empty_credential_keeps_the_stored_one() -> None:
     assert stored.credential == "sk-ant-123"
 
 
+async def test_test_allows_empty_models_before_catalog_selection() -> None:
+    use_case, _, _ = _use_case()
+
+    result = await use_case.test("claude", _dto(chat_model="", title_model=""))
+
+    assert result.ok is True
+
+
 async def test_activate_without_credential_is_rejected() -> None:
     use_case, repo, _ = _use_case()
     await repo.save(

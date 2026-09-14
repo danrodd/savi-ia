@@ -27,7 +27,7 @@ from app.modules.conversations.infrastructure.persistence.models import (
 from app.modules.erp_databases.infrastructure.persistence.models import (
     ErpDatabaseModel,
 )
-from app.modules.usage.domain.value_objects import UsagePeriod
+from app.modules.usage.domain.value_objects import UsageFilters, UsagePeriod
 from app.modules.usage.infrastructure.persistence.repositories.sqlalchemy_usage_repository import (
     SqlAlchemyUsageRepository,
 )
@@ -95,6 +95,8 @@ async def _seed(session: AsyncSession) -> ConversationModel:
             content="respuesta",
             usage={"input_tokens": 100, "output_tokens": 40},
             cost_usd=Decimal("0.001234"),
+            provider="Claude",
+            model="claude-sonnet",
             created_at=datetime(2026, 6, 1, 15, 30, tzinfo=UTC),
         )
     )
@@ -188,3 +190,25 @@ async def test_usage_conversation_stats_percentiles(sqlite_sessionmaker: Any) ->
         stats = await repo.conversation_stats(_PERIOD)
         assert stats.count == 1
         assert stats.p50_cost_usd == pytest.approx(0.001234)
+
+
+async def test_usage_filters_provider_and_model_on_all_aggregates(
+    sqlite_sessionmaker: Any,
+) -> None:
+    async with sqlite_sessionmaker() as session:
+        await _seed(session)
+
+    async with sqlite_sessionmaker() as session:
+        repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
+        filters = UsageFilters(provider=" Claude ", model="claude-sonnet")
+
+        assert (await repo.system_totals(_PERIOD, filters=filters)).message_count == 1
+        assert len(await repo.daily_system(_PERIOD, filters=filters)) == 1
+        assert len(await repo.per_user(_PERIOD, filters=filters)) == 1
+        assert (await repo.conversation_stats(_PERIOD, filters=filters)).count == 1
+        assert (await repo.user_stats(_PERIOD, filters=filters)).active_count == 1
+        assert len(await repo.per_conversation(_PERIOD, limit=10, filters=filters)) == 1
+
+        unknown = UsageFilters(provider="Gemini")
+        assert (await repo.system_totals(_PERIOD, filters=unknown)).message_count == 0
+        assert await repo.daily_system(_PERIOD, filters=unknown) == []

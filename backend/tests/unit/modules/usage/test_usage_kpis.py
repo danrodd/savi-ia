@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from uuid import UUID
 
 import pytest
 
@@ -19,6 +20,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
     DailyUsage,
+    UsageFilters,
     UsagePeriod,
     UsageTotals,
     UserStats,
@@ -55,29 +57,57 @@ _USER_STATS = UserStats(active_count=4, avg_cost_usd=2.5, avg_conversations=2.0)
 
 
 class _FakeRepo(UsageRepository):
-    async def totals_for_user(self, user_id: int, period: UsagePeriod) -> UsageTotals:  # noqa: ARG002
+    async def totals_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> UsageTotals:  # noqa: ARG002
         return _TOTALS
 
-    async def daily_for_user(self, user_id: int, period: UsagePeriod) -> list[DailyUsage]:  # noqa: ARG002
+    async def daily_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> list[DailyUsage]:  # noqa: ARG002
         return []
 
-    async def system_totals(self, period: UsagePeriod) -> UsageTotals:  # noqa: ARG002
+    async def system_totals(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UsageTotals:  # noqa: ARG002
         return _TOTALS
 
-    async def per_user(self, period: UsagePeriod) -> list[UserUsage]:  # noqa: ARG002
+    async def per_user(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[UserUsage]:  # noqa: ARG002
         return []
 
-    async def daily_system(self, period: UsagePeriod) -> list[DailyUsage]:  # noqa: ARG002
+    async def daily_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DailyUsage]:  # noqa: ARG002
         return []
 
-    async def conversation_stats(self, period: UsagePeriod) -> ConversationStats:  # noqa: ARG002
+    async def conversation_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> ConversationStats:  # noqa: ARG002
         return _CONV_STATS
 
-    async def user_stats(self, period: UsagePeriod) -> UserStats:  # noqa: ARG002
+    async def user_stats(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> UserStats:  # noqa: ARG002
         return _USER_STATS
 
     async def per_conversation(
-        self, period: UsagePeriod, *, limit: int
+        self,
+        period: UsagePeriod,
+        *,
+        limit: int,
+        filters: UsageFilters | None = None,
     ) -> list[ConversationUsage]:  # noqa: ARG002
         return []
 
@@ -121,7 +151,9 @@ async def test_kpis_pasan_percentiles_de_conversacion() -> None:
 @pytest.mark.asyncio
 async def test_kpis_sin_turnos_no_divide_por_cero() -> None:
     class _EmptyRepo(_FakeRepo):
-        async def system_totals(self, period: UsagePeriod) -> UsageTotals:  # noqa: ARG002
+        async def system_totals(
+            self, period: UsagePeriod, *, filters: UsageFilters | None = None
+        ) -> UsageTotals:  # noqa: ARG002
             return UsageTotals()
 
     kpis = await GetUsageKpisUseCase(_EmptyRepo()).execute(_PERIOD)

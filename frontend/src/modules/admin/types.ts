@@ -111,6 +111,7 @@ export interface SaveLlmProviderRequest {
 export interface ProviderModel {
   id: string
   display_name: string
+  metadata?: Record<string, unknown>
 }
 
 export interface ProviderTestResponse {

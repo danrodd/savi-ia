@@ -11,7 +11,7 @@ from app.modules.usage.application.responses import (
     UsageKpisResponse,
     UserUsageReportResponse,
 )
-from app.modules.usage.domain.value_objects import UsagePeriod
+from app.modules.usage.domain.value_objects import UsageFilters, UsagePeriod
 from app.modules.usage.infrastructure.http.dependencies import (
     AdminUserDep,
     GetSystemUsageUseCaseDep,
@@ -59,6 +59,10 @@ def _require_database(user: AuthenticatedUser) -> UUID:
     return user.erp_database_id
 
 
+def _resolve_filters(provider: str | None, model: str | None) -> UsageFilters:
+    return UsageFilters(provider=provider, model=model)
+
+
 @router.get("/me", response_model=UserUsageReportResponse)
 async def my_usage(
     use_case: GetUserUsageUseCaseDep,
@@ -70,6 +74,8 @@ async def my_usage(
     end: datetime | None = Query(
         default=None, description="Fin del período (ISO 8601). Default: ahora."
     ),
+    provider: str | None = Query(default=None, description="Proveedor del modelo."),
+    model: str | None = Query(default=None, description="Modelo utilizado."),
 ) -> UserUsageReportResponse:
     """Consumo del usuario autenticado: total + serie diaria, en USD.
 
@@ -78,11 +84,12 @@ async def my_usage(
     """
     period = _resolve_period(start, end)
     report = await use_case.execute(
-        user.id, period, erp_database_id=_require_database(user)
+        user.id,
+        period,
+        erp_database_id=_require_database(user),
+        filters=_resolve_filters(provider, model),
     )
-    return UserUsageReportResponse.from_dto(
-        report, usd_to_cop_rate=settings.usd_to_cop_rate
-    )
+    return UserUsageReportResponse.from_dto(report, usd_to_cop_rate=settings.usd_to_cop_rate)
 
 
 @router.get("/system", response_model=SystemUsageReportResponse)
@@ -96,15 +103,15 @@ async def system_usage(
     end: datetime | None = Query(
         default=None, description="Fin del período (ISO 8601). Default: ahora."
     ),
+    provider: str | None = Query(default=None, description="Proveedor del modelo."),
+    model: str | None = Query(default=None, description="Modelo utilizado."),
 ) -> SystemUsageReportResponse:
     """Consumo global del sistema (solo admins): total + ranking por
     usuario + serie diaria. 403 si el usuario no es admin.
     """
     period = _resolve_period(start, end)
-    report = await use_case.execute(period)
-    return SystemUsageReportResponse.from_dto(
-        report, usd_to_cop_rate=settings.usd_to_cop_rate
-    )
+    report = await use_case.execute(period, filters=_resolve_filters(provider, model))
+    return SystemUsageReportResponse.from_dto(report, usd_to_cop_rate=settings.usd_to_cop_rate)
 
 
 @router.get("/kpis", response_model=UsageKpisResponse)
@@ -118,6 +125,8 @@ async def usage_kpis(
     end: datetime | None = Query(
         default=None, description="Fin del período (ISO 8601). Default: ahora."
     ),
+    provider: str | None = Query(default=None, description="Proveedor del modelo."),
+    model: str | None = Query(default=None, description="Modelo utilizado."),
 ) -> UsageKpisResponse:
     """KPIs de consumo para definir tarifa (solo admins).
 
@@ -125,7 +134,7 @@ async def usage_kpis(
     proyección mensual al ritmo actual y ratio de caché. 403 si no es admin.
     """
     period = _resolve_period(start, end)
-    kpis = await use_case.execute(period)
+    kpis = await use_case.execute(period, filters=_resolve_filters(provider, model))
     return UsageKpisResponse.from_dto(kpis, usd_to_cop_rate=settings.usd_to_cop_rate)
 
 
@@ -139,6 +148,8 @@ async def conversations_usage(
     end: datetime | None = Query(
         default=None, description="Fin del período (ISO 8601). Default: ahora."
     ),
+    provider: str | None = Query(default=None, description="Proveedor del modelo."),
+    model: str | None = Query(default=None, description="Modelo utilizado."),
     limit: int = Query(
         default=_CONVERSATIONS_LIMIT_DEFAULT,
         ge=1,
@@ -152,5 +163,9 @@ async def conversations_usage(
     distribución y el export CSV de la vista de KPIs.
     """
     period = _resolve_period(start, end)
-    rows = await use_case.execute(period, limit=limit)
+    rows = await use_case.execute(
+        period,
+        limit=limit,
+        filters=_resolve_filters(provider, model),
+    )
     return [ConversationUsageResponse.from_vo(r) for r in rows]

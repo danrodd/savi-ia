@@ -391,6 +391,7 @@ const showConversationShare = computed<boolean>(
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+  background: radial-gradient(circle at 88% 0%, var(--brand-soft), transparent 28%), var(--surface);
 }
 
 .chat-main__banner {
@@ -421,6 +422,10 @@ const showConversationShare = computed<boolean>(
   font-size: 11.5px;
   font-weight: var(--fw-medium);
 }
+
+.chat-main :deep(.welcome) { animation: workspace-in var(--duration-slow) var(--ease-out); }
+
+@keyframes workspace-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Banner identificador de "vista compartida". Variante suave por default
    (conversación propia), variante de alerta cuando es solo lectura.

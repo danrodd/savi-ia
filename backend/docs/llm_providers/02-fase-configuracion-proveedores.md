@@ -58,7 +58,7 @@ class CredentialKind(StrEnum):
 | `kind` | `claude` | `gemini` |
 | `display_name` | Claude (Anthropic) | Gemini (Google) |
 | `credential_kinds` | `api_key`, `oauth_token`, `local_session` | `api_key` |
-| `supports_model_listing` | No: se ingresan a mano | Sí (`client.aio.models.list`) |
+| `supports_model_listing` | Sí para `api_key`/`oauth_token` (`anthropic.models.list`); no para `local_session` | Sí (`client.aio.models.list`) |
 | `implemented` | Sí | Sí a partir de la Fase 3 |
 
 Agregar un proveedor = agregar un descriptor + su adaptador. La UI y la API
@@ -134,8 +134,10 @@ class ProviderProbe(ABC):
 ```
 
 - `ClaudeProbe`: corre un turno mínimo del SDK con `max_turns=1`, sin
-  tools, con el modelo de títulos. No hay endpoint para listar modelos, así
-  que `models` queda vacío y la UI pide el ID a mano.
+  tools, con el modelo de títulos. Para `api_key` y `oauth_token` también
+  consulta `AsyncAnthropic.models.list(limit=100)` y devuelve los modelos.
+  `local_session` no expone un catálogo directo, así que la UI pide el ID a
+  mano en ese caso.
 - `GeminiProbe` llega en la Fase 3.
 - El probe **nunca levanta**: una key inválida es `ok=False` con un detalle
   accionable, igual que `ConnectionTester` para las bases del ERP.
