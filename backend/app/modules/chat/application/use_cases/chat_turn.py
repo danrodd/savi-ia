@@ -96,6 +96,8 @@ class _TurnAccumulator:
         self.tool_invocations: dict[str, ToolInvocation] = {}
         self.usage: TokenUsage | None = None
         self.cost_usd: Decimal | None = None
+        self.provider: str | None = None
+        self.model: str | None = None
         self.finish_reason: MessageFinishReason = MessageFinishReason.COMPLETE
 
     def consume(self, event: ChatEvent) -> None:
@@ -123,6 +125,8 @@ class _TurnAccumulator:
                 self.usage = TokenUsage.from_dict(event.usage)
             if event.cost_usd is not None:
                 self.cost_usd = Decimal(str(event.cost_usd))
+            self.provider = event.provider
+            self.model = event.model
         elif isinstance(event, ErrorEvent):
             self.finish_reason = MessageFinishReason.ERROR
 
@@ -138,6 +142,8 @@ class _TurnAccumulator:
             tool_invocations=list(self.tool_invocations.values()),
             usage=self.usage,
             cost_usd=self.cost_usd,
+            provider=self.provider,
+            model=self.model,
         )
 
 

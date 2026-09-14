@@ -179,6 +179,8 @@ class ClaudeAgentRunner(LLMRunner):
                     yield DoneEvent(
                         usage=msg.usage,
                         cost_usd=msg.total_cost_usd,
+                        provider=self._provider.kind,
+                        model=self._provider.chat_model,
                     )
         except Exception as e:  # noqa: BLE001
             if done_yielded:

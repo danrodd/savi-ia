@@ -21,6 +21,8 @@ from app.modules.chat.domain.interfaces import (
 )
 from app.modules.chat.infrastructure.llm.claude.runner import ClaudeAgentRunner
 from app.modules.chat.infrastructure.llm.claude.title_generator import ClaudeTitleGenerator
+from app.modules.chat.infrastructure.llm.gemini.runner import GeminiRunner
+from app.modules.chat.infrastructure.llm.gemini.title_generator import GeminiTitleGenerator
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +34,8 @@ class LLMRunnerFactory:
     def build(self, provider: ActiveProvider) -> LLMRunner:
         if provider.kind == "claude":
             return ClaudeAgentRunner(self._settings, provider)
+        if provider.kind == "gemini":
+            return GeminiRunner(self._settings, provider)
         raise LlmProviderUnavailableError(
             "El proveedor de IA activo no está disponible en esta versión de SAVI."
         )
@@ -44,6 +48,8 @@ class TitleGeneratorFactory:
     def build(self, provider: ActiveProvider) -> TitleGenerator:
         if provider.kind == "claude":
             return ClaudeTitleGenerator(self._settings, provider)
+        if provider.kind == "gemini":
+            return GeminiTitleGenerator(self._settings, provider)
         raise LlmProviderUnavailableError(
             "El proveedor de IA activo no está disponible en esta versión de SAVI."
         )

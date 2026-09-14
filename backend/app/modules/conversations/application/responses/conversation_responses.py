@@ -70,6 +70,8 @@ class MessageResponse(BaseModel):
     )
     usage: TokenUsageResponse | None = None
     cost_usd: Decimal | None = None
+    provider: str | None = None
+    model: str | None = None
     superseded_at: datetime | None = None
     superseded_by_id: UUID | None = None
 
@@ -93,6 +95,8 @@ class MessageResponse(BaseModel):
             ],
             usage=TokenUsageResponse(**dto.usage.to_dict()) if dto.usage else None,
             cost_usd=dto.cost_usd,
+            provider=dto.provider,
+            model=dto.model,
             superseded_at=dto.superseded_at,
             superseded_by_id=dto.superseded_by_id,
         )

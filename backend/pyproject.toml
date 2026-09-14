@@ -18,6 +18,7 @@ dependencies = [
     "orjson>=3.10",
     "claude-agent-sdk>=0.0.10",
     "anthropic>=0.40",
+    "google-genai==2.23.0",
     "sqlglot>=27",
     "pyjwt>=2.10",
     # Lo usa `app.tray` para el icono de la bandeja. Llegaba transitivo por

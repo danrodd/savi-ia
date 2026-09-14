@@ -65,6 +65,8 @@ class DoneEvent:
     usage: dict[str, Any] | None = None
     cost_usd: float | None = None
     finish_reason: str = "complete"
+    provider: str | None = None
+    model: str | None = None
     type: ChatEventType = ChatEventType.DONE
 
 

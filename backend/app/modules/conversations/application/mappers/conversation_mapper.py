@@ -28,6 +28,8 @@ class ConversationMapper:
             finish_reason=entity.finish_reason,
             usage=entity.usage,
             cost_usd=entity.cost_usd,
+            provider=entity.provider,
+            model=entity.model,
             superseded_at=entity.superseded_at,
             superseded_by_id=entity.superseded_by_id,
         )

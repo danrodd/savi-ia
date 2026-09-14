@@ -39,7 +39,7 @@ PROVIDER_DESCRIPTORS: tuple[ProviderDescriptor, ...] = (
         display_name="Gemini (Google)",
         credential_kinds=(CredentialKind.API_KEY,),
         supports_model_listing=True,
-        implemented=False,
+        implemented=True,
     ),
 )
 

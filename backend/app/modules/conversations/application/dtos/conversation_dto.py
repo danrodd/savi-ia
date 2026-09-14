@@ -45,6 +45,8 @@ class MessageDTO:
     finish_reason: MessageFinishReason | None = None
     usage: TokenUsage | None = None
     cost_usd: Decimal | None = None
+    provider: str | None = None
+    model: str | None = None
     superseded_at: datetime | None = None
     superseded_by_id: UUID | None = None
 

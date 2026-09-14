@@ -11,7 +11,6 @@ import pytest
 from app.modules.llm_providers.application.dtos import SaveLlmProviderDTO
 from app.modules.llm_providers.application.use_cases import ManageLlmProvidersUseCase
 from app.modules.llm_providers.domain.entities import LlmProviderConfig
-from app.modules.llm_providers.domain.exceptions import LlmProviderNotImplementedError
 from app.modules.llm_providers.domain.interfaces import (
     LlmProviderRepository,
     ProbeResult,
@@ -148,11 +147,11 @@ async def test_activate_ok_invalidates_the_resolver_cache() -> None:
     assert calls == [1]
 
 
-async def test_unimplemented_provider_raises_422_equivalent() -> None:
+async def test_gemini_provider_is_implemented() -> None:
     use_case, _, _ = _use_case()
 
-    with pytest.raises(LlmProviderNotImplementedError):
-        await use_case.save("gemini", _dto())
+    saved = await use_case.save("gemini", _dto())
+    assert saved.provider == "gemini"
 
 
 async def test_unsupported_credential_kind_is_rejected() -> None:

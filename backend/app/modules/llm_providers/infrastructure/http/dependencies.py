@@ -16,7 +16,7 @@ from app.modules.llm_providers.infrastructure.active_provider_resolver import (
 from app.modules.llm_providers.infrastructure.persistence import (
     SqlAlchemyLlmProviderRepository,
 )
-from app.modules.llm_providers.infrastructure.probes import ClaudeProbe
+from app.modules.llm_providers.infrastructure.probes import ClaudeProbe, GeminiProbe
 from app.shared.security import FernetCredentialCipher
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -35,7 +35,7 @@ def build_llm_provider_repository(settings: Settings) -> LlmProviderRepository:
 def get_manage_llm_providers_use_case(settings: SettingsDep) -> ManageLlmProvidersUseCase:
     return ManageLlmProvidersUseCase(
         build_llm_provider_repository(settings),
-        probes={ProviderKind.CLAUDE: ClaudeProbe(settings)},
+        probes={ProviderKind.CLAUDE: ClaudeProbe(settings), ProviderKind.GEMINI: GeminiProbe()},
         on_change=get_active_provider_resolver().invalidate,
     )
 
