@@ -1,0 +1,12 @@
+{
+  "name": "frmAutorizaOrdenCompra",
+  "module": "CUENTAPAGAR",
+  "type": "PROCESO",
+  "description": "Aprobación jerárquica de órdenes de compra. Los usuarios con perfil de aprobador pueden autorizar o rechazar OCs que requieren aprobación.",
+  "keywords": [
+    "aprobar orden compra",
+    "autorizar compra",
+    "aprobacion oc"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "frmAnticipo",
+  "module": "CONTABILIDAD",
+  "type": "TRANSACCION",
+  "description": "Registro de anticipos recibidos de clientes o entregados a proveedores antes de generar la factura. Crea saldo a favor que se aplica al momento de facturar.",
+  "keywords": [
+    "anticipo cliente",
+    "anticipo proveedor",
+    "pago anticipado",
+    "deposito previo"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

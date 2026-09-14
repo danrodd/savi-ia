@@ -1,0 +1,18 @@
+{
+  "code": "ACTIVOFIJO",
+  "label": "ActivoFijo",
+  "purpose": "Módulo ActivoFijo del ERP. Cubre 3 formularios.",
+  "tags": [
+    "#ActivoFijo",
+    "#Depreciacion",
+    "#Activos",
+    "#Propiedades",
+    "#Polizas"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmMaestroActivoFijo",
+    "frmRealizarDepreciacion",
+    "frmInformeDepreciacion"
+  ]
+}

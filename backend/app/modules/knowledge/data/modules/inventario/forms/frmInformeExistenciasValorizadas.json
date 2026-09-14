@@ -1,0 +1,21 @@
+{
+  "name": "frmInformeExistenciasValorizadas",
+  "module": "INVENTARIO",
+  "type": "INFORME",
+  "description": "Informe del valor del inventario disponible. Muestra existencias por producto multiplicadas por el costo promedio. Puede agruparse por almacén, grupo, subgrupo. Permite comparar costo vs precio de venta.",
+  "keywords": [
+    "valor inventario",
+    "existencias valorizadas",
+    "inventario valorado",
+    "costo inventario",
+    "informe existencias"
+  ],
+  "filters": [
+    "almacen",
+    "grupo",
+    "subgrupo",
+    "fecha corte",
+    "incluir costo cero"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

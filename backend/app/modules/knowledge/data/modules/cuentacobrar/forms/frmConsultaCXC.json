@@ -1,0 +1,29 @@
+{
+  "name": "frmConsultaCXC",
+  "module": "CUENTACOBRAR",
+  "type": "CONSULTA",
+  "description": "Consulta de cuentas por cobrar activas. Muestra facturas con saldo pendiente de cobro, fechas de vencimiento y estado de cartera. Permite gestionar directamente la cuenta cobrar: registrar pagos, generar notas, enviar a cobro.",
+  "keywords": [
+    "cuentas por cobrar",
+    "cartera activa",
+    "cxc",
+    "saldo pendiente",
+    "facturas por cobrar",
+    "deuda cliente"
+  ],
+  "actions": [
+    "Consultar",
+    "Registrar pago",
+    "Cuenta cobro",
+    "Enviar correo",
+    "Ver factura"
+  ],
+  "filters": [
+    "tercero",
+    "fecha factura",
+    "fecha vencimiento",
+    "estado cartera",
+    "dias vencida"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "faq_014",
+  "question": "¿Cómo ver los productos que están por vencer (lotes)?",
+  "synonyms": [],
+  "module": "INVENTARIO",
+  "answer_summary": "frmInformeVencimientoLote (módulo Inventario). Filtra por almacén y fecha de vencimiento.",
+  "related_forms": [
+    "frmInformeVencimientoLote"
+  ],
+  "related_workflows": []
+}

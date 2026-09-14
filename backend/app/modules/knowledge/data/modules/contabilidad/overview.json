@@ -1,0 +1,23 @@
+{
+  "code": "CONTABILIDAD",
+  "label": "Contabilidad",
+  "purpose": "Módulo Contabilidad del ERP. Cubre 24 formularios.",
+  "tags": [
+    "#Contabilidad",
+    "#PlanContable",
+    "#LibroDiario",
+    "#BalanceGeneral",
+    "#EstadoResultados",
+    "#MediosExogenos",
+    "#DIAN",
+    "#Tributario",
+    "#ConciliacionBancaria"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmConsultaSaldoContable",
+    "frmConsultaMovimientoContable",
+    "frmMovimientoContable",
+    "frmPlanContable"
+  ]
+}

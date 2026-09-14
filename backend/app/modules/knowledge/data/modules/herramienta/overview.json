@@ -1,0 +1,18 @@
+{
+  "code": "HERRAMIENTA",
+  "label": "Herramientas",
+  "purpose": "Módulo Herramientas del ERP. Cubre 4 formularios.",
+  "tags": [
+    "#Herramientas",
+    "#Administracion",
+    "#BaseDatos",
+    "#Sincronizacion"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmCopiaSeguridad",
+    "frmDesbloqueoDocumento",
+    "frmSincronizarSEO",
+    "frmCrearTareaWindows"
+  ]
+}

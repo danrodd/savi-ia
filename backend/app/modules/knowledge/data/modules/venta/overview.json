@@ -1,0 +1,23 @@
+{
+  "code": "VENTA",
+  "label": "Venta",
+  "purpose": "Módulo Venta del ERP. Cubre 9 formularios.",
+  "tags": [
+    "#Venta",
+    "#Caja",
+    "#TurnoCaja",
+    "#Cotizacion",
+    "#Pedido",
+    "#Restaurante",
+    "#Comisiones",
+    "#PuntosFidelizacion",
+    "#Convenio"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmCaja",
+    "frmCotizacion",
+    "frmPedido",
+    "frmConvenio"
+  ]
+}

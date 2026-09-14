@@ -1,0 +1,12 @@
+{
+  "name": "frmPropuestaPagoConsulta",
+  "module": "CUENTAPAGAR",
+  "type": "CONSULTA",
+  "description": "Consulta y gestión de propuestas de pago masivo a proveedores. Muestra las propuestas generadas con su estado (pendiente, aprobada, pagada).",
+  "keywords": [
+    "propuesta pago",
+    "pago masivo proveedores",
+    "programar pagos"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

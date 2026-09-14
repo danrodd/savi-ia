@@ -1,0 +1,12 @@
+{
+  "id": "faq_021",
+  "question": "¿Cómo registrar una glosa del sector salud?",
+  "synonyms": [],
+  "module": "CUENTACOBRAR",
+  "answer_summary": "frmGlosa (módulo CuentaCobrar) para crear la glosa. frmRespuestaGlosa para responderla.",
+  "related_forms": [
+    "frmGlosa",
+    "frmRespuestaGlosa"
+  ],
+  "related_workflows": []
+}

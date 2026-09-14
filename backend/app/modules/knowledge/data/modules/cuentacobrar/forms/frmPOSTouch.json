@@ -1,0 +1,13 @@
+{
+  "name": "frmPOSTouch",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Versión táctil del POS. Misma lógica que frmPOS pero con interfaz optimizada para pantallas touch. Botones grandes, teclado virtual.",
+  "keywords": [
+    "pos touch",
+    "tactil",
+    "pantalla touch",
+    "venta tactil"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

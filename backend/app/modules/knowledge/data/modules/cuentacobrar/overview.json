@@ -1,0 +1,22 @@
+{
+  "code": "CUENTACOBRAR",
+  "label": "CuentaCobrar",
+  "purpose": "Módulo CuentaCobrar del ERP. Cubre 17 formularios.",
+  "tags": [
+    "#CuentaCobrar",
+    "#Facturacion",
+    "#FacturaElectronica",
+    "#Remision",
+    "#POS",
+    "#Ventas",
+    "#DIAN",
+    "#Glosa"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmFactura",
+    "frmPOS",
+    "frmPOSTouch",
+    "frmRemision"
+  ]
+}

@@ -215,24 +215,20 @@ Node.js **no es un requisito de SAVI**.
 
 ## Bloqueos abiertos
 
-- [ ] **Falta el catálogo de conocimiento.** `backend/app/modules/knowledge/data/`
-      no tiene ningún `.json`. Sin él SAVI arranca, pero responde sin
-      saber nada del ERP ni de la empresa.
-      **Causa raíz**: la regla `data/` del `.gitignore` de la raíz
-      ignoraba el directorio entero, por lo que los archivos nunca
-      llegaron al repositorio — pese a que el diseño del módulo asume lo
-      contrario (`catalog_provider.py`). Ya corregido con una excepción
-      explícita; falta copiar el contenido.
-      **Cómo generarlo**:
+- [x] **Catálogo de conocimiento.** Generado desde
+      `sisfec_knowledge_base_v2.json` (kb 2.0.0) y versionado: 10 módulos,
+      101 formularios, 4 flujos y 29 FAQs. Los módulos `Inicio` y
+      `Seguridad` se omiten a propósito (ver `scripts/bootstrap_knowledge.py`).
+      Para regenerarlo:
       `uv run python -m scripts.bootstrap_knowledge --source <sisfec_knowledge_base_v2.json> --target app/modules/knowledge/data`
+      — el script escribe CRLF en Windows; normalizar a LF antes de
+      commitear (`.gitattributes` fija `eol=lf`).
 - [ ] **Probar el instalador de punta a punta**, idealmente en una
       máquina limpia.
-- [ ] **`installer/assets/savi.ico`** — sin el icono, el ejecutable usa
-      el de PyInstaller por defecto.
+- [x] **`installer/assets/savi.ico`** — presente.
 - [ ] **Firma de código (Authenticode).** Sin firmar, SmartScreen
       advierte en cada instalación.
-- [ ] **`frontend/package-lock.json`** quedó sin versionar. Sin él los
-      builds del instalador no son reproducibles.
+- [x] **`frontend/package-lock.json`** — versionado.
 
 ---
 

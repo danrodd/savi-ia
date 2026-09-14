@@ -1,0 +1,13 @@
+{
+  "name": "frmGeneracionCompuestoInventario",
+  "module": "INVENTARIO",
+  "type": "PROCESO",
+  "description": "Genera unidades de un producto compuesto a partir de sus componentes. Consume stock de los componentes y genera stock del producto final.",
+  "keywords": [
+    "producto compuesto",
+    "ensamble",
+    "kit",
+    "generacion compuesto"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

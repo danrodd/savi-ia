@@ -1,0 +1,20 @@
+{
+  "name": "frmInformeVencimientoLote",
+  "module": "INVENTARIO",
+  "type": "INFORME",
+  "description": "Informe de productos con fecha de vencimiento próxima o vencida, ordenados por lote. Fundamental para el sector farmacéutico. Permite filtrar por rango de días para alertas tempranas.",
+  "keywords": [
+    "vencimiento lotes",
+    "productos vencidos",
+    "fecha vencimiento",
+    "lotes por vencer",
+    "FEFO"
+  ],
+  "filters": [
+    "almacen",
+    "fecha vencimiento hasta",
+    "producto",
+    "dias para vencer"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

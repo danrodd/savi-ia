@@ -1,0 +1,13 @@
+{
+  "name": "frmGestionCartera",
+  "module": "CUENTACOBRAR",
+  "type": "PROCESO",
+  "description": "Gestión del proceso de cobro de cartera vencida. Permite registrar llamadas, visitas y acuerdos de pago para facturas vencidas.",
+  "keywords": [
+    "gestion cobro",
+    "cobro cartera",
+    "recuperacion cartera",
+    "acuerdo pago"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

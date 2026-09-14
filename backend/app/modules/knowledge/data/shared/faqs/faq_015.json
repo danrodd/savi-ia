@@ -1,0 +1,11 @@
+{
+  "id": "faq_015",
+  "question": "¿Cómo crear o modificar un usuario?",
+  "synonyms": [],
+  "module": null,
+  "answer_summary": "frmUsuario (módulo Seguridad). Permite crear usuario, asignar clave, estado y parámetros.",
+  "related_forms": [
+    "frmUsuario"
+  ],
+  "related_workflows": []
+}

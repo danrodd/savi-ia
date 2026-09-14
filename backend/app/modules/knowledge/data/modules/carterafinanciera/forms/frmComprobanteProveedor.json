@@ -1,0 +1,13 @@
+{
+  "name": "frmComprobanteProveedor",
+  "module": "CARTERAFINANCIERA",
+  "type": "TRANSACCION",
+  "description": "Comprobante de egreso por pago a proveedor. Registra el pago realizado y lo cruza contra las facturas de compra pendientes. Genera el movimiento bancario y la contabilización.",
+  "keywords": [
+    "comprobante egreso",
+    "pago proveedor",
+    "cancelar factura proveedor",
+    "egreso tesoreria"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

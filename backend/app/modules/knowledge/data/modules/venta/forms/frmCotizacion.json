@@ -1,0 +1,21 @@
+{
+  "name": "frmCotizacion",
+  "module": "VENTA",
+  "type": "TRANSACCION",
+  "description": "Cotización de productos a clientes. No afecta inventario ni contabilidad. Puede convertirse en pedido o factura directamente. Tiene estados: Activa, Confirmada, Rechazada.",
+  "keywords": [
+    "cotizacion cliente",
+    "proforma",
+    "oferta comercial",
+    "presupuesto venta"
+  ],
+  "actions": [
+    "Nueva",
+    "Guardar",
+    "Convertir a factura",
+    "Convertir a pedido",
+    "Imprimir",
+    "Anular"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

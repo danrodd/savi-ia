@@ -1,0 +1,34 @@
+{
+  "name": "frmReciboCliente",
+  "module": "CARTERAFINANCIERA",
+  "type": "TRANSACCION",
+  "description": "Recibo de caja por pago de cliente. Registra el pago recibido y lo cruza contra las facturas pendientes de cobro. Soporta múltiples formas de pago (efectivo, transferencia, cheque). Contabiliza el movimiento de tesorería automáticamente.",
+  "keywords": [
+    "recibo caja",
+    "pago cliente",
+    "abono cartera",
+    "cruzar pago",
+    "aplicar pago factura"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Anular",
+    "Imprimir recibo"
+  ],
+  "filters": [
+    "numero recibo",
+    "tercero",
+    "fecha"
+  ],
+  "business_rules": [
+    "El cruce automático aplica el pago a las facturas más antiguas primero (FIFO por vencimiento)"
+  ],
+  "db_tables": [
+    "Cartera.ReciboComprobante",
+    "Cartera.DetalleReciboComprobante",
+    "Cartera.CruceFacturaPago"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

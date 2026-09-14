@@ -1,0 +1,13 @@
+{
+  "name": "frmInformeUtilidadVenta",
+  "module": "INVENTARIO",
+  "type": "INFORME",
+  "description": "Informe de utilidad bruta en ventas: compara precio de venta vs costo y calcula margen por producto, vendedor o período.",
+  "keywords": [
+    "utilidad venta",
+    "margen",
+    "rentabilidad",
+    "ganancia"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "frmEnvioNominaElectronica",
+  "module": "NÓMINA",
+  "type": "PROCESO",
+  "description": "Envío de documentos de nómina electrónica a la DIAN. Genera y transmite el XML de cada empleado con los valores de la liquidación del período.",
+  "keywords": [
+    "nomina electronica",
+    "envio dian nomina",
+    "ne dian",
+    "documento nomina electronica"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

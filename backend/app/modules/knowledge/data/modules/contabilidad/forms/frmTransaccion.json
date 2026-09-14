@@ -1,0 +1,13 @@
+{
+  "name": "frmTransaccion",
+  "module": "CONTABILIDAD",
+  "type": "CRUD",
+  "description": "Configuración de transacciones contables. Define cómo se contabiliza cada tipo de documento (factura, compra, nómina, etc.): a qué cuentas débita y acredita automáticamente.",
+  "keywords": [
+    "transaccion contable",
+    "configurar contabilizacion",
+    "parametrizar contabilidad",
+    "reglas contables"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

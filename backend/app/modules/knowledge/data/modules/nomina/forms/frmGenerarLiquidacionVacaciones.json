@@ -1,0 +1,13 @@
+{
+  "name": "frmGenerarLiquidacionVacaciones",
+  "module": "NÓMINA",
+  "type": "PROCESO",
+  "description": "Calcula y genera el pago de vacaciones de un empleado. Calcula los días de vacaciones acumulados y el valor a pagar según el promedio salarial.",
+  "keywords": [
+    "vacaciones empleado",
+    "liquidar vacaciones",
+    "pago vacaciones",
+    "calcular vacaciones"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

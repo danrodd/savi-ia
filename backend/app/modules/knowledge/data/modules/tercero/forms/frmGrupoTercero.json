@@ -1,0 +1,12 @@
+{
+  "name": "frmGrupoTercero",
+  "module": "TERCERO",
+  "type": "CRUD",
+  "description": "Grupos de clasificación de terceros para segmentación.",
+  "keywords": [
+    "grupo tercero",
+    "segmento clientes",
+    "clasificar clientes"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

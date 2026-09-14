@@ -1,0 +1,40 @@
+{
+  "name": "frmTercero",
+  "module": "TERCERO",
+  "type": "CRUD",
+  "description": "Maestro de terceros. Es la entidad central del sistema. Un tercero puede ser simultáneamente cliente, proveedor, empleado y/o propietario. Registra datos de identificación (NIT/CC), datos tributarios (retenciones aplicables, régimen), datos de crédito (cupo, días), datos de contacto y puede capturar huella dactilar.",
+  "keywords": [
+    "crear cliente",
+    "crear proveedor",
+    "tercero",
+    "maestro clientes",
+    "maestro proveedores",
+    "nit empresa",
+    "cliente nuevo"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Bloquear",
+    "Exportar/Importar"
+  ],
+  "filters": [
+    "numero identificacion",
+    "nombre/razon social",
+    "tipo (cliente/proveedor/empleado)",
+    "estado",
+    "grupo tercero"
+  ],
+  "business_rules": [
+    "Puede bloquearse para impedir facturación",
+    "Huella dactilar para autenticación en POS",
+    "Cupo de crédito controla facturación a crédito"
+  ],
+  "db_tables": [
+    "Tercero.Tercero",
+    "Tercero.TerceroDireccion",
+    "Tercero.TerceroBanco"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

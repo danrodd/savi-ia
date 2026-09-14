@@ -1,0 +1,11 @@
+{
+  "id": "faq_023",
+  "question": "¿Cómo hacer el libro auxiliar de una cuenta contable?",
+  "synonyms": [],
+  "module": "CONTABILIDAD",
+  "answer_summary": "frmInformeAuxiliar (módulo Contabilidad). Filtra por rango de cuentas y período.",
+  "related_forms": [
+    "frmInformeAuxiliar"
+  ],
+  "related_workflows": []
+}

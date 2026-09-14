@@ -1,0 +1,11 @@
+{
+  "id": "faq_019",
+  "question": "¿Cómo calcular la depreciación de activos fijos?",
+  "synonyms": [],
+  "module": "ACTIVOFIJO",
+  "answer_summary": "frmRealizarDepreciacion (módulo ActivoFijo). Calcula y contabiliza la depreciación mensual.",
+  "related_forms": [
+    "frmRealizarDepreciacion"
+  ],
+  "related_workflows": []
+}

@@ -1,0 +1,30 @@
+{
+  "name": "frmInformeBalanceGeneral",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Genera el Balance General (Estado de Situación Financiera - ESF) de la empresa para un período. Muestra Activos, Pasivos y Patrimonio. Puede generar en formato simple, comparativo (dos períodos) o consolidado por empresas. Genera gráfico de distribución.",
+  "keywords": [
+    "balance general",
+    "estado situacion financiera",
+    "esf",
+    "activos pasivos patrimonio",
+    "informe balance",
+    "balance contable"
+  ],
+  "actions": [
+    "Generar reporte",
+    "Generar gráfico",
+    "Exportar"
+  ],
+  "filters": [
+    "año",
+    "mes",
+    "centro costo (opcional para filtrar)",
+    "tipo reporte (simple/comparativo/consolidado)"
+  ],
+  "db_tables": [
+    "Contabilidad.RptTemBalanceGeneral",
+    "Contabilidad.SaldoContable"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "faq_003",
+  "question": "¿Cuántas existencias hay de un producto / cuál es el stock disponible?",
+  "synonyms": [],
+  "module": "INVENTARIO",
+  "answer_summary": "frmConsultaProductoExistencia (módulo Inventario). Muestra existencias actuales por producto y almacén, con precio y lotes.",
+  "related_forms": [
+    "frmConsultaProductoExistencia"
+  ],
+  "related_workflows": []
+}

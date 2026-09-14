@@ -1,0 +1,20 @@
+{
+  "name": "frmInformeVentaMensual",
+  "module": "CUENTACOBRAR",
+  "type": "INFORME",
+  "description": "Informe de ventas agrupadas por mes con comparativo de períodos. Muestra unidades vendidas, valor, descuentos y margen.",
+  "keywords": [
+    "ventas mensuales",
+    "informe ventas",
+    "reporte ventas",
+    "resumen ventas"
+  ],
+  "filters": [
+    "almacen",
+    "año",
+    "grupo producto",
+    "vendedor",
+    "tercero"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

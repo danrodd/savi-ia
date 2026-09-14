@@ -1,0 +1,38 @@
+{
+  "name": "frmConsultaSaldoContable",
+  "module": "CONTABILIDAD",
+  "type": "CONSULTA",
+  "description": "Consulta de saldos contables por cuenta del PUC para un año y mes específico. Muestra saldo anterior, movimiento débito/crédito y saldo actual por cada cuenta. Tiene 4 pestañas: (1) Saldos por Cuenta, (2) Saldos por Cuenta-Tercero, (3) Información Contable del documento seleccionado, (4) Movimiento Contable detallado. Permite filtrar por rango de cuentas y centro de costo.",
+  "keywords": [
+    "consultar saldos contables",
+    "saldo cuenta contable",
+    "saldo puc",
+    "balance cuenta",
+    "consulta contable",
+    "ver saldo contabilidad",
+    "saldo por cuenta",
+    "saldo periodo contable"
+  ],
+  "actions": [
+    "Nueva consulta (limpiar)",
+    "Consultar",
+    "Exportar Excel (por pestaña)",
+    "Imprimir comprobante del movimiento seleccionado"
+  ],
+  "filters": [
+    "Año (requerido)",
+    "Mes (requerido, 1-13 donde 13=cierre)",
+    "Cuenta desde (código PUC, búsqueda por inicio o contiene)",
+    "Cuenta hasta (código PUC)",
+    "Centro de costo desde",
+    "Centro de costo hasta",
+    "Mostrar saldos en cero (checkbox)"
+  ],
+  "db_tables": [
+    "Contabilidad.SaldoContable",
+    "Contabilidad.SaldoContableTercero",
+    "Contabilidad.MovimientoContable",
+    "Contabilidad.DetalleMovimientoContable"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

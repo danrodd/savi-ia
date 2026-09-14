@@ -1,0 +1,12 @@
+{
+  "name": "frmOtraCuentaCobrar",
+  "module": "CONTABILIDAD",
+  "type": "TRANSACCION",
+  "description": "Otras cuentas por cobrar no relacionadas con ventas (préstamos a empleados, cobros a terceros por daños, etc.).",
+  "keywords": [
+    "otras cuentas cobrar",
+    "cobros varios",
+    "prestamos empleados contable"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

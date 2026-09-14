@@ -1,0 +1,32 @@
+{
+  "name": "frmEntradaInventario",
+  "module": "INVENTARIO",
+  "type": "TRANSACCION",
+  "description": "Registra entradas de inventario no asociadas a compra (donaciones, sobrantes de inventario físico, producción). Genera movimiento de inventario tipo ENTRADA y actualiza SaldoInventario. Permite manejo por lotes con fecha de vencimiento.",
+  "keywords": [
+    "entrada inventario",
+    "ingreso mercancia",
+    "ajuste positivo",
+    "entrada bodega"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Consultar",
+    "Anular",
+    "Imprimir"
+  ],
+  "filters": [
+    "numero",
+    "fecha desde/hasta",
+    "almacen",
+    "documento",
+    "estado"
+  ],
+  "db_tables": [
+    "Inventario.MovimientoInventario",
+    "Inventario.DetalleMovimientoInventario",
+    "Inventario.SaldoInventario"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

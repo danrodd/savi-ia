@@ -1,0 +1,29 @@
+{
+  "name": "frmPOS",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Punto de venta rápido. Interfaz optimizada para ventas en mostrador con escáner de código de barras. Maneja turno de caja, múltiples formas de pago, cambio en efectivo, descuentos y programa de puntos de fidelización.",
+  "keywords": [
+    "pos",
+    "punto de venta",
+    "caja",
+    "venta rapida",
+    "mostrador",
+    "escaner"
+  ],
+  "actions": [
+    "Agregar ítem",
+    "Cambiar precio (con permiso)",
+    "Aplicar descuento",
+    "Procesar pago",
+    "Anular ítem",
+    "Cerrar caja"
+  ],
+  "business_rules": [
+    "Requiere turno de caja abierto",
+    "Cambio de precio solo con permiso especial (clave supervisor)",
+    "Descuento máximo configurable por usuario",
+    "Acumula puntos de fidelización automáticamente"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

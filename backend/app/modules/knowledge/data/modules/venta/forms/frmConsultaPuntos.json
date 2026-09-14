@@ -1,0 +1,17 @@
+{
+  "name": "frmConsultaPuntos",
+  "module": "VENTA",
+  "type": "CONSULTA",
+  "description": "Consulta de puntos de fidelización acumulados por cliente.",
+  "keywords": [
+    "puntos fidelizacion",
+    "programa puntos",
+    "consultar puntos cliente",
+    "fidelizacion"
+  ],
+  "filters": [
+    "tercero/cliente",
+    "fecha desde/hasta"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

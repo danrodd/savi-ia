@@ -1,0 +1,13 @@
+{
+  "id": "faq_005",
+  "question": "¿Cómo facturar a un cliente?",
+  "synonyms": [],
+  "module": "CUENTACOBRAR",
+  "answer_summary": "frmFactura (módulo CuentaCobrar) para factura completa, o frmPOS / frmPOSTouch para venta rápida en mostrador.",
+  "related_forms": [
+    "frmFactura",
+    "frmPOS",
+    "frmPOSTouch"
+  ],
+  "related_workflows": []
+}

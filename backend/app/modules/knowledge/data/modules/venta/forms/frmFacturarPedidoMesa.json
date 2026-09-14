@@ -1,0 +1,12 @@
+{
+  "name": "frmFacturarPedidoMesa",
+  "module": "VENTA",
+  "type": "TRANSACCION",
+  "description": "Facturación de un pedido de restaurante. Convierte el pedido de mesa en factura con pago.",
+  "keywords": [
+    "facturar mesa",
+    "cobrar mesa",
+    "cerrar mesa restaurante"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

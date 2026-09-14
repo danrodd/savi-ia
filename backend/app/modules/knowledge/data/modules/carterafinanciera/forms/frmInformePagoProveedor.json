@@ -1,0 +1,12 @@
+{
+  "name": "frmInformePagoProveedor",
+  "module": "CARTERAFINANCIERA",
+  "type": "INFORME",
+  "description": "Historial de pagos realizados a proveedores. Muestra comprobantes de egreso emitidos.",
+  "keywords": [
+    "historial pagos proveedores",
+    "egresos realizados",
+    "pagos realizados"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

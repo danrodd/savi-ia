@@ -1,0 +1,18 @@
+{
+  "name": "frmConsultaFacturaCompra",
+  "module": "CUENTAPAGAR",
+  "type": "CONSULTA",
+  "description": "Consulta de facturas de compra con filtros por proveedor, período, referencia. Muestra estado de pago de cada factura.",
+  "keywords": [
+    "consultar facturas compra",
+    "historial compras",
+    "facturas proveedor"
+  ],
+  "filters": [
+    "proveedor",
+    "fecha desde/hasta",
+    "referencia factura proveedor",
+    "estado pago"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

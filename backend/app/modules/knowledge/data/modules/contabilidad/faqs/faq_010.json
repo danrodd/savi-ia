@@ -1,0 +1,11 @@
+{
+  "id": "faq_010",
+  "question": "¿Cómo generar el estado de resultados?",
+  "synonyms": [],
+  "module": "CONTABILIDAD",
+  "answer_summary": "frmInformeEstadoResultado (módulo Contabilidad). Filtra por año y mes.",
+  "related_forms": [
+    "frmInformeEstadoResultado"
+  ],
+  "related_workflows": []
+}

@@ -1,0 +1,34 @@
+{
+  "name": "frmConsultaFactura",
+  "module": "CUENTACOBRAR",
+  "type": "CONSULTA",
+  "description": "Consulta y búsqueda de facturas de venta con múltiples filtros. Permite ver el detalle de cada factura, su estado de cartera, alistamiento asociado y hacer consultas por cliente, período, vendedor o grupo de producto.",
+  "keywords": [
+    "consultar facturas",
+    "buscar factura",
+    "historial facturas",
+    "facturas cliente",
+    "ver facturas emitidas"
+  ],
+  "actions": [
+    "Consultar",
+    "Ver detalle",
+    "Imprimir",
+    "Exportar Excel",
+    "Ver alistamiento"
+  ],
+  "filters": [
+    "fecha desde/hasta",
+    "tercero/cliente",
+    "numero factura",
+    "grupo tercero",
+    "vendedor (empleado)",
+    "estado (activa/anulada)",
+    "con/sin cartera"
+  ],
+  "db_tables": [
+    "CuentaCobrar.Factura",
+    "CuentaCobrar.DetalleFactura"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "frmSalidaInventario",
+  "module": "INVENTARIO",
+  "type": "TRANSACCION",
+  "description": "Registra salidas de inventario no asociadas a ventas (consumo interno, mermas, inventario físico). Genera movimiento tipo SALIDA. Verifica existencias antes de permitir la salida.",
+  "keywords": [
+    "salida inventario",
+    "egreso mercancia",
+    "ajuste negativo",
+    "salida bodega",
+    "consumo interno"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Consultar",
+    "Anular",
+    "Imprimir"
+  ],
+  "business_rules": [
+    "Valida que haya existencia suficiente en el almacén antes de guardar"
+  ],
+  "db_tables": [
+    "Inventario.MovimientoInventario",
+    "Inventario.SaldoInventario"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "faq_002",
+  "question": "¿Cómo ver el historial de movimientos contables / comprobantes de diario?",
+  "synonyms": [],
+  "module": "CONTABILIDAD",
+  "answer_summary": "frmConsultaMovimientoContable (módulo Contabilidad). Filtra por fecha, tipo de documento, número, tercero y cuenta.",
+  "related_forms": [
+    "frmConsultaMovimientoContable"
+  ],
+  "related_workflows": []
+}

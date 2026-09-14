@@ -1,0 +1,22 @@
+{
+  "name": "frmRemision",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Remisión de mercancía al cliente (despacho sin facturar). Reserva y descuenta inventario pero NO genera la cuenta por cobrar ni contabiliza. Al facturar la remisión con frmFacturaRemision se completa el ciclo.",
+  "keywords": [
+    "remision",
+    "despacho",
+    "envio mercancia",
+    "remitir",
+    "remision cliente"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Anular",
+    "Imprimir",
+    "Facturar remisión"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

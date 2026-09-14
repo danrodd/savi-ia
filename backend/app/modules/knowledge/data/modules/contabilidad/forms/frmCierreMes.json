@@ -1,0 +1,17 @@
+{
+  "name": "frmCierreMes",
+  "module": "CONTABILIDAD",
+  "type": "PROCESO",
+  "description": "Cierre contable mensual. Bloquea el período contable para evitar modificaciones posteriores y genera los saldos del período como punto de partida para el siguiente mes.",
+  "keywords": [
+    "cierre mes",
+    "cierre contable",
+    "cerrar periodo",
+    "bloquear periodo"
+  ],
+  "business_rules": [
+    "Irreversible sin permiso de administrador",
+    "Bloquea todos los documentos del período"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "frmInformeEdadCarteraProveedor",
+  "module": "CARTERAFINANCIERA",
+  "type": "INFORME",
+  "description": "Informe de antigüedad de cuentas por pagar a proveedores. Muestra las facturas de compra pendientes clasificadas por días de vencimiento.",
+  "keywords": [
+    "edad cartera proveedores",
+    "antiguedad cuentas pagar",
+    "vencimiento pagos",
+    "obligaciones"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

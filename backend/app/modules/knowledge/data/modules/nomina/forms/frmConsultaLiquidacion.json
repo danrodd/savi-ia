@@ -1,0 +1,19 @@
+{
+  "name": "frmConsultaLiquidacion",
+  "module": "NÓMINA",
+  "type": "CONSULTA",
+  "description": "Consulta de liquidaciones de nómina por período, empleado o concepto. Permite ver el detalle de lo que se pagó a cada empleado.",
+  "keywords": [
+    "consultar nomina",
+    "ver liquidacion",
+    "historial nomina",
+    "resumen nomina empleado"
+  ],
+  "filters": [
+    "periodo",
+    "empleado",
+    "concepto",
+    "estado liquidacion"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

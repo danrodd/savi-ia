@@ -1,0 +1,21 @@
+{
+  "name": "frmInformeAuxiliar",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Libro auxiliar contable por cuenta. Muestra todos los movimientos de una cuenta en un período: fecha, documento, tercero, descripción, débito, crédito y saldo acumulado.",
+  "keywords": [
+    "libro auxiliar contable",
+    "auxiliar cuenta",
+    "movimientos cuenta contable",
+    "historial cuenta",
+    "auxiliar contabilidad"
+  ],
+  "filters": [
+    "cuenta desde/hasta",
+    "fecha desde/hasta",
+    "tercero",
+    "centro costo",
+    "tipo documento"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

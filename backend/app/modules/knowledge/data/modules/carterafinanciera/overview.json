@@ -1,0 +1,19 @@
+{
+  "code": "CARTERAFINANCIERA",
+  "label": "Cartera",
+  "purpose": "Módulo Cartera del ERP. Cubre 7 formularios.",
+  "tags": [
+    "#Cartera",
+    "#Recibos",
+    "#Pagos",
+    "#CruceDocumentos",
+    "#Tesoreria"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmReciboCliente",
+    "frmComprobanteProveedor",
+    "frmInformeEdadCarteraCliente",
+    "frmInformeEdadCarteraProveedor"
+  ]
+}

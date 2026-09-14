@@ -1,0 +1,13 @@
+{
+  "name": "frmInformeCertificadoRetencion",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Genera certificados de retención en la fuente para terceros (clientes o proveedores) para presentar ante la DIAN.",
+  "keywords": [
+    "certificado retencion",
+    "certificado retenciones",
+    "retencion fuente certificado",
+    "declaracion retencion"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "frmInformeEdadCarteraCliente",
+  "module": "CARTERAFINANCIERA",
+  "type": "INFORME",
+  "description": "Informe de antigüedad de cartera de clientes. Clasifica las facturas pendientes en rangos de días (0-30, 31-60, 61-90, >90 días). Fundamental para gestión de cobros y provisiones contables.",
+  "keywords": [
+    "edad cartera",
+    "antiguedad cartera",
+    "cartera vencida clientes",
+    "vencimiento facturas",
+    "cobros pendientes",
+    "informe cartera"
+  ],
+  "filters": [
+    "tercero/cliente",
+    "fecha corte",
+    "almacen",
+    "grupo tercero",
+    "vendedor"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "frmConsultaMovimientoContable",
+  "module": "CONTABILIDAD",
+  "type": "CONSULTA",
+  "description": "Consulta de comprobantes contables (movimientos diarios). Permite buscar por tipo de documento, número, fecha, tercero o cuenta. Muestra el detalle de cada comprobante con sus partidas débito y crédito. Permite imprimir el formato del comprobante.",
+  "keywords": [
+    "consultar movimientos contables",
+    "comprobantes contables",
+    "asientos contables",
+    "movimiento contable",
+    "ver comprobante",
+    "diario contable"
+  ],
+  "actions": [
+    "Consultar",
+    "Exportar Excel",
+    "Imprimir comprobante"
+  ],
+  "filters": [
+    "fecha desde/hasta",
+    "tipo documento contable (transaccion)",
+    "numero comprobante",
+    "tercero",
+    "cuenta PUC desde/hasta",
+    "centro costo"
+  ],
+  "db_tables": [
+    "Contabilidad.MovimientoContable",
+    "Contabilidad.DetalleMovimientoContable"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

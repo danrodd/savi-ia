@@ -1,0 +1,14 @@
+{
+  "name": "frmColaAlistamiento",
+  "module": "CUENTACOBRAR",
+  "type": "PROCESO",
+  "description": "Gestión de la cola de alistamiento (picking) de pedidos. Muestra los pedidos pendientes de preparar, permite asignar a operarios y registrar el alistamiento de cada ítem.",
+  "keywords": [
+    "alistamiento",
+    "picking",
+    "preparar pedido",
+    "cola alistamiento",
+    "despacho"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

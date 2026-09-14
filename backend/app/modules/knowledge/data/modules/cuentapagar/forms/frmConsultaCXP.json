@@ -1,0 +1,23 @@
+{
+  "name": "frmConsultaCXP",
+  "module": "CUENTAPAGAR",
+  "type": "CONSULTA",
+  "description": "Consulta de cuentas por pagar pendientes. Muestra facturas de compra con saldo pendiente de pago, fechas de vencimiento. Permite generar propuestas de pago.",
+  "keywords": [
+    "cuentas por pagar",
+    "cxp",
+    "deuda proveedor",
+    "facturas por pagar",
+    "obligaciones proveedores"
+  ],
+  "actions": [
+    "Consultar",
+    "Propuesta pago"
+  ],
+  "filters": [
+    "proveedor",
+    "fecha vencimiento",
+    "dias vencida"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

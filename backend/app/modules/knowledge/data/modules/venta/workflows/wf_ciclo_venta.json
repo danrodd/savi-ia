@@ -1,0 +1,55 @@
+{
+  "id": "wf_ciclo_venta",
+  "name": "Ciclo de Venta Completo",
+  "description": "Flujo desde la cotización hasta el cobro",
+  "modules": [
+    "CARTERAFINANCIERA",
+    "CUENTACOBRAR",
+    "VENTA"
+  ],
+  "synonyms": [],
+  "steps": [
+    {
+      "step": 1,
+      "form": "frmCotizacion",
+      "action": "Cotizar",
+      "optional": true
+    },
+    {
+      "step": 2,
+      "form": "frmPedido",
+      "action": "Tomar pedido",
+      "optional": true
+    },
+    {
+      "step": 3,
+      "form": "frmColaAlistamiento",
+      "action": "Alistar pedido",
+      "optional": true
+    },
+    {
+      "step": 4,
+      "form": "frmRemision",
+      "action": "Despachar (opcional)",
+      "optional": true
+    },
+    {
+      "step": 5,
+      "form": "frmFactura",
+      "action": "Facturar",
+      "optional": false
+    },
+    {
+      "step": 6,
+      "form": "frmEnvioFacturaElectronica",
+      "action": "Enviar FE DIAN",
+      "optional": false
+    },
+    {
+      "step": 7,
+      "form": "frmReciboCliente",
+      "action": "Recaudar pago",
+      "optional": false
+    }
+  ]
+}

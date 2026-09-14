@@ -1,0 +1,13 @@
+{
+  "name": "frmInformeMedioExogeno1001",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Información exógena DIAN Formato 1001: pagos y abonos en cuenta y retenciones en la fuente practicadas.",
+  "keywords": [
+    "exogena 1001",
+    "medios magneticos 1001",
+    "informacion exogena",
+    "pagos terceros dian"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

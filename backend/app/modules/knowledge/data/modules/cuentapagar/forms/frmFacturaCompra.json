@@ -1,0 +1,39 @@
+{
+  "name": "frmFacturaCompra",
+  "module": "CUENTAPAGAR",
+  "type": "TRANSACCION",
+  "description": "Registro de facturas recibidas de proveedores. Ingresa la mercancía al inventario y genera la cuenta por pagar. Puede asociarse a órdenes de compra previas. Calcula automáticamente IVA y retenciones (RteFuente, RteICA, RteIVA) según configuración del proveedor.",
+  "keywords": [
+    "factura compra",
+    "entrada mercancia proveedor",
+    "recepcion mercancia",
+    "contabilizar compra"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Anular",
+    "Imprimir comprobante",
+    "Asociar OC",
+    "Recontabilizar"
+  ],
+  "filters": [
+    "numero",
+    "proveedor",
+    "fecha",
+    "referencia proveedor",
+    "estado"
+  ],
+  "business_rules": [
+    "Ingresa mercancía al inventario al guardar",
+    "Calcula retenciones automáticamente según tercero",
+    "Actualiza costo promedio de los productos"
+  ],
+  "db_tables": [
+    "CuentaPagar.FacturaCompra",
+    "CuentaPagar.DetalleFacturaCompra",
+    "Inventario.MovimientoInventario"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

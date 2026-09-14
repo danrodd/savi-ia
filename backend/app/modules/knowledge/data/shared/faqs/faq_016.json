@@ -1,0 +1,11 @@
+{
+  "id": "faq_016",
+  "question": "¿Cómo asignar permisos a un usuario?",
+  "synonyms": [],
+  "module": null,
+  "answer_summary": "frmPermisoAccionUsuario (módulo Seguridad). Permite habilitar/deshabilitar acceso por formulario y acción.",
+  "related_forms": [
+    "frmPermisoAccionUsuario"
+  ],
+  "related_workflows": []
+}

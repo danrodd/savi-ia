@@ -1,0 +1,12 @@
+{
+  "name": "frmConsultaPagoComision",
+  "module": "VENTA",
+  "type": "CONSULTA",
+  "description": "Consulta del historial de comisiones pagadas a vendedores.",
+  "keywords": [
+    "comisiones vendedor",
+    "historial comisiones",
+    "pago comisiones"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

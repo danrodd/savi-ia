@@ -1,0 +1,11 @@
+{
+  "id": "faq_017",
+  "question": "¿Cómo hacer una devolución de venta / nota crédito?",
+  "synonyms": [],
+  "module": "CUENTACOBRAR",
+  "answer_summary": "frmDevolucionVenta (módulo CuentaCobrar). Genera nota crédito y devuelve el inventario.",
+  "related_forms": [
+    "frmDevolucionVenta"
+  ],
+  "related_workflows": []
+}

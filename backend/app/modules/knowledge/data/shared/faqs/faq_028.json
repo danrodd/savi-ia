@@ -1,0 +1,12 @@
+{
+  "id": "faq_028",
+  "question": "¿Qué formulario se usa para crear un presupuesto?",
+  "synonyms": [],
+  "module": null,
+  "answer_summary": "frmPresupuesto (módulo Presupuesto) para el presupuesto general. frmPresupuestoCentroCosto para presupuesto por área.",
+  "related_forms": [
+    "frmPresupuesto",
+    "frmPresupuestoCentroCosto"
+  ],
+  "related_workflows": []
+}

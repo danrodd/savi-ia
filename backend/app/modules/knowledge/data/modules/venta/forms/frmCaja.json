@@ -1,0 +1,12 @@
+{
+  "name": "frmCaja",
+  "module": "VENTA",
+  "type": "CRUD",
+  "description": "Configuración de cajas registradoras del punto de venta. Define nombre, almacén asociado, documentos de facturación y parámetros del POS.",
+  "keywords": [
+    "configurar caja",
+    "caja pos",
+    "registradora"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

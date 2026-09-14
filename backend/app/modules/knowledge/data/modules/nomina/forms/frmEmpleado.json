@@ -1,0 +1,25 @@
+{
+  "name": "frmEmpleado",
+  "module": "NÓMINA",
+  "type": "CRUD",
+  "description": "Maestro de empleados. Registra datos laborales (cargo, dependencia, sueldo, tipo contrato, fecha ingreso), datos de seguridad social (EPS, AFP, ARL, CCF) y datos bancarios para pago de nómina. Se vincula a un Tercero para datos personales.",
+  "keywords": [
+    "crear empleado",
+    "gestionar empleado",
+    "datos laborales",
+    "personal",
+    "trabajadores"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Retirar",
+    "Exportar"
+  ],
+  "db_tables": [
+    "Nomina.Empleado",
+    "Tercero.Tercero"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

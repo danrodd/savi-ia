@@ -1,0 +1,13 @@
+{
+  "name": "frmRealizarDepreciacion",
+  "module": "ACTIVOFIJO",
+  "type": "PROCESO",
+  "description": "Cálculo y registro mensual de la depreciación de todos los activos fijos. Genera el asiento contable de depreciación del período.",
+  "keywords": [
+    "calcular depreciacion",
+    "depreciar activos",
+    "depreciacion mensual",
+    "gasto depreciacion"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

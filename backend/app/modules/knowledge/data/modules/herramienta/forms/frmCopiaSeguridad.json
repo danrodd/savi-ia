@@ -1,0 +1,13 @@
+{
+  "name": "frmCopiaSeguridad",
+  "module": "HERRAMIENTA",
+  "type": "PROCESO",
+  "description": "Generación de backup de la base de datos PostgreSQL. Ejecuta pg_dump y guarda el archivo de respaldo en la ruta configurada.",
+  "keywords": [
+    "backup",
+    "copia seguridad",
+    "respaldo base datos",
+    "backup postgres"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

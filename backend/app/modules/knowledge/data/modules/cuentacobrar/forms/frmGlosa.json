@@ -1,0 +1,24 @@
+{
+  "name": "frmGlosa",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Registro de glosas del sector salud. Una glosa es la objeción de una entidad pagadora (EPS, aseguradora) a una factura por errores, inconsistencias o diferencias en precios. Permite registrar el valor objetado y el motivo.",
+  "keywords": [
+    "glosa",
+    "objecion factura",
+    "glosa eps",
+    "sector salud glosa"
+  ],
+  "actions": [
+    "Nueva",
+    "Guardar",
+    "Responder glosa",
+    "Aceptar glosa"
+  ],
+  "db_tables": [
+    "CuentaCobrar.Glosa",
+    "CuentaCobrar.DetalleGlosa",
+    "CuentaCobrar.MotivoGlosa"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

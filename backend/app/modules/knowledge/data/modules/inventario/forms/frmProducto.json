@@ -1,0 +1,38 @@
+{
+  "name": "frmProducto",
+  "module": "INVENTARIO",
+  "type": "CRUD",
+  "description": "Maestro de productos. Registra todos los artículos del inventario con datos generales (código, descripción, grupo, línea), datos comerciales (precio costo, precio venta, IVA, retenciones), datos farmacéuticos (INVIMA, CUM, principio activo, forma farmacéutica) y parámetros de comportamiento (manejo por lotes, fraccionamiento, inventario especial).",
+  "keywords": [
+    "crear producto",
+    "gestionar producto",
+    "articulo",
+    "item",
+    "medicamento",
+    "catalogo productos"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Eliminar",
+    "Exportar",
+    "Imprimir rótulo",
+    "Ver histórico precios"
+  ],
+  "filters": [
+    "codigo barras",
+    "codigo",
+    "descripcion",
+    "grupo",
+    "subgrupo",
+    "estado",
+    "proveedor"
+  ],
+  "db_tables": [
+    "Inventario.Producto",
+    "Inventario.ProductoAlmacen",
+    "Inventario.ProductoCodigoBarra"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

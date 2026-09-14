@@ -1,0 +1,12 @@
+{
+  "name": "frmCreditoEmpleado",
+  "module": "NÓMINA",
+  "type": "TRANSACCION",
+  "description": "Préstamos otorgados a empleados descontados por nómina. Registra el valor del crédito y genera el plan de cuotas a descontar en cada período.",
+  "keywords": [
+    "prestamo empleado",
+    "credito empleado",
+    "descuento nomina prestamo"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

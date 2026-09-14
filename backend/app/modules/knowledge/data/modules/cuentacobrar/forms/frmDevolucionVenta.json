@@ -1,0 +1,23 @@
+{
+  "name": "frmDevolucionVenta",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Registra devoluciones de clientes sobre facturas existentes. Genera nota crédito, devuelve el inventario al almacén de origen y contabiliza la reversión. Requiere motivo de devolución.",
+  "keywords": [
+    "devolucion venta",
+    "nota credito",
+    "reversar factura",
+    "devolucion cliente",
+    "anular venta"
+  ],
+  "actions": [
+    "Nueva devolución",
+    "Guardar",
+    "Imprimir nota crédito"
+  ],
+  "db_tables": [
+    "CuentaCobrar.FacturaDevolucion",
+    "CuentaCobrar.MotivoNotaCredito"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

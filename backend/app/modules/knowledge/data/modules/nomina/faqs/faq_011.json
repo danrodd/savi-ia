@@ -1,0 +1,12 @@
+{
+  "id": "faq_011",
+  "question": "¿Cómo liquidar la nómina del mes?",
+  "synonyms": [],
+  "module": "NÓMINA",
+  "answer_summary": "frmLiquidacionNomina (módulo Nomina). Proceso: primero registrar novedades en frmNovedadNomina, luego liquidar en frmLiquidacionNomina.",
+  "related_forms": [
+    "frmNovedadNomina",
+    "frmLiquidacionNomina"
+  ],
+  "related_workflows": []
+}

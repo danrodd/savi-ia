@@ -1,0 +1,12 @@
+{
+  "name": "frmInformeComisionVendedor",
+  "module": "VENTA",
+  "type": "INFORME",
+  "description": "Informe de comisiones generadas por vendedor en un período, según las tablas de comisión configuradas.",
+  "keywords": [
+    "informe comisiones",
+    "calculo comisiones",
+    "reporte vendedores"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

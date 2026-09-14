@@ -1,0 +1,12 @@
+{
+  "name": "frmInformeGlosa",
+  "module": "CUENTACOBRAR",
+  "type": "INFORME",
+  "description": "Informe de glosas recibidas y su estado (respondidas, aceptadas, pendientes). Permite análisis de calidad de facturación en el sector salud.",
+  "keywords": [
+    "informe glosas",
+    "reporte glosas",
+    "analisis glosas"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "frmDocumentoSoporte",
+  "module": "CUENTAPAGAR",
+  "type": "PROCESO",
+  "description": "Envío de documentos soporte electrónico a la DIAN (para compras a no obligados a facturar). Equivalente a la factura electrónica pero para proveedores sin obligación.",
+  "keywords": [
+    "documento soporte",
+    "dian documento soporte",
+    "compra personas naturales"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

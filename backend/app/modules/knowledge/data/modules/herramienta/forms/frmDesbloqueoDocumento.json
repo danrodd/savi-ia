@@ -1,0 +1,12 @@
+{
+  "name": "frmDesbloqueoDocumento",
+  "module": "HERRAMIENTA",
+  "type": "PROCESO",
+  "description": "Desbloquea documentos que quedaron bloqueados por cierre inesperado del sistema. Libera los registros en edición para que otros usuarios puedan accederlos.",
+  "keywords": [
+    "desbloquear documento",
+    "documento bloqueado",
+    "liberar registro"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

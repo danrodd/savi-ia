@@ -1,0 +1,14 @@
+{
+  "name": "frmRetiroEmpleado",
+  "module": "NÓMINA",
+  "type": "PROCESO",
+  "description": "Liquidación final de contrato (liquidación definitiva). Calcula prestaciones sociales: cesantías, intereses cesantías, prima, vacaciones pendientes y primas adeudadas al momento del retiro.",
+  "keywords": [
+    "retiro empleado",
+    "liquidacion definitiva",
+    "liquidacion contrato",
+    "prestaciones sociales",
+    "finiquito"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

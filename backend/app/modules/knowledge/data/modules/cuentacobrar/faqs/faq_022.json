@@ -1,0 +1,12 @@
+{
+  "id": "faq_022",
+  "question": "¿Cómo ver las ventas del mes / informe de ventas?",
+  "synonyms": [],
+  "module": "CUENTACOBRAR",
+  "answer_summary": "frmInformeVentaMensual (módulo CuentaCobrar) para resumen mensual. frmConsultaFactura para búsqueda detallada.",
+  "related_forms": [
+    "frmInformeVentaMensual",
+    "frmConsultaFactura"
+  ],
+  "related_workflows": []
+}

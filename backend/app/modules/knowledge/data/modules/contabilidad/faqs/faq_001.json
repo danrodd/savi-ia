@@ -1,0 +1,11 @@
+{
+  "id": "faq_001",
+  "question": "¿Qué formulario uso para consultar saldos contables?",
+  "synonyms": [],
+  "module": "CONTABILIDAD",
+  "answer_summary": "frmConsultaSaldoContable (módulo Contabilidad). Permite consultar saldos por cuenta PUC para un año y mes. Tiene 4 pestañas: saldos por cuenta, saldos por cuenta-tercero, información contable y movimiento detallado.",
+  "related_forms": [
+    "frmConsultaSaldoContable"
+  ],
+  "related_workflows": []
+}

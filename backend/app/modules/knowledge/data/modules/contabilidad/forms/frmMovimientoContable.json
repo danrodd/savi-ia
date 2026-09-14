@@ -1,0 +1,26 @@
+{
+  "name": "frmMovimientoContable",
+  "module": "CONTABILIDAD",
+  "type": "TRANSACCION",
+  "description": "Ingreso manual de comprobantes contables (asientos de diario). Permite crear débitos y créditos manuales contra cualquier cuenta del PUC. Usado para ajustes, reclasificaciones y asientos especiales que no se generan automáticamente.",
+  "keywords": [
+    "comprobante contable manual",
+    "asiento manual",
+    "ajuste contable",
+    "diario manual",
+    "movimiento contable manual"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Eliminar",
+    "Imprimir",
+    "Exportar"
+  ],
+  "db_tables": [
+    "Contabilidad.MovimientoContable",
+    "Contabilidad.DetalleMovimientoContable"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

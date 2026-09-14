@@ -1,0 +1,26 @@
+{
+  "name": "frmLiquidacionNomina",
+  "module": "NÓMINA",
+  "type": "PROCESO",
+  "description": "Proceso de liquidación de nómina. Calcula automáticamente todos los conceptos de la nómina (salarios, horas extra, auxilio transporte, seguridad social, retención en la fuente) para un período y grupo de empleados. Genera la planilla PILA.",
+  "keywords": [
+    "liquidacion nomina",
+    "procesar nomina",
+    "calcular nomina",
+    "nomina quincenal",
+    "nomina mensual",
+    "pila nomina"
+  ],
+  "actions": [
+    "Crear período",
+    "Calcular nómina",
+    "Revisar conceptos",
+    "Aprobar",
+    "Contabilizar"
+  ],
+  "db_tables": [
+    "Nomina.LiquidacionNomina",
+    "Nomina.DetalleLiquidacionNomina"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

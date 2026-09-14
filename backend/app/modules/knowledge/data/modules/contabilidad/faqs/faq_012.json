@@ -1,0 +1,14 @@
+{
+  "id": "faq_012",
+  "question": "¿Cómo hacer el cierre contable del mes?",
+  "synonyms": [],
+  "module": "CONTABILIDAD",
+  "answer_summary": "Proceso de cierre: (1) frmConsultaSaldoContable para revisar, (2) frmMovimientoContable para ajustes, (3) frmMayorizarMes, (4) frmCierreMes.",
+  "related_forms": [
+    "frmConsultaSaldoContable",
+    "frmMovimientoContable",
+    "frmMayorizarMes",
+    "frmCierreMes"
+  ],
+  "related_workflows": []
+}

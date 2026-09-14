@@ -1,0 +1,41 @@
+{
+  "id": "wf_cierre_contable",
+  "name": "Cierre Contable Mensual",
+  "description": "Proceso de cierre mensual de contabilidad",
+  "modules": [
+    "CONTABILIDAD"
+  ],
+  "synonyms": [],
+  "steps": [
+    {
+      "step": 1,
+      "form": "frmConsultaSaldoContable",
+      "action": "Revisar saldos del período",
+      "optional": false
+    },
+    {
+      "step": 2,
+      "form": "frmMovimientoContable",
+      "action": "Registrar ajustes manuales si es necesario",
+      "optional": true
+    },
+    {
+      "step": 3,
+      "form": "frmMayorizarMes",
+      "action": "Mayorizar el mes",
+      "optional": false
+    },
+    {
+      "step": 4,
+      "form": "frmCierreMes",
+      "action": "Cerrar mes",
+      "optional": false
+    },
+    {
+      "step": 5,
+      "form": "frmInformeBalanceGeneral / frmInformeEstadoResultado",
+      "action": "Generar informes financieros",
+      "optional": false
+    }
+  ]
+}

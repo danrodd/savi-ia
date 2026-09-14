@@ -1,0 +1,22 @@
+{
+  "code": "INVENTARIO",
+  "label": "Inventario",
+  "purpose": "Módulo Inventario del ERP. Cubre 15 formularios.",
+  "tags": [
+    "#Inventario",
+    "#Productos",
+    "#Almacen",
+    "#Stock",
+    "#Lotes",
+    "#Kardex",
+    "#Traslados",
+    "#Farmacia"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmProducto",
+    "frmEntradaInventario",
+    "frmSalidaInventario",
+    "frmTrasladoInventario"
+  ]
+}

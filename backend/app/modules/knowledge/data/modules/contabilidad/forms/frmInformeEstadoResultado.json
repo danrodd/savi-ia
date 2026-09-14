@@ -1,0 +1,19 @@
+{
+  "name": "frmInformeEstadoResultado",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Estado de Resultados (P&G): ingresos, costos y gastos del período. Calcula utilidad bruta, operacional y neta.",
+  "keywords": [
+    "estado resultados",
+    "p&g",
+    "perdidas ganancias",
+    "utilidad operacional",
+    "ingresos gastos"
+  ],
+  "filters": [
+    "año",
+    "mes",
+    "centro costo"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

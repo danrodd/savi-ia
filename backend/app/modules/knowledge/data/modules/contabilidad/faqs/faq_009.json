@@ -1,0 +1,11 @@
+{
+  "id": "faq_009",
+  "question": "¿Cómo generar el balance general?",
+  "synonyms": [],
+  "module": "CONTABILIDAD",
+  "answer_summary": "frmInformeBalanceGeneral (módulo Contabilidad). Filtrar por año y mes. Genera reporte simple, comparativo o consolidado.",
+  "related_forms": [
+    "frmInformeBalanceGeneral"
+  ],
+  "related_workflows": []
+}

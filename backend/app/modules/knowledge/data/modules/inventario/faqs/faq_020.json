@@ -1,0 +1,11 @@
+{
+  "id": "faq_020",
+  "question": "¿Cómo ver el valor del inventario / existencias valorizadas?",
+  "synonyms": [],
+  "module": "INVENTARIO",
+  "answer_summary": "frmInformeExistenciasValorizadas (módulo Inventario). Muestra existencias multiplicadas por costo promedio.",
+  "related_forms": [
+    "frmInformeExistenciasValorizadas"
+  ],
+  "related_workflows": []
+}

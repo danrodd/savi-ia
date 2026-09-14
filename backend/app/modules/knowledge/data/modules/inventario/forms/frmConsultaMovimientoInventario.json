@@ -1,0 +1,33 @@
+{
+  "name": "frmConsultaMovimientoInventario",
+  "module": "INVENTARIO",
+  "type": "CONSULTA",
+  "description": "Consulta el historial de movimientos de inventario (entradas, salidas, traslados, facturas, compras). Permite ver el kardex completo de un producto en un período. Filtros por documento, almacén, fecha, producto y tercero.",
+  "keywords": [
+    "historial movimientos",
+    "kardex",
+    "movimientos inventario",
+    "entradas salidas",
+    "trazabilidad inventario"
+  ],
+  "actions": [
+    "Consultar",
+    "Exportar Excel",
+    "Imprimir",
+    "Ver detalle movimiento"
+  ],
+  "filters": [
+    "fecha desde/hasta",
+    "almacen",
+    "documento",
+    "tipo movimiento",
+    "producto",
+    "tercero",
+    "centro costo"
+  ],
+  "db_tables": [
+    "Inventario.MovimientoInventario",
+    "Inventario.DetalleMovimientoInventario"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

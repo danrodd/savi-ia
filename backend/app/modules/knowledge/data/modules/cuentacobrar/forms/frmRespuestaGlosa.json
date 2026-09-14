@@ -1,0 +1,13 @@
+{
+  "name": "frmRespuestaGlosa",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Registra la respuesta de la empresa a una glosa recibida: aceptar total/parcialmente o justificar el cobro con documentos soporte.",
+  "keywords": [
+    "respuesta glosa",
+    "contestar glosa",
+    "aceptar glosa",
+    "justificar glosa"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "frmInformeLibroDiario",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Libro diario oficial. Lista todos los comprobantes del período en orden cronológico con el detalle de cada partida.",
+  "keywords": [
+    "libro diario",
+    "diario oficial",
+    "comprobantes cronologicos"
+  ],
+  "filters": [
+    "fecha desde/hasta",
+    "tipo documento"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

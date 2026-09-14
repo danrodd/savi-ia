@@ -1,0 +1,12 @@
+{
+  "name": "frmInformeRetencionFuente",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Informe de retención en la fuente practicada. Consolida las retenciones que la empresa aplicó a proveedores para la declaración de retención.",
+  "keywords": [
+    "retencion fuente informe",
+    "declaracion retencion",
+    "retefuente"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "frmInformePagoCliente",
+  "module": "CARTERAFINANCIERA",
+  "type": "INFORME",
+  "description": "Historial de pagos recibidos de clientes en un período. Muestra recibos emitidos con forma de pago y facturas cruzadas.",
+  "keywords": [
+    "historial pagos clientes",
+    "recibos emitidos",
+    "cobros realizados"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

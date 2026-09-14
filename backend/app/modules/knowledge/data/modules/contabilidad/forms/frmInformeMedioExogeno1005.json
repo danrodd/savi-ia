@@ -1,0 +1,12 @@
+{
+  "name": "frmInformeMedioExogeno1005",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Información exógena DIAN Formato 1005: IVA generado e IVA descontable.",
+  "keywords": [
+    "exogena 1005",
+    "iva generado descontable",
+    "declaracion iva exogena"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

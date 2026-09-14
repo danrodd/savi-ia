@@ -1,0 +1,12 @@
+{
+  "id": "faq_008",
+  "question": "¿Cómo ver la cartera vencida de clientes?",
+  "synonyms": [],
+  "module": "CARTERAFINANCIERA",
+  "answer_summary": "frmInformeEdadCarteraCliente (módulo Cartera) para el informe de antigüedad, o frmConsultaCXC (módulo CuentaCobrar) para ver y gestionar las CXC activas.",
+  "related_forms": [
+    "frmInformeEdadCarteraCliente",
+    "frmConsultaCXC"
+  ],
+  "related_workflows": []
+}

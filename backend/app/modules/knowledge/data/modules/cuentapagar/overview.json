@@ -1,0 +1,20 @@
+{
+  "code": "CUENTAPAGAR",
+  "label": "CuentaPagar",
+  "purpose": "Módulo CuentaPagar del ERP. Cubre 9 formularios.",
+  "tags": [
+    "#CuentaPagar",
+    "#Compras",
+    "#OrdenCompra",
+    "#Proveedores",
+    "#FacturaCompra",
+    "#WMS"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmOrdenCompra",
+    "frmFacturaCompra",
+    "frmDevolucionCompra",
+    "frmConsultaFacturaCompra"
+  ]
+}

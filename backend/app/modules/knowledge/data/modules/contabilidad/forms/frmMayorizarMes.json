@@ -1,0 +1,12 @@
+{
+  "name": "frmMayorizarMes",
+  "module": "CONTABILIDAD",
+  "type": "PROCESO",
+  "description": "Mayorización mensual. Consolida todos los movimientos del período en el mayor contable. Paso previo requerido antes del cierre de mes.",
+  "keywords": [
+    "mayorizar",
+    "mayorizacion",
+    "consolidar periodo"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

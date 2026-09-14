@@ -1,0 +1,26 @@
+{
+  "name": "frmPedido",
+  "module": "VENTA",
+  "type": "TRANSACCION",
+  "description": "Pedido del cliente. Reserva mercancía del inventario sin descuentarla. Activa el proceso de alistamiento (picking). Puede generar factura o remisión al aprobar.",
+  "keywords": [
+    "pedido cliente",
+    "orden venta",
+    "tomar pedido",
+    "solicitud cliente"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Aprobar",
+    "Convertir a factura",
+    "Anular",
+    "Imprimir"
+  ],
+  "db_tables": [
+    "Venta.Pedido",
+    "Venta.DetallePedido"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

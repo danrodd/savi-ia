@@ -1,0 +1,11 @@
+{
+  "id": "faq_007",
+  "question": "¿Cómo registrar el pago de un cliente?",
+  "synonyms": [],
+  "module": "CARTERAFINANCIERA",
+  "answer_summary": "frmReciboCliente (módulo Cartera). Registra el recibo de caja y cruza el pago contra las facturas pendientes.",
+  "related_forms": [
+    "frmReciboCliente"
+  ],
+  "related_workflows": []
+}

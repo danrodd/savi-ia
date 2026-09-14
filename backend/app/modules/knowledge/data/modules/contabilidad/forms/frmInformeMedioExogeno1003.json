@@ -1,0 +1,11 @@
+{
+  "name": "frmInformeMedioExogeno1003",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Información exógena DIAN Formato 1003: retenciones en la fuente que le practicaron.",
+  "keywords": [
+    "exogena 1003",
+    "retenciones practicadas"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

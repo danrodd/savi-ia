@@ -1,0 +1,12 @@
+{
+  "name": "frmBanco",
+  "module": "TERCERO",
+  "type": "CRUD",
+  "description": "Catálogo de entidades bancarias del sistema financiero colombiano.",
+  "keywords": [
+    "bancos",
+    "entidades bancarias",
+    "catalogo bancos"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

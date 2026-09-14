@@ -1,0 +1,42 @@
+{
+  "id": "wf_ciclo_compra",
+  "name": "Ciclo de Compra Completo",
+  "description": "Flujo desde la orden de compra hasta el pago al proveedor",
+  "modules": [
+    "CARTERAFINANCIERA",
+    "CUENTAPAGAR"
+  ],
+  "synonyms": [],
+  "steps": [
+    {
+      "step": 1,
+      "form": "frmOrdenCompra",
+      "action": "Crear orden de compra",
+      "optional": false
+    },
+    {
+      "step": 2,
+      "form": "frmAutorizaOrdenCompra",
+      "action": "Aprobar OC",
+      "optional": true
+    },
+    {
+      "step": 3,
+      "form": "frmFacturaCompra",
+      "action": "Recibir mercancía (factura proveedor)",
+      "optional": false
+    },
+    {
+      "step": 4,
+      "form": "frmPropuestaPagoConsulta",
+      "action": "Generar propuesta de pago",
+      "optional": true
+    },
+    {
+      "step": 5,
+      "form": "frmComprobanteProveedor",
+      "action": "Pagar proveedor",
+      "optional": false
+    }
+  ]
+}

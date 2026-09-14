@@ -1,0 +1,11 @@
+{
+  "id": "faq_004",
+  "question": "¿Cómo ver el kardex / historial de movimientos de un producto?",
+  "synonyms": [],
+  "module": "INVENTARIO",
+  "answer_summary": "frmConsultaMovimientoInventario (módulo Inventario). Filtra por producto, fecha, almacén y tipo de movimiento.",
+  "related_forms": [
+    "frmConsultaMovimientoInventario"
+  ],
+  "related_workflows": []
+}

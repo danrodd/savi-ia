@@ -1,0 +1,13 @@
+{
+  "name": "frmCierreAnual",
+  "module": "CONTABILIDAD",
+  "type": "PROCESO",
+  "description": "Cierre contable anual. Cierra las cuentas de resultados trasladando la utilidad/pérdida al patrimonio. Genera saldos iniciales del nuevo año.",
+  "keywords": [
+    "cierre anual",
+    "cierre ejercicio",
+    "fin año contable",
+    "apertura nuevo ano"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "frmConvenio",
+  "module": "VENTA",
+  "type": "CRUD",
+  "description": "Convenios comerciales con clientes (EPS, empresas con crédito especial). Define precios especiales, descuentos y condiciones de pago para grupos de clientes.",
+  "keywords": [
+    "convenio comercial",
+    "precio especial",
+    "descuento especial cliente",
+    "acuerdo comercial"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

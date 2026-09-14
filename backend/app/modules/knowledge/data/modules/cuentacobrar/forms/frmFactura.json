@@ -1,0 +1,48 @@
+{
+  "name": "frmFactura",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Factura de venta al cliente. Es el documento central del módulo. Al guardar: (1) valida existencias, (2) descuenta inventario, (3) genera movimiento de inventario, (4) crea cuenta por cobrar o descuenta saldo, (5) contabiliza automáticamente el movimiento en Contabilidad. Soporta múltiples formas de pago (efectivo, tarjeta, cheque, crédito, anticipo). Permite asociar a pedido, remisión o cotización previa.",
+  "keywords": [
+    "crear factura",
+    "factura venta",
+    "facturar cliente",
+    "vender",
+    "punto venta factura"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Consultar histórico",
+    "Anular",
+    "Imprimir",
+    "Recontabilizar",
+    "Envío FE",
+    "Buscar pedido/cotización",
+    "Simular",
+    "Orden Servicio"
+  ],
+  "filters": [
+    "numero factura",
+    "fecha desde/hasta",
+    "tercero/cliente",
+    "estado (activa/anulada)"
+  ],
+  "business_rules": [
+    "Descuenta inventario en tiempo real al guardar",
+    "Contabiliza automáticamente según la transacción configurada",
+    "Valida resolución DIAN vigente para numeración",
+    "Aplica retenciones según configuración del tercero",
+    "Puede generar factura electrónica DIAN inmediatamente"
+  ],
+  "db_tables": [
+    "CuentaCobrar.Factura",
+    "CuentaCobrar.DetalleFactura",
+    "CuentaCobrar.FacturaIva",
+    "CuentaCobrar.FacturaIndicadorRetencion",
+    "Inventario.MovimientoInventario",
+    "Contabilidad.MovimientoContable"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

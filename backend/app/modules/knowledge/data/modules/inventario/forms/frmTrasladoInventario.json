@@ -1,0 +1,24 @@
+{
+  "name": "frmTrasladoInventario",
+  "module": "INVENTARIO",
+  "type": "TRANSACCION",
+  "description": "Traslado de productos entre almacenes de la misma empresa. Genera movimiento SALIDA en el almacén origen y ENTRADA en el almacén destino. Soporta aprobación de dos pasos (genera remisión de traslado que debe ser confirmada en destino).",
+  "keywords": [
+    "traslado inventario",
+    "transferencia almacen",
+    "mover mercancia",
+    "traslado entre bodegas"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Aprobar/Recibir",
+    "Anular",
+    "Imprimir"
+  ],
+  "db_tables": [
+    "Inventario.MovimientoInventario",
+    "Inventario.SaldoInventario"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "faq_029",
+  "question": "¿Cómo registrar el mantenimiento de un vehículo?",
+  "synonyms": [],
+  "module": null,
+  "answer_summary": "frmOrdenServicio (módulo Mantenimiento) para servicio externo. frmOrdenTrabajo para trabajo interno. frmRutina para programar mantenimiento preventivo.",
+  "related_forms": [
+    "frmOrdenServicio",
+    "frmOrdenTrabajo",
+    "frmRutina"
+  ],
+  "related_workflows": []
+}

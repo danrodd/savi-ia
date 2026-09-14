@@ -1,0 +1,12 @@
+{
+  "name": "frmDevolucionCompra",
+  "module": "CUENTAPAGAR",
+  "type": "TRANSACCION",
+  "description": "Devolución de mercancía a proveedores. Genera nota débito al proveedor, descuenta el inventario recibido y ajusta la cuenta por pagar.",
+  "keywords": [
+    "devolucion compra",
+    "nota debito proveedor",
+    "devolver mercancia proveedor"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

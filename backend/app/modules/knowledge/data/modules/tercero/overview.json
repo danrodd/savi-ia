@@ -1,0 +1,19 @@
+{
+  "code": "TERCERO",
+  "label": "Tercero",
+  "purpose": "Módulo Tercero del ERP. Cubre 3 formularios.",
+  "tags": [
+    "#Tercero",
+    "#Clientes",
+    "#Proveedores",
+    "#MaestroTerceros",
+    "#NIT",
+    "#HuellaDactilar"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmTercero",
+    "frmGrupoTercero",
+    "frmBanco"
+  ]
+}

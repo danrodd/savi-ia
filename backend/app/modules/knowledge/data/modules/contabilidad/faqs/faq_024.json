@@ -1,0 +1,11 @@
+{
+  "id": "faq_024",
+  "question": "¿Cómo hacer la conciliación bancaria?",
+  "synonyms": [],
+  "module": "CONTABILIDAD",
+  "answer_summary": "frmConciliacionBancaria (módulo Contabilidad). Importa extracto bancario y lo cruza con contabilidad.",
+  "related_forms": [
+    "frmConciliacionBancaria"
+  ],
+  "related_workflows": []
+}

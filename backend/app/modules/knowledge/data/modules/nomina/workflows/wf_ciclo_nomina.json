@@ -1,0 +1,35 @@
+{
+  "id": "wf_ciclo_nomina",
+  "name": "Ciclo de Nómina Mensual",
+  "description": "Proceso mensual de liquidación y pago de nómina",
+  "modules": [
+    "NÓMINA"
+  ],
+  "synonyms": [],
+  "steps": [
+    {
+      "step": 1,
+      "form": "frmNovedadNomina",
+      "action": "Registrar novedades del período",
+      "optional": false
+    },
+    {
+      "step": 2,
+      "form": "frmLiquidacionNomina",
+      "action": "Liquidar nómina",
+      "optional": false
+    },
+    {
+      "step": 3,
+      "form": "frmContabilizarNomina",
+      "action": "Contabilizar nómina",
+      "optional": false
+    },
+    {
+      "step": 4,
+      "form": "frmEnvioNominaElectronica",
+      "action": "Enviar nómina electrónica DIAN",
+      "optional": false
+    }
+  ]
+}

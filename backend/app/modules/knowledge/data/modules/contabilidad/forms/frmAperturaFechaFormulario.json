@@ -1,0 +1,12 @@
+{
+  "name": "frmAperturaFechaFormulario",
+  "module": "CONTABILIDAD",
+  "type": "PROCESO",
+  "description": "Apertura o reapertura de períodos contables ya cerrados. Requiere permiso especial de administrador.",
+  "keywords": [
+    "abrir periodo contable",
+    "reabrir mes",
+    "apertura periodo"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

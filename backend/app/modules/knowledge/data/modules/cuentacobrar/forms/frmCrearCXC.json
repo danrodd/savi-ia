@@ -1,0 +1,12 @@
+{
+  "name": "frmCrearCXC",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Creación manual de cuentas por cobrar no originadas en factura (por ejemplo, prestamos a empleados, cobros diversos). Genera la CXC directamente sin documento de inventario.",
+  "keywords": [
+    "crear cxc manual",
+    "cuenta cobrar manual",
+    "cobro diverso"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

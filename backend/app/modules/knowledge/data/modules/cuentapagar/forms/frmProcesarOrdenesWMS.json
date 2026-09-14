@@ -1,0 +1,13 @@
+{
+  "name": "frmProcesarOrdenesWMS",
+  "module": "CUENTAPAGAR",
+  "type": "PROCESO",
+  "description": "Sincronización de órdenes de compra con el sistema WMS externo. Envía órdenes pendientes y recibe confirmaciones de recepción.",
+  "keywords": [
+    "wms",
+    "sincronizar wms",
+    "integracion wms",
+    "ordenes logistica"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

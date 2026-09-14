@@ -1,0 +1,12 @@
+{
+  "name": "frmContabilizarNomina",
+  "module": "NÓMINA",
+  "type": "PROCESO",
+  "description": "Genera los asientos contables de la nómina liquidada. Contabiliza salarios, aportes patronales y deducciones en las cuentas configuradas.",
+  "keywords": [
+    "contabilizar nomina",
+    "asiento nomina",
+    "causacion nomina"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

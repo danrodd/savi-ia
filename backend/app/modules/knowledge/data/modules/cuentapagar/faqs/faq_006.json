@@ -1,0 +1,11 @@
+{
+  "id": "faq_006",
+  "question": "¿Qué formulario se usa para registrar la compra / entrada de mercancía de proveedor?",
+  "synonyms": [],
+  "module": "CUENTAPAGAR",
+  "answer_summary": "frmFacturaCompra (módulo CuentaPagar). Ingresa la mercancía al inventario y genera la cuenta por pagar.",
+  "related_forms": [
+    "frmFacturaCompra"
+  ],
+  "related_workflows": []
+}

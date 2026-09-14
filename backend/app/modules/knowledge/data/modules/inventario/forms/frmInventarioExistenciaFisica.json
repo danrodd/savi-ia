@@ -1,0 +1,23 @@
+{
+  "name": "frmInventarioExistenciaFisica",
+  "module": "INVENTARIO",
+  "type": "PROCESO",
+  "description": "Proceso de toma física de inventario. Permite ingresar conteos por almacén y producto. Al finalizar genera ajustes automáticos de entrada/salida para cuadrar el inventario del sistema con el físico real.",
+  "keywords": [
+    "toma fisica",
+    "inventario fisico",
+    "conteo fisico",
+    "ajuste inventario",
+    "ciclic count"
+  ],
+  "actions": [
+    "Nuevo conteo",
+    "Agregar ítems",
+    "Ajustar diferencias",
+    "Aprobar toma física"
+  ],
+  "business_rules": [
+    "Bloquea el almacén durante la toma física para evitar movimientos concurrentes"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

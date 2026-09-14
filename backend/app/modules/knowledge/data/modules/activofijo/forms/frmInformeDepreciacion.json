@@ -1,0 +1,12 @@
+{
+  "name": "frmInformeDepreciacion",
+  "module": "ACTIVOFIJO",
+  "type": "INFORME",
+  "description": "Informe de depreciaciones calculadas: valor de adquisición, depreciación acumulada, valor en libros y depreciación del período por activo.",
+  "keywords": [
+    "informe depreciacion",
+    "valor libros activos",
+    "estado activos fijos"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

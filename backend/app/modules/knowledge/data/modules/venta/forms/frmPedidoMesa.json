@@ -1,0 +1,13 @@
+{
+  "name": "frmPedidoMesa",
+  "module": "VENTA",
+  "type": "TRANSACCION",
+  "description": "Pedido en restaurante por mesa. Permite capturar los ítems solicitados en una mesa, enviar a cocina e imprimir la cuenta.",
+  "keywords": [
+    "pedido mesa",
+    "orden restaurante",
+    "pedido cocina",
+    "mesa restaurante"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

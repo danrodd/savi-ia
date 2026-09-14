@@ -1,0 +1,12 @@
+{
+  "name": "frmInformeListadoArticulos",
+  "module": "INVENTARIO",
+  "type": "INFORME",
+  "description": "Listado maestro de artículos con todos sus atributos: código, descripción, precios, grupo, indicadores. Útil para auditorías de catálogo.",
+  "keywords": [
+    "listado productos",
+    "catalogo articulos",
+    "maestro productos"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

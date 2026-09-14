@@ -1,0 +1,12 @@
+{
+  "name": "frmConciliacionBancaria",
+  "module": "CONTABILIDAD",
+  "type": "PROCESO",
+  "description": "Conciliación de extractos bancarios con la contabilidad. Importa el extracto del banco y lo cruza con los movimientos de la cuenta bancaria en el sistema. Genera el documento de conciliación con partidas conciliatorias.",
+  "keywords": [
+    "conciliacion bancaria",
+    "extracto bancario",
+    "cruzar banco contabilidad"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

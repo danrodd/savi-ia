@@ -1,0 +1,41 @@
+{
+  "name": "frmConsultaProductoExistencia",
+  "module": "INVENTARIO",
+  "type": "CONSULTA",
+  "description": "Consulta las existencias actuales de productos por almacén. Muestra cantidad en stock, costo promedio, precio de venta, información de lotes y vencimientos. Permite filtrar por múltiples criterios: grupo, subgrupo, marca, línea, almacén, tarifa de precio.",
+  "keywords": [
+    "consultar existencias",
+    "ver stock",
+    "inventario disponible",
+    "cuantos hay",
+    "existencias por almacen",
+    "saldo inventario",
+    "kardex actual"
+  ],
+  "actions": [
+    "Consultar",
+    "Exportar Excel",
+    "Imprimir"
+  ],
+  "filters": [
+    "almacen",
+    "grupo",
+    "subgrupo",
+    "marca",
+    "linea",
+    "producto especifico",
+    "tarifa precio",
+    "estado (activos/inactivos)",
+    "con/sin existencias",
+    "con lotes vencidos"
+  ],
+  "business_rules": [
+    "Muestra precios según la tarifa seleccionada o la tarifa del usuario"
+  ],
+  "db_tables": [
+    "Inventario.SaldoInventario",
+    "Inventario.Producto",
+    "Inventario.Almacen"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

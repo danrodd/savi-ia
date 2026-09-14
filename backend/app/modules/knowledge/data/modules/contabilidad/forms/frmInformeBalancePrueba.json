@@ -1,0 +1,19 @@
+{
+  "name": "frmInformeBalancePrueba",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Balance de prueba (sumas y saldos). Muestra para cada cuenta del PUC: saldo anterior, débitos del período, créditos del período y saldo final. Herramienta de verificación contable.",
+  "keywords": [
+    "balance prueba",
+    "sumas saldos",
+    "verificacion contable",
+    "balance comprobacion"
+  ],
+  "filters": [
+    "año",
+    "mes",
+    "cuenta desde/hasta",
+    "nivel de detalle"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

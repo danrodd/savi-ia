@@ -1,0 +1,12 @@
+{
+  "id": "faq_018",
+  "question": "¿Cómo registrar una orden de compra?",
+  "synonyms": [],
+  "module": "CUENTAPAGAR",
+  "answer_summary": "frmOrdenCompra (módulo CuentaPagar). Crea la OC al proveedor. Puede requerir aprobación en frmAutorizaOrdenCompra.",
+  "related_forms": [
+    "frmOrdenCompra",
+    "frmAutorizaOrdenCompra"
+  ],
+  "related_workflows": []
+}

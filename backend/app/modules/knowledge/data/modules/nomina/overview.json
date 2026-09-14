@@ -1,0 +1,22 @@
+{
+  "code": "NÓMINA",
+  "label": "Nomina",
+  "purpose": "Módulo Nomina del ERP. Cubre 10 formularios.",
+  "tags": [
+    "#Nomina",
+    "#Empleados",
+    "#Liquidacion",
+    "#SeguridadSocial",
+    "#NominaElectronica",
+    "#UGPP",
+    "#Vacaciones",
+    "#ContratoLaboral"
+  ],
+  "main_workflows": [],
+  "main_forms": [
+    "frmEmpleado",
+    "frmContratoEmpleado",
+    "frmLiquidacionNomina",
+    "frmNovedadNomina"
+  ]
+}

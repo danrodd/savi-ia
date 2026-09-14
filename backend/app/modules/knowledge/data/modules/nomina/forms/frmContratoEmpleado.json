@@ -1,0 +1,12 @@
+{
+  "name": "frmContratoEmpleado",
+  "module": "NÓMINA",
+  "type": "CRUD",
+  "description": "Gestión de contratos laborales por empleado. Registra tipo de contrato, duración, fecha inicio y fin, salario integral.",
+  "keywords": [
+    "contrato laboral",
+    "contrato empleado",
+    "vinculacion laboral"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "frmNovedadNomina",
+  "module": "NÓMINA",
+  "type": "TRANSACCION",
+  "description": "Registro de novedades que afectan la liquidación de nómina: incapacidades, vacaciones, horas extra, permisos, embargos, préstamos. Se capturan antes de liquidar el período.",
+  "keywords": [
+    "novedad nomina",
+    "incapacidad",
+    "horas extra",
+    "permiso empleado",
+    "novedad laboral",
+    "ausentismo"
+  ],
+  "actions": [
+    "Nueva novedad",
+    "Guardar",
+    "Consultar novedades del período"
+  ],
+  "db_tables": [
+    "Nomina.Novedad",
+    "Nomina.DetalleNovedad"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "frmOtroPasivo",
+  "module": "CONTABILIDAD",
+  "type": "TRANSACCION",
+  "description": "Registro de otros pasivos no originados en compras (depósitos recibidos, obligaciones diversas).",
+  "keywords": [
+    "otros pasivos",
+    "pasivos varios",
+    "obligaciones diversas"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

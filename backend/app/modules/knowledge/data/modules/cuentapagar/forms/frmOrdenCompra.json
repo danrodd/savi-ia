@@ -1,0 +1,37 @@
+{
+  "name": "frmOrdenCompra",
+  "module": "CUENTAPAGAR",
+  "type": "TRANSACCION",
+  "description": "Creación de órdenes de compra a proveedores. Genera el documento de solicitud de mercancía. Puede integrarse con WMS. Soporta aprobación jerárquica antes de enviar al proveedor.",
+  "keywords": [
+    "orden compra",
+    "oc",
+    "pedido proveedor",
+    "compra mercancia",
+    "solicitud compra"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Aprobar",
+    "Anular",
+    "Imprimir",
+    "Enviar WMS"
+  ],
+  "filters": [
+    "numero OC",
+    "proveedor",
+    "fecha",
+    "estado (pendiente/remisionada/facturada/anulada)"
+  ],
+  "business_rules": [
+    "Requiere autorización según montos configurados",
+    "Puede integrarse con WMS para logística"
+  ],
+  "db_tables": [
+    "CuentaPagar.OrdenCompra",
+    "CuentaPagar.DetalleOrdenCompra"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

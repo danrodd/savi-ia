@@ -1,0 +1,12 @@
+{
+  "id": "faq_013",
+  "question": "¿Cómo enviar la factura electrónica a la DIAN?",
+  "synonyms": [],
+  "module": "CUENTACOBRAR",
+  "answer_summary": "frmEnvioFacturaElectronica (módulo CuentaCobrar) para envío masivo. También se puede enviar individual desde frmFactura al guardar.",
+  "related_forms": [
+    "frmEnvioFacturaElectronica",
+    "frmFactura"
+  ],
+  "related_workflows": []
+}

@@ -1,0 +1,14 @@
+{
+  "name": "frmInformeImpuestoIva",
+  "module": "CONTABILIDAD",
+  "type": "INFORME",
+  "description": "Informe para la declaración de IVA. Muestra IVA generado en ventas e IVA descontable en compras del período.",
+  "keywords": [
+    "declaracion iva",
+    "impuesto iva",
+    "iva generado",
+    "iva descontable",
+    "bimestre iva"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

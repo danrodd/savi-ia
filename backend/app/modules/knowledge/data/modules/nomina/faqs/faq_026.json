@@ -1,0 +1,11 @@
+{
+  "id": "faq_026",
+  "question": "¿Cómo enviar la nómina electrónica a la DIAN?",
+  "synonyms": [],
+  "module": "NÓMINA",
+  "answer_summary": "frmEnvioNominaElectronica (módulo Nomina). Previo a enviar se debe liquidar la nómina en frmLiquidacionNomina.",
+  "related_forms": [
+    "frmEnvioNominaElectronica"
+  ],
+  "related_workflows": []
+}

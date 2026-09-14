@@ -1,0 +1,12 @@
+{
+  "name": "frmCuentaCobro",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Genera una cuenta de cobro para entidades del estado o sector salud. Es un documento que soporta el cobro de servicios.",
+  "keywords": [
+    "cuenta cobro",
+    "cobro servicios",
+    "entidades estado"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

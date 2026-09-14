@@ -1,0 +1,12 @@
+{
+  "name": "frmReclasificarProducto",
+  "module": "INVENTARIO",
+  "type": "PROCESO",
+  "description": "Permite cambiar el grupo, subgrupo o línea de un producto y reclasificar todos sus movimientos históricos.",
+  "keywords": [
+    "reclasificar producto",
+    "cambiar grupo producto",
+    "mover producto"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

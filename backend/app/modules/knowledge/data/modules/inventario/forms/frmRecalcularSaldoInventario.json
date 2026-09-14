@@ -1,0 +1,15 @@
+{
+  "name": "frmRecalcularSaldoInventario",
+  "module": "INVENTARIO",
+  "type": "PROCESO",
+  "description": "Proceso de administrador que recalcula todos los saldos de inventario desde cero a partir de los movimientos. Se usa cuando los saldos están descuadrados por errores del sistema.",
+  "keywords": [
+    "recalcular saldos",
+    "reparar inventario",
+    "cuadrar inventario"
+  ],
+  "business_rules": [
+    "Solo ejecutable por usuarios administradores"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

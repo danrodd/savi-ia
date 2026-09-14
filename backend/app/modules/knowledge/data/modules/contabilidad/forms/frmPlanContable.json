@@ -1,0 +1,24 @@
+{
+  "name": "frmPlanContable",
+  "module": "CONTABILIDAD",
+  "type": "CRUD",
+  "description": "Gestión del Plan Único de Cuentas (PUC). Permite crear, modificar y organizar jerárquicamente las cuentas contables (clases, grupos, cuentas, subcuentas, auxiliares). Cada cuenta tiene naturaleza (débito/crédito), tipo y configuraciones para manejo de terceros.",
+  "keywords": [
+    "plan contable",
+    "puc",
+    "cuentas contables",
+    "crear cuenta",
+    "catalogo cuentas"
+  ],
+  "actions": [
+    "Nuevo",
+    "Guardar",
+    "Modificar",
+    "Eliminar",
+    "Exportar/Importar"
+  ],
+  "db_tables": [
+    "Contabilidad.PlanContable"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "frmCrearTareaWindows",
+  "module": "HERRAMIENTA",
+  "type": "PROCESO",
+  "description": "Crea tareas programadas en el programador de tareas de Windows para el envío automático de facturas electrónicas.",
+  "keywords": [
+    "tarea programada",
+    "envio automatico fe",
+    "scheduler windows"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

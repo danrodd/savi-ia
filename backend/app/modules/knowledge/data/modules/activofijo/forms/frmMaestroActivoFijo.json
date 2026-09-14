@@ -1,0 +1,14 @@
+{
+  "name": "frmMaestroActivoFijo",
+  "module": "ACTIVOFIJO",
+  "type": "CRUD",
+  "description": "Registro y gestión de activos fijos de la empresa. Incluye valor de adquisición, vida útil, método de depreciación (línea recta, reducción de saldos, suma dígitos), dependencia asignada y póliza de seguro.",
+  "keywords": [
+    "activo fijo",
+    "propiedades planta equipo",
+    "ppe",
+    "vehiculo activo",
+    "equipos empresa"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

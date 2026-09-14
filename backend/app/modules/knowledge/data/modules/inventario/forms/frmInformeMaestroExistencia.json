@@ -1,0 +1,12 @@
+{
+  "name": "frmInformeMaestroExistencia",
+  "module": "INVENTARIO",
+  "type": "INFORME",
+  "description": "Informe maestro de existencias con detalle de lotes, vencimientos y ubicaciones.",
+  "keywords": [
+    "maestro existencias",
+    "informe completo inventario",
+    "existencias con lotes"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

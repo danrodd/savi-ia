@@ -1,0 +1,13 @@
+{
+  "name": "frmInformeAuxiliarCarteraCliente",
+  "module": "CARTERAFINANCIERA",
+  "type": "INFORME",
+  "description": "Libro auxiliar de cartera de clientes. Muestra débitos (facturas), créditos (pagos y notas crédito) y saldo por tercero.",
+  "keywords": [
+    "auxiliar cartera",
+    "libro auxiliar cliente",
+    "saldo cliente",
+    "movimientos cliente"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

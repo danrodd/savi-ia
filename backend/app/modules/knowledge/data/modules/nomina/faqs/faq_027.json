@@ -1,0 +1,11 @@
+{
+  "id": "faq_027",
+  "question": "¿Cómo retirar un empleado / hacer liquidación definitiva?",
+  "synonyms": [],
+  "module": "NÓMINA",
+  "answer_summary": "frmRetiroEmpleado (módulo Nomina). Calcula prestaciones sociales y genera la liquidación definitiva.",
+  "related_forms": [
+    "frmRetiroEmpleado"
+  ],
+  "related_workflows": []
+}

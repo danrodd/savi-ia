@@ -1,0 +1,20 @@
+{
+  "name": "frmEnvioFacturaElectronica",
+  "module": "CUENTACOBRAR",
+  "type": "PROCESO",
+  "description": "Envío masivo de facturas electrónicas a la DIAN a través del proveedor HKA. Muestra el estado de cada documento (pendiente, enviado, aceptado, rechazado) y permite reenviar documentos con error.",
+  "keywords": [
+    "factura electronica",
+    "envio dian",
+    "fe",
+    "facturacion electronica",
+    "hka",
+    "estado factura electronica"
+  ],
+  "actions": [
+    "Enviar seleccionados",
+    "Consultar estado DIAN",
+    "Reenviar con error"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

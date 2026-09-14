@@ -1,0 +1,11 @@
+{
+  "name": "frmFacturaRemision",
+  "module": "CUENTACOBRAR",
+  "type": "TRANSACCION",
+  "description": "Factura una o varias remisiones pendientes de facturar. Convierte la remisión en factura formal generando la cuenta por cobrar y la contabilización.",
+  "keywords": [
+    "facturar remision",
+    "convertir remision factura"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}

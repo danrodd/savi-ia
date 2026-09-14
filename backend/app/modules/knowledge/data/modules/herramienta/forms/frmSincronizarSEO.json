@@ -1,0 +1,12 @@
+{
+  "name": "frmSincronizarSEO",
+  "module": "HERRAMIENTA",
+  "type": "PROCESO",
+  "description": "Sincronización de datos con el portal SEO (analítica). Envía información de módulos y registros de ingreso al esquema SEO de la base de datos.",
+  "keywords": [
+    "sincronizar seo",
+    "portal seo",
+    "analitica seo"
+  ],
+  "source": "sisfec_knowledge_base v2"
+}
