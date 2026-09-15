@@ -4,8 +4,8 @@
 > código duplicado, interfaz incompleta y detalles de seguridad menores.
 >
 > **Estado: parcial (2026-09-15).** Hechos M6, O7, O5, B3, B4 y los puntos
-> 1-3 de M8, más **tres bugs que aparecieron al verificar**. Pendientes M9 y
-> el resto de las bajas. Detalle al final.
+> 1-4, 10 y 11 de M8, más **tres bugs que aparecieron al verificar**.
+> Pendientes M9 y el resto del pulido. Detalle al final.
 
 ## Alcance
 
@@ -176,6 +176,9 @@ if record.is_revoked:
 | M8 #1 | Barra de avance en la tabla de documentos | Captura durante un procesamiento real: "Procesando… 0 de 150 fragmentos" |
 | M8 #2 | La tabla pasa a tarjetas en pantallas angostas | Captura a 400 px: Editar, Reemplazar y Eliminar visibles, antes fuera de pantalla |
 | M8 #3 | Soltar un archivo fuera de la zona punteada ya no abre el archivo | El `drop` se acepta en todo el formulario; `dragleave` deja de parpadear al pasar por un hijo |
+| M8 #4 | Buscador por nombre y filtro por estado, en el cliente | Con 8 documentos: "politica" deja 2, el contador dice "2 de 8" y sin coincidencias aparece el estado vacío |
+| M8 #10 | El estado vacío trae su propio botón de subir | Quien llega a una pantalla vacía busca la acción ahí |
+| M8 #11 | La barra de uso aparece recién a partir del 10% | Con 258 de 50.000 fragmentos se veía una barra vacía que no decía nada |
 
 ### Dos bugs que encontró la verificación
 
@@ -215,15 +218,15 @@ y los otros dos), con test de regresión para ambos lados.
 
 ### Suite
 
-570 tests en backend, 79 en frontend. Ruff, Pyright strict, `vue-tsc` y Biome
+570 tests en backend, 87 en frontend. Ruff, Pyright strict, `vue-tsc` y Biome
 en verde.
 
 ## Lo que queda
 
 | # | Qué | Por qué no se hizo ahora |
 |---|---|---|
-| M8 #4-12 | Buscador y filtros, menú por fila, pasaje coincidente, páginas precisas, títulos, puntajes, estado vacío, barra de uso, confirmación al reemplazar | Pulido; los tres que más molestaban ya están |
-| M9 | Unificar el bucle agéntico de OpenAI y Gemini | Es un refactor grande sin cambio de comportamiento: merece su propia sesión y su propia verificación con turnos reales de los dos proveedores |
+| M8 #5-9, #12 | Menú por fila, pasaje coincidente, páginas precisas, títulos con guiones, puntajes explicados, confirmación al reemplazar | Pulido; lo que más molestaba ya está |
+| M9 | Unificar el bucle agéntico de OpenAI y Gemini | **No se hizo a propósito.** Es un refactor del corazón del chat, y su criterio de aceptación pide un turno real con **cada** proveedor. Con Gemini y Claude se puede; para OpenAI no hay key configurada en este entorno. Refactorizar el bucle de un proveedor que no se puede probar de punta a punta es exactamente el cambio que se ve bien y rompe en producción. Queda para cuando haya key de OpenAI. |
 | O5 (cola) | Posición en la cola ("2 documentos antes") | El avance del documento en curso ya está; la posición exige exponer el orden de la cola |
 | B1 | Refresh token en `localStorage` → cookie `HttpOnly` | Cambia el flujo de autenticación del frontend; hay que medir el costo antes |
 | B2 | `xlsx` sin parche | Hoy no explotable (solo se escribe) |

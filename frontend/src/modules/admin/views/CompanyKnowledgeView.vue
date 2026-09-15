@@ -37,6 +37,40 @@ const usagePercent = computed(() => {
   return Math.min(100, Math.round((usage.chunks / usage.chunk_limit) * 100))
 })
 
+/**
+ * La barra solo aparece cuando el número empieza a significar algo. Con 258
+ * de 50.000 fragmentos se veía una barra vacía que no decía nada.
+ */
+const showUsageBar = computed(() => usagePercent.value >= 10)
+
+// Filtros del listado, en el cliente: la lista ya viene entera (hasta 200) y
+// filtrar acá responde en cada tecla sin volver a pedir nada al servidor.
+const search = ref('')
+const statusFilter = ref<'todos' | 'listo' | 'en_proceso' | 'con_problema'>('todos')
+
+const STATUS_GROUPS = {
+  listo: ['ready'],
+  en_proceso: ['pending', 'processing'],
+  con_problema: ['failed', 'no_text'],
+} as const
+
+const visibleDocuments = computed(() => {
+  const term = search.value.trim().toLowerCase()
+  return store.documents.filter((document) => {
+    const matchesTerm =
+      !term ||
+      document.title.toLowerCase().includes(term) ||
+      document.original_filename.toLowerCase().includes(term)
+    const group = statusFilter.value
+    const matchesStatus =
+      group === 'todos' ||
+      (STATUS_GROUPS[group] as readonly string[]).includes(document.status)
+    return matchesTerm && matchesStatus
+  })
+})
+
+const isFiltering = computed(() => search.value.trim() !== '' || statusFilter.value !== 'todos')
+
 const editOpen = computed({
   get: () => editing.value !== null,
   set: (open: boolean) => {
@@ -140,7 +174,14 @@ onUnmounted(() => store.stopPolling())
       <span>{{ store.usage.total }} documentos</span>
       <span class="kview__dot">·</span>
       <span>{{ store.usage.chunks.toLocaleString('es-CO') }} de {{ store.usage.chunk_limit.toLocaleString('es-CO') }} fragmentos</span>
-      <span class="kview__bar" role="progressbar" :aria-valuenow="usagePercent" aria-valuemin="0" aria-valuemax="100">
+      <span
+        v-if="showUsageBar"
+        class="kview__bar"
+        role="progressbar"
+        :aria-valuenow="usagePercent"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
         <span class="kview__bar-fill" :style="{ width: `${usagePercent}%` }" />
       </span>
       <span class="kview__dot">·</span>
@@ -154,17 +195,45 @@ onUnmounted(() => store.stopPolling())
     <p v-else-if="store.loading && store.documents.length === 0" class="kview__hint">Cargando…</p>
     <div v-else-if="store.documents.length === 0" class="kview__empty">
       <p>Aún no hay documentos. Sube el primero para que SAVI pueda consultarlo.</p>
+      <!-- El botón acá y no solo arriba: quien llega a una pantalla vacía
+           busca la acción en la pantalla vacía. -->
+      <Button @click="uploadOpen = true">Subir documentos</Button>
     </div>
-    <CompanyDocumentTable
-      v-else
-      :documents="store.documents"
-      :database-names="databaseNames"
-      :busy-id="busyId"
-      @edit="(document) => (editing = document)"
-      @replace="onReplace"
-      @reprocess="onReprocess"
-      @remove="(document) => (removing = document)"
-    />
+    <template v-else>
+      <!-- Filtros solo cuando hay suficientes documentos para que sirvan. -->
+      <div v-if="store.documents.length > 5" class="kview__filters">
+        <input
+          v-model="search"
+          class="kview__search"
+          type="search"
+          placeholder="Buscar por nombre…"
+          aria-label="Buscar documentos por nombre"
+        />
+        <select v-model="statusFilter" class="kview__select" aria-label="Filtrar por estado">
+          <option value="todos">Todos los estados</option>
+          <option value="listo">Listos</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="con_problema">Con problemas</option>
+        </select>
+        <span v-if="isFiltering" class="kview__count">
+          {{ visibleDocuments.length }} de {{ store.documents.length }}
+        </span>
+      </div>
+
+      <div v-if="visibleDocuments.length === 0" class="kview__empty">
+        <p>Ningún documento coincide con la búsqueda.</p>
+      </div>
+      <CompanyDocumentTable
+        v-else
+        :documents="visibleDocuments"
+        :database-names="databaseNames"
+        :busy-id="busyId"
+        @edit="(document) => (editing = document)"
+        @replace="onReplace"
+        @reprocess="onReprocess"
+        @remove="(document) => (removing = document)"
+      />
+    </template>
 
     <input
       ref="replaceInput"
@@ -257,12 +326,49 @@ onUnmounted(() => store.stopPolling())
 }
 
 .kview__empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
   padding: var(--space-8) var(--space-4);
   border: 1px dashed var(--border);
   border-radius: var(--r-md);
   font-size: 13px;
   color: var(--text-muted);
   text-align: center;
+}
+
+.kview__empty p {
+  margin: 0;
+}
+
+.kview__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.kview__search,
+.kview__select {
+  height: 34px;
+  padding: 0 var(--space-3);
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.kview__search {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.kview__count {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .kview__error {
