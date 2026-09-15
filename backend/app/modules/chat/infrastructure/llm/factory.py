@@ -25,6 +25,7 @@ from app.modules.chat.infrastructure.llm.gemini.runner import GeminiRunner
 from app.modules.chat.infrastructure.llm.gemini.title_generator import GeminiTitleGenerator
 from app.modules.chat.infrastructure.llm.openai.runner import OpenAIRunner
 from app.modules.chat.infrastructure.llm.openai.title_generator import OpenAITitleGenerator
+from app.modules.company_knowledge.domain.services import TurnDocumentContext
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ class ResolvingLLMRunner(LLMRunner):
         conversation_id: UUID | None = None,
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         try:
             runner = self._factory.build(await self._resolver.resolve())
@@ -92,6 +94,7 @@ class ResolvingLLMRunner(LLMRunner):
             conversation_id=conversation_id,
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
+            document_context=document_context,
         ):
             yield event
 

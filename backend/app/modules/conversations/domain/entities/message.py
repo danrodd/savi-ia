@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from app.modules.conversations.domain.value_objects import (
     MessageFinishReason,
+    MessageSource,
     TokenUsage,
     ToolInvocation,
 )
@@ -40,6 +41,8 @@ class Message:
     cost_usd: Decimal | None = None
     provider: str | None = None
     model: str | None = None
+    # Documentos de la empresa citados. Vacío si la respuesta no citó ninguno.
+    sources: list[MessageSource] = field(default_factory=list[MessageSource])
     # Revisiones: si `superseded_at` está set, este mensaje ya no es parte
     # del hilo activo de la conversación. `superseded_by_id` apunta al
     # mensaje que lo reemplazó (puede ser None si el reemplazo aún no se

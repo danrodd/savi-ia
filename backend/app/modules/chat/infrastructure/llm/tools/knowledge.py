@@ -16,7 +16,7 @@ Notas de diseño:
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
@@ -360,12 +360,14 @@ KNOWLEDGE_TIPOS: tuple[str, ...] = (
     "glosario",
     "modulos_disponibles",
     "formulario",
+    "documentos",
 )
 
 
 def build_consultar_conocimiento_impl(
     catalog: KnowledgeCatalog,
     allowed_modules: frozenset[ModuleCode] | None,
+    document_search: Callable[[str], Awaitable[dict[str, Any]]] | None = None,
 ) -> Callable[[dict[str, Any]], Any]:
     """Constructor de la tool unificada del catálogo.
 
@@ -399,6 +401,10 @@ def build_consultar_conocimiento_impl(
             return await modulos({})
         if tipo == "formulario":
             return await formulario({"nombre": consulta})
+        if tipo == "documentos":
+            if document_search is None:
+                return {"matches": [], "nota": "No hay documentos de la empresa disponibles."}
+            return await document_search(consulta)
 
         return {
             "error": (

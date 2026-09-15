@@ -33,6 +33,7 @@ from app.modules.chat.infrastructure.llm.pricing import compute_cost_usd
 from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
+from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.conversations.domain.value_objects import TokenUsage
 
 log = logging.getLogger(__name__)
@@ -133,12 +134,14 @@ class GeminiRunner(LLMRunner):
         conversation_id: UUID | None = None,
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         client = self._client or genai.Client(api_key=self._provider.credential)
         tools = build_savi_tools(
             conversation_id=conversation_id,
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
+            document_context=document_context,
         )
         contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt)])]
         usage = TokenUsage()

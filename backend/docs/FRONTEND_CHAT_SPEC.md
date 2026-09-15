@@ -49,6 +49,20 @@ type Message = {
   // del hilo activo. superseded_by_id apunta al que lo reemplazó.
   superseded_at: string | null;       // ISO 8601 UTC
   superseded_by_id: string | null;    // UUID
+  // Documentos de la empresa citados en la respuesta. [] si no citó ninguno.
+  sources: MessageSource[];
+}
+
+type MessageSource = {
+  ref: string;            // "D1": primera referencia del documento en el texto
+  refs: string[];         // todas las referencias de ese documento ("D1", "D3")
+  document_id: string;    // UUID
+  version: number;        // versión del documento al momento de la cita
+  title: string;          // título al momento de la cita
+  pages: string | null;   // "3-4, 9" en PDF; null en TXT/Markdown
+  // Solo en GET /conversations/{id}: calculado para QUIEN consulta.
+  available?: boolean;
+  unavailable_reason?: "deleted" | "processing" | "no_access" | null;
 }
 
 type ToolInvocation = {
@@ -65,6 +79,13 @@ type TokenUsage = {
   cache_creation_input_tokens: number;
 }
 ```
+
+> **Fuentes**: el texto del asistente trae referencias `[D1]`. Reemplazá las
+> que estén en `sources` por una marca numerada por documento y **ocultá**
+> las que no estén (el modelo pudo inventarlas). Abrí el original con
+> `GET /company-documents/{document_id}/file?conversation_id=…` usando el
+> header `Authorization` (un `<a href>` directo no lleva el token). Todo
+> rechazo de esa descarga es `404`.
 
 > **Para la UI**: Usa `tool_invocations` para rehidratar los chips de
 > tools en mensajes históricos (cuando el usuario recarga una
@@ -228,6 +249,7 @@ Todos los payloads incluyen `type`. Otros campos varían:
 | `tool_use`        | `id: string`, `name: string`, `input: object`     | El agente está llamando una tool; muestra spinner |
 | `tool_result`     | `tool_use_id: string`, `is_error: bool`           | Cierra el spinner de esa tool |
 | `superseded`      | `message_ids: string[]`                            | Llega al inicio del stream en `edit_last` y `regenerate`. Lista de IDs que pasan a ser superseded: ocúltalos del hilo activo. |
+| `sources`         | `sources: MessageSource[]`                         | Documentos de la empresa citados. Llega **justo antes** de `done` y solo si hubo referencias válidas. |
 | `title_update`    | `title: string`                                    | Renombra la conversación en el sidebar en vivo. Llega 0, 1 o 2 veces por turno (fase provisional + fase refinada). Sólo en conversaciones cuyo título sigue siendo el default. |
 | `done`            | `usage: object \| null`, `cost_usd: number \| null`, `finish_reason: string` | Cierre limpio |
 | `error`           | `message: string`                                  | El stream falló; muestra error y permite reintentar |

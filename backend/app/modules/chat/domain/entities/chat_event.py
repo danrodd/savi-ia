@@ -10,6 +10,7 @@ class ChatEventType(StrEnum):
     TOOL_RESULT = "tool_result"
     TITLE_UPDATE = "title_update"
     SUPERSEDED = "superseded"
+    SOURCES = "sources"
     DONE = "done"
     ERROR = "error"
 
@@ -61,6 +62,18 @@ class SupersededEvent:
 
 
 @dataclass(slots=True)
+class SourcesEvent:
+    """Documentos de la empresa citados en la respuesta.
+
+    Llega justo antes de `done`, solo si la respuesta citó referencias
+    válidas. Cada fuente es `MessageSource.to_dict()`.
+    """
+
+    sources: list[dict[str, Any]]
+    type: ChatEventType = ChatEventType.SOURCES
+
+
+@dataclass(slots=True)
 class DoneEvent:
     usage: dict[str, Any] | None = None
     cost_usd: float | None = None
@@ -83,6 +96,7 @@ ChatEvent = (
     | ToolResultEvent
     | TitleUpdateEvent
     | SupersededEvent
+    | SourcesEvent
     | DoneEvent
     | ErrorEvent
 )

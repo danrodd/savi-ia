@@ -113,6 +113,8 @@ class MessageModel(Base):
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(10, 6), nullable=True)
     provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
     model: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # Documentos de la empresa citados (`MessageSource.to_dict`). NULL = sin citas.
+    sources: Mapped[list[dict[str, Any]] | None] = mapped_column(JsonType, nullable=True)
     # Revisiones: cuando un mensaje se edita o se regenera, el viejo NO se
     # borra: queda con `superseded_at=now()` y `superseded_by_id` apuntando
     # al mensaje que lo reemplazó. El hilo activo se filtra por

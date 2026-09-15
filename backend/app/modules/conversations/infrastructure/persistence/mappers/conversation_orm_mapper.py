@@ -3,6 +3,7 @@ from typing import Any
 from app.modules.conversations.domain.entities import Conversation, Message, MessageRole
 from app.modules.conversations.domain.value_objects import (
     MessageFinishReason,
+    MessageSource,
     TokenUsage,
     ToolInvocation,
 )
@@ -58,6 +59,7 @@ class ConversationOrmMapper:
             cost_usd=model.cost_usd,
             provider=model.provider,
             model=model.model,
+            sources=[MessageSource.from_dict(s) for s in (model.sources or [])],
             superseded_at=model.superseded_at,
             superseded_by_id=model.superseded_by_id,
             created_at=model.created_at,
@@ -84,6 +86,7 @@ class ConversationOrmMapper:
             cost_usd=entity.cost_usd,
             provider=entity.provider,
             model=entity.model,
+            sources=[s.to_dict() for s in entity.sources] or None,
             superseded_at=entity.superseded_at,
             superseded_by_id=entity.superseded_by_id,
         )

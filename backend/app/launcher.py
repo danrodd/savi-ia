@@ -649,6 +649,38 @@ def _connection_remedy(label: str, error: Exception) -> str:
     return f"Revisá los datos de conexión de {label}. " + _RECONFIGURE_HINT
 
 
+def _embedding_model_check(settings: Settings) -> CheckResult:
+    """Carga el modelo de embeddings de documentos, sin red, como en runtime."""
+    import os
+
+    from app.modules.company_knowledge.infrastructure.embeddings import (
+        FastEmbedEmbedder,
+        models_root,
+    )
+
+    log = logging.getLogger(__name__)
+    model_dir = models_root(settings.company_docs_model_dir)
+    log.info("diagnostico_modelo_documentos_inicio dir=%s", model_dir)
+    embedder = FastEmbedEmbedder(
+        settings.company_docs_embedding_model, model_dir, max(1, (os.cpu_count() or 2) // 2)
+    )
+    available = embedder.is_available()
+    log.info("diagnostico_modelo_documentos_fin disponible=%s", available)
+    if available:
+        return CheckResult(
+            label="Modelo de documentos de la empresa",
+            ok=True,
+            detail=f"{embedder.model_name} cargado ({embedder.dimension} dimensiones).",
+        )
+    return CheckResult(
+        label="Modelo de documentos de la empresa",
+        ok=False,
+        detail=f"No se pudo cargar {embedder.model_name} desde {model_dir}.",
+        remedy="Los documentos de la empresa quedan en cola hasta resolverlo; el chat "
+        "funciona igual. Reinstalá SAVI para restaurar el modelo.",
+    )
+
+
 def _collect_report() -> Report:
     """Corre todos los chequeos y devuelve el resultado como datos."""
     import asyncio
@@ -803,6 +835,7 @@ def _collect_report() -> Report:
         return checks
 
     report.results.extend(asyncio.run(probe()))
+    report.results.append(_embedding_model_check(settings))
 
     # El puerto se chequea acá porque su ausencia era engañosa: el reporte
     # decía "Todo en orden" mientras el arranque fallaba con "puerto

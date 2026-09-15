@@ -47,6 +47,7 @@ from app.modules.chat.infrastructure.llm.errors import user_facing_error
 from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
+from app.modules.company_knowledge.domain.services import TurnDocumentContext
 
 log = logging.getLogger(__name__)
 
@@ -77,11 +78,13 @@ def _build_options(
     conversation_id: UUID | None,
     allowed_modules: frozenset[ModuleCode] | None,
     erp_database_id: UUID | None,
+    document_context: TurnDocumentContext | None,
 ) -> ClaudeAgentOptions:
     tools = build_savi_tools(
         conversation_id=conversation_id,
         allowed_modules=allowed_modules,
         erp_database_id=erp_database_id,
+        document_context=document_context,
     )
     return ClaudeAgentOptions(
         model=provider.chat_model,
@@ -141,6 +144,7 @@ class ClaudeAgentRunner(LLMRunner):
         conversation_id: UUID | None = None,
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         options = _build_options(
             self._settings,
@@ -148,6 +152,7 @@ class ClaudeAgentRunner(LLMRunner):
             conversation_id=conversation_id,
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
+            document_context=document_context,
         )
         truncator = ResponseTruncator(self._settings.max_response_chars)
         done_yielded = False

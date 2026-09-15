@@ -30,6 +30,7 @@ from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
+    SourcesEvent,
     SupersededEvent,
     TextDeltaEvent,
     TitleUpdateEvent,
@@ -45,12 +46,14 @@ from app.modules.chat.domain.interfaces import (
     ConversationTitleUpdater,
     LLMRunner,
 )
+from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.conversations.domain.entities import Message, MessageRole
 from app.modules.conversations.domain.exceptions import ConversationNotFoundError
 from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.domain.value_objects import (
     ConversationOwner,
     MessageFinishReason,
+    MessageSource,
     TokenUsage,
     ToolInvocation,
     ToolInvocationStatus,
@@ -99,6 +102,25 @@ class _TurnAccumulator:
         self.provider: str | None = None
         self.model: str | None = None
         self.finish_reason: MessageFinishReason = MessageFinishReason.COMPLETE
+        self.sources: list[MessageSource] = []
+
+    def resolve_sources(self, document_context: TurnDocumentContext | None) -> list[MessageSource]:
+        """Fuentes válidas citadas hasta ahora. Idempotente: se recalcula
+        en `done` y otra vez al persistir tras una cancelación."""
+        if document_context is None or not len(document_context.citations):
+            return []
+        self.sources = [
+            MessageSource(
+                ref=source.ref,
+                refs=source.refs,
+                document_id=source.document_id,
+                version=source.version,
+                title=source.title,
+                pages=source.pages,
+            )
+            for source in document_context.citations.build_sources("".join(self.text_parts))
+        ]
+        return self.sources
 
     def consume(self, event: ChatEvent) -> None:
         if isinstance(event, TextDeltaEvent):
@@ -144,6 +166,7 @@ class _TurnAccumulator:
             cost_usd=self.cost_usd,
             provider=self.provider,
             model=self.model,
+            sources=list(self.sources),
         )
 
 
@@ -223,6 +246,7 @@ class ChatTurnUseCase:
         *,
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         # `validate` ya corrió desde el endpoint; aún así re-leemos la
         # conversación para conocer `title_locked` y el título.
@@ -240,6 +264,7 @@ class ChatTurnUseCase:
                 is_renamable=is_renamable,
                 allowed_modules=allowed_modules,
                 erp_database_id=erp_database_id,
+                document_context=document_context,
             ):
                 yield event
         elif action == ChatAction.EDIT_LAST:
@@ -250,6 +275,7 @@ class ChatTurnUseCase:
                 is_renamable=is_renamable,
                 allowed_modules=allowed_modules,
                 erp_database_id=erp_database_id,
+                document_context=document_context,
             ):
                 yield event
         elif action == ChatAction.REGENERATE:
@@ -257,6 +283,7 @@ class ChatTurnUseCase:
                 conversation_id,
                 allowed_modules=allowed_modules,
                 erp_database_id=erp_database_id,
+                document_context=document_context,
             ):
                 yield event
 
@@ -269,6 +296,7 @@ class ChatTurnUseCase:
         is_renamable: bool,
         allowed_modules: frozenset[ModuleCode] | None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         history = await self._repository.list_messages(conversation_id)
         user_message = Message(
@@ -286,6 +314,7 @@ class ChatTurnUseCase:
             user_text_for_title=user_text if is_renamable else None,
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
+            document_context=document_context,
         ):
             yield event
 
@@ -298,6 +327,7 @@ class ChatTurnUseCase:
         is_renamable: bool,
         allowed_modules: frozenset[ModuleCode] | None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         active = await self._repository.list_messages(conversation_id)
         if not active:
@@ -350,6 +380,7 @@ class ChatTurnUseCase:
             user_text_for_title=new_user_text if is_renamable else None,
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
+            document_context=document_context,
         ):
             yield event
 
@@ -360,6 +391,7 @@ class ChatTurnUseCase:
         *,
         allowed_modules: frozenset[ModuleCode] | None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         active = await self._repository.list_messages(conversation_id)
         if not active or active[-1].role != MessageRole.ASSISTANT:
@@ -386,6 +418,7 @@ class ChatTurnUseCase:
             user_text_for_title=None,  # regenerate nunca regenera el título
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
+            document_context=document_context,
         ):
             yield event
 
@@ -399,6 +432,7 @@ class ChatTurnUseCase:
         user_text_for_title: str | None,
         allowed_modules: frozenset[ModuleCode] | None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         title_phase1_task: asyncio.Task[Any] | None = None
         title_phase1_emitted = False
@@ -414,8 +448,15 @@ class ChatTurnUseCase:
                 conversation_id=conversation_id,
                 allowed_modules=allowed_modules,
                 erp_database_id=erp_database_id,
+                document_context=document_context,
             ):
                 accumulator.consume(event)
+                if isinstance(event, DoneEvent):
+                    # Las fuentes llegan ANTES de `done`: el frontend cierra
+                    # el mensaje al recibir `done`.
+                    sources = accumulator.resolve_sources(document_context)
+                    if sources:
+                        yield SourcesEvent(sources=[src.to_dict() for src in sources])
                 yield event
                 if (
                     title_phase1_task is not None
@@ -435,6 +476,9 @@ class ChatTurnUseCase:
             raise
         finally:
             if accumulator.has_content():
+                # Con cancelación no hubo `done`: se resuelven acá las
+                # referencias válidas citadas hasta el corte.
+                accumulator.resolve_sources(document_context)
                 assistant_message = accumulator.build_message(conversation_id)
                 _spawn(self._safe_write(assistant_message, supersedes_id=supersedes_id))
 

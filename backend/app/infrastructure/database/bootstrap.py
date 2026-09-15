@@ -22,6 +22,12 @@ from alembic import command
 from app.infrastructure.config.settings import Settings
 from app.infrastructure.database.base import Base
 from app.modules.auth.infrastructure.persistence.models import RefreshTokenModel
+from app.modules.company_knowledge.infrastructure.persistence.models import (
+    CompanyDocumentBlobModel,
+    CompanyDocumentChunkModel,
+    CompanyDocumentDatabaseModel,
+    CompanyDocumentModel,
+)
 from app.modules.conversations.infrastructure.persistence.models import (
     ConversationModel,
     MessageModel,
@@ -48,6 +54,10 @@ _REGISTERED_MODELS = (
     MessageModel,
     AuditQueryModel,
     LlmProviderConfigModel,
+    CompanyDocumentModel,
+    CompanyDocumentDatabaseModel,
+    CompanyDocumentBlobModel,
+    CompanyDocumentChunkModel,
 )
 
 

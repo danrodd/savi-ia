@@ -96,6 +96,60 @@ def register_exception_handlers(app: FastAPI) -> None:
             },
         )
 
+    from app.modules.company_knowledge.domain.exceptions import (
+        CompanyDocumentConflictError,
+        CompanyDocumentFileTooLargeError,
+        CompanyDocumentIndexLimitReachedError,
+        DuplicateCompanyDocumentError,
+        UnsupportedCompanyDocumentMediaTypeError,
+    )
+
+    @app.exception_handler(CompanyDocumentFileTooLargeError)
+    async def _document_too_large(
+        _: Request, exc: CompanyDocumentFileTooLargeError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=413,
+            content={"errorCode": "file_too_large", "detail": str(exc), "limit_mb": exc.limit_mb},
+        )
+
+    @app.exception_handler(UnsupportedCompanyDocumentMediaTypeError)
+    async def _document_media_type(
+        _: Request, exc: UnsupportedCompanyDocumentMediaTypeError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=415,
+            content={"errorCode": "unsupported_media_type", "detail": str(exc)},
+        )
+
+    @app.exception_handler(DuplicateCompanyDocumentError)
+    async def _document_duplicate(_: Request, exc: DuplicateCompanyDocumentError) -> JSONResponse:
+        # El frontend enlaza al documento existente en lugar de un error seco.
+        return JSONResponse(
+            status_code=409,
+            content={
+                "errorCode": "duplicate_document",
+                "detail": str(exc),
+                "existing_document_id": exc.existing_document_id,
+                "existing_title": exc.existing_title,
+            },
+        )
+
+    @app.exception_handler(CompanyDocumentIndexLimitReachedError)
+    async def _document_index_limit(
+        _: Request, exc: CompanyDocumentIndexLimitReachedError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={"errorCode": "index_limit_reached", "detail": str(exc), "limit": exc.limit},
+        )
+
+    @app.exception_handler(CompanyDocumentConflictError)
+    async def _document_conflict(_: Request, exc: CompanyDocumentConflictError) -> JSONResponse:
+        return JSONResponse(
+            status_code=409, content={"errorCode": "document_conflict", "detail": str(exc)}
+        )
+
     @app.exception_handler(DomainError)
     async def _domain(_: Request, exc: DomainError) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})

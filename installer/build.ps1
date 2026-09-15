@@ -175,6 +175,11 @@ try {
     uv sync
     if ($LASTEXITCODE -ne 0) { throw 'uv sync falló.' }
 
+    # Modelo de embeddings de documentos de la empresa: viaja en el bundle y
+    # SAVI no descarga en runtime. Idempotente: si ya está, solo lo verifica.
+    uv run download-embedding-model
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar el modelo de embeddings.' }
+
     uv run pyinstaller `
         --noconfirm `
         --distpath (Join-Path $InstallerDir 'build\dist') `

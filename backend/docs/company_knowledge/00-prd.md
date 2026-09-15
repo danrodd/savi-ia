@@ -1,6 +1,7 @@
 # PRD — Conocimiento de la empresa (documentos propios)
 
-> Estado: **propuesta**, pendiente de aprobación antes de implementar.
+> Estado: **Fases 1 y 2 implementadas (backend)**; Fase 3 (interfaz) pendiente.
+> Ver "Estado de implementación" al final.
 > Fecha: 2026-09-14.
 > Specs por fase:
 > [Fase 1 — Ingesta y procesamiento](01-fase-ingesta-y-procesamiento.md) ·
@@ -237,3 +238,50 @@ Orden obligatorio: 1 → 2 → 3.
 | **RRF** | *Reciprocal Rank Fusion*: combina dos rankings sumando `1 / (k + posición)`. |
 | **Visibilidad / alcance** | Quién ve el documento / en qué bases aplica. |
 | **Referencia de cita** | Identificador corto (`D1`, `D2`) que la tool asigna por turno y el modelo usa para citar. |
+
+---
+
+## Estado de implementación (2026-09-14)
+
+### Hecho y verificado
+
+| Área | Verificación |
+|---|---|
+| Ingesta (PDF, TXT, MD), fragmentación, embeddings locales, worker | Tests + subida real: documento `ready` en 2,4 s (incluye la primera carga del modelo). |
+| Índice híbrido con filtro de permisos previo | Tests con fragmentos restringidos más parecidos que el permitido. |
+| Permisos por visibilidad, módulos y base | Tabla exhaustiva + prueba real con un usuario no admin del ERP (`all`, `admins`, módulo que tiene, módulo que no tiene), en caliente. |
+| `tipo = documentos`, citas, `sources` antes de `done`, persistencia | Tests + turno real con Claude: respuesta citada `[D1]`. |
+| Descarga protegida | Tests de cada rechazo + real: `200 text/plain nosniff`; `404` desde una conversación que no cita el documento. |
+| Instrucciones en documentos | Real con Claude: las ignoró. |
+| Pregunta sin respuesta en documentos | Real con Claude: "No encontré información…". |
+| Suite | 432 tests; Ruff y Pyright strict en verde. |
+
+### Cambios respecto de la spec
+
+- **Carrera del worker corregida.** Un `save` completo al terminar resucitaba
+  documentos eliminados durante el procesamiento. El cierre ahora es
+  condicional (`complete_processing`: sin eliminar, `processing`, misma
+  `version`) y la edición de permisos usa `update_access_metadata`, que no
+  toca el estado.
+- **Umbral de similitud 0,80, no 0,3.** Medido con `multilingual-e5-small`:
+  relevante 0,86, sin relación 0,76. Con 0,3 no se filtraba nada. Es
+  provisorio hasta el spike.
+- **`unavailable_reason = "processing"`** además de `deleted` y `no_access`,
+  para un documento citado que se está reprocesando.
+- **Arranque tolerante.** Si el módulo no puede arrancar (p. ej. tablas sin
+  migrar), SAVI sigue funcionando sin documentos en lugar de caerse.
+- **Modelo en el instalador: 465 MB** (ONNX fp32); la carpeta de la app queda en 643 MB.
+  Verificado con el `.exe` empaquetado: `--check-config` carga el modelo desde el bundle,
+  sin red, en 1,6 s. El `savi.spec` excluía `numpy` y `PIL` desde antes: con el módulo
+  nuevo eso impedía que el `.exe` arrancara, y se corrigió.
+
+### Pendiente
+
+- **Spike con documentos reales** (P1): fija modelo definitivo, tamaño de
+  fragmento y umbral. Sin eso, RNF-08 no está medido.
+- **Fase 3**: interfaz de administración y fuentes en el chat.
+- RNF-02 (impacto en el chat con un PDF grande procesándose) y RNF-04
+  (50.000 fragmentos) sin medir.
+- Instalador de punta a punta (Inno Setup) en una VM limpia: se verificó el bundle de
+  PyInstaller, no el `.exe` del instalador.
+

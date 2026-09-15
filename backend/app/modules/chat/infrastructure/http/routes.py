@@ -19,6 +19,7 @@ from uuid import UUID
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from app.infrastructure.config import get_settings
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http.dependencies import CurrentUserDep
 from app.modules.chat.application.requests import ChatRequest
@@ -27,6 +28,8 @@ from app.modules.chat.infrastructure.http.dependencies import (
     ActiveProviderResolverDep,
     ChatTurnUseCaseDep,
 )
+from app.modules.company_knowledge.application.access import build_access_context
+from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.conversations.domain.value_objects import ConversationOwner
 from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
 from app.modules.erp_databases.infrastructure.http.dependencies import (
@@ -105,6 +108,18 @@ async def chat(
         None if access.is_admin_in_database else frozenset(access.modules)
     )
 
+    # Documentos de la empresa: permisos del usuario en ESTA base. El
+    # registro de citas es nuevo por turno (las referencias D1, D2… no se
+    # comparten entre turnos).
+    document_context = TurnDocumentContext(
+        access=build_access_context(
+            access,
+            erp_database_id=_require(conversation_database_id),
+            login=user.login,
+            savi_admin_logins=get_settings().savi_admin_logins_set,
+        )
+    )
+
     async def event_stream():
         async for event in use_case.execute(
             request.conversation_id,
@@ -112,6 +127,7 @@ async def chat(
             request.message,
             allowed_modules=modules_filter,
             erp_database_id=conversation_database_id,
+            document_context=document_context,
         ):
             yield _sse(_event_to_payload(event))
 

@@ -58,6 +58,23 @@ class ConversationResponse(BaseModel):
         )
 
 
+class MessageSourceResponse(BaseModel):
+    """Fuente citada. `available` se calcula al consultar, para quien consulta."""
+
+    ref: str
+    refs: list[str]
+    document_id: UUID
+    version: int
+    title: str
+    pages: str | None = None
+    available: bool | None = None
+    unavailable_reason: str | None = None
+
+
+def _empty_sources() -> list[MessageSourceResponse]:
+    return []
+
+
 class MessageResponse(BaseModel):
     id: UUID
     conversation_id: UUID
@@ -74,6 +91,7 @@ class MessageResponse(BaseModel):
     model: str | None = None
     superseded_at: datetime | None = None
     superseded_by_id: UUID | None = None
+    sources: list[MessageSourceResponse] = Field(default_factory=_empty_sources)
 
     @classmethod
     def from_dto(cls, dto: MessageDTO) -> "MessageResponse":
@@ -99,6 +117,17 @@ class MessageResponse(BaseModel):
             model=dto.model,
             superseded_at=dto.superseded_at,
             superseded_by_id=dto.superseded_by_id,
+            sources=[
+                MessageSourceResponse(
+                    ref=s.ref,
+                    refs=list(s.refs),
+                    document_id=s.document_id,
+                    version=s.version,
+                    title=s.title,
+                    pages=s.pages,
+                )
+                for s in dto.sources
+            ],
         )
 
 

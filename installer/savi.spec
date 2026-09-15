@@ -16,13 +16,19 @@
 
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import (
+    collect_all,
+    collect_data_files,
+    collect_submodules,
+)
 
 ROOT = Path(SPECPATH).parent  # noqa: F821 - SPECPATH lo inyecta PyInstaller
 BACKEND = ROOT / "backend"
 
 KNOWLEDGE_DATA = BACKEND / "app" / "modules" / "knowledge" / "data"
 FRONTEND_BUILD = BACKEND / "frontend"
+# Modelo de embeddings de documentos de la empresa (lo baja build.ps1).
+EMBEDDING_MODELS = BACKEND / ".models"
 
 
 def _require(path: Path, explanation: str) -> Path:
@@ -63,12 +69,21 @@ _require(
     "Generalo con: installer/build.ps1  (o copiá frontend/dist a backend/frontend).",
 )
 
+_require(
+    EMBEDDING_MODELS,
+    "Es el modelo de embeddings de los documentos de la empresa. SAVI no\n"
+    "descarga nada en runtime: sin el, los documentos quedan en cola.\n"
+    "Bajalo con: cd backend && uv run download-embedding-model",
+)
+
 datas = [
     # Alembic: el launcher corre las migraciones solo al arrancar.
     (str(BACKEND / "alembic"), "alembic"),
     (str(BACKEND / "alembic.ini"), "."),
     (str(KNOWLEDGE_DATA), "app/modules/knowledge/data"),
     (str(FRONTEND_BUILD), "frontend"),
+    # `models_root()` lo busca en `<bundle>/models` cuando está congelado.
+    (str(EMBEDDING_MODELS), "models"),
 ]
 # Plantillas .mako que alembic necesita para generar revisiones.
 datas += collect_data_files("alembic")
@@ -114,16 +129,30 @@ hiddenimports = [
 # instalado en el equipo del cliente y no aca.
 hiddenimports += collect_submodules("sqlglot")
 
+# Documentos de la empresa: fastembed descubre modelos y onnxruntime carga
+# DLLs nativas en runtime; el analisis estatico no ve ninguna de las dos.
+binaries: list[tuple[str, str]] = []
+for package in ("fastembed", "onnxruntime", "tokenizers"):
+    package_datas, package_binaries, package_hidden = collect_all(package)
+    datas += package_datas
+    binaries += package_binaries
+    hiddenimports += package_hidden
+hiddenimports += ["pypdf", "multipart", "python_multipart"]
+
 analysis = Analysis(  # noqa: F821
     [str(BACKEND / "app" / "launcher.py")],
     pathex=[str(BACKEND)],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],
     # Pesan cientos de MB y no se usan en runtime.
-    excludes=["tkinter", "pytest", "ruff", "pyright", "PIL", "numpy", "matplotlib"],
+    # numpy y PIL NO se excluyen: los documentos de la empresa usan numpy, y
+    # `fastembed` importa PIL al cargarse (`fastembed/common/types.py`) aunque
+    # SAVI solo vectoriza texto. `main.py` importa ese modulo al arrancar:
+    # excluirlos rompia el arranque del .exe entero, no solo los documentos.
+    excludes=["tkinter", "pytest", "ruff", "pyright", "matplotlib"],
     noarchive=False,
 )
 

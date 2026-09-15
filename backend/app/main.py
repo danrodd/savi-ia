@@ -17,6 +17,16 @@ from app.infrastructure.database import (
 )
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.chat.infrastructure.http import router as chat_router
+from app.modules.company_knowledge.infrastructure.http import (
+    public_router as company_documents_public_router,
+)
+from app.modules.company_knowledge.infrastructure.http import (
+    router as company_documents_router,
+)
+from app.modules.company_knowledge.infrastructure.provider import (
+    start_company_knowledge,
+    stop_company_knowledge,
+)
 from app.modules.conversations.infrastructure.http import router as conversations_router
 from app.modules.erp_databases.infrastructure import (
     ErpConnectionProvider,
@@ -60,6 +70,7 @@ _API_PREFIXES = (
     "usage",
     "admin",
     "erp-databases",
+    "company-documents",
     "health",
     "version",
     "docs",
@@ -115,9 +126,14 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # una ruta sintética dentro del bundle y la resolución deja de ser obvia.
     knowledge_root = resource_dir() / "app" / "modules" / "knowledge" / "data"
     init_catalog(knowledge_root)
+
+    # Documentos de la empresa: worker de ingesta + índice en memoria. La
+    # carga del índice corre en segundo plano y no demora el arranque.
+    await start_company_knowledge(settings)
     try:
         yield
     finally:
+        await stop_company_knowledge()
         await close_engine_registry()
         await close_engines()
 
@@ -172,6 +188,8 @@ def create_app() -> FastAPI:
     app.include_router(erp_databases_router)
     app.include_router(erp_databases_public_router)
     app.include_router(llm_providers_router)
+    app.include_router(company_documents_router)
+    app.include_router(company_documents_public_router)
 
     # Va último: la ruta catch-all tiene que perder contra cualquier ruta
     # del API, y FastAPI resuelve por orden de registro.

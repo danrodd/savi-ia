@@ -163,3 +163,6 @@ installer/build/
 installer/output/
 # Prerrequisitos descargados en tiempo de build (Node, git-bash).
 installer/vendor/
+
+# Modelo de embeddings bajado en desarrollo (`uv run download-embedding-model`).
+backend/.models/

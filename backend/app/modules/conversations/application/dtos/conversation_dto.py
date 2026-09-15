@@ -5,6 +5,7 @@ from uuid import UUID
 
 from app.modules.conversations.domain.value_objects import (
     MessageFinishReason,
+    MessageSource,
     TokenUsage,
     ToolInvocation,
 )
@@ -49,6 +50,7 @@ class MessageDTO:
     model: str | None = None
     superseded_at: datetime | None = None
     superseded_by_id: UUID | None = None
+    sources: tuple[MessageSource, ...] = ()
 
 
 @dataclass(frozen=True)

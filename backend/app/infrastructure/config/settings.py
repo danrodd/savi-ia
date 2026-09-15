@@ -108,6 +108,37 @@ class Settings(BaseSettings):
     # de ejecutar.
     free_query_max_estimated_rows: int = Field(default=1000)
 
+    # ── Conocimiento de la empresa (documentos propios) ──────────────────
+    # Límites de carga por archivo y por documento.
+    company_docs_max_file_mb: int = Field(default=20)
+    company_docs_max_pages: int = Field(default=500)
+    company_docs_max_chunks_per_doc: int = Field(default=2000)
+    # Tope de la instalación. El worker lo verifica antes de guardar.
+    company_docs_max_total_chunks: int = Field(default=50000)
+    # Fragmentación: tamaño objetivo y solapamiento en tokens estimados
+    # (caracteres ÷ 4). Los ajusta el spike del modelo.
+    company_docs_chunk_tokens: int = Field(default=900)
+    company_docs_chunk_overlap: int = Field(default=120)
+    # Modelo de embeddings. e5 usa prefijos `query:`/`passage:`; el
+    # embedder los aplica solo cuando el nombre del modelo contiene `e5`.
+    company_docs_embedding_model: str = Field(
+        default="intfloat/multilingual-e5-small"
+    )
+    # Vacío = ubicación por entorno (modelo empaquetado en la app, o
+    # `backend/.models/` en desarrollo). Ver `resolve_model_dir`.
+    company_docs_model_dir: str = Field(default="")
+    # Apaga el worker de ingesta (tests). En runtime siempre `true`.
+    company_docs_worker_enabled: bool = Field(default=True)
+    # Búsqueda híbrida (Fase 2). `min_similarity` depende del modelo: e5
+    # comprime las similitudes (medido con multilingual-e5-small el
+    # 2026-09-14: relevante 0.86, sin relación 0.76). Con 0.3 no filtraba
+    # nada. 0.80 es provisorio hasta el spike con documentos reales.
+    company_docs_min_similarity: float = Field(default=0.80)
+    company_docs_search_candidates: int = Field(default=50)
+    company_docs_search_limit: int = Field(default=6)
+    company_docs_search_max_per_document: int = Field(default=3)
+    company_docs_max_context_chars: int = Field(default=6000)
+
     # ── Auth ─────────────────────────────────────────────────────────────
     # Secreto para firmar los JWT. NUNCA usar el default en prod.
     jwt_secret: str = Field(default="change-me-in-prod")

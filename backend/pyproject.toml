@@ -28,6 +28,16 @@ dependencies = [
     # cambie, SAVI arranca sin forma de cerrarse.
     "pywin32>=311; sys_platform == 'win32'",
     "openai==3.13.0",
+    # Conocimiento de la empresa (documentos propios): extracción de PDF y
+    # embeddings locales. `fastembed` trae `onnxruntime`, `numpy`,
+    # `tokenizers` y `huggingface-hub`. Versiones fijas, como
+    # `openai==3.13.0`: el runtime ONNX y el modelo viajan en el instalador
+    # y cambian de comportamiento entre minors.
+    "fastembed==0.8.0",
+    "pypdf==6.18.1",
+    # Subida `multipart/form-data` en FastAPI. Llegaba transitivo; se
+    # declara porque el módulo de documentos depende de él directamente.
+    "python-multipart==0.0.29",
 ]
 
 [dependency-groups]
@@ -47,6 +57,7 @@ lint = "app.cli:lint"
 fmt = "app.cli:fmt"
 typecheck = "app.cli:typecheck"
 migrate = "app.cli:migrate"
+download-embedding-model = "app.cli:download_embedding_model"
 
 [tool.uv]
 package = true

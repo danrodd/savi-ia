@@ -24,6 +24,10 @@ from app.modules.chat.infrastructure.llm.tools.consultar_datos import (
 from app.modules.chat.infrastructure.llm.tools.consultar_libre import (
     build_consultar_libre_impl,
 )
+from app.modules.chat.infrastructure.llm.tools.documents import (
+    DocumentSearch,
+    build_document_search,
+)
 from app.modules.chat.infrastructure.llm.tools.info_empresa import info_empresa_impl
 from app.modules.chat.infrastructure.llm.tools.knowledge import (
     build_consultar_conocimiento_impl,
@@ -33,6 +37,10 @@ from app.modules.chat.infrastructure.llm.tools.schemas import (
     CONSULTAR_DATOS_SCHEMA,
     CONSULTAR_LIBRE_SCHEMA,
     INFO_EMPRESA_SCHEMA,
+)
+from app.modules.company_knowledge.domain.services import TurnDocumentContext
+from app.modules.company_knowledge.infrastructure.provider import (
+    get_company_knowledge_runtime,
 )
 from app.modules.knowledge.infrastructure.catalog_provider import get_catalog
 
@@ -90,7 +98,11 @@ _CONSULTAR_CONOCIMIENTO_DESCRIPTION = (
     "  * 'modulos_disponibles': lista de módulos del usuario. "
     "`consulta` = '' (vacío).\n"
     "  * 'formulario': lookup directo por nombre interno frmXxx. "
-    "`consulta` = nombre del formulario.\n\n"
+    "`consulta` = nombre del formulario.\n"
+    "  * 'documentos': documentos PROPIOS de la empresa (políticas, "
+    "procedimientos, reglamentos, actas, normas internas). `consulta` = la "
+    "pregunta del usuario. Cada resultado trae `ref` (D1, D2…): citala entre "
+    "corchetes, [D1], justo después de la afirmación que respalda.\n\n"
     "El response trae `matches` (para intencion), `module`, `workflow`, "
     "`faqs`, `entry` o `modules` según el tipo. **Si la respuesta trae "
     "datos, ESOS DATOS SON REALES — usalos para componer tu respuesta. "
@@ -140,11 +152,24 @@ def _spec(name: str, description: str, parameters: dict[str, Any], raw: _RawHand
     return ToolSpec(name=name, description=description, parameters=parameters, handler=handler)
 
 
+def _document_search(document_context: TurnDocumentContext | None) -> DocumentSearch | None:
+    """Búsqueda de documentos del turno, o `None` si no hay índice o contexto.
+
+    Sin contexto no hay permisos que aplicar, así que no hay búsqueda: nunca
+    se cae a "sin filtro".
+    """
+    runtime = get_company_knowledge_runtime()
+    if runtime is None or document_context is None:
+        return None
+    return build_document_search(runtime.index, document_context, limit=runtime.search_limit)
+
+
 def build_savi_tools(
     *,
     conversation_id: UUID | None,
     allowed_modules: frozenset[ModuleCode] | None,
     erp_database_id: UUID | None,
+    document_context: TurnDocumentContext | None = None,
 ) -> list[ToolSpec]:
     """`allowed_modules=None` significa admin sin filtro (D3)."""
 
@@ -155,7 +180,9 @@ def build_savi_tools(
         return await consultar_datos_impl(args, erp_database_id=erp_database_id)
 
     consultar_libre = build_consultar_libre_impl(conversation_id, erp_database_id)
-    consultar_conocimiento = build_consultar_conocimiento_impl(get_catalog(), allowed_modules)
+    consultar_conocimiento = build_consultar_conocimiento_impl(
+        get_catalog(), allowed_modules, _document_search(document_context)
+    )
 
     return [
         _spec("info_empresa", _INFO_EMPRESA_DESCRIPTION, INFO_EMPRESA_SCHEMA, info_empresa),

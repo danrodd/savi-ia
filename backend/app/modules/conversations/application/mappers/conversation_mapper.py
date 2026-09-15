@@ -32,4 +32,5 @@ class ConversationMapper:
             model=entity.model,
             superseded_at=entity.superseded_at,
             superseded_by_id=entity.superseded_by_id,
+            sources=tuple(entity.sources),
         )

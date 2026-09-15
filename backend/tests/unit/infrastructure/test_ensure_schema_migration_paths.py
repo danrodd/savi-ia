@@ -99,13 +99,17 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
         db_path, "llm_provider_configs"
     )
 
+    document_columns = _table_columns(db_path, "company_documents")
+    assert {"title", "sha256", "visibility", "all_databases"}.issubset(document_columns)
+    assert "uq_company_documents_sha256" in _index_names(db_path, "company_documents")
+
     engine = create_engine(f"sqlite:///{db_path.as_posix()}")
     try:
         with engine.connect() as conn:
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     finally:
         engine.dispose()
-        assert version == "f2c7b9d8e1a0"
+        assert version == "a9c1e5f7b3d2"
 
 
 def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
@@ -227,4 +231,4 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert row.erp_database_id == queried_database_id
     # ...y la identidad se backfillea desde la base consultada.
     assert row.owner_erp_database_id == queried_database_id
-    assert version == "f2c7b9d8e1a0"
+    assert version == "a9c1e5f7b3d2"

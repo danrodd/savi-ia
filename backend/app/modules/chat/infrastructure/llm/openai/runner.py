@@ -45,6 +45,7 @@ from app.modules.chat.infrastructure.llm.pricing import compute_cost_usd
 from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
+from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.conversations.domain.value_objects import TokenUsage
 
 log = logging.getLogger(__name__)
@@ -145,6 +146,7 @@ class OpenAIRunner(LLMRunner):
         conversation_id: UUID | None = None,
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
+        document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
         client = cast(
             _AsyncClient, self._client or AsyncOpenAI(api_key=self._provider.credential)
@@ -153,6 +155,7 @@ class OpenAIRunner(LLMRunner):
             conversation_id=conversation_id,
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
+            document_context=document_context,
         )
         tools = tool_definitions(tool_specs)
         # Mezcla deliberada de dicts neutros y objetos de la SDK: la API

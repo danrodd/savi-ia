@@ -2,7 +2,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
+from app.infrastructure.config import get_settings
 from app.modules.auth.infrastructure.http import CurrentUserDep
+from app.modules.company_knowledge.application.access import build_access_context
+from app.modules.company_knowledge.application.use_cases import (
+    RepositorySourceAvailabilityResolver,
+)
+from app.modules.company_knowledge.infrastructure.http.repository_dependency import (
+    DocumentRepositoryDep,
+)
 from app.modules.conversations.application.dtos import CreateConversationDTO
 from app.modules.conversations.application.requests import (
     CreateConversationRequest,
@@ -105,6 +113,8 @@ async def get_conversation(
     conversation_id: UUID,
     use_case: GetConversationWithMessagesUseCaseDep,
     user: CurrentUserDep,
+    documents: DocumentRepositoryDep,
+    access_resolver: ResolveModulesForDatabaseUseCaseDep,
     include_superseded: bool = Query(
         default=False,
         description=(
@@ -119,7 +129,45 @@ async def get_conversation(
         expected_owner=_owner(user),
         include_superseded=include_superseded,
     )
-    return ConversationWithMessagesResponse.from_dto(result)
+    response = ConversationWithMessagesResponse.from_dto(result)
+    await _resolve_source_availability(response, user, documents, access_resolver)
+    return response
+
+
+async def _resolve_source_availability(
+    response: ConversationWithMessagesResponse,
+    user: CurrentUserDep,
+    documents: DocumentRepositoryDep,
+    access_resolver: ResolveModulesForDatabaseUseCaseDep,
+) -> None:
+    """Marca cada fuente citada como disponible o no, para QUIEN consulta.
+
+    Se calcula en cada lectura: un documento eliminado, en reproceso o sin
+    permiso para este usuario hoy aparece así aunque ayer se citara.
+    """
+    sources = [source for message in response.messages for source in message.sources]
+    database_id = response.conversation.erp_database_id
+    if not sources or database_id is None:
+        return
+    access = await access_resolver.execute(user.login, database_id)
+    if not access.has_access:
+        for source in sources:
+            source.available = False
+            source.unavailable_reason = "no_access"
+        return
+    ctx = build_access_context(
+        access,
+        erp_database_id=database_id,
+        login=user.login,
+        savi_admin_logins=get_settings().savi_admin_logins_set,
+    )
+    availability = await RepositorySourceAvailabilityResolver(documents).resolve(
+        [source.document_id for source in sources], ctx
+    )
+    for source in sources:
+        state = availability.get(source.document_id)
+        source.available = bool(state and state.available)
+        source.unavailable_reason = None if state is None or state.available else state.reason
 
 
 @router.patch("/{conversation_id}", response_model=ConversationResponse)
