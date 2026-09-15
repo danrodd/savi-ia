@@ -5,9 +5,10 @@
 - POST /auth/logout   → revoca el refresh recibido (idempotente)
 - GET  /auth/me       → devuelve el usuario del access token actual
 """
+
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
 
 from app.modules.auth.application.requests import LoginRequest, RefreshRequest
 from app.modules.auth.application.responses import (
@@ -16,12 +17,20 @@ from app.modules.auth.application.responses import (
     ModulesVersionResponse,
     TokenResponse,
 )
+from app.modules.auth.domain.exceptions import InvalidCredentialsError, UserDisabledError
 from app.modules.auth.infrastructure.http.dependencies import (
     CurrentUserDep,
     LoginUseCaseDep,
     LogoutUseCaseDep,
     RefreshUseCaseDep,
     ResolveUserModulesUseCaseDep,
+    SettingsDep,
+)
+from app.shared.rate_limit import (
+    enforce_login_limits,
+    enforce_refresh_limits,
+    record_login_failure,
+    record_login_success,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -29,18 +38,34 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
+    http_request: Request,
     request: LoginRequest,
     use_case: LoginUseCaseDep,
+    settings: SettingsDep,
 ) -> TokenResponse:
-    tokens, user = await use_case.execute(request.login, request.password)
+    # El límite va ANTES del caso de uso: si corriera después, cada intento
+    # rechazado igual pagaría el viaje al ERP y el hash, que es justo el
+    # trabajo que un ataque de fuerza bruta busca hacernos gastar.
+    enforce_login_limits(http_request, settings, request.login)
+    try:
+        tokens, user = await use_case.execute(request.login, request.password)
+    except (InvalidCredentialsError, UserDisabledError):
+        record_login_failure(settings, request.login)
+        raise
+    record_login_success(settings, request.login)
     return TokenResponse.from_domain(tokens, user)
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(
+    http_request: Request,
     request: RefreshRequest,
     use_case: RefreshUseCaseDep,
+    settings: SettingsDep,
 ) -> TokenResponse:
+    # Por IP: acá todavía no hay usuario resuelto, y sin límite el refresh es
+    # un oráculo gratis para probar tokens.
+    enforce_refresh_limits(http_request, settings)
     tokens, user = await use_case.execute(request.refresh_token)
     return TokenResponse.from_domain(tokens, user)
 

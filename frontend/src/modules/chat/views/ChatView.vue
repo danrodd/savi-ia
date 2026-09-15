@@ -349,8 +349,10 @@ const showConversationShare = computed<boolean>(
         v-if="!isReadOnly"
         :streaming="streaming"
         :disabled="activeDatabaseUnavailable || store.llmProviderUnavailable"
+        :restore-text="store.rejectedText"
         @send="handleSend"
         @stop="store.stopStream"
+        @restored="store.rejectedText = null"
       />
     </main>
 

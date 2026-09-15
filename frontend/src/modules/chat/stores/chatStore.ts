@@ -162,6 +162,27 @@ function isLlmProviderUnavailable(e: unknown): boolean {
   return e instanceof HttpRequestError && e.body.errorCode === 'llm_provider_unavailable'
 }
 
+/**
+ * Rechazos por límite de uso o por turno en curso. El backend corta ANTES de
+ * abrir el stream, así que no se persistió nada: hay que sacar los
+ * placeholders y devolverle al usuario el texto que había escrito, en lugar
+ * de dejar un error rojo y el mensaje perdido.
+ */
+function isBusyRejection(e: unknown): boolean {
+  if (!(e instanceof HttpRequestError)) return false
+  return e.body.errorCode === 'rate_limited' || e.body.errorCode === 'conversation_busy'
+}
+
+function busyMessage(e: unknown): string {
+  if (!(e instanceof HttpRequestError)) return 'Probá de nuevo en un momento.'
+  if (e.body.errorCode === 'conversation_busy') {
+    return 'Ya hay una respuesta en curso en esta conversación.'
+  }
+  return typeof e.body.detail === 'string'
+    ? e.body.detail
+    : 'Demasiadas consultas seguidas. Probá en unos segundos.'
+}
+
 function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
   for (let i = arr.length - 1; i >= 0; i--) {
     if (arr[i] !== undefined && predicate(arr[i] as T)) return i
@@ -179,6 +200,8 @@ export const useChatStore = defineStore('chat', () => {
   const streaming = ref(false)
   const error = ref<string | null>(null)
   const llmProviderUnavailable = ref(false)
+  /** Texto que el usuario había escrito y el backend rechazó por límite. */
+  const rejectedText = ref<string | null>(null)
 
   // Bases del ERP a las que el usuario tiene acceso. La de una conversación
   // se fija al crearla y no cambia; la selección solo aplica a la próxima.
@@ -473,6 +496,14 @@ export const useChatStore = defineStore('chat', () => {
         // placeholder del turno debe quedar visible en el hilo local.
         llmProviderUnavailable.value = true
         messages.value = messages.value.filter((m) => m.id !== null)
+      } else if (isBusyRejection(err)) {
+        // Igual que arriba, pero además se recupera el texto: perder lo que
+        // el usuario escribió por un límite temporal es la peor forma de
+        // aplicarlo.
+        const pendiente = messages.value.find((m) => m.id === null && m.role === 'user')
+        rejectedText.value = pendiente?.text ?? null
+        messages.value = messages.value.filter((m) => m.id !== null)
+        error.value = busyMessage(err)
       } else {
         error.value = err.message
         messages.value = applyEvent(messages.value, { type: 'error', message: err.message })
@@ -567,6 +598,7 @@ export const useChatStore = defineStore('chat', () => {
     streaming,
     error,
     llmProviderUnavailable,
+    rejectedText,
     lastUserIndex,
     lastAssistantIndex,
     canRegenerate,

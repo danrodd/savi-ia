@@ -43,6 +43,7 @@ from app.modules.company_knowledge.infrastructure.http.dependencies import (
     UploadUseCaseDep,
     UsageUseCaseDep,
 )
+from app.shared.rate_limit import enforce_upload_limits
 
 router = APIRouter(prefix="/admin/company-documents", tags=["company-documents"])
 
@@ -100,6 +101,10 @@ async def upload_document(
     all_databases: bool = Form(default=True),
     database_ids: list[UUID] = Form(default_factory=list),
 ) -> CompanyDocumentResponse:
+    # Antes de leer el cuerpo: cada subida encola procesamiento (embeddings),
+    # que es el trabajo caro. Con el usuario ya inyectado, sin resolver la
+    # autenticación de nuevo.
+    enforce_upload_limits(settings, admin)
     limit_mb = settings.company_docs_max_file_mb
     _reject_oversized_body(request, limit_mb)
     content = await _read_limited(file, limit_mb)
@@ -199,9 +204,11 @@ async def replace_document(
     request: Request,
     use_case: ReplaceUseCaseDep,
     settings: SettingsDep,
-    _admin: SaviAdminDep,
+    admin: SaviAdminDep,
     file: UploadFile = File(...),
 ) -> CompanyDocumentResponse:
+    # Reemplazar también encola procesamiento: cuenta para el mismo cupo.
+    enforce_upload_limits(settings, admin)
     limit_mb = settings.company_docs_max_file_mb
     _reject_oversized_body(request, limit_mb)
     content = await _read_limited(file, limit_mb)

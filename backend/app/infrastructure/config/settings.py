@@ -165,6 +165,38 @@ class Settings(BaseSettings):
 
     cors_allowed_origins: str = Field(default="http://localhost:5173,http://localhost:3000")
 
+    # ── Límites de pedidos ───────────────────────────────────────────────
+    # Defaults holgados a propósito: un usuario de la app de escritorio no
+    # los toca nunca, y frenan a un script. Medido antes de ponerlos: 50
+    # logins fallidos en paralelo se procesaban todos.
+    rate_limit_enabled: bool = Field(default=True)
+    # Login: por IP y por código de usuario.
+    rate_limit_login_per_minute: int = Field(default=10)
+    # Contraseñas malas seguidas antes de bloquear ese login. Las claves del
+    # ERP son MD5 sin sal: la ventana sola no frena un ataque lento.
+    rate_limit_login_max_failures: int = Field(default=5)
+    rate_limit_login_block_minutes: int = Field(default=15)
+    rate_limit_refresh_per_minute: int = Field(default=30)
+    # Chat: por usuario. Cada turno cuesta dinero de verdad.
+    rate_limit_chat_per_minute: int = Field(default=20)
+    rate_limit_chat_per_hour: int = Field(default=200)
+    rate_limit_upload_per_hour: int = Field(default=30)
+    # Techo general por IP, para todo lo demás (incluye `/health`).
+    rate_limit_global_per_minute: int = Field(default=300)
+    # Solo se confía en `X-Forwarded-For` si hay un proxy declarado. Confiarlo
+    # siempre vuelve decorativo el límite: cualquiera falsea el header.
+    trust_proxy_headers: bool = Field(default=False)
+
+    # ── Concurrencia del chat ────────────────────────────────────────────
+    # Cada turno con Claude levanta un subproceso del CLI con su contexto.
+    # Sin tope, N usuarios simultáneos son N procesos y la máquina se queda
+    # sin memoria antes de que termine ninguno.
+    max_concurrent_chat_turns: int = Field(default=3)
+    # Reloj de pared por turno. `max_agent_turns` acota las rondas de
+    # herramienta, no el tiempo: un turno podía quedarse colgado reteniendo
+    # el subproceso y la conexión SSE.
+    chat_turn_timeout_seconds: float = Field(default=180.0)
+
     # ── Usage / consumo ──────────────────────────────────────────────────
     # El consumo se ALMACENA siempre en USD (lo que reporta el SDK). Esta
     # tasa es solo para que el frontend muestre el equivalente en COP — no

@@ -16,8 +16,9 @@ SAVI está **bien construido en lo que más cuesta**:
 - credenciales cifradas;
 - 432 tests con Pyright strict.
 
-> **Estado al 2026-09-15:** la Fase 0 del plan ya está implementada y
-> verificada — C1, M2, M3 y O3 están corregidos. El resto sigue abierto.
+> **Estado al 2026-09-15:** las Fases 0 y 2 del plan están implementadas y
+> verificadas — C1, M2, M3, O3, O1, O2, O4 y M5 corregidos. Queda abierto lo
+> de datos del ERP (A1, A2), multiempresa (A3, M1, O6) y la deuda.
 
 Pero tiene **dos problemas de seguridad que hay que corregir antes de
 cualquier despliegue con usuarios reales**:

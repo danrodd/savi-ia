@@ -7,18 +7,18 @@ from app.modules.auth.domain.exceptions import (
     UserDisabledError,
 )
 from app.shared.exceptions.base import (
+    ConversationBusyError,
     DomainError,
     ForbiddenError,
     NotFoundError,
+    RateLimitExceededError,
     ValidationError,
 )
 
 
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ModuleAccessDeniedError)
-    async def _module_access_denied(
-        _: Request, exc: ModuleAccessDeniedError
-    ) -> JSONResponse:
+    async def _module_access_denied(_: Request, exc: ModuleAccessDeniedError) -> JSONResponse:
         # Shape estructurado: el frontend usa `errorCode` para detectar
         # esto y recargar el bootstrap (caché de módulos stale).
         return JSONResponse(
@@ -41,6 +41,26 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ValidationError)
     async def _validation(_: Request, exc: ValidationError) -> JSONResponse:
         return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+    @app.exception_handler(ConversationBusyError)
+    async def _conversation_busy(_: Request, exc: ConversationBusyError) -> JSONResponse:
+        # 409 y no 429: no es exceso de pedidos, es que esa conversación ya
+        # tiene un turno corriendo. El frontend deshabilita enviar y avisa.
+        return JSONResponse(
+            status_code=409,
+            content={"errorCode": "conversation_busy", "detail": str(exc)},
+        )
+
+    @app.exception_handler(RateLimitExceededError)
+    async def _rate_limited(_: Request, exc: RateLimitExceededError) -> JSONResponse:
+        # `errorCode` para que el frontend lo muestre como aviso con cuenta
+        # regresiva y no como error genérico (perdiendo lo que el usuario
+        # escribió). `Retry-After` es el estándar para el cliente.
+        return JSONResponse(
+            status_code=429,
+            content={"errorCode": "rate_limited", "detail": exc.detail},
+            headers={"Retry-After": str(exc.retry_after_seconds)},
+        )
 
     @app.exception_handler(UserDisabledError)
     async def _user_disabled(_: Request, exc: UserDisabledError) -> JSONResponse:
@@ -80,9 +100,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(ErpDatabaseUnavailableError)
-    async def _erp_unavailable(
-        _: Request, exc: ErpDatabaseUnavailableError
-    ) -> JSONResponse:
+    async def _erp_unavailable(_: Request, exc: ErpDatabaseUnavailableError) -> JSONResponse:
         # 409 y no 404: la conversación y la base existen, lo que falla es
         # el estado (desactivada, eliminada o sin acceso). El frontend usa
         # el `errorCode` para mostrar el banner de solo lectura en lugar de

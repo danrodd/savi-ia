@@ -2,10 +2,30 @@
 import { nextTick, ref, watch } from 'vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
 
-const props = defineProps<{ streaming: boolean; disabled?: boolean }>()
-const emit = defineEmits<{ send: [text: string]; stop: [] }>()
+const props = defineProps<{
+  streaming: boolean
+  disabled?: boolean
+  /**
+   * Texto que el backend rechazó por límite de uso o por turno en curso.
+   * Vuelve al cuadro para que el usuario no pierda lo que escribió: el
+   * rechazo es temporal y reescribirlo sería el peor castigo posible.
+   */
+  restoreText?: string | null
+}>()
+const emit = defineEmits<{ send: [text: string]; stop: []; restored: [] }>()
 
 const text = ref('')
+
+watch(
+  () => props.restoreText,
+  (value) => {
+    if (!value) return
+    // Sin pisar lo que el usuario ya haya empezado a escribir de nuevo.
+    if (!text.value.trim()) text.value = value
+    emit('restored')
+    nextTick(autosize)
+  },
+)
 const textarea = ref<HTMLTextAreaElement | null>(null)
 
 function autosize(): void {

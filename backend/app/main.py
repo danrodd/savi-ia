@@ -60,6 +60,7 @@ from app.modules.llm_providers.infrastructure.seed import seed_llm_providers
 from app.modules.usage.infrastructure.http import router as usage_router
 from app.paths import resource_dir
 from app.shared.exceptions import register_exception_handlers
+from app.shared.rate_limit import GlobalRateLimitMiddleware
 from app.shared.security import FernetCredentialCipher
 
 # Prefijos que pertenecen al API. Una ruta desconocida bajo alguno de
@@ -157,6 +158,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Techo por IP para todo, incluido lo público. Se registra ANTES que CORS
+    # para que quede por fuera: un pedido rechazado no debería gastar nada más.
+    app.add_middleware(GlobalRateLimitMiddleware)
+
     if settings.cors_origins_list:
         app.add_middleware(
             CORSMiddleware,
@@ -170,11 +175,12 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["system"])
     async def health() -> dict[str, str]:
-        """Vivo o no. **No toca la base de datos a propósito**: es público y
-        sin límite de pedidos, así que cualquier trabajo real acá es un
-        amplificador de DoS. Medido antes del cambio: 200 pedidos concurrentes
-        llevaban la mediana a ~1 s porque cada uno hacía un `SELECT 1`.
-        Para chequear la BD está `/health/db`, que pide administrador."""
+        """Vivo o no. **No toca la base de datos a propósito**: es el endpoint
+        público más golpeado, así que cualquier trabajo real acá amplifica un
+        DoS aun con el techo por IP del middleware. Medido antes del cambio:
+        200 pedidos concurrentes llevaban la mediana a ~1 s porque cada uno
+        hacía un `SELECT 1`. Para chequear la BD está `/health/db`, que pide
+        administrador."""
         return {
             "status": "ok",
             "app": settings.app_name,

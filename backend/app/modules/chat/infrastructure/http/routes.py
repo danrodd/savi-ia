@@ -11,7 +11,9 @@ El cuerpo del stream son líneas SSE estándar:
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 from dataclasses import asdict
 from typing import Any
 from uuid import UUID
@@ -24,6 +26,10 @@ from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http.dependencies import CurrentUserDep
 from app.modules.chat.application.requests import ChatRequest
 from app.modules.chat.domain.entities import ChatEvent
+from app.modules.chat.infrastructure.http.concurrency import (
+    acquire_turn_slot,
+    release_turn_slot,
+)
 from app.modules.chat.infrastructure.http.dependencies import (
     ActiveProviderResolverDep,
     ChatTurnUseCaseDep,
@@ -35,6 +41,9 @@ from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableEr
 from app.modules.erp_databases.infrastructure.http.dependencies import (
     ResolveModulesForDatabaseUseCaseDep,
 )
+from app.shared.rate_limit import enforce_chat_limits
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -71,6 +80,10 @@ async def chat(
     modules_resolver: ResolveModulesForDatabaseUseCaseDep,
     provider_resolver: ActiveProviderResolverDep,
 ) -> StreamingResponse:
+    # Primero el límite por usuario: cada turno cuesta dinero de verdad, así
+    # que no conviene pagar ni las validaciones de un pedido que va a 429.
+    enforce_chat_limits(get_settings(), user)
+
     # Validaciones de dominio ANTES de devolver StreamingResponse: si
     # algo falla, el handler global emite el 4xx limpio (dentro del
     # SSE ya no podemos cambiar el status code). Incluye chequeo de
@@ -93,8 +106,7 @@ async def chat(
     if not access.has_access:
         raise ErpDatabaseUnavailableError(
             str(conversation_database_id),
-            "La base de datos de esta conversación no está disponible o ya no "
-            "tenés acceso a ella.",
+            "La base de datos de esta conversación no está disponible o ya no tenés acceso a ella.",
         )
 
     # Sin proveedor de IA usable, 409 `llm_provider_unavailable` acá, antes
@@ -104,9 +116,7 @@ async def chat(
 
     # Las tools del knowledge filtran contra este set. Un admin de la base
     # consultada pasa None = sin filtro.
-    modules_filter = (
-        None if access.is_admin_in_database else frozenset(access.modules)
-    )
+    modules_filter = None if access.is_admin_in_database else frozenset(access.modules)
 
     # Documentos de la empresa: permisos del usuario en ESTA base. El
     # registro de citas es nuevo por turno (las referencias D1, D2… no se
@@ -120,16 +130,42 @@ async def chat(
         )
     )
 
+    settings = get_settings()
+    # El cupo se toma ACÁ y no dentro del generador: si no hay lugar, el 429
+    # tiene que salir como respuesta HTTP normal. Una vez abierto el SSE ya no
+    # se puede cambiar el status code.
+    await acquire_turn_slot(settings, request.conversation_id)
+
     async def event_stream():
-        async for event in use_case.execute(
-            request.conversation_id,
-            request.action,
-            request.message,
-            allowed_modules=modules_filter,
-            erp_database_id=conversation_database_id,
-            document_context=document_context,
-        ):
-            yield _sse(_event_to_payload(event))
+        try:
+            async with asyncio.timeout(settings.chat_turn_timeout_seconds):
+                async for event in use_case.execute(
+                    request.conversation_id,
+                    request.action,
+                    request.message,
+                    allowed_modules=modules_filter,
+                    erp_database_id=conversation_database_id,
+                    document_context=document_context,
+                ):
+                    yield _sse(_event_to_payload(event))
+        except TimeoutError:
+            # `max_agent_turns` acota las rondas de herramienta, no el tiempo.
+            # Sin este reloj, un turno podía quedarse colgado reteniendo el
+            # subproceso del CLI y la conexión. Lo ya generado se persiste por
+            # el mismo camino que la cancelación del cliente.
+            log.warning("chat_turn_timeout conversation_id=%s", request.conversation_id)
+            yield _sse(
+                {
+                    "type": "error",
+                    "message": (
+                        "La consulta tardó demasiado y se detuvo. "
+                        "Probá con una pregunta más acotada."
+                    ),
+                }
+            )
+            yield _sse({"type": "done"})
+        finally:
+            await release_turn_slot(request.conversation_id)
 
     return StreamingResponse(
         event_stream(),

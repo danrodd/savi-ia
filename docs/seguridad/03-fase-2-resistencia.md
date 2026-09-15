@@ -2,7 +2,9 @@
 
 > Objetivo: que la aplicación aguante uso abusivo y varios usuarios a la vez
 > sin degradarse ni disparar costos.
-> Esfuerzo estimado: **3 días**. Sin decisiones de producto pendientes.
+>
+> **Estado: implementada y verificada el 2026-09-15.** Resultados medidos al
+> final.
 
 ## Alcance
 
@@ -215,6 +217,49 @@ Tres códigos de error nuevos que la interfaz tiene que entender:
 pierde el mensaje que el usuario escribió.
 
 ---
+
+## Verificación (2026-09-15)
+
+Todo medido contra el backend corriendo, repitiendo las mismas ráfagas de la
+revisión.
+
+### Rate limiting
+
+| Ráfaga | Antes | Después |
+|---|---|---|
+| 50 logins fallidos en paralelo | 50 × 401 (todos procesados) | **50 × 429** |
+| 30 logins correctos en paralelo | 30 × 200 | 10 × 200, **20 × 429** |
+| 200 × `/health` | p50 1035 ms · 142 req/s | **p50 491 ms · 337 req/s** |
+
+Bloqueo por fallos consecutivos, secuencial y en frío:
+
+```
+intentos 1-5 con clave mala: 401
+intento 6:                   429 · Retry-After 900 · rate_limited
+con la clave CORRECTA:       429   (no filtra que era la buena)
+otro usuario:                401   (el bloqueo es por login)
+```
+
+### Concurrencia y candado por conversación
+
+Con turnos reales de chat:
+
+| Caso | Resultado |
+|---|---|
+| Dos conversaciones distintas, tope en 1 | una responde, la otra **429 `rate_limited`** |
+| Doble envío sobre la misma conversación, tope por defecto | una responde, la otra **409 `conversation_busy`** |
+
+### Decisiones que cambiaron respecto de la spec
+
+- **Sin dependency de FastAPI para los límites por usuario.** La primera versión exponía `RateLimitedChatUserDep`, pero eso obligaba a `app/shared` a importar la capa HTTP del módulo `auth` — que a su vez importa `shared`: import circular, y una violación de capas. Quedaron funciones (`enforce_chat_limits`, `enforce_upload_limits`) que cada ruta llama con el usuario que **ya** tiene inyectado. De paso evita resolver la autenticación dos veces por pedido.
+- **Contador explícito en lugar de `asyncio.Semaphore`** para el cupo de turnos: lo que hace falta es *rechazar* al instante, y un semáforo solo sabe esperar; preguntarle si tiene lugar obliga a mirarle atributos privados.
+- **Reemplazar un documento cuenta para el cupo de subida**: también encola procesamiento.
+- **Fixture `autouse` que limpia los contadores entre tests.** Son estado de proceso: sin limpiarlos, un test que hace muchos pedidos dejaba al siguiente cerca del tope y aparecían fallos según el orden de ejecución. Se limpia en vez de desactivar el límite, así los tests siguen recorriendo el camino real.
+
+### Suite
+
+469 tests en backend (27 nuevos), 79 en frontend (3 nuevos). Ruff, Pyright
+strict, `vue-tsc` y Biome en verde.
 
 ## Resultado de la fase
 
