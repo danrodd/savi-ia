@@ -26,6 +26,14 @@ _CUSTOM_MODELS: dict[str, dict[str, Any]] = {
         "normalization": True,
         "model_file": "onnx/model.onnx",
     },
+    # Mismo modelo cuantizado a int8: 129 MB en lugar de 465 MB y ~25% más
+    # rápido en CPU; coseno 0,996 contra la versión fp32 (spike).
+    "Xenova/multilingual-e5-small": {
+        "dim": 384,
+        "pooling": PoolingType.MEAN,
+        "normalization": True,
+        "model_file": "onnx/model_quantized.onnx",
+    },
 }
 _registered_custom: set[str] = set()
 # Tras un fallo de carga se reintenta pasado este tiempo: bajar el modelo

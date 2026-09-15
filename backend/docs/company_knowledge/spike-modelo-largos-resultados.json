@@ -1,0 +1,4726 @@
+[
+  {
+    "model": "intfloat/multilingual-e5-small",
+    "chunk_tokens": 900,
+    "chunks": 49,
+    "failed_documents": [],
+    "index_ms_per_page": 2065.3,
+    "query_p95_ms": 13.6,
+    "index_memory_bytes": 248432,
+    "model_disk_bytes": 622757059,
+    "metrics": {
+      "vector": {
+        "recall": 1.0,
+        "mrr": 0.929
+      },
+      "bm25": {
+        "recall": 1.0,
+        "mrr": 0.782
+      },
+      "hybrid": {
+        "recall": 1.0,
+        "mrr": 0.917
+      }
+    },
+    "hybrid_recall_at": {
+      "1": 0.857,
+      "3": 1.0
+    },
+    "separation": {
+      "answerable_top_correct_vector_min": 0.8014,
+      "unanswerable_top_vector_max": 0.83
+    },
+    "best": {
+      "production_rule": {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      "vector_only": {
+        "t": 0.79,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      "dual": {
+        "t_low": 0.0,
+        "t_high": 0.83,
+        "bm25_min": 0.0,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    },
+    "production_rule_curve": [
+      {
+        "t": 0.0,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.01,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.02,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.03,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.04,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.05,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.06,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.07,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.08,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.09,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.1,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.11,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.12,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.13,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.14,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.15,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.16,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.17,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.18,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.19,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.2,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.21,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.22,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.23,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.24,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.25,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.26,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.27,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.28,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.29,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.3,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.31,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.32,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.33,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.34,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.35,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.36,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.37,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.38,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.39,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.4,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.41,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.42,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.43,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.44,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.45,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.46,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.47,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.48,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.49,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.5,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.51,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.52,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.53,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.54,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.55,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.56,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.57,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.58,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.59,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.6,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.61,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.62,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.63,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.64,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.65,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.66,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.67,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.68,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.69,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.7,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.71,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.72,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.73,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.74,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.75,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.76,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.77,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.78,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.79,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.8,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.81,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.82,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.84,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.85,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.86,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.87,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.88,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.89,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.9,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.91,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.92,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.93,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.94,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.95,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    ],
+    "per_question": [
+      {
+        "id": "q01",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8109,
+            "bm25": 4.594
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8167,
+            "bm25": 2.291
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8186,
+            "bm25": 1.728
+          }
+        ]
+      },
+      {
+        "id": "q02",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8072,
+            "bm25": 4.671
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8049,
+            "bm25": 2.313
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8032,
+            "bm25": 2.355
+          }
+        ]
+      },
+      {
+        "id": "q03",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8276,
+            "bm25": 2.291
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8142,
+            "bm25": 2.906
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8077,
+            "bm25": 1.879
+          }
+        ]
+      },
+      {
+        "id": "q04",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8219,
+            "bm25": 2.313
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8055,
+            "bm25": 2.355
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8024,
+            "bm25": 2.294
+          }
+        ]
+      },
+      {
+        "id": "q05",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8226,
+            "bm25": 5.199
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8138,
+            "bm25": 2.906
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8056,
+            "bm25": 4.263
+          }
+        ]
+      },
+      {
+        "id": "q06",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8439,
+            "bm25": 1.728
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8404,
+            "bm25": 1.688
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.838,
+            "bm25": 1.695
+          }
+        ]
+      },
+      {
+        "id": "q07",
+        "kind": "paraphrase",
+        "hybrid_rank": 3,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8323,
+            "bm25": 2.72
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8261,
+            "bm25": 2.376
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8389,
+            "bm25": 1.728
+          }
+        ]
+      },
+      {
+        "id": "q08",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8097,
+            "bm25": 12.456
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8034,
+            "bm25": 2.582
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7905,
+            "bm25": 3.583
+          }
+        ]
+      },
+      {
+        "id": "q19",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8195,
+            "bm25": 2.551
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8075,
+            "bm25": 2.544
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7978,
+            "bm25": 5.922
+          }
+        ]
+      },
+      {
+        "id": "q20",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7967,
+            "bm25": 2.954
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7923,
+            "bm25": 4.017
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8045,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q21",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8378,
+            "bm25": 12.387
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8184,
+            "bm25": 1.733
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8104,
+            "bm25": 1.747
+          }
+        ]
+      },
+      {
+        "id": "q22",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8295,
+            "bm25": 8.008
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.819,
+            "bm25": 5.186
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.816,
+            "bm25": 5.259
+          }
+        ]
+      },
+      {
+        "id": "q23",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8243,
+            "bm25": 14.063
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7983,
+            "bm25": 4.982
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7933,
+            "bm25": 2.329
+          }
+        ]
+      },
+      {
+        "id": "q25",
+        "kind": "exact",
+        "hybrid_rank": 2,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8205,
+            "bm25": 0.058
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.818,
+            "bm25": 0.058
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8138,
+            "bm25": 3.511
+          }
+        ]
+      },
+      {
+        "id": "q26",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8244,
+            "bm25": 5.205
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8102,
+            "bm25": 2.372
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8174,
+            "bm25": 1.752
+          }
+        ]
+      },
+      {
+        "id": "q27",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.83,
+            "bm25": 0.0
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8285,
+            "bm25": 0.0
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8285,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q28",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8159,
+            "bm25": 3.458
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8265,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8245,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q29",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7847,
+            "bm25": 0.0
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7844,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7813,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q30",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8127,
+            "bm25": 3.458
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8161,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8155,
+            "bm25": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "model": "intfloat/multilingual-e5-small",
+    "chunk_tokens": 450,
+    "chunks": 98,
+    "failed_documents": [],
+    "index_ms_per_page": 3004.5,
+    "query_p95_ms": 12.3,
+    "index_memory_bytes": 324548,
+    "model_disk_bytes": 622757059,
+    "metrics": {
+      "vector": {
+        "recall": 1.0,
+        "mrr": 0.964
+      },
+      "bm25": {
+        "recall": 0.929,
+        "mrr": 0.78
+      },
+      "hybrid": {
+        "recall": 1.0,
+        "mrr": 0.857
+      }
+    },
+    "hybrid_recall_at": {
+      "1": 0.786,
+      "3": 1.0
+    },
+    "separation": {
+      "answerable_top_correct_vector_min": 0.8176,
+      "unanswerable_top_vector_max": 0.8287
+    },
+    "best": {
+      "production_rule": {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      "vector_only": {
+        "t": 0.8,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      "dual": {
+        "t_low": 0.0,
+        "t_high": 0.83,
+        "bm25_min": 0.0,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    },
+    "production_rule_curve": [
+      {
+        "t": 0.0,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.01,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.02,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.03,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.04,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.05,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.06,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.07,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.08,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.09,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.1,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.11,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.12,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.13,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.14,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.15,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.16,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.17,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.18,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.19,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.2,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.21,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.22,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.23,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.24,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.25,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.26,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.27,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.28,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.29,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.3,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.31,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.32,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.33,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.34,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.35,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.36,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.37,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.38,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.39,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.4,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.41,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.42,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.43,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.44,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.45,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.46,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.47,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.48,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.49,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.5,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.51,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.52,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.53,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.54,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.55,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.56,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.57,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.58,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.59,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.6,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.61,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.62,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.63,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.64,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.65,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.66,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.67,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.68,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.69,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.7,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.71,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.72,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.73,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.74,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.75,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.76,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.77,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.78,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.79,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.8,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.81,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.82,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.84,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.85,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.86,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.87,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.88,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.89,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.9,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.91,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.92,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.93,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.94,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.95,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    ],
+    "per_question": [
+      {
+        "id": "q01",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8227,
+            "bm25": 5.205
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.817,
+            "bm25": 4.068
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8182,
+            "bm25": 2.34
+          }
+        ]
+      },
+      {
+        "id": "q02",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8182,
+            "bm25": 3.252
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8121,
+            "bm25": 3.214
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8088,
+            "bm25": 3.003
+          }
+        ]
+      },
+      {
+        "id": "q03",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8255,
+            "bm25": 2.139
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8204,
+            "bm25": 2.899
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8158,
+            "bm25": 2.152
+          }
+        ]
+      },
+      {
+        "id": "q04",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8431,
+            "bm25": 3.252
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8195,
+            "bm25": 3.003
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8103,
+            "bm25": 3.214
+          }
+        ]
+      },
+      {
+        "id": "q05",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8206,
+            "bm25": 5.127
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8326,
+            "bm25": 2.899
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8121,
+            "bm25": 3.014
+          }
+        ]
+      },
+      {
+        "id": "q06",
+        "kind": "paraphrase",
+        "hybrid_rank": 3,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8427,
+            "bm25": 2.34
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8431,
+            "bm25": 2.34
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8494,
+            "bm25": 2.116
+          }
+        ]
+      },
+      {
+        "id": "q07",
+        "kind": "paraphrase",
+        "hybrid_rank": 3,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8395,
+            "bm25": 3.764
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8338,
+            "bm25": 3.649
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8428,
+            "bm25": 2.409
+          }
+        ]
+      },
+      {
+        "id": "q08",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8302,
+            "bm25": 11.197
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.818,
+            "bm25": 2.916
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8115,
+            "bm25": 3.17
+          }
+        ]
+      },
+      {
+        "id": "q19",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8221,
+            "bm25": 3.223
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8142,
+            "bm25": 7.659
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8188,
+            "bm25": 3.036
+          }
+        ]
+      },
+      {
+        "id": "q20",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8176,
+            "bm25": 5.289
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7999,
+            "bm25": 3.604
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.806,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q21",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.84,
+            "bm25": 15.666
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8337,
+            "bm25": 15.666
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8042,
+            "bm25": 5.243
+          }
+        ]
+      },
+      {
+        "id": "q22",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8341,
+            "bm25": 5.758
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8236,
+            "bm25": 5.84
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8306,
+            "bm25": 5.726
+          }
+        ]
+      },
+      {
+        "id": "q23",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8214,
+            "bm25": 16.834
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.803,
+            "bm25": 5.493
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7907,
+            "bm25": 3.453
+          }
+        ]
+      },
+      {
+        "id": "q25",
+        "kind": "exact",
+        "hybrid_rank": 3,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8274,
+            "bm25": 0.193
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8231,
+            "bm25": 0.197
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8201,
+            "bm25": 0.202
+          }
+        ]
+      },
+      {
+        "id": "q26",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8273,
+            "bm25": 6.213
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8142,
+            "bm25": 2.169
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.814,
+            "bm25": 2.138
+          }
+        ]
+      },
+      {
+        "id": "q27",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8287,
+            "bm25": 0.0
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8272,
+            "bm25": 0.0
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8272,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q28",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8162,
+            "bm25": 4.104
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8268,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8256,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q29",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7922,
+            "bm25": 0.0
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.787,
+            "bm25": 0.0
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7863,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q30",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8115,
+            "bm25": 4.104
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8261,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8218,
+            "bm25": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "model": "Xenova/multilingual-e5-small",
+    "chunk_tokens": 900,
+    "chunks": 49,
+    "failed_documents": [],
+    "index_ms_per_page": 1714.6,
+    "query_p95_ms": 9.9,
+    "index_memory_bytes": 248432,
+    "model_disk_bytes": 622757059,
+    "metrics": {
+      "vector": {
+        "recall": 1.0,
+        "mrr": 0.917
+      },
+      "bm25": {
+        "recall": 1.0,
+        "mrr": 0.782
+      },
+      "hybrid": {
+        "recall": 1.0,
+        "mrr": 0.917
+      }
+    },
+    "hybrid_recall_at": {
+      "1": 0.857,
+      "3": 1.0
+    },
+    "separation": {
+      "answerable_top_correct_vector_min": 0.8008,
+      "unanswerable_top_vector_max": 0.8259
+    },
+    "best": {
+      "production_rule": {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      "vector_only": {
+        "t": 0.79,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      "dual": {
+        "t_low": 0.0,
+        "t_high": 0.83,
+        "bm25_min": 0.0,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    },
+    "production_rule_curve": [
+      {
+        "t": 0.0,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.01,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.02,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.03,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.04,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.05,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.06,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.07,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.08,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.09,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.1,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.11,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.12,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.13,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.14,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.15,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.16,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.17,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.18,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.19,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.2,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.21,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.22,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.23,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.24,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.25,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.26,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.27,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.28,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.29,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.3,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.31,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.32,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.33,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.34,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.35,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.36,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.37,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.38,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.39,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.4,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.41,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.42,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.43,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.44,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.45,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.46,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.47,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.48,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.49,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.5,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.51,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.52,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.53,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.54,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.55,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.56,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.57,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.58,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.59,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.6,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.61,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.62,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.63,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.64,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.65,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.66,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.67,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.68,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.69,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.7,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.71,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.72,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.73,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.74,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.75,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.76,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.77,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.78,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.79,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.8,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.81,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.82,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.84,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.85,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.86,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.87,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.88,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.89,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.9,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.91,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.92,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.93,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.94,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.95,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    ],
+    "per_question": [
+      {
+        "id": "q01",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8093,
+            "bm25": 4.594
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8137,
+            "bm25": 2.291
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8139,
+            "bm25": 1.728
+          }
+        ]
+      },
+      {
+        "id": "q02",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.811,
+            "bm25": 4.671
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8066,
+            "bm25": 2.355
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8065,
+            "bm25": 2.313
+          }
+        ]
+      },
+      {
+        "id": "q03",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8371,
+            "bm25": 2.291
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8232,
+            "bm25": 2.906
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8117,
+            "bm25": 1.879
+          }
+        ]
+      },
+      {
+        "id": "q04",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8176,
+            "bm25": 2.313
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8045,
+            "bm25": 2.355
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7997,
+            "bm25": 2.294
+          }
+        ]
+      },
+      {
+        "id": "q05",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8286,
+            "bm25": 5.199
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8232,
+            "bm25": 2.906
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8069,
+            "bm25": 4.263
+          }
+        ]
+      },
+      {
+        "id": "q06",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8406,
+            "bm25": 1.728
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8336,
+            "bm25": 1.695
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8379,
+            "bm25": 1.688
+          }
+        ]
+      },
+      {
+        "id": "q07",
+        "kind": "paraphrase",
+        "hybrid_rank": 3,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8297,
+            "bm25": 2.72
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8222,
+            "bm25": 2.376
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8358,
+            "bm25": 1.728
+          }
+        ]
+      },
+      {
+        "id": "q08",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8052,
+            "bm25": 12.456
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8004,
+            "bm25": 2.582
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.789,
+            "bm25": 3.583
+          }
+        ]
+      },
+      {
+        "id": "q19",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8245,
+            "bm25": 2.551
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8104,
+            "bm25": 2.544
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.804,
+            "bm25": 5.922
+          }
+        ]
+      },
+      {
+        "id": "q20",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7933,
+            "bm25": 2.954
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7894,
+            "bm25": 4.017
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8044,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q21",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8343,
+            "bm25": 12.387
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8122,
+            "bm25": 1.733
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8072,
+            "bm25": 1.747
+          }
+        ]
+      },
+      {
+        "id": "q22",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8248,
+            "bm25": 8.008
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8177,
+            "bm25": 5.186
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.815,
+            "bm25": 5.259
+          }
+        ]
+      },
+      {
+        "id": "q23",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.818,
+            "bm25": 14.063
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7982,
+            "bm25": 4.982
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7908,
+            "bm25": 2.763
+          }
+        ]
+      },
+      {
+        "id": "q25",
+        "kind": "exact",
+        "hybrid_rank": 2,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8195,
+            "bm25": 0.058
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8149,
+            "bm25": 0.058
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8125,
+            "bm25": 3.511
+          }
+        ]
+      },
+      {
+        "id": "q26",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8178,
+            "bm25": 5.205
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8099,
+            "bm25": 2.372
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8116,
+            "bm25": 1.752
+          }
+        ]
+      },
+      {
+        "id": "q27",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8259,
+            "bm25": 0.0
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8247,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8239,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q28",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8092,
+            "bm25": 3.458
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.822,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8218,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q29",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7868,
+            "bm25": 0.0
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7828,
+            "bm25": 0.0
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7819,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q30",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8104,
+            "bm25": 3.458
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8175,
+            "bm25": 0.0
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8144,
+            "bm25": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "model": "Xenova/multilingual-e5-small",
+    "chunk_tokens": 450,
+    "chunks": 98,
+    "failed_documents": [],
+    "index_ms_per_page": 2462.7,
+    "query_p95_ms": 9.0,
+    "index_memory_bytes": 324548,
+    "model_disk_bytes": 622757059,
+    "metrics": {
+      "vector": {
+        "recall": 1.0,
+        "mrr": 0.929
+      },
+      "bm25": {
+        "recall": 0.929,
+        "mrr": 0.78
+      },
+      "hybrid": {
+        "recall": 1.0,
+        "mrr": 0.851
+      }
+    },
+    "hybrid_recall_at": {
+      "1": 0.786,
+      "3": 0.929
+    },
+    "separation": {
+      "answerable_top_correct_vector_min": 0.8152,
+      "unanswerable_top_vector_max": 0.8249
+    },
+    "best": {
+      "production_rule": {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      "vector_only": {
+        "t": 0.8,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      "dual": {
+        "t_low": 0.0,
+        "t_high": 0.83,
+        "bm25_min": 0.0,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    },
+    "production_rule_curve": [
+      {
+        "t": 0.0,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.01,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.02,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.03,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.04,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.05,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.06,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.07,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.08,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.09,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.1,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.11,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.12,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.13,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.14,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.15,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.16,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.17,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.18,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.19,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.2,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.21,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.22,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.23,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.24,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.25,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.26,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.27,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.28,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.29,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.3,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.31,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.32,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.33,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.34,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.35,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.36,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.37,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.38,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.39,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.4,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.41,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.42,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.43,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.44,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.45,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.46,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.47,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.48,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.49,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.5,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.51,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.52,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.53,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.54,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.55,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.56,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.57,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.58,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.59,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.6,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.61,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.62,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.63,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.64,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.65,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.66,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.67,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.68,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.69,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.7,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.71,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.72,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.73,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.74,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.75,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.76,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.77,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.78,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.79,
+        "recall": 1.0,
+        "rejection": 0.0
+      },
+      {
+        "t": 0.8,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.81,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.82,
+        "recall": 1.0,
+        "rejection": 0.2
+      },
+      {
+        "t": 0.83,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.84,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.85,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.86,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.87,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.88,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.89,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.9,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.91,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.92,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.93,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.94,
+        "recall": 1.0,
+        "rejection": 0.4
+      },
+      {
+        "t": 0.95,
+        "recall": 1.0,
+        "rejection": 0.4
+      }
+    ],
+    "per_question": [
+      {
+        "id": "q01",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8178,
+            "bm25": 5.205
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8167,
+            "bm25": 2.34
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8099,
+            "bm25": 4.068
+          }
+        ]
+      },
+      {
+        "id": "q02",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8222,
+            "bm25": 3.252
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8072,
+            "bm25": 5.174
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8118,
+            "bm25": 3.214
+          }
+        ]
+      },
+      {
+        "id": "q03",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8362,
+            "bm25": 2.139
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8234,
+            "bm25": 2.899
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8226,
+            "bm25": 2.152
+          }
+        ]
+      },
+      {
+        "id": "q04",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8423,
+            "bm25": 3.252
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8163,
+            "bm25": 3.003
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8069,
+            "bm25": 3.214
+          }
+        ]
+      },
+      {
+        "id": "q05",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8281,
+            "bm25": 5.127
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8346,
+            "bm25": 2.899
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8176,
+            "bm25": 3.014
+          }
+        ]
+      },
+      {
+        "id": "q06",
+        "kind": "paraphrase",
+        "hybrid_rank": 3,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8403,
+            "bm25": 2.34
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8406,
+            "bm25": 2.34
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8452,
+            "bm25": 2.116
+          }
+        ]
+      },
+      {
+        "id": "q07",
+        "kind": "paraphrase",
+        "hybrid_rank": 4,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8403,
+            "bm25": 3.764
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8339,
+            "bm25": 3.649
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8296,
+            "bm25": 3.044
+          }
+        ]
+      },
+      {
+        "id": "q08",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8281,
+            "bm25": 11.197
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8154,
+            "bm25": 2.916
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8098,
+            "bm25": 3.17
+          }
+        ]
+      },
+      {
+        "id": "q19",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8303,
+            "bm25": 3.223
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8246,
+            "bm25": 7.659
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8287,
+            "bm25": 3.036
+          }
+        ]
+      },
+      {
+        "id": "q20",
+        "kind": "paraphrase",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8152,
+            "bm25": 5.289
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8003,
+            "bm25": 3.604
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8055,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q21",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8424,
+            "bm25": 15.666
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8293,
+            "bm25": 15.666
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8091,
+            "bm25": 2.169
+          }
+        ]
+      },
+      {
+        "id": "q22",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8287,
+            "bm25": 5.726
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8268,
+            "bm25": 5.758
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8232,
+            "bm25": 5.84
+          }
+        ]
+      },
+      {
+        "id": "q23",
+        "kind": "exact",
+        "hybrid_rank": 1,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8238,
+            "bm25": 16.834
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8053,
+            "bm25": 5.493
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7936,
+            "bm25": 3.453
+          }
+        ]
+      },
+      {
+        "id": "q25",
+        "kind": "exact",
+        "hybrid_rank": 3,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8244,
+            "bm25": 0.193
+          },
+          {
+            "document": "politica-devoluciones.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8218,
+            "bm25": 0.197
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8214,
+            "bm25": 0.194
+          }
+        ]
+      },
+      {
+        "id": "q26",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8238,
+            "bm25": 6.213
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8141,
+            "bm25": 2.169
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8115,
+            "bm25": 2.132
+          }
+        ]
+      },
+      {
+        "id": "q27",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8249,
+            "bm25": 0.0
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8241,
+            "bm25": 0.0
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8223,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q28",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8108,
+            "bm25": 4.104
+          },
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8235,
+            "bm25": 0.0
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.822,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q29",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "politica-credito-clientes.txt",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7935,
+            "bm25": 0.0
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7877,
+            "bm25": 0.0
+          },
+          {
+            "document": "acta-comite-045.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.7855,
+            "bm25": 0.0
+          }
+        ]
+      },
+      {
+        "id": "q30",
+        "kind": "unanswerable",
+        "hybrid_rank": null,
+        "top": [
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8117,
+            "bm25": 4.104
+          },
+          {
+            "document": "seguridad-informacion.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8243,
+            "bm25": 0.0
+          },
+          {
+            "document": "manual-caja.md",
+            "pages": [
+              null,
+              null
+            ],
+            "vector": 0.8211,
+            "bm25": 0.0
+          }
+        ]
+      }
+    ]
+  }
+]

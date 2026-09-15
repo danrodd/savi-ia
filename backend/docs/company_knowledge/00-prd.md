@@ -314,10 +314,26 @@ fragmento por el pipeline real:
   modelos. El umbral solo recorta ruido; el "no encontré información" lo
   decide el modelo de lenguaje. No se implementa doble umbral.
 
+### Validación de importación e interfaz, 2026-09-15
+
+- [`validacion-importacion.md`](validacion-importacion.md):
+  - **RNF-03 cumplido**: PDF denso de 50 páginas en 11–12 s. En general ~0,2 s por página, casi todo en embeddings.
+  - **RNF-02 medido**: mientras se procesa un PDF de 200 páginas, la búsqueda pasa de 25 a 59 ms de mediana.
+  - **Truncamiento a 512 tokens**: el modelo no ve ~42% de cada fragmento. En híbrido no se pierden respuestas, así que se queda el fragmento de 900.
+  - **Int8**: la versión cuantizada del modelo pesa 129 MB (en lugar de 465) con la misma calidad. Queda como decisión pendiente.
+- [`revision-interfaz.md`](revision-interfaz.md): la pantalla es correcta, pero le faltan tres cosas:
+  - mostrar el avance de los documentos largos;
+  - que las acciones se vean en móvil;
+  - buscar y filtrar documentos.
+
+  Hay 12 hallazgos priorizados.
+
 ### Pendiente
 
 - **Repetir el spike con documentos reales** (P1): el set sintético tiene
   documentos cortos y no distingue bien entre tamaños de fragmento.
+- **Decidir el modelo int8** antes de tener clientes con documentos cargados.
+- **Mejoras de interfaz** priorizadas en `revision-interfaz.md`.
 - E2E en Firefox y WebKit.
 - RNF-02 (impacto en el chat con un PDF grande procesándose) y RNF-04
   (50.000 fragmentos) sin medir.

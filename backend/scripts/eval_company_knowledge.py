@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import random
 import statistics
 import tempfile
 import time
@@ -214,8 +215,62 @@ def _model_disk_bytes(model: str) -> int:
     return total
 
 
+_FILLER_SUBJECTS = [
+    "El área de mercadeo",
+    "La coordinación de proyectos",
+    "El equipo de infraestructura",
+    "La oficina de comunicaciones",
+    "El comité de responsabilidad social",
+    "La dirección de planeación",
+]
+_FILLER_ACTIONS = [
+    "revisa trimestralmente el plan de actividades institucionales",
+    "publica un boletín con las novedades de la organización",
+    "organiza jornadas de integración con la comunidad del barrio",
+    "evalúa las propuestas de mejora de los espacios físicos",
+    "actualiza el archivo histórico de campañas publicitarias",
+    "coordina las visitas de estudiantes en práctica",
+    "documenta las lecciones aprendidas de cada proyecto",
+    "mantiene el inventario de material promocional impreso",
+]
+_FILLER_CLOSINGS = [
+    "según el cronograma aprobado al inicio del año",
+    "con apoyo de los líderes de cada dependencia",
+    "y deja constancia en el repositorio compartido",
+    "priorizando las iniciativas de mayor impacto",
+]
+
+
+def _filler(rng: random.Random, chars: int) -> str:
+    """Texto corporativo plausible SIN ninguno de los datos del set de preguntas."""
+    paragraphs: list[str] = []
+    size = 0
+    while size < chars:
+        sentences = [
+            f"{rng.choice(_FILLER_SUBJECTS)} {rng.choice(_FILLER_ACTIONS)} {rng.choice(_FILLER_CLOSINGS)}."
+            for _ in range(4)
+        ]
+        paragraph = " ".join(sentences)
+        paragraphs.append(paragraph)
+        size += len(paragraph)
+    return "\n\n".join(paragraphs)
+
+
+def _lengthen(text: str, name: str) -> str:
+    """Documento largo: cada párrafo original separado por 1.000-4.000 caracteres
+    de relleno, para que las respuestas caigan en posiciones variadas del
+    fragmento (incluida la cola que e5 trunca a 512 tokens)."""
+    rng = random.Random(name)
+    parts = [p for p in text.split("\n\n") if p.strip()]
+    out = [_filler(rng, 6000)]
+    for part in parts:
+        out.append(part)
+        out.append(_filler(rng, rng.randint(1000, 4000)))
+    return "\n\n".join(out)
+
+
 async def _evaluate(
-    model: str, chunk_tokens: int, questions: list[dict[str, Any]]
+    model: str, chunk_tokens: int, questions: list[dict[str, Any]], long_docs: bool = False
 ) -> dict[str, Any]:
     tmp = Path(tempfile.mkdtemp())
     engine = create_async_engine(f"sqlite+aiosqlite:///{(tmp / 'eval.db').as_posix()}")
@@ -250,7 +305,13 @@ async def _evaluate(
 
     pages = 0
     for path in sorted((EVAL_DIR / "documents").iterdir()):
-        content = path.read_bytes()
+        if long_docs and path.suffix == ".pdf":
+            continue
+        content = (
+            _lengthen(path.read_text(encoding="utf-8"), path.name).encode()
+            if long_docs
+            else path.read_bytes()
+        )
         document = CompanyDocument(
             title=path.name,
             original_filename=path.name,
@@ -472,8 +533,19 @@ async def _main() -> None:
     parser.add_argument("--models", nargs="+", default=DEFAULT_MODELS)
     parser.add_argument("--chunk-tokens", nargs="+", type=int, default=DEFAULT_CHUNK_TOKENS)
     parser.add_argument("--download", action="store_true", help="Descarga los modelos que falten.")
+    parser.add_argument(
+        "--long",
+        action="store_true",
+        help="Documentos largos: MD/TXT con relleno entre párrafos (sin PDF). Mide el truncamiento.",
+    )
     args = parser.parse_args()
     questions = json.loads((EVAL_DIR / "questions.json").read_text(encoding="utf-8"))["questions"]
+    report = REPORT
+    if args.long:
+        questions = [
+            q for q in questions if all(not e["document"].endswith(".pdf") for e in q["expected"])
+        ]
+        report = REPORT.with_name("spike-modelo-largos-resultados.md")
 
     results: list[dict[str, Any]] = []
     for model in args.models:
@@ -482,7 +554,7 @@ async def _main() -> None:
             download_embedding_model(model, models_root(""))
         for chunk_tokens in args.chunk_tokens:
             print(f"Evaluando {model} con fragmento {chunk_tokens}…", flush=True)
-            result = await _evaluate(model, chunk_tokens, questions)
+            result = await _evaluate(model, chunk_tokens, questions, args.long)
             m = result["metrics"]["hybrid"]
             print(
                 f"  híbrido recall={m['recall']} mrr={m['mrr']} · fallidos={result['failed_documents']}",
@@ -490,12 +562,12 @@ async def _main() -> None:
             )
             results.append(result)
 
-    REPORT.parent.mkdir(parents=True, exist_ok=True)
-    REPORT.with_suffix(".json").write_text(
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.with_suffix(".json").write_text(
         json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    REPORT.write_text(_render(results), encoding="utf-8")
-    print(f"Informe: {REPORT}")
+    report.write_text(_render(results), encoding="utf-8")
+    print(f"Informe: {report}")
 
 
 if __name__ == "__main__":
