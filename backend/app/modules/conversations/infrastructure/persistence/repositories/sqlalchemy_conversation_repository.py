@@ -114,15 +114,25 @@ class SqlAlchemyConversationRepository(ConversationRepository):
         conversation_id: UUID,
         *,
         include_superseded: bool = False,
+        limit: int | None = None,
     ) -> list[Message]:
         stmt = select(MessageModel).where(
             MessageModel.conversation_id == conversation_id
         )
         if not include_superseded:
             stmt = stmt.where(MessageModel.superseded_at.is_(None))
-        stmt = stmt.order_by(MessageModel.created_at.asc())
-        result = await self._session.execute(stmt)
-        return [ConversationOrmMapper.message_to_entity(m) for m in result.scalars().all()]
+        if limit is None:
+            stmt = stmt.order_by(MessageModel.created_at.asc())
+            result = await self._session.execute(stmt)
+            rows = list(result.scalars().all())
+        else:
+            # Los N más recientes: se piden en descendente (que es lo que el
+            # índice puede cortar) y se invierten en memoria. Ordenar
+            # ascendente con LIMIT devolvería los N más VIEJOS.
+            stmt = stmt.order_by(MessageModel.created_at.desc()).limit(limit)
+            result = await self._session.execute(stmt)
+            rows = list(reversed(result.scalars().all()))
+        return [ConversationOrmMapper.message_to_entity(m) for m in rows]
 
     async def get_last_active_message(
         self,

@@ -12,6 +12,11 @@ export interface UsageTotals {
   total_tokens: number
   message_count: number
   cost_usd: number
+  /**
+   * Turnos cuyo modelo no tenía tarifa cargada: su costo NO está en
+   * `cost_usd`. Si es > 0, el total mostrado es menor al real.
+   */
+  untariffed_count: number
 }
 
 export interface DailyUsage {

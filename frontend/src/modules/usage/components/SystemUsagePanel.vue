@@ -36,6 +36,14 @@ onMounted(() => {
           <p class="su__card-label">Costo total del sistema</p>
           <p class="su__card-value">{{ formatCop(store.system.totals.cost_usd, rate) }}</p>
           <p class="su__card-foot">{{ formatUsd(store.system.totals.cost_usd) }} USD</p>
+          <!-- Sin esto, las respuestas de un modelo sin tarifa se suman como
+               cero y el total parece completo cuando no lo es. -->
+          <p v-if="store.system.totals.untariffed_count > 0" class="su__card-warning">
+            {{ store.system.totals.untariffed_count }}
+            {{ store.system.totals.untariffed_count === 1 ? 'respuesta' : 'respuestas' }}
+            sin tarifa cargada: el costo real es mayor. Cargá los precios del modelo
+            en Proveedores de IA.
+          </p>
         </article>
         <article class="su__card">
           <p class="su__card-label">Tokens totales</p>
@@ -117,6 +125,16 @@ onMounted(() => {
   margin: var(--space-2) 0 0;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.su__card-warning {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-sm);
+  background: var(--surface-warning, rgba(217, 119, 6, 0.1));
+  color: var(--text-warning, #b45309);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .su__section-title {

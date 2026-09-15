@@ -102,10 +102,11 @@ class ShortLivedConversationRepository(ConversationRepository):
         conversation_id: UUID,
         *,
         include_superseded: bool = False,
+        limit: int | None = None,
     ) -> list[Message]:
         async with self._sessionmaker() as session:
             return await SqlAlchemyConversationRepository(session).list_messages(
-                conversation_id, include_superseded=include_superseded
+                conversation_id, include_superseded=include_superseded, limit=limit
             )
 
     async def get_last_active_message(self, conversation_id: UUID) -> Message | None:

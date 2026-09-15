@@ -60,6 +60,7 @@ from app.modules.llm_providers.infrastructure.seed import seed_llm_providers
 from app.modules.usage.infrastructure.http import router as usage_router
 from app.paths import resource_dir
 from app.shared.exceptions import register_exception_handlers
+from app.shared.middleware import SecurityHeadersMiddleware
 from app.shared.rate_limit import GlobalRateLimitMiddleware
 from app.shared.security import FernetCredentialCipher
 
@@ -71,7 +72,12 @@ _API_PREFIXES = (
     "chat",
     "conversations",
     "usage",
-    "admin",
+    # Bajo `/admin` conviven el API y las pantallas del frontend, así que se
+    # listan los prefijos COMPLETOS del API. Poner solo "admin" hacía que
+    # `/admin/consumo` y las demás pantallas devolvieran un 404 JSON.
+    "admin/company-documents",
+    "admin/erp-databases",
+    "admin/llm-providers",
     "erp-databases",
     "company-documents",
     "health",
@@ -158,6 +164,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Cabeceras de seguridad en toda respuesta, incluida la SPA.
+    app.add_middleware(SecurityHeadersMiddleware)
+
     # Techo por IP para todo, incluido lo público. Se registra ANTES que CORS
     # para que quede por fuera: un pedido rechazado no debería gastar nada más.
     app.add_middleware(GlobalRateLimitMiddleware)
@@ -223,6 +232,24 @@ def create_app() -> FastAPI:
     return app
 
 
+def _belongs_to_the_api(path: str) -> bool:
+    """¿Esta ruta desconocida es del API o de `vue-router`?
+
+    Se compara contra prefijos COMPLETOS, no contra el primer segmento. El
+    frontend tiene sus propias rutas bajo `/admin` (`/admin/consumo`,
+    `/admin/conocimiento`, `/admin/bases`) y el API también (`/admin/
+    company-documents`, …). Mirando solo el primer segmento, **todas las
+    pantallas de administración devolvían un 404 JSON** al recargarlas o al
+    entrar por enlace directo en la app instalada. En desarrollo no se veía
+    porque ahí la SPA la sirve Vite.
+    """
+    normalizada = path.strip("/")
+    return any(
+        normalizada == prefijo or normalizada.startswith(f"{prefijo}/")
+        for prefijo in _API_PREFIXES
+    )
+
+
 def _mount_frontend(app: FastAPI) -> None:
     """Sirve el build de Vue desde el mismo origen que el API.
 
@@ -237,8 +264,7 @@ def _mount_frontend(app: FastAPI) -> None:
 
     @app.get("/{spa_path:path}", include_in_schema=False)
     async def serve_spa(spa_path: str) -> FileResponse:
-        first_segment = spa_path.split("/", 1)[0]
-        if first_segment in _API_PREFIXES:
+        if _belongs_to_the_api(spa_path):
             raise HTTPException(status_code=404, detail="Not Found")
 
         # `spa_path` viene del cliente: sin este chequeo un

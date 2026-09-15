@@ -66,6 +66,7 @@ class ConversationRepository(ABC):
         conversation_id: UUID,
         *,
         include_superseded: bool = False,
+        limit: int | None = None,
     ) -> list[Message]:
         """Lista los mensajes de la conversación.
 
@@ -74,6 +75,11 @@ class ConversationRepository(ABC):
 
         Con `include_superseded=True` devuelve también las versiones
         anteriores — útil para reconstruir trazabilidad en la UI.
+
+        `limit` devuelve los N **más recientes** (igual en orden ascendente).
+        Lo usa el armado del historial del turno, que solo mira los últimos
+        mensajes: sin esto traía la conversación entera para descartar casi
+        todo, y una conversación larga pagaba ese costo en cada turno.
         """
 
     @abstractmethod

@@ -20,6 +20,12 @@ class UsageTotals:
     cost_usd: Decimal = Decimal("0")
     # Cantidad de turnos del asistente que contribuyeron al agregado.
     message_count: int = 0
+    # Turnos SIN costo calculado: el proveedor no tenía tarifa cargada para
+    # ese modelo, así que `cost_usd` quedó NULL. Se cuentan aparte porque
+    # sumarlos como cero hace que la pantalla muestre un costo menor al real
+    # sin decir que le falta información. Medido: las respuestas de Gemini
+    # figuraban en USD 0,00 por no tener tarifa.
+    untariffed_count: int = 0
 
     @property
     def total_tokens(self) -> int:

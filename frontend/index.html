@@ -11,17 +11,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap">
     <title>SAVI - SEO ERP</title>
     <meta name="description" content="SAVI - Sistema de Asistente Virtual Inteligente de SEO ERP">
-    <script>
-      (() => {
-        try {
-          const stored = localStorage.getItem('savi-agent-theme-mode');
-          const mode = stored ? JSON.parse(stored) : 'system';
-          const isDark = mode === 'dark' ||
-            (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (isDark) document.documentElement.classList.add('dark');
-        } catch (_) {}
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="app"></div>

@@ -2,7 +2,10 @@
 
 > Objetivo: cerrar lo que no es urgente pero desgasta: costos que no se ven,
 > código duplicado, interfaz incompleta y detalles de seguridad menores.
-> Esfuerzo estimado: **4-5 días**, troceable. Ninguna tarea bloquea a otra.
+>
+> **Estado: parcial (2026-09-15).** Hechos M6, O7, B3 y B4, más **dos bugs
+> que aparecieron al verificar**. Pendientes M8, M9, O5 y el resto de las
+> bajas. Detalle al final.
 
 ## Alcance
 
@@ -160,6 +163,61 @@ if record.is_revoked:
 | B7 | UX: sin buscador de conversaciones, "Nueva conversación" vacías acumuladas, consumo por `#id` | Buscador en la barra lateral; no crear la conversación hasta el primer mensaje; mostrar el nombre del usuario en consumo. |
 
 ---
+
+## Lo hecho y verificado (2026-09-15)
+
+| # | Qué | Verificación |
+|---|---|---|
+| M6 | El consumo distingue "sin tarifa" de "costo cero": los turnos sin precio cargado se cuentan aparte y la pantalla avisa que el total es menor al real | Nueva columna en el agregado; aviso en `SystemUsagePanel` |
+| O7 | Reusar un refresh token revocado ahora **corta toda la cadena** del usuario en esa base y deja un warning en el log | Camino de reuso en `RefreshTokensUseCase` |
+| B3 | Cabeceras de seguridad en toda respuesta: CSP, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` | Verificado con la SPA **compilada**, no solo con Vite |
+| B4 | El historial del turno pide solo los últimos 20 mensajes en SQL | Antes traía la conversación entera para descartar casi todo en cada turno |
+
+### Dos bugs que encontró la verificación
+
+Ninguno estaba en la revisión: los dos aparecieron al probar la **SPA
+compilada servida por el backend**, que es lo que se instala. Los E2E corren
+contra Vite y por eso nunca los tocaron.
+
+**1. La CSP rompía la aplicación instalada.** Al aplicarla aparecieron dos
+violaciones reales:
+
+- El script que aplica el tema antes del primer pintado estaba embebido en
+  `index.html` y quedaba bloqueado: volvía el destello claro al cargar en modo
+  oscuro. **No se abrió `'unsafe-inline'`** —sería desarmar la defensa contra
+  XSS de toda la app por un script de diez líneas—: se movió a
+  `public/theme-init.js`.
+- Las fuentes de Google quedaban bloqueadas. Se permitieron sus dominios.
+  Alojarlas con la app sería mejor (el escritorio debería funcionar sin
+  internet), y queda anotado.
+
+Tras los arreglos: **0 violaciones** recorriendo login, chat y las pantallas
+de administración.
+
+**2. Todas las pantallas de administración devolvían un 404 JSON.**
+`/admin/consumo`, `/admin/conocimiento` y `/admin/bases` respondían
+`{"detail":"Not Found"}` en lugar de la aplicación, al recargarlas o entrar
+por enlace directo. El fallback de la SPA comparaba solo el **primer
+segmento** de la ruta contra los prefijos del API, y bajo `/admin` conviven
+las dos cosas. Ahora se comparan prefijos completos (`admin/company-documents`
+y los otros dos), con test de regresión para ambos lados.
+
+### Suite
+
+558 tests en backend, 79 en frontend. Ruff, Pyright strict, `vue-tsc` y Biome
+en verde.
+
+## Lo que queda
+
+| # | Qué | Por qué no se hizo ahora |
+|---|---|---|
+| M8 | Mejoras de la interfaz de documentos (avance, móvil, drag & drop) | Las más valiosas dependen de O5 (avance persistido); el resto es trabajo de UI con su propia verificación visual |
+| M9 | Unificar el bucle agéntico de OpenAI y Gemini | Es un refactor grande sin cambio de comportamiento: merece su propia sesión y su propia verificación con turnos reales de los dos proveedores |
+| O5 | Avance de la ingesta y posición en cola | Necesita migración Alembic; va junto con el punto 1 de M8 |
+| B1 | Refresh token en `localStorage` → cookie `HttpOnly` | Cambia el flujo de autenticación del frontend; hay que medir el costo antes |
+| B2 | `xlsx` sin parche | Hoy no explotable (solo se escribe) |
+| B5 | Partir `launcher.py` | Deuda pura, sin riesgo abierto |
+| B7 | Buscador de conversaciones, no crear conversaciones vacías, nombre en consumo | UX, sin riesgo |
 
 ## Resultado de la fase
 

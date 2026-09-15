@@ -6,6 +6,7 @@ trazabilidad por sesión.
 """
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
@@ -21,6 +22,8 @@ from app.modules.auth.domain.interfaces import (
     UserRepositoryFactory,
 )
 from app.modules.auth.domain.value_objects import TokenPair, TokenPurpose
+
+log = logging.getLogger(__name__)
 
 
 class RefreshTokensUseCase:
@@ -45,6 +48,21 @@ class RefreshTokensUseCase:
         if record is None:
             raise InvalidTokenError("Token desconocido")
         if record.is_revoked:
+            # Un refresh ya revocado que vuelve es la firma de un token
+            # robado: el legítimo ya rotó y se llevó este `jti`. Se corta
+            # TODA la cadena del usuario en esa base y que vuelva a iniciar
+            # sesión, en lugar de dejar al atacante reintentando con los
+            # demás tokens de la familia.
+            log.warning(
+                "refresh_token_reuse_detected user_id=%s erp_database_id=%s",
+                record.user_id,
+                record.erp_database_id,
+            )
+            await self._refresh_tokens.revoke_all_for_user(
+                record.user_id,
+                erp_database_id=record.erp_database_id,
+                when=datetime.now(UTC),
+            )
             raise RefreshTokenRevokedError
         if record.expires_at <= datetime.now(UTC):
             raise InvalidTokenError("Token expirado")

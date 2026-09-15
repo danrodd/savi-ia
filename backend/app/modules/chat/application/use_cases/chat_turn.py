@@ -298,7 +298,12 @@ class ChatTurnUseCase:
         erp_database_id: UUID | None = None,
         document_context: TurnDocumentContext | None = None,
     ) -> AsyncIterator[ChatEvent]:
-        history = await self._repository.list_messages(conversation_id)
+        # Solo los últimos: `_format_history_block` descarta el resto igual.
+        # Traer la conversación entera para tirar casi todo era trabajo puro
+        # en cada turno de una conversación larga.
+        history = await self._repository.list_messages(
+            conversation_id, limit=_HISTORY_TURNS
+        )
         user_message = Message(
             conversation_id=conversation_id,
             role=MessageRole.USER,

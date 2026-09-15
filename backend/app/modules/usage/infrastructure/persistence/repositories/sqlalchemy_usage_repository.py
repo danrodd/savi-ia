@@ -68,6 +68,14 @@ def _count() -> ColumnElement[Any]:
     return func.count(MessageModel.id)
 
 
+def _untariffed_count() -> ColumnElement[Any]:
+    """Turnos con `cost_usd` NULL: el modelo no tenía tarifa cargada.
+
+    `count()` sobre una columna ignora los NULL, así que se cuenta al revés:
+    total menos los que sí tienen costo."""
+    return func.count(MessageModel.id) - func.count(MessageModel.cost_usd)
+
+
 def _as_date(value: Any) -> date:
     """Normaliza el bucket de día a `date`.
 
@@ -111,6 +119,7 @@ def _totals_columns() -> tuple[ColumnElement[Any], ...]:
         _token_sum("cache_creation_input_tokens").label("cache_creation_input_tokens"),
         _cost_sum().label("cost_usd"),
         _count().label("message_count"),
+        _untariffed_count().label("untariffed_count"),
     )
 
 
@@ -122,6 +131,7 @@ def _row_to_totals(m: RowMapping) -> UsageTotals:
         cache_creation_input_tokens=int(m["cache_creation_input_tokens"]),
         cost_usd=Decimal(m["cost_usd"]),
         message_count=int(m["message_count"]),
+        untariffed_count=int(m["untariffed_count"]),
     )
 
 

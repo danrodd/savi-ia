@@ -28,6 +28,10 @@ class UsageTotalsResponse(BaseModel):
     # Costo en USD (dato fuente). El frontend lo multiplica por
     # `usd_to_cop_rate` para mostrarlo en pesos.
     cost_usd: float
+    # Turnos sin tarifa cargada para su modelo: su costo NO está incluido
+    # arriba. Si es > 0, el total mostrado es menor al real y la vista tiene
+    # que decirlo en lugar de dar un número que parece completo.
+    untariffed_count: int = 0
 
     @classmethod
     def from_vo(cls, t: UsageTotals) -> "UsageTotalsResponse":
@@ -39,6 +43,7 @@ class UsageTotalsResponse(BaseModel):
             total_tokens=t.total_tokens,
             message_count=t.message_count,
             cost_usd=float(t.cost_usd),
+            untariffed_count=t.untariffed_count,
         )
 
 
