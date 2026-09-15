@@ -131,9 +131,10 @@ class Settings(BaseSettings):
     company_docs_worker_enabled: bool = Field(default=True)
     # Búsqueda híbrida (Fase 2). `min_similarity` depende del modelo: e5
     # comprime las similitudes (medido con multilingual-e5-small el
-    # 2026-09-14: relevante 0.86, sin relación 0.76). Con 0.3 no filtraba
-    # nada. 0.80 es provisorio hasta el spike con documentos reales.
-    company_docs_min_similarity: float = Field(default=0.80)
+    # 2026-09-14/15: relevantes 0.86-0.90, sin relación 0.76-0.80). Con 0.3
+    # no filtraba nada y con 0.80 pasaba un documento sin relación en el
+    # borde. 0.82 es provisorio hasta el spike con documentos reales.
+    company_docs_min_similarity: float = Field(default=0.82)
     company_docs_search_candidates: int = Field(default=50)
     company_docs_search_limit: int = Field(default=6)
     company_docs_search_max_per_document: int = Field(default=3)

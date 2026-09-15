@@ -119,3 +119,75 @@ export interface ProviderTestResponse {
   detail: string
   models: ProviderModel[]
 }
+
+// ── Conocimiento de la empresa (documentos propios) ─────────────────────
+
+export type DocumentVisibility = 'all' | 'modules' | 'admins'
+export type DocumentStatus = 'pending' | 'processing' | 'ready' | 'no_text' | 'failed'
+
+export interface CompanyDocument {
+  id: string
+  title: string
+  original_filename: string
+  media_type: string
+  size_bytes: number
+  version: number
+  status: DocumentStatus
+  status_code: string | null
+  status_message: string | null
+  page_count: number | null
+  chunk_count: number
+  char_count: number
+  embedding_model: string | null
+  visibility: DocumentVisibility
+  modules: string[]
+  all_databases: boolean
+  database_ids: string[]
+  uploaded_by_login: string
+  processed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** Permisos de un documento: quién lo ve y en qué bases aplica. */
+export interface DocumentPermissions {
+  visibility: DocumentVisibility
+  modules: string[]
+  all_databases: boolean
+  database_ids: string[]
+}
+
+export interface UpdateCompanyDocumentRequest extends Partial<DocumentPermissions> {
+  title?: string
+}
+
+export interface CompanyDocumentUsage {
+  total: number
+  by_status: Record<DocumentStatus, number>
+  chunks: number
+  chunk_limit: number
+  bytes_stored: number
+  estimated_index_memory_bytes: number
+  embedding_model: string
+}
+
+export type ExclusionReason =
+  | 'visibility_admins'
+  | 'visibility_modules'
+  | 'database_scope'
+  | 'not_available'
+
+export interface SearchTestResult {
+  context: { login: string; has_access: boolean; modules: string[]; is_admin: boolean }
+  results: {
+    document_id: string
+    title: string
+    pages: string | null
+    heading: string | null
+    snippet: string
+    vector_score: number
+    bm25_score: number
+    rrf_score: number
+  }[]
+  excluded_documents: { document_id: string; title: string; reason: ExclusionReason }[]
+}

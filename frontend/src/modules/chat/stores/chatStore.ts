@@ -35,6 +35,7 @@ function storedToUI(m: StoredMessage): UIMessage {
     done: true,
     interrupted: m.finish_reason === 'interrupted',
     error: m.finish_reason === 'error' ? 'La respuesta falló.' : undefined,
+    sources: m.sources ?? [],
   }
 }
 
@@ -141,6 +142,9 @@ function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
       break
     case 'error':
       next[next.length - 1] = { ...last, done: true, error: ev.message }
+      break
+    case 'sources':
+      next[next.length - 1] = { ...last, sources: ev.sources }
       break
     case 'thinking_delta':
     case 'title_update':

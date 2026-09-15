@@ -5,6 +5,7 @@
 
 export { erpDatabaseService } from './services/erpDatabaseService'
 export { llmProviderService } from './services/llmProviderService'
+export { useCompanyDocumentStore } from './stores/companyDocumentStore'
 export { useErpDatabaseStore } from './stores/erpDatabaseStore'
 export { useLlmProviderStore } from './stores/llmProviderStore'
 export type {

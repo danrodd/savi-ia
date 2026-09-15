@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { MessageVersion, UIMessage } from '../types'
+import { linkCitations } from '../utils/citations'
 import { groupToolCalls } from '../utils/groupToolCalls'
 import BrandMark from './BrandMark.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
+import MessageSources from './MessageSources.vue'
 import ShareMenu from './ShareMenu.vue'
 import ToolPill from './ToolPill.vue'
 import VersionNavigator from './VersionNavigator.vue'
@@ -35,9 +37,17 @@ const contentEl = ref<HTMLElement | null>(null)
 
 const hasVersions = computed(() => (props.versions?.length ?? 0) > 1)
 const totalVersions = computed(() => props.versions?.length ?? 0)
+// Las fuentes pertenecen a la versión vigente: una versión anterior se muestra
+// sin marcas de cita (sus referencias ya no se pueden resolver).
+const displayedSources = computed(() =>
+  versionIdx.value === null ? (props.message.sources ?? []) : [],
+)
 const displayedText = computed(() => {
-  if (versionIdx.value === null) return props.message.text
-  return props.versions?.[versionIdx.value]?.text ?? props.message.text
+  const raw =
+    versionIdx.value === null
+      ? props.message.text
+      : (props.versions?.[versionIdx.value]?.text ?? props.message.text)
+  return linkCitations(raw, displayedSources.value)
 })
 const displayedToolCalls = computed(() => {
   if (versionIdx.value === null) return props.message.toolCalls
@@ -100,6 +110,13 @@ function next(): void {
           <span v-if="showCaret && !isViewingHistorical" class="caret" aria-hidden="true" />
         </template>
       </div>
+
+      <MessageSources
+        v-if="message.done && displayedSources.length > 0"
+        :sources="displayedSources"
+        :conversation-id="conversationId"
+        :read-only="readOnly"
+      />
 
       <p v-if="message.error && !isViewingHistorical" class="assistant-message__error">
         {{ message.error }}

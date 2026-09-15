@@ -12,6 +12,7 @@ const AdminLayout = () => import('@/modules/admin/views/AdminLayout.vue')
 const ErpDatabasesView = () => import('@/modules/admin/views/ErpDatabasesView.vue')
 const AdminUsageView = () => import('@/modules/admin/views/AdminUsageView.vue')
 const LlmProvidersView = () => import('@/modules/admin/views/LlmProvidersView.vue')
+const CompanyKnowledgeView = () => import('@/modules/admin/views/CompanyKnowledgeView.vue')
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -81,6 +82,11 @@ const router = createRouter({
         { path: '', name: 'admin', redirect: { name: 'admin-databases' } },
         { path: 'bases-datos', name: 'admin-databases', component: ErpDatabasesView },
         { path: 'proveedores-ia', name: 'admin-llm-providers', component: LlmProvidersView },
+        {
+          path: 'conocimiento',
+          name: 'admin-company-knowledge',
+          component: CompanyKnowledgeView,
+        },
         { path: 'consumo', name: 'admin-usage', component: AdminUsageView },
       ],
     },

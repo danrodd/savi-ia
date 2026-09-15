@@ -1,6 +1,6 @@
 # PRD — Conocimiento de la empresa (documentos propios)
 
-> Estado: **Fases 1 y 2 implementadas (backend)**; Fase 3 (interfaz) pendiente.
+> Estado: **Fases 1, 2 y 3 implementadas**; pendiente el spike con documentos reales.
 > Ver "Estado de implementación" al final.
 > Fecha: 2026-09-14.
 > Specs por fase:
@@ -263,9 +263,10 @@ Orden obligatorio: 1 → 2 → 3.
   condicional (`complete_processing`: sin eliminar, `processing`, misma
   `version`) y la edición de permisos usa `update_access_metadata`, que no
   toca el estado.
-- **Umbral de similitud 0,80, no 0,3.** Medido con `multilingual-e5-small`:
-  relevante 0,86, sin relación 0,76. Con 0,3 no se filtraba nada. Es
-  provisorio hasta el spike.
+- **Umbral de similitud 0,82, no 0,3.** Medido con `multilingual-e5-small`:
+  relevantes 0,86–0,90, sin relación 0,76–0,80. Con 0,3 no se filtraba nada
+  y con 0,80 un documento sin relación pasaba en el borde. Es provisorio
+  hasta el spike.
 - **`unavailable_reason = "processing"`** además de `deleted` y `no_access`,
   para un documento citado que se está reprocesando.
 - **Arranque tolerante.** Si el módulo no puede arrancar (p. ej. tablas sin
@@ -275,11 +276,39 @@ Orden obligatorio: 1 → 2 → 3.
   sin red, en 1,6 s. El `savi.spec` excluía `numpy` y `PIL` desde antes: con el módulo
   nuevo eso impedía que el `.exe` arrancara, y se corrigió.
 
+### Fase 3 (interfaz), 2026-09-15
+
+| Área | Verificación |
+|---|---|
+| `/admin/conocimiento`: subir (varios archivos), editar permisos, reemplazar, reprocesar, eliminar, uso | Vitest + E2E Playwright contra backend real. |
+| Prueba de búsqueda "como otro usuario" | E2E con `FSCOGL17`: el documento `admins` aparece como excluido. |
+| Fuentes en el chat: marcas de cita, lista "Fuentes", abrir el original | E2E con Claude: respuesta con 7,5, sin `[D…]` crudos, descarga `200 application/pdf nosniff`. |
+| Suite E2E completa en Chromium | 7 passed. Firefox y WebKit no se corrieron. |
+
+Cambios respecto de la spec de Fase 3:
+
+- **Marcas de cita con dígitos superíndice Unicode** (`¹`) en lugar de `<sup>`:
+  el markdown sigue con `html: false` y DOMPurify sin cambios.
+- **Prueba de búsqueda en un diálogo**, no en un panel lateral, reutilizando
+  el `Dialog` existente.
+- **Subida sin barra de progreso por bytes**: estado por archivo (en cola,
+  subiendo, subido, duplicado, rechazado). `fetch` no expone progreso y el
+  límite de 20 MB no lo justificaba.
+- **Bug encontrado en la verificación visual**: insertar la marca pegada a un
+  `**` de cierre rompía el negrita (`**7,5 %**¹` se veía con asteriscos). Se
+  conserva el espacio después de delimitadores de formato; hay test.
+
+Hallazgo sobre el umbral de similitud (medido en la interfaz): con 0,80 un
+documento sin relación pasaba en el borde, por eso se subió a 0,82. Aun así,
+"receta de arepas" trae un acta corta con 0,8248. Con este modelo y
+documentos cortos el umbral solo no alcanza; el spike tiene que decidir la
+estrategia (p. ej. exigir más similitud cuando no hay coincidencia léxica).
+
 ### Pendiente
 
 - **Spike con documentos reales** (P1): fija modelo definitivo, tamaño de
   fragmento y umbral. Sin eso, RNF-08 no está medido.
-- **Fase 3**: interfaz de administración y fuentes en el chat.
+- E2E en Firefox y WebKit.
 - RNF-02 (impacto en el chat con un PDF grande procesándose) y RNF-04
   (50.000 fragmentos) sin medir.
 - Instalador de punta a punta (Inno Setup) en una VM limpia: se verificó el bundle de

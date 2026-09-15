@@ -27,6 +27,22 @@ export interface ToolInvocation {
   status: ToolInvocationStatus
 }
 
+/** Documento de la empresa citado en una respuesta. */
+export interface MessageSource {
+  /** Primera referencia del documento en el texto (`D1`). */
+  ref: string
+  /** Todas las referencias de ese documento en el mensaje. */
+  refs: string[]
+  document_id: string
+  version: number
+  title: string
+  /** `"3-4, 9"` en PDF; `null` en texto plano. */
+  pages: string | null
+  /** Solo en el historial: calculado para quien consulta. */
+  available?: boolean | null
+  unavailable_reason?: 'deleted' | 'processing' | 'no_access' | null
+}
+
 export interface StoredMessage {
   id: string
   conversation_id: string
@@ -39,6 +55,7 @@ export interface StoredMessage {
   cost_usd: string | null
   superseded_at: string | null
   superseded_by_id: string | null
+  sources?: MessageSource[]
 }
 
 export interface ConversationDetail {
@@ -58,6 +75,7 @@ export type ChatEvent =
   | { type: 'tool_result'; tool_use_id: string; is_error: boolean }
   | { type: 'superseded'; message_ids: string[] }
   | { type: 'title_update'; title: string }
+  | { type: 'sources'; sources: MessageSource[] }
   | {
       type: 'done'
       usage: Record<string, unknown> | null
@@ -96,6 +114,7 @@ export interface UIMessage {
   done: boolean
   interrupted?: boolean
   error?: string
+  sources?: MessageSource[]
 }
 
 export interface MessageVersion {

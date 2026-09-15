@@ -188,6 +188,41 @@ export class HttpClient {
   }
 
   /**
+   * `multipart/form-data` (subida de archivos). El `Content-Type` NO se fija
+   * a mano: lo arma el navegador con el `boundary` del formulario.
+   */
+  async postForm<T>(endpoint: string, form: FormData, opts: RequestOptions = {}): Promise<T> {
+    const url = this.buildUrl(endpoint, opts.query)
+    const res = await this.fetchWithAuth(
+      url,
+      { method: 'POST', signal: opts.signal, body: form },
+      opts.headers,
+      undefined,
+    )
+    if (!res.ok) {
+      const errBody = await readErrorBody(res)
+      throw new HttpRequestError(errorMessage(errBody, res), res.status, errBody)
+    }
+    return (await res.json()) as T
+  }
+
+  /** Descarga binaria con la misma autenticación. Lanza `HttpRequestError` si no es OK. */
+  async getBlob(endpoint: string, opts: RequestOptions = {}): Promise<Blob> {
+    const url = this.buildUrl(endpoint, opts.query)
+    const res = await this.fetchWithAuth(
+      url,
+      { method: 'GET', signal: opts.signal },
+      opts.headers,
+      undefined,
+    )
+    if (!res.ok) {
+      const errBody = await readErrorBody(res)
+      throw new HttpRequestError(errorMessage(errBody, res), res.status, errBody)
+    }
+    return res.blob()
+  }
+
+  /**
    * Para SSE: devuelve la Response directa con auth inyectada y refresh
    * automático en caso de 401. El caller la procesa con readSseJson o
    * similar. NO se reintenta automáticamente si el chat ya empezó a
