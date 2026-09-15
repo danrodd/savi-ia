@@ -333,6 +333,10 @@ fragmento por el pipeline real:
 - **Repetir el spike con documentos reales** (P1): el set sintético tiene
   documentos cortos y no distingue bien entre tamaños de fragmento.
 - **Decidir el modelo int8** antes de tener clientes con documentos cargados.
+- **Decidir la opción de embeddings en la nube** ([`spike-nube.md`](spike-nube.md)):
+  - Gemini pone el fragmento correcto primero en el 100% de los casos (e5-small: 86–88%).
+  - A cambio necesita internet en cada pregunta (+~320 ms) y envía los documentos completos al proveedor.
+  - Con una key gratuita, la cuota frena la importación.
 - **Mejoras de interfaz** priorizadas en `revision-interfaz.md`.
 - E2E en Firefox y WebKit.
 - RNF-02 (impacto en el chat con un PDF grande procesándose) y RNF-04

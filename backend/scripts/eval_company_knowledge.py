@@ -45,6 +45,7 @@ from app.modules.company_knowledge.application.use_cases import (
     ProcessNextCompanyDocumentUseCase,
 )
 from app.modules.company_knowledge.domain.entities.company_document import CompanyDocument
+from app.modules.company_knowledge.domain.interfaces import Embedder
 from app.modules.company_knowledge.domain.services import DocumentAccessContext
 from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatus,
@@ -85,6 +86,7 @@ from app.modules.conversations.infrastructure.persistence.models import (
     MessageModel,
 )
 from app.modules.erp_databases.infrastructure.persistence import ErpDatabaseModel
+from scripts.gemini_embedder import GeminiEmbedder, resolve_gemini_key
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_DIR = ROOT / "tests" / "fixtures" / "company_knowledge" / "eval"
@@ -270,7 +272,11 @@ def _lengthen(text: str, name: str) -> str:
 
 
 async def _evaluate(
-    model: str, chunk_tokens: int, questions: list[dict[str, Any]], long_docs: bool = False
+    model: str,
+    chunk_tokens: int,
+    questions: list[dict[str, Any]],
+    long_docs: bool = False,
+    gemini_key: str | None = None,
 ) -> dict[str, Any]:
     tmp = Path(tempfile.mkdtemp())
     engine = create_async_engine(f"sqlite+aiosqlite:///{(tmp / 'eval.db').as_posix()}")
@@ -289,7 +295,12 @@ async def _evaluate(
         )
     sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False, autoflush=False)
     repo = SqlAlchemyDocumentRepository(sessionmaker)
-    embedder = FastEmbedEmbedder(model, models_root(""), 4)
+    # `gemini/<modelo>` = embeddings en la nube (spike); el resto, ONNX local.
+    embedder: Embedder = (
+        GeminiEmbedder(model.removeprefix("gemini/"), gemini_key or "")
+        if model.startswith("gemini/")
+        else FastEmbedEmbedder(model, models_root(""), 4)
+    )
     if not embedder.is_available():
         raise SystemExit(f"No se pudo cargar {model}. Probá con --download.")
     executor = ThreadPoolExecutor(max_workers=1)
@@ -394,6 +405,20 @@ async def _evaluate(
         "query_p95_ms": round(statistics.quantiles(latencies, n=20)[18], 1),
         "index_memory_bytes": index.status().memory_bytes,
         "model_disk_bytes": _model_disk_bytes(model),
+        "cloud_usage": (
+            {
+                "requests": embedder.usage.requests,
+                "texts": embedder.usage.texts,
+                "retries_429": embedder.usage.retries_429,
+                "waited_for_quota_s": round(embedder.usage.waited_s, 1),
+                "api_s": round(embedder.usage.api_s, 2),
+                "query_embed_ms_median": round(statistics.median(embedder.usage.query_ms), 0)
+                if embedder.usage.query_ms
+                else None,
+            }
+            if isinstance(embedder, GeminiEmbedder)
+            else None
+        ),
         "metrics": {
             mode: {"recall": round(r, 3), "mrr": round(m, 3)} for mode, (r, m) in metrics.items()
         },
@@ -538,6 +563,9 @@ async def _main() -> None:
         action="store_true",
         help="Documentos largos: MD/TXT con relleno entre párrafos (sin PDF). Mide el truncamiento.",
     )
+    parser.add_argument(
+        "--out", help="Nombre del informe (misma carpeta). Por defecto, según el modo."
+    )
     args = parser.parse_args()
     questions = json.loads((EVAL_DIR / "questions.json").read_text(encoding="utf-8"))["questions"]
     report = REPORT
@@ -547,14 +575,20 @@ async def _main() -> None:
         ]
         report = REPORT.with_name("spike-modelo-largos-resultados.md")
 
+    if args.out:
+        report = REPORT.with_name(args.out)
+    gemini_key = (
+        await resolve_gemini_key() if any(m.startswith("gemini/") for m in args.models) else None
+    )
+
     results: list[dict[str, Any]] = []
     for model in args.models:
-        if args.download:
+        if args.download and not model.startswith("gemini/"):
             print(f"Preparando {model}…", flush=True)
             download_embedding_model(model, models_root(""))
         for chunk_tokens in args.chunk_tokens:
             print(f"Evaluando {model} con fragmento {chunk_tokens}…", flush=True)
-            result = await _evaluate(model, chunk_tokens, questions, args.long)
+            result = await _evaluate(model, chunk_tokens, questions, args.long, gemini_key)
             m = result["metrics"]["hybrid"]
             print(
                 f"  híbrido recall={m['recall']} mrr={m['mrr']} · fallidos={result['failed_documents']}",
