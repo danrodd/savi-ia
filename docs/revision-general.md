@@ -16,6 +16,9 @@ SAVI está **bien construido en lo que más cuesta**:
 - credenciales cifradas;
 - 432 tests con Pyright strict.
 
+> **Estado al 2026-09-15:** la Fase 0 del plan ya está implementada y
+> verificada — C1, M2, M3 y O3 están corregidos. El resto sigue abierto.
+
 Pero tiene **dos problemas de seguridad que hay que corregir antes de
 cualquier despliegue con usuarios reales**:
 
@@ -35,6 +38,11 @@ con el backend en ejecución.
 ## Crítica
 
 ### C1. El agente de Claude tiene Bash, Read, Write y WebFetch con permisos automáticos
+
+> **Corregido el 2026-09-15.** `tools=[]` más `disallowed_tools` en el runner y
+> en el generador de títulos. Verificado contra el CLI: de 31 herramientas
+> integradas a **0**, y el contexto por turno bajó de ~144.000 a ~31.000
+> tokens. Ver [`seguridad/01-fase-0-cierre-urgente.md`](seguridad/01-fase-0-cierre-urgente.md).
 
 | | |
 |---|---|

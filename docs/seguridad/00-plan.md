@@ -4,7 +4,7 @@
 > Esto **no es un PRD**: no define producto nuevo. Es el plan para cerrar
 > defectos ya identificados y verificados, con una spec por frente.
 >
-> Estado: **propuesto**, sin código escrito.
+> Estado: **Fase 0 implementada y verificada** (2026-09-15); el resto, propuesto.
 
 ## Qué resuelve
 
@@ -15,7 +15,7 @@ puede cortar al final de cualquiera.
 
 | Fase | Objetivo | Hallazgos | Esfuerzo | Bloquea a |
 |---|---|---|---|---|
-| [0 — Cierre urgente](01-fase-0-cierre-urgente.md) | Sacar la ejecución de código y las llaves del alcance del chat | C1, M2, M3, O3 | ~1 día | Cualquier despliegue |
+| [0 — Cierre urgente](01-fase-0-cierre-urgente.md) ✅ | Sacar la ejecución de código y las llaves del alcance del chat | C1, M2, M3, O3 | ~1 día | Cualquier despliegue |
 | [1 — Datos del ERP](02-fase-1-datos-erp.md) | Que un usuario solo vea los datos que le corresponden | A1, A2, M4, M7 | ~3-4 días | Usuarios reales |
 | [2 — Resistencia](03-fase-2-resistencia.md) | Que la app aguante abuso y concurrencia | O1, O2, O4, M5 | ~3 días | Usuarios reales |
 | [3 — Multiempresa](04-fase-3-multiempresa.md) | Aislar clientes entre sí | A3, M1, O6 | ~3 días | SAVI Servidor |
@@ -45,10 +45,10 @@ Una fase está cerrada cuando:
 
 | ID | Hallazgo | Fase | Estado |
 |---|---|---|---|
-| C1 | Claude con Bash, Read, Write y WebFetch sin permiso | 0 | pendiente |
-| M2 | `JWT_SECRET` por defecto aceptado | 0 | pendiente |
-| M3 | Dependencias con CVE | 0 | pendiente |
-| O3 | `/health` público golpea la BD | 0 | pendiente |
+| C1 | Claude con Bash, Read, Write y WebFetch sin permiso | 0 | **hecho** |
+| M2 | `JWT_SECRET` por defecto aceptado | 0 | **hecho** |
+| M3 | Dependencias con CVE | 0 | **hecho** |
+| O3 | `/health` público golpea la BD | 0 | **hecho** |
 | A1 | SQL libre sin permisos del ERP | 1 | pendiente |
 | A2 | Superusuario y funciones peligrosas | 1 | pendiente |
 | M4 | Fronteras de seguridad sin tests | 1 | pendiente |

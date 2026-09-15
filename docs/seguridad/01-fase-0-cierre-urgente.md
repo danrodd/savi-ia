@@ -2,7 +2,9 @@
 
 > Objetivo: que el chat deje de poder ejecutar código y leer archivos de la
 > máquina, y que no haya secretos por defecto ni dependencias con CVE conocidas.
-> Esfuerzo estimado: **1 día**. Sin decisiones de producto pendientes.
+>
+> **Estado: implementada y verificada el 2026-09-15.** Resultados medidos al
+> final de cada sección.
 
 ## Alcance
 
@@ -188,6 +190,59 @@ necesitaba la señal de BD: en ese caso apuntarlo a `/health/db`.
 - `test_health_db_requires_admin`.
 
 ---
+
+## Verificación (2026-09-15)
+
+Lo medido tras implementar la fase.
+
+### Herramientas del CLI
+
+Leyendo el mensaje `init` del CLI con las opciones reales del chat:
+
+| | Antes | Después |
+|---|---|---|
+| Herramientas integradas | **31** (`Bash`, `Read`, `Write`, `Edit`, `WebFetch`, `WebSearch`, `Task`, `ToolSearch`…) | **0** |
+| Herramientas de SAVI | 4 | 4 (`consultar_conocimiento`, `consultar_datos`, `consultar_libre`, `info_empresa`) |
+
+### Contexto por turno
+
+Turnos reales contra el backend, con el caché en caliente:
+
+| Turno | Contexto | Antes (promedio de 31 respuestas) |
+|---|---|---|
+| Pregunta sin herramientas | **30.820** | ~144.000 |
+| Pregunta con 2 llamadas a herramientas | **93.518** | ~144.000 |
+
+**Sobre el costo:** en esta muestra chica (3 turnos) el costo por respuesta
+quedó en USD 0,13-0,16, sin una baja clara respecto del promedio previo de
+USD 0,137. La medición incluye escrituras de caché, que son más caras que las
+lecturas, y cada turno arrancó una conversación nueva. **Hace falta una
+medición sobre más turnos antes de afirmar un ahorro**; lo que sí está medido
+es la caída del contexto.
+
+Los ~30.800 tokens que quedan en un turno sin herramientas son el system
+prompt de SAVI, las 4 definiciones de tools y **el system prompt propio del
+CLI de Claude Code**, que sigue viajando. Reducirlo es otra tarea.
+
+### Sobre la regla de "máximo 4 tools MCP"
+
+`ToolSearch` estaba entre las 31 integradas y ahora no aparece. Eso **apunta**
+a que el modo *deferred tools* lo disparaba la cantidad total de herramientas
+del CLI y no las 4 propias. No alcanza para levantar la regla: habría que
+probar con una quinta tool propia y verificar que no reaparezca. Queda como
+tarea, y hasta entonces el test `test_mcp_server_tool_limit.py` se queda.
+
+### Dependencias
+
+`pip-audit` sobre el lock: **sin vulnerabilidades conocidas** (antes: 13
+hallazgos en 5 paquetes). `mcp` se subió dentro de la línea 1.x (1.27.1 →
+1.30.0): el salto a 2.x toca el SDK del agente y no lo justificaba una falla
+en transportes que SAVI no usa.
+
+### Suite
+
+442 tests (10 nuevos), Ruff y Pyright strict en verde. E2E de Chromium para
+chat y documentos en verde.
 
 ## Resultado de la fase
 

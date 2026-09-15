@@ -16,7 +16,17 @@ dependencies = [
     # falla con ZoneInfoNotFoundError en cualquier equipo cliente.
     "tzdata>=2024.1",
     "pydantic>=2.10",
-    "pydantic-settings>=2.6",
+    # >=2.14.2 por CVE-2026-58203 (lectura de secretos desde directorio).
+    "pydantic-settings>=2.14.2",
+    # Pines de seguridad, no funcionales. `starlette` llega por FastAPI y
+    # `cryptography` por el cifrado de credenciales del ERP; se declaran acá
+    # para que el lock no vuelva a una versión vulnerable:
+    # - starlette <1.3.1: límites de `request.form()` no aplicados y
+    #   `request.url` mal reconstruida (SAVI recibe multipart).
+    # - cryptography <50: OpenSSL vulnerable en la wheel, más pkcs7 y
+    #   validación de cadenas.
+    "starlette>=1.3.1",
+    "cryptography>=50.0.0",
     "orjson>=3.10",
     "claude-agent-sdk>=0.0.10",
     "anthropic>=0.40",
@@ -37,7 +47,15 @@ dependencies = [
     "pypdf==6.18.1",
     # Subida `multipart/form-data` en FastAPI. Llegaba transitivo; se
     # declara porque el módulo de documentos depende de él directamente.
-    "python-multipart==0.0.29",
+    # >=0.0.31 por PYSEC-2026-3036/3037/3040 (Content-Length negativo y `;`
+    # como separador): justo el camino de la subida de documentos.
+    "python-multipart>=0.0.31",
+    # Llega transitivo por `claude-agent-sdk`. Se fija el piso por
+    # PYSEC-2026-3481/3482/3483: afectan transportes SSE, HTTP y WebSocket que
+    # SAVI no usa (monta el servidor MCP en proceso), pero no hay motivo para
+    # quedarse abajo. Acotado a la línea 1.x: el salto a 2.x es mayor y
+    # tocaría el SDK del agente, que es el corazón del chat.
+    "mcp>=1.28.1,<2",
 ]
 
 [dependency-groups]

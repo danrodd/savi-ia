@@ -8,6 +8,7 @@ from app.infrastructure.claude_cli import resolve_cli_path
 from app.infrastructure.claude_env import build_claude_env
 from app.infrastructure.config import Settings
 from app.modules.chat.domain.interfaces import ActiveProvider, TitleGenerator
+from app.modules.chat.infrastructure.llm.claude.mcp_adapter import BUILTIN_TOOLS
 from app.modules.chat.infrastructure.llm.title_prompt import (
     TITLE_SYSTEM_PROMPT,
     build_title_prompt,
@@ -26,7 +27,12 @@ class ClaudeTitleGenerator(TitleGenerator):
         options = ClaudeAgentOptions(
             model=self._provider.title_model,
             system_prompt=TITLE_SYSTEM_PROMPT,
+            # Titular no necesita ninguna herramienta, y el texto que se le
+            # manda es del usuario: sin `tools=[]` el CLI traería Bash, Read
+            # y compañía, aprobadas por `bypassPermissions`.
+            tools=[],
             allowed_tools=[],
+            disallowed_tools=list(BUILTIN_TOOLS),
             permission_mode="bypassPermissions",
             max_turns=1,
             cli_path=resolve_cli_path(),

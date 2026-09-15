@@ -1,4 +1,5 @@
 import logging
+import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -16,6 +17,7 @@ from app.infrastructure.database import (
     init_engines,
 )
 from app.modules.auth.infrastructure.http import router as auth_router
+from app.modules.auth.infrastructure.http.admin import SaviAdminDep
 from app.modules.chat.infrastructure.http import router as chat_router
 from app.modules.company_knowledge.infrastructure.http import (
     public_router as company_documents_public_router,
@@ -88,6 +90,13 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # Primera línea del log de cada arranque: es lo primero que un
     # técnico de soporte busca para saber qué build tiene el cliente.
     logger.info("SAVI %s arrancando (env=%s)", __version__, settings.app_env)
+    if settings.uses_insecure_jwt_secret:
+        # Fuera de desarrollo esto ni siquiera arranca (lo valida Settings).
+        # Acá el aviso es para que no se filtre a un despliegue por descuido.
+        logger.warning(
+            "JWT_SECRET tiene el valor de fábrica: cualquiera que lo conozca puede "
+            "firmarse un token de administrador. Generá uno antes de salir de desarrollo."
+        )
     init_engines(settings)
 
     # Registry de engines del ERP: uno por base de cliente, creado en su
@@ -161,14 +170,24 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["system"])
     async def health() -> dict[str, str]:
-        async with get_agent_engine().connect() as conn:
-            await conn.execute(text("SELECT 1"))
+        """Vivo o no. **No toca la base de datos a propósito**: es público y
+        sin límite de pedidos, así que cualquier trabajo real acá es un
+        amplificador de DoS. Medido antes del cambio: 200 pedidos concurrentes
+        llevaban la mediana a ~1 s porque cada uno hacía un `SELECT 1`.
+        Para chequear la BD está `/health/db`, que pide administrador."""
         return {
             "status": "ok",
             "app": settings.app_name,
             "env": settings.app_env,
             "version": __version__,
         }
+
+    @app.get("/health/db", tags=["system"])
+    async def health_db(_admin: SaviAdminDep) -> dict[str, str | float]:
+        started = time.perf_counter()
+        async with get_agent_engine().connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"status": "ok", "latencia_ms": round((time.perf_counter() - started) * 1000, 1)}
 
     @app.get("/version", tags=["system"])
     async def version() -> dict[str, str | None]:

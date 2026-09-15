@@ -7,6 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.paths import data_dir
 
+# Valor de fábrica del secreto de firma. Sirve para que `uv run dev` arranque
+# sin configurar nada; fuera de `development` se rechaza.
+INSECURE_JWT_SECRET = "change-me-in-prod"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -141,8 +145,10 @@ class Settings(BaseSettings):
     company_docs_max_context_chars: int = Field(default=6000)
 
     # ── Auth ─────────────────────────────────────────────────────────────
-    # Secreto para firmar los JWT. NUNCA usar el default en prod.
-    jwt_secret: str = Field(default="change-me-in-prod")
+    # Secreto para firmar los JWT. Fuera de `development` el default hace
+    # fallar el arranque: quien lo conozca puede firmarse un token de
+    # administrador. Ver `_reject_default_jwt_secret`.
+    jwt_secret: str = Field(default=INSECURE_JWT_SECRET)
     jwt_algorithm: str = Field(default="HS256")
     access_token_ttl_minutes: int = Field(default=15)
     refresh_token_ttl_days: int = Field(default=7)
@@ -189,6 +195,25 @@ class Settings(BaseSettings):
                 "Usá agent_db_engine='sqlite' para una instalación sin servidor de BD."
             )
         return self
+
+    @model_validator(mode="after")
+    def _reject_default_jwt_secret(self) -> "Settings":
+        """El secreto de fábrica firma tokens válidos para cualquiera que lo
+        conozca, incluido `is_admin`. En desarrollo es una comodidad; en
+        cualquier otro entorno es una puerta abierta, así que no arranca."""
+        if self.app_env != "development" and self.jwt_secret.strip() == INSECURE_JWT_SECRET:
+            raise ValueError(
+                "JWT_SECRET tiene el valor de fábrica y APP_ENV no es 'development'. "
+                "Generá uno nuevo (por ejemplo con "
+                '`python -c "import secrets; print(secrets.token_urlsafe(48))"`) '
+                "y guardalo en el .env antes de usar SAVI."
+            )
+        return self
+
+    @property
+    def uses_insecure_jwt_secret(self) -> bool:
+        """Para avisar por log en desarrollo sin repetir la constante."""
+        return self.jwt_secret.strip() == INSECURE_JWT_SECRET
 
     @property
     def resolved_agent_db_path(self) -> Path:

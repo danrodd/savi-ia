@@ -38,3 +38,28 @@ def allowed_tool_names(tools: list[ToolSpec]) -> list[str]:
     """Whitelist derivada del registro: no se puede registrar una tool y
     olvidarse de habilitarla."""
     return [f"mcp__{MCP_SERVER_NAME}__{spec.name}" for spec in tools]
+
+
+# Herramientas integradas del CLI, observadas en el mensaje `init` con las
+# opciones reales del chat. `tools=[]` ya las apaga todas; esta lista es la
+# segunda barrera por si un CLI futuro cambia el default de `--tools`.
+BUILTIN_TOOLS: tuple[str, ...] = (
+    "Task",
+    "Bash",
+    "Edit",
+    "Glob",
+    "Grep",
+    "NotebookEdit",
+    "Read",
+    "Skill",
+    "TaskCreate",
+    "TaskGet",
+    "TaskList",
+    "TaskOutput",
+    "TaskStop",
+    "TaskUpdate",
+    "ToolSearch",
+    "WebFetch",
+    "WebSearch",
+    "Write",
+)

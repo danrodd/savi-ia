@@ -39,6 +39,7 @@ from app.modules.chat.domain.entities import (
 )
 from app.modules.chat.domain.interfaces import ActiveProvider, LLMRunner
 from app.modules.chat.infrastructure.llm.claude.mcp_adapter import (
+    BUILTIN_TOOLS,
     MCP_SERVER_NAME,
     allowed_tool_names,
     build_mcp_server,
@@ -90,7 +91,15 @@ def _build_options(
         model=provider.chat_model,
         system_prompt=SYSTEM_PROMPT,
         mcp_servers={MCP_SERVER_NAME: build_mcp_server(tools)},
+        # `tools=[]` apaga TODAS las herramientas integradas del CLI. NO es
+        # redundante con `allowed_tools`: esa lista solo evita el prompt de
+        # permiso, no define qué existe. Sin esto el CLI arranca con Bash,
+        # Read, Write y WebFetch entre otras, y `bypassPermissions` las
+        # aprueba solas: cualquier usuario del chat podía pedir que se
+        # leyera el `.env` de la máquina donde corre SAVI.
+        tools=[],
         allowed_tools=allowed_tool_names(tools),
+        disallowed_tools=list(BUILTIN_TOOLS),
         permission_mode="bypassPermissions",
         max_turns=settings.max_agent_turns,
         # Por el ejecutable y no por el shim `.cmd` de npm: ver
