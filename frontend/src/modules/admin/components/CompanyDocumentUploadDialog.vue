@@ -95,6 +95,15 @@ function onDrop(event: DragEvent): void {
   if (event.dataTransfer?.files) addFiles(event.dataTransfer.files)
 }
 
+function onDragLeave(event: DragEvent): void {
+  // `dragleave` también salta al pasar por encima de un hijo (el botón, la
+  // lista). Sin este chequeo el recuadro parpadea mientras se arrastra.
+  const salienteDelFormulario = !(event.currentTarget as HTMLElement).contains(
+    event.relatedTarget as Node | null,
+  )
+  if (salienteDelFormulario) dragging.value = false
+}
+
 function removeItem(key: string): void {
   items.value = items.value.filter((i) => i.key !== key)
 }
@@ -151,14 +160,20 @@ const STATE_LABELS: Record<ItemState, string> = {
     :close-on-overlay="false"
     @update:open="(value) => (value ? emit('update:open', true) : close())"
   >
-    <form id="company-document-upload" class="docup" novalidate @submit.prevent="onSubmit">
-      <div
-        class="docup__drop"
-        :class="{ 'docup__drop--active': dragging }"
-        @dragover.prevent="dragging = true"
-        @dragleave.prevent="dragging = false"
-        @drop.prevent="onDrop"
-      >
+    <!-- El `drop` se acepta en TODO el formulario, no solo en la zona
+         punteada. Soltar un archivo unos píxeles afuera hacía que el
+         navegador lo abriera y se perdiera la pantalla con lo ya cargado:
+         un `drop` sin `preventDefault` es una navegación. -->
+    <form
+      id="company-document-upload"
+      class="docup"
+      novalidate
+      @submit.prevent="onSubmit"
+      @dragover.prevent="dragging = true"
+      @dragleave.prevent="onDragLeave"
+      @drop.prevent="onDrop"
+    >
+      <div class="docup__drop" :class="{ 'docup__drop--active': dragging }">
         <p class="docup__drop-text">Arrastra los archivos acá o</p>
         <Button variant="secondary" size="sm" :disabled="uploading" @click="fileInput?.click()">
           Elegir archivos

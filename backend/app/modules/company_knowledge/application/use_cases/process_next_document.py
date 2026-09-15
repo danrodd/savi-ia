@@ -12,6 +12,9 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatus,
     DocumentStatusCode,
 )
+from app.modules.company_knowledge.infrastructure.progress import (
+    get_progress_registry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +52,10 @@ class ProcessNextCompanyDocumentUseCase:
         if outcome.status == DocumentStatus.READY:
             outcome = await self._enforce_installation_limit(outcome)
 
+        # Cerrado el documento, el avance ya no aplica: dejarlo colgado haría
+        # que la interfaz mostrara un porcentaje viejo para siempre.
+        get_progress_registry().finish(document.id)
+
         completed = await self._repository.complete_processing(
             document.id, document.version, outcome
         )
@@ -82,7 +89,7 @@ class ProcessNextCompanyDocumentUseCase:
         if content is None:
             return ProcessingOutcome.failed(DocumentStatusCode.INTERNAL_ERROR)
         try:
-            return await self._processor.process(content, media_type)
+            return await self._processor.process(content, media_type, document_id)
         except EmbedderUnavailableError:
             await self._repository.release_claim(document_id, version)
             raise

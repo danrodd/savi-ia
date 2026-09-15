@@ -11,6 +11,9 @@ from app.modules.company_knowledge.application.use_cases.document_access import 
     SearchTestResult,
 )
 from app.modules.company_knowledge.domain.services import format_pages
+from app.modules.company_knowledge.infrastructure.progress import (
+    get_progress_registry,
+)
 
 
 class CompanyDocumentResponse(BaseModel):
@@ -25,6 +28,10 @@ class CompanyDocumentResponse(BaseModel):
     status_message: str | None
     page_count: int | None
     chunk_count: int
+    # Avance del procesamiento en curso: `None` salvo mientras se procesa.
+    # Vive en memoria del proceso, no en la base (ver `infrastructure/progress.py`).
+    progress_done: int | None = None
+    progress_total: int | None = None
     char_count: int
     embedding_model: str | None
     visibility: str
@@ -40,6 +47,9 @@ class CompanyDocumentResponse(BaseModel):
 
     @classmethod
     def from_dto(cls, dto: CompanyDocumentDTO) -> "CompanyDocumentResponse":
+        # El avance vive en memoria del proceso y no en el DTO: se consulta
+        # acá, al armar la respuesta, y es `None` salvo mientras se procesa.
+        progress = get_progress_registry().get(dto.id)
         return cls(
             id=dto.id,
             title=dto.title,
@@ -52,6 +62,8 @@ class CompanyDocumentResponse(BaseModel):
             status_message=dto.status_message,
             page_count=dto.page_count,
             chunk_count=dto.chunk_count,
+            progress_done=progress.done if progress else None,
+            progress_total=progress.total if progress else None,
             char_count=dto.char_count,
             embedding_model=dto.embedding_model,
             visibility=dto.visibility.value,

@@ -139,6 +139,12 @@ export interface CompanyDocument {
   status_message: string | null
   page_count: number | null
   chunk_count: number
+  /**
+   * Avance del procesamiento en curso. `null` salvo mientras se procesa:
+   * el backend lo mantiene en memoria, no en la base.
+   */
+  progress_done: number | null
+  progress_total: number | null
   char_count: number
   embedding_model: string | null
   visibility: DocumentVisibility

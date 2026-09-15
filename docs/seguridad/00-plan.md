@@ -5,7 +5,7 @@
 > defectos ya identificados y verificados, con una spec por frente.
 >
 > Estado: **Fases 0 a 3 implementadas y verificadas** (2026-09-15); la 4 va
-> parcial (M6, O7, B3, B4).
+> parcial (M6, O7, O5, B3, B4 y lo principal de M8); queda M9 y pulido.
 
 ## Qué resuelve
 
@@ -62,9 +62,9 @@ Una fase está cerrada cuando:
 | M1 | Módulos calculados contra la base equivocada | 3 | **hecho** |
 | O6 | SQLite con varios usuarios | 3 | **hecho** (queda acortar la transacción del turno) |
 | M6 | Costo invisible sin tarifa | 4 | **hecho** |
-| M8 | Interfaz de documentos | 4 | pendiente |
+| M8 | Interfaz de documentos | 4 | parcial: avance, móvil y drag & drop |
 | M9 | Tres runners duplicados | 4 | pendiente |
-| O5 | Ingesta en serie | 4 | pendiente |
+| O5 | Ingesta en serie | 4 | **hecho** (falta posición en cola) |
 | O7 | Reuso de refresh token | 4 | **hecho** |
 | B1–B7 | Bajas | 4 | parcial: B3 y B4 hechos |
 

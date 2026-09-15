@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from uuid import UUID
 
 from app.modules.company_knowledge.domain.entities.processing import PendingChunk
 from app.modules.company_knowledge.domain.value_objects.visibility import (
@@ -38,4 +39,11 @@ class DocumentProcessor(ABC):
     """
 
     @abstractmethod
-    async def process(self, content: bytes, media_type: str) -> ProcessingOutcome: ...
+    async def process(
+        self, content: bytes, media_type: str, document_id: UUID | None = None
+    ) -> ProcessingOutcome:
+        """Procesa el contenido y devuelve el resultado.
+
+        `document_id` es opcional y solo se usa para reportar avance: los
+        tests llaman sin él."""
+        ...

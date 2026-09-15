@@ -3,9 +3,9 @@
 > Objetivo: cerrar lo que no es urgente pero desgasta: costos que no se ven,
 > código duplicado, interfaz incompleta y detalles de seguridad menores.
 >
-> **Estado: parcial (2026-09-15).** Hechos M6, O7, B3 y B4, más **dos bugs
-> que aparecieron al verificar**. Pendientes M8, M9, O5 y el resto de las
-> bajas. Detalle al final.
+> **Estado: parcial (2026-09-15).** Hechos M6, O7, O5, B3, B4 y los puntos
+> 1-3 de M8, más **tres bugs que aparecieron al verificar**. Pendientes M9 y
+> el resto de las bajas. Detalle al final.
 
 ## Alcance
 
@@ -172,6 +172,10 @@ if record.is_revoked:
 | O7 | Reusar un refresh token revocado ahora **corta toda la cadena** del usuario en esa base y deja un warning en el log | Camino de reuso en `RefreshTokensUseCase` |
 | B3 | Cabeceras de seguridad en toda respuesta: CSP, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` | Verificado con la SPA **compilada**, no solo con Vite |
 | B4 | El historial del turno pide solo los últimos 20 mensajes en SQL | Antes traía la conversación entera para descartar casi todo en cada turno |
+| O5 | Avance del procesamiento, en memoria y sin migración | Turno real con un PDF de 120 páginas: 32 → 64 → 96 de 120, y se limpia al terminar |
+| M8 #1 | Barra de avance en la tabla de documentos | Captura durante un procesamiento real: "Procesando… 0 de 150 fragmentos" |
+| M8 #2 | La tabla pasa a tarjetas en pantallas angostas | Captura a 400 px: Editar, Reemplazar y Eliminar visibles, antes fuera de pantalla |
+| M8 #3 | Soltar un archivo fuera de la zona punteada ya no abre el archivo | El `drop` se acepta en todo el formulario; `dragleave` deja de parpadear al pasar por un hijo |
 
 ### Dos bugs que encontró la verificación
 
@@ -194,7 +198,14 @@ violaciones reales:
 Tras los arreglos: **0 violaciones** recorriendo login, chat y las pantallas
 de administración.
 
-**2. Todas las pantallas de administración devolvían un 404 JSON.**
+**2. Una barra de avance rota en documentos ya terminados.** La captura la
+mostró en filas en estado "Listo", con el texto "de fragmentos" sin números.
+La causa inmediata era un backend viejo corriendo (sin los campos nuevos),
+pero destapó un defecto real del guard: comparaba con `=== null`, que **no**
+atrapa `undefined`. Cualquier respuesta sin esos campos —un backend viejo
+detrás de un frontend nuevo— dibujaba la barra vacía. Corregido con `== null`.
+
+**3. Todas las pantallas de administración devolvían un 404 JSON.**
 `/admin/consumo`, `/admin/conocimiento` y `/admin/bases` respondían
 `{"detail":"Not Found"}` en lugar de la aplicación, al recargarlas o entrar
 por enlace directo. El fallback de la SPA comparaba solo el **primer
@@ -204,16 +215,16 @@ y los otros dos), con test de regresión para ambos lados.
 
 ### Suite
 
-558 tests en backend, 79 en frontend. Ruff, Pyright strict, `vue-tsc` y Biome
+570 tests en backend, 79 en frontend. Ruff, Pyright strict, `vue-tsc` y Biome
 en verde.
 
 ## Lo que queda
 
 | # | Qué | Por qué no se hizo ahora |
 |---|---|---|
-| M8 | Mejoras de la interfaz de documentos (avance, móvil, drag & drop) | Las más valiosas dependen de O5 (avance persistido); el resto es trabajo de UI con su propia verificación visual |
+| M8 #4-12 | Buscador y filtros, menú por fila, pasaje coincidente, páginas precisas, títulos, puntajes, estado vacío, barra de uso, confirmación al reemplazar | Pulido; los tres que más molestaban ya están |
 | M9 | Unificar el bucle agéntico de OpenAI y Gemini | Es un refactor grande sin cambio de comportamiento: merece su propia sesión y su propia verificación con turnos reales de los dos proveedores |
-| O5 | Avance de la ingesta y posición en cola | Necesita migración Alembic; va junto con el punto 1 de M8 |
+| O5 (cola) | Posición en la cola ("2 documentos antes") | El avance del documento en curso ya está; la posición exige exponer el orden de la cola |
 | B1 | Refresh token en `localStorage` → cookie `HttpOnly` | Cambia el flujo de autenticación del frontend; hay que medir el costo antes |
 | B2 | `xlsx` sin parche | Hoy no explotable (solo se escribe) |
 | B5 | Partir `launcher.py` | Deuda pura, sin riesgo abierto |

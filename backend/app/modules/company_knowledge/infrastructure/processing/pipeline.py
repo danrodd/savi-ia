@@ -8,6 +8,7 @@ encole nada ajeno y el chat siga respondiendo mientras se procesa (RNF-02).
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from uuid import UUID
 
 from app.modules.company_knowledge.domain.entities.processing import (
     ExtractedText,
@@ -30,6 +31,9 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
 )
 from app.modules.company_knowledge.infrastructure.embeddings.vector_codec import (
     vector_to_bytes,
+)
+from app.modules.company_knowledge.infrastructure.progress import (
+    get_progress_registry,
 )
 
 # Promedio mínimo de caracteres por página para considerar que un PDF
@@ -54,11 +58,17 @@ class PipelineDocumentProcessor(DocumentProcessor):
         self._executor = executor
         self._max_chunks = max_chunks_per_document
 
-    async def process(self, content: bytes, media_type: str) -> ProcessingOutcome:
+    async def process(
+        self, content: bytes, media_type: str, document_id: UUID | None = None
+    ) -> ProcessingOutcome:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(self._executor, self._process_sync, content, media_type)
+        return await loop.run_in_executor(
+            self._executor, self._process_sync, content, media_type, document_id
+        )
 
-    def _process_sync(self, content: bytes, media_type: str) -> ProcessingOutcome:
+    def _process_sync(
+        self, content: bytes, media_type: str, document_id: UUID | None = None
+    ) -> ProcessingOutcome:
         try:
             extracted = self._extractor.extract(content, media_type)
         except DocumentExtractionError as exc:
@@ -90,6 +100,12 @@ class PipelineDocumentProcessor(DocumentProcessor):
 
         # `EmbedderUnavailableError` se propaga a propósito: el documento
         # vuelve a la cola en lugar de quedar `failed` por la instalación.
+        # El avance se publica por lote: un PDF de 500 páginas tarda casi
+        # dos minutos y sin esto la interfaz solo puede decir "Procesando…".
+        progress = get_progress_registry()
+        if document_id is not None:
+            progress.start(document_id, len(drafts))
+
         chunks: list[PendingChunk] = []
         for start in range(0, len(drafts), _EMBED_BATCH):
             batch = drafts[start : start + _EMBED_BATCH]
@@ -105,6 +121,8 @@ class PipelineDocumentProcessor(DocumentProcessor):
                 )
                 for draft, vector in zip(batch, vectors, strict=True)
             )
+            if document_id is not None:
+                progress.advance(document_id, len(chunks))
 
         return ProcessingOutcome(
             status=DocumentStatus.READY,
