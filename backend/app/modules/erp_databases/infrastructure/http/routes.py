@@ -10,7 +10,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query, status
 
-from app.modules.auth.infrastructure.http.admin import SaviAdminDep
+from app.modules.auth.infrastructure.http.admin import PlatformAdminDep
 from app.modules.erp_databases.application.requests import (
     ExportErpDatabasesRequest,
     ImportErpDatabasesRequest,
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/admin/erp-databases", tags=["erp-databases"])
 @router.get("", response_model=list[ErpDatabaseResponse])
 async def list_databases(
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
     include_inactive: bool = Query(
         default=False,
         description="Incluir las desactivadas. Las eliminadas nunca se listan.",
@@ -51,7 +51,7 @@ async def list_databases(
 async def create_database(
     request: SaveErpDatabaseRequest,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ErpDatabaseResponse:
     """Registra una base nueva.
 
@@ -65,7 +65,7 @@ async def create_database(
 async def test_connection(
     request: SaveErpDatabaseRequest,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
     database_id: UUID | None = Query(
         default=None,
         description=(
@@ -88,7 +88,7 @@ async def test_connection(
 async def export_databases(
     request: ExportErpDatabasesRequest,
     use_case: ExportImportErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ExportErpDatabasesResponse:
     """Exporta las bases activas para cargarlas en otra instalación (ej.
     otro agente del call center). El archivo queda cifrado con
@@ -100,7 +100,7 @@ async def export_databases(
 async def import_databases(
     request: ImportErpDatabasesRequest,
     use_case: ExportImportErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ImportErpDatabasesResponse:
     """Importa el archivo de otra instalación. Por `code`: crea las que
     no existen acá y actualiza las que sí (host, usuario, contraseña,
@@ -120,7 +120,7 @@ async def import_databases(
 async def get_database(
     database_id: UUID,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ErpDatabaseResponse:
     return ErpDatabaseResponse.from_dto(await use_case.get(database_id))
 
@@ -130,7 +130,7 @@ async def update_database(
     database_id: UUID,
     request: SaveErpDatabaseRequest,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ErpDatabaseResponse:
     """Edita una base. Contraseña vacía = conservar la guardada.
 
@@ -146,7 +146,7 @@ async def update_database(
 async def set_default(
     database_id: UUID,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ErpDatabaseResponse:
     return ErpDatabaseResponse.from_dto(await use_case.set_default(database_id))
 
@@ -155,7 +155,7 @@ async def set_default(
 async def activate(
     database_id: UUID,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ErpDatabaseResponse:
     return ErpDatabaseResponse.from_dto(await use_case.activate(database_id))
 
@@ -164,7 +164,7 @@ async def activate(
 async def deactivate(
     database_id: UUID,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ErpDatabaseResponse:
     """Desactiva una base. 422 si es la predeterminada.
 
@@ -178,7 +178,7 @@ async def deactivate(
 async def delete_database(
     database_id: UUID,
     use_case: ManageErpDatabasesUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> None:
     """Baja lógica idempotente. 422 si es la predeterminada.
 

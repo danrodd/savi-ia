@@ -4,7 +4,8 @@
 > control entre ellas. **Obligatoria antes de SAVI Servidor**
 > ([`docs/plataforma/`](../plataforma/00-prd.md)); opcional en la app de
 > escritorio de un solo cliente.
-> Esfuerzo estimado: **3 días**.
+>
+> **Estado: implementada y verificada el 2026-09-15.** Detalle al final.
 
 ## Alcance
 
@@ -166,6 +167,56 @@ turno. Con varios usuarios, eso es un bloqueo permanente.
 - `test_turn_does_not_hold_session_during_streaming` (con un runner falso lento, verificar que la sesión se abre y cierra por operación).
 
 ---
+
+## Verificación (2026-09-15)
+
+### A3 — Dos roles
+
+| Situación | Antes | Ahora |
+|---|---|---|
+| Admin del ERP de la base **por defecto** | administra todo | administra todo |
+| Admin del ERP de **otra** base, con varias registradas | **administraba todo**, incluida la exportación de credenciales de los demás clientes | 403 en bases y proveedores de IA; administra **su** empresa |
+| Login en `SAVI_ADMIN_LOGINS` | administra todo | administra todo (aunque el ERP no lo marque admin) |
+| Instalación con **una sola base** | administra todo | **igual que antes** |
+
+Esa última fila es deliberada: la app de escritorio es el despliegue actual y
+no se puede romper. La distinción aparece recién con más de una empresa.
+
+Además, **no alcanzaba con cambiar el guard**: `/admin/company-documents`
+devolvía los documentos de todas las empresas. Ahora un administrador de
+empresa queda acotado a su base aunque pida otra por query string.
+
+### M1 — Módulos contra la base correcta
+
+`/auth/me/bootstrap` y `/auth/me/modules-version` usan el resolver por base.
+Verificado con un doble que registra con qué base lo llamaron: recibe la del
+usuario, no la default.
+
+Se **eliminaron** `get_permission_repository`, `get_seo_plan_repository` y
+`get_resolve_user_modules_use_case`, todos atados a `get_erp_engine_for(None)`.
+Un resolver que elige la base en silencio es una trampa para el próximo
+endpoint que lo use.
+
+`RequireModule` (que no usa ninguna ruta todavía) también pasó al resolver por
+base. De paso se corrigió que **no se podía montar**: su dependencia venía de
+un import solo para tipos, y FastAPI no habría podido resolver la anotación al
+usarla. Se verificó montándola en una app de prueba.
+
+### O6 — Postgres en modo servidor
+
+Fuera de `development`, `AGENT_DB_ENGINE=sqlite` ahora impide arrancar, con un
+mensaje que explica por qué y cuál es la salida. La app de escritorio
+(`APP_ENV=development`) sigue con SQLite.
+
+**Pendiente de esta fase:** acortar el alcance de la sesión de BD dentro del
+turno de chat. Hoy la transacción vive lo que dura la respuesta del modelo, y
+eso es la causa de fondo tanto del bloqueo de SQLite como de retener una
+conexión del pool por turno en Postgres. Es un cambio en `ChatTurnUseCase` que
+merece su propia medición.
+
+### Suite
+
+550 tests (11 nuevos: 8 del alcance de administrador y 3 del bootstrap).
 
 ## Resultado de la fase
 

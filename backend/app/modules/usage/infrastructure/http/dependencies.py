@@ -5,7 +5,7 @@ from fastapi import Depends
 from app.infrastructure.config import Settings, get_settings
 from app.infrastructure.database.session import AgentSessionDep
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.infrastructure.http import CurrentUserDep
+from app.modules.auth.infrastructure.http.admin import require_platform_admin
 from app.modules.usage.application.use_cases import (
     GetSystemUsageUseCase,
     GetUsageKpisUseCase,
@@ -16,7 +16,6 @@ from app.modules.usage.domain.interfaces import UsageRepository
 from app.modules.usage.infrastructure.persistence.repositories import (
     SqlAlchemyUsageRepository,
 )
-from app.shared.exceptions import ForbiddenError
 
 
 def _settings() -> Settings:
@@ -26,12 +25,8 @@ def _settings() -> Settings:
 SettingsDep = Annotated[Settings, Depends(_settings)]
 
 
-def get_usage_repository(
-    session: AgentSessionDep, settings: SettingsDep
-) -> UsageRepository:
-    return SqlAlchemyUsageRepository(
-        session, reporting_timezone=settings.reporting_timezone
-    )
+def get_usage_repository(session: AgentSessionDep, settings: SettingsDep) -> UsageRepository:
+    return SqlAlchemyUsageRepository(session, reporting_timezone=settings.reporting_timezone)
 
 
 UsageRepositoryDep = Annotated[UsageRepository, Depends(get_usage_repository)]
@@ -55,28 +50,17 @@ def get_list_conversation_usage_use_case(
     return ListConversationUsageUseCase(repository)
 
 
-GetUserUsageUseCaseDep = Annotated[
-    GetUserUsageUseCase, Depends(get_user_usage_use_case)
-]
-GetSystemUsageUseCaseDep = Annotated[
-    GetSystemUsageUseCase, Depends(get_system_usage_use_case)
-]
-GetUsageKpisUseCaseDep = Annotated[
-    GetUsageKpisUseCase, Depends(get_usage_kpis_use_case)
-]
+GetUserUsageUseCaseDep = Annotated[GetUserUsageUseCase, Depends(get_user_usage_use_case)]
+GetSystemUsageUseCaseDep = Annotated[GetSystemUsageUseCase, Depends(get_system_usage_use_case)]
+GetUsageKpisUseCaseDep = Annotated[GetUsageKpisUseCase, Depends(get_usage_kpis_use_case)]
 ListConversationUsageUseCaseDep = Annotated[
     ListConversationUsageUseCase, Depends(get_list_conversation_usage_use_case)
 ]
 
 
-def require_admin(user: CurrentUserDep) -> AuthenticatedUser:
-    """Gate de la vista administrativa: solo usuarios admin del ERP.
-
-    Levanta `ForbiddenError` (→ 403) si el usuario autenticado no es admin.
-    """
-    if not user.is_admin:
-        raise ForbiddenError("Se requiere rol administrador para ver el consumo global")
-    return user
-
-
-AdminUserDep = Annotated[AuthenticatedUser, Depends(require_admin)]
+# El consumo GLOBAL cruza empresas: quién preguntó y cuánto costó, de toda la
+# instalación. Por eso pide administrador de la instalación y no de una base:
+# el administrador del ERP del cliente A no tiene por qué ver el uso del
+# cliente B. `require_platform_admin` deja pasar igual cuando hay una sola
+# base registrada, que es el caso de la app de escritorio.
+AdminUserDep = Annotated[AuthenticatedUser, Depends(require_platform_admin)]

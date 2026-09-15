@@ -125,9 +125,7 @@ class Settings(BaseSettings):
     company_docs_chunk_overlap: int = Field(default=120)
     # Modelo de embeddings. e5 usa prefijos `query:`/`passage:`; el
     # embedder los aplica solo cuando el nombre del modelo contiene `e5`.
-    company_docs_embedding_model: str = Field(
-        default="intfloat/multilingual-e5-small"
-    )
+    company_docs_embedding_model: str = Field(default="intfloat/multilingual-e5-small")
     # Vacío = ubicación por entorno (modelo empaquetado en la app, o
     # `backend/.models/` en desarrollo). Ver `resolve_model_dir`.
     company_docs_model_dir: str = Field(default="")
@@ -225,6 +223,27 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"agent_db_engine='postgresql' requiere: {', '.join(missing)}. "
                 "Usá agent_db_engine='sqlite' para una instalación sin servidor de BD."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _require_postgres_outside_development(self) -> "Settings":
+        """SQLite no aguanta varios usuarios a la vez.
+
+        Un turno de chat mantiene una transacción abierta mientras el modelo
+        responde, y las escrituras internas compiten con ese lock: el propio
+        `pool.py` documenta que forzar `BEGIN IMMEDIATE` convirtió una carrera
+        ocasional en un fallo garantizado de 30 s por turno.
+
+        Para la app de escritorio (un usuario, una máquina) está bien y sigue
+        siendo el default. Para un despliegue servidor, no.
+        """
+        if self.app_env != "development" and self.agent_db_engine == "sqlite":
+            raise ValueError(
+                "AGENT_DB_ENGINE='sqlite' no soporta varios usuarios simultáneos: "
+                "un turno de chat retiene la transacción mientras el modelo responde. "
+                "Usá 'postgresql' fuera de desarrollo, o APP_ENV='development' si es "
+                "una instalación de escritorio de un solo usuario."
             )
         return self
 

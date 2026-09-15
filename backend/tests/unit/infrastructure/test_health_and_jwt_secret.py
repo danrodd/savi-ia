@@ -49,13 +49,28 @@ def test_health_db_requires_admin(client: TestClient) -> None:
 
 
 def _settings(**overrides: str) -> Settings:
+    """Ajustes válidos para el entorno pedido.
+
+    Fuera de `development` se exige Postgres (SQLite no soporta varios
+    usuarios), así que estos casos traen una configuración de Postgres
+    completa: lo que se prueba acá es el secreto, no el motor.
+    """
     base: dict[str, str] = {
-        "agent_db_engine": "sqlite",
         "erp_db_host": "x",
         "erp_db_user": "x",
         "erp_db_password": "x",
         "erp_db_name": "x",
     }
+    if overrides.get("app_env", "development") == "development":
+        base["agent_db_engine"] = "sqlite"
+    else:
+        base |= {
+            "agent_db_engine": "postgresql",
+            "agent_db_host": "localhost",
+            "agent_db_user": "savi",
+            "agent_db_password": "x",
+            "agent_db_name": "savi",
+        }
     return Settings(**{**base, **overrides})  # pyright: ignore[reportArgumentType]
 
 

@@ -10,6 +10,9 @@ from pydantic import BaseModel
 from app.modules.auth.application.responses.auth_responses import (
     AuthenticatedUserResponse,
 )
+from app.modules.auth.application.use_cases.resolve_modules_for_database import (
+    DatabaseAccess,
+)
 from app.modules.auth.application.use_cases.resolve_user_modules import (
     UserModulesResolution,
 )
@@ -39,6 +42,21 @@ class BootstrapResponse(BaseModel):
             version=resolution.version,
         )
 
+    @classmethod
+    def from_database_access(
+        cls, user: AuthenticatedUser, access: DatabaseAccess
+    ) -> BootstrapResponse:
+        """Desde el acceso resuelto contra LA base del usuario.
+
+        Antes se usaba `from_domain` con un resolver que consultaba la base
+        por defecto: un usuario de otra base recibía los módulos del usuario
+        con el mismo `idUsuario` allá."""
+        return cls(
+            user=AuthenticatedUserResponse.from_domain(user),
+            modules=sorted(m.value for m in access.modules),
+            version=access.version,
+        )
+
 
 class ModulesVersionResponse(BaseModel):
     """Hash de versión actual. El cliente lo compara contra el cacheado."""
@@ -48,3 +66,7 @@ class ModulesVersionResponse(BaseModel):
     @classmethod
     def from_domain(cls, resolution: UserModulesResolution) -> ModulesVersionResponse:
         return cls(version=resolution.version)
+
+    @classmethod
+    def from_database_access(cls, access: DatabaseAccess) -> ModulesVersionResponse:
+        return cls(version=access.version)

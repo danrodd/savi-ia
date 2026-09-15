@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.modules.auth.infrastructure.http.admin import SaviAdminDep
+from app.modules.auth.infrastructure.http.admin import PlatformAdminDep
 from app.modules.llm_providers.application.requests import (
     SaveLlmProviderRequest,
     TestLlmProviderRequest,
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/admin/llm-providers", tags=["llm-providers"])
 @router.get("", response_model=list[LlmProviderResponse])
 async def list_providers(
     use_case: ManageLlmProvidersUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> list[LlmProviderResponse]:
     """Un item por proveedor soportado, configurado o no."""
     return [LlmProviderResponse.from_dto(d) for d in await use_case.list()]
@@ -39,7 +39,7 @@ async def save_provider(
     provider: str,
     request: SaveLlmProviderRequest,
     use_case: ManageLlmProvidersUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> LlmProviderResponse:
     return LlmProviderResponse.from_dto(await use_case.save(provider, request.to_dto()))
 
@@ -49,7 +49,7 @@ async def test_provider(
     provider: str,
     request: TestLlmProviderRequest,
     use_case: ManageLlmProvidersUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ProviderTestResponse:
     """No persiste la configuración. Devuelve 200 aunque la credencial
     falle: el resultado va en `ok`."""
@@ -60,7 +60,7 @@ async def test_provider(
 async def list_models(
     provider: str,
     use_case: ManageLlmProvidersUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> ModelListResponse:
     models = await use_case.list_models(provider)
     return ModelListResponse(models=[ModelInfoResponse.from_value(m) for m in models])
@@ -70,6 +70,6 @@ async def list_models(
 async def activate_provider(
     provider: str,
     use_case: ManageLlmProvidersUseCaseDep,
-    _admin: SaviAdminDep,
+    _admin: PlatformAdminDep,
 ) -> LlmProviderResponse:
     return LlmProviderResponse.from_dto(await use_case.activate(provider))

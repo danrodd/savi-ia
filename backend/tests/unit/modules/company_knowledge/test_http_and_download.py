@@ -18,7 +18,7 @@ from app.modules.auth.application.use_cases import (
 )
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
-from app.modules.auth.infrastructure.http.admin import require_savi_admin
+from app.modules.auth.infrastructure.http.admin import require_company_admin
 from app.modules.company_knowledge.application.use_cases import (
     DownloadCompanyDocumentUseCase,
     RepositorySourceAvailabilityResolver,
@@ -68,7 +68,7 @@ def client(
     get_settings.cache_clear()
     app = main_module.create_app()
     repo = SqlAlchemyDocumentRepository(sessionmaker_)
-    app.dependency_overrides[require_savi_admin] = lambda: ADMIN
+    app.dependency_overrides[require_company_admin] = lambda: ADMIN
     app.dependency_overrides[get_document_repository] = lambda: repo
     app.dependency_overrides[get_erp_database_repository] = lambda: _ErpRepo({BASE})
     yield TestClient(app)  # sin `with`: no corre el lifespan

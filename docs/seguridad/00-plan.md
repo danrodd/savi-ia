@@ -4,7 +4,7 @@
 > Esto **no es un PRD**: no define producto nuevo. Es el plan para cerrar
 > defectos ya identificados y verificados, con una spec por frente.
 >
-> Estado: **Fases 0, 1 y 2 implementadas y verificadas** (2026-09-15); quedan la 3 y la 4.
+> Estado: **Fases 0 a 3 implementadas y verificadas** (2026-09-15); queda la 4.
 
 ## Qué resuelve
 
@@ -18,7 +18,7 @@ puede cortar al final de cualquiera.
 | [0 — Cierre urgente](01-fase-0-cierre-urgente.md) ✅ | Sacar la ejecución de código y las llaves del alcance del chat | C1, M2, M3, O3 | ~1 día | Cualquier despliegue |
 | [1 — Datos del ERP](02-fase-1-datos-erp.md) ✅ | Que un usuario solo vea los datos que le corresponden | A1, A2, M4, M7 | ~3-4 días | Usuarios reales |
 | [2 — Resistencia](03-fase-2-resistencia.md) ✅ | Que la app aguante abuso y concurrencia | O1, O2, O4, M5 | ~3 días | Usuarios reales |
-| [3 — Multiempresa](04-fase-3-multiempresa.md) | Aislar clientes entre sí | A3, M1, O6 | ~3 días | SAVI Servidor |
+| [3 — Multiempresa](04-fase-3-multiempresa.md) ✅ | Aislar clientes entre sí | A3, M1, O6 | ~3 días | SAVI Servidor |
 | [4 — Deuda y pulido](05-fase-4-deuda-y-ux.md) | Calidad, costos visibles, UX | M6, M8, M9, O5, O7, bajas | ~4-5 días | — |
 
 ## Principios del plan
@@ -57,9 +57,9 @@ Una fase está cerrada cuando:
 | O2 | Sin tope de turnos concurrentes | 2 | **hecho** |
 | O4 | Turno sin timeout de pared | 2 | **hecho** |
 | M5 | Turnos concurrentes en una conversación | 2 | **hecho** |
-| A3 | Administrador de una base administra todas | 3 | pendiente |
-| M1 | Módulos calculados contra la base equivocada | 3 | pendiente |
-| O6 | SQLite con varios usuarios | 3 | pendiente |
+| A3 | Administrador de una base administra todas | 3 | **hecho** |
+| M1 | Módulos calculados contra la base equivocada | 3 | **hecho** |
+| O6 | SQLite con varios usuarios | 3 | **hecho** (queda acortar la transacción del turno) |
 | M6 | Costo invisible sin tarifa | 4 | pendiente |
 | M8 | Interfaz de documentos | 4 | pendiente |
 | M9 | Tres runners duplicados | 4 | pendiente |

@@ -1,4 +1,5 @@
 """DI del módulo auth + dependency `get_current_user` para proteger rutas."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
@@ -13,7 +14,9 @@ from app.modules.auth.application.use_cases import (
     LogoutUseCase,
     RefreshTokensUseCase,
     ResolveUserFromAccessTokenUseCase,
-    ResolveUserModulesUseCase,
+)
+from app.modules.auth.application.use_cases.resolve_modules_for_database import (
+    ResolveModulesForDatabaseUseCase,
 )
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.exceptions import (
@@ -22,16 +25,12 @@ from app.modules.auth.domain.exceptions import (
 )
 from app.modules.auth.domain.interfaces import (
     PasswordHasher,
-    PermissionRepository,
     RefreshTokenRepository,
-    SeoPlanRepository,
     TokenService,
     UserRepositoryFactory,
 )
 from app.modules.auth.domain.value_objects import ModuleCode
 from app.modules.auth.infrastructure.persistence import (
-    ErpPermissionRepository,
-    ErpSeoPlanRepository,
     ErpUserRepositoryFactory,
     SqlAlchemyRefreshTokenRepository,
 )
@@ -39,7 +38,6 @@ from app.modules.auth.infrastructure.security import JwtTokenService, Md5Passwor
 from app.modules.erp_databases.infrastructure import (
     get_connection_provider,
     get_engine_registry,
-    get_erp_engine_for,
 )
 from app.modules.erp_databases.infrastructure.persistence import (
     SqlAlchemyErpDatabaseRepository,
@@ -80,23 +78,17 @@ def get_user_repository_factory() -> UserRepositoryFactory:
         old_keys=[get_settings().erp_credentials_key_old],
     )
     databases = SqlAlchemyErpDatabaseRepository(get_agent_sessionmaker(), cipher)
-    return ErpUserRepositoryFactory(
-        databases, get_engine_registry(), get_connection_provider()
-    )
+    return ErpUserRepositoryFactory(databases, get_engine_registry(), get_connection_provider())
 
 
-UserRepositoryFactoryDep = Annotated[
-    UserRepositoryFactory, Depends(get_user_repository_factory)
-]
+UserRepositoryFactoryDep = Annotated[UserRepositoryFactory, Depends(get_user_repository_factory)]
 
 
 def get_refresh_token_repository() -> RefreshTokenRepository:
     return SqlAlchemyRefreshTokenRepository(get_agent_sessionmaker())
 
 
-RefreshTokenRepositoryDep = Annotated[
-    RefreshTokenRepository, Depends(get_refresh_token_repository)
-]
+RefreshTokenRepositoryDep = Annotated[RefreshTokenRepository, Depends(get_refresh_token_repository)]
 
 
 def get_login_use_case(
@@ -129,27 +121,14 @@ def get_resolve_user_use_case(
     return ResolveUserFromAccessTokenUseCase(tokens)
 
 
-async def get_permission_repository() -> PermissionRepository:
-    return ErpPermissionRepository(await get_erp_engine_for(None))
-
-
-PermissionRepositoryDep = Annotated[
-    PermissionRepository, Depends(get_permission_repository)
-]
-
-
-async def get_seo_plan_repository() -> SeoPlanRepository:
-    return ErpSeoPlanRepository(await get_erp_engine_for(None))
-
-
-SeoPlanRepositoryDep = Annotated[SeoPlanRepository, Depends(get_seo_plan_repository)]
-
-
-def get_resolve_user_modules_use_case(
-    permissions: PermissionRepositoryDep,
-    plan: SeoPlanRepositoryDep,
-) -> ResolveUserModulesUseCase:
-    return ResolveUserModulesUseCase(permissions, plan)
+# Acá vivían `get_permission_repository`, `get_seo_plan_repository` y
+# `get_resolve_user_modules_use_case`, todos atados a `get_erp_engine_for(None)`
+# — es decir, a la base POR DEFECTO. Se eliminaron: un usuario de otra base
+# recibía los permisos del usuario con el mismo `idUsuario` en la default.
+#
+# Quien necesite módulos usa `ResolveModulesForDatabaseUseCase`, que exige
+# decir contra qué base resolver. Un resolver que elige la base en silencio
+# es una trampa para el próximo endpoint que lo use.
 
 
 LoginUseCaseDep = Annotated[LoginUseCase, Depends(get_login_use_case)]
@@ -157,9 +136,6 @@ RefreshUseCaseDep = Annotated[RefreshTokensUseCase, Depends(get_refresh_use_case
 LogoutUseCaseDep = Annotated[LogoutUseCase, Depends(get_logout_use_case)]
 ResolveUserUseCaseDep = Annotated[
     ResolveUserFromAccessTokenUseCase, Depends(get_resolve_user_use_case)
-]
-ResolveUserModulesUseCaseDep = Annotated[
-    ResolveUserModulesUseCase, Depends(get_resolve_user_modules_use_case)
 ]
 
 
@@ -185,6 +161,21 @@ def get_current_user(
 CurrentUserDep = Annotated[AuthenticatedUser, Depends(get_current_user)]
 
 
+def _resolve_modules_for_database() -> ResolveModulesForDatabaseUseCase:
+    """Puente al proveedor que vive en `erp_databases`.
+
+    El import va adentro y no arriba: `erp_databases` importa de `auth`, así
+    que a nivel de módulo sería un ciclo. La CLASE sí se importa arriba —
+    vive en la capa de aplicación de `auth`— para que la anotación del
+    parámetro se resuelva sin trucos.
+    """
+    from app.modules.erp_databases.infrastructure.http.dependencies import (
+        get_resolve_modules_for_database_use_case,
+    )
+
+    return get_resolve_modules_for_database_use_case()
+
+
 def RequireModule(  # noqa: N802 — factory que produce dependencies; mantenemos PascalCase.
     code: ModuleCode,
 ) -> Callable[..., Awaitable[AuthenticatedUser]]:
@@ -203,14 +194,22 @@ def RequireModule(  # noqa: N802 — factory que produce dependencies; mantenemo
 
     Si el usuario no tiene el módulo, levanta `ModuleAccessDeniedError`
     que el handler global mapea a 403 con `errorCode: module_access_denied`.
+
+    Resuelve contra **la base del usuario**. Antes usaba el resolver de la
+    base por defecto: en una instalación con varias bases, el usuario 5 de la
+    base B habría sido evaluado con los permisos del usuario 5 de la default.
     """
 
     async def _check(
         user: CurrentUserDep,
-        resolver: ResolveUserModulesUseCaseDep,
+        resolver: Annotated[
+            ResolveModulesForDatabaseUseCase, Depends(_resolve_modules_for_database)
+        ],
     ) -> AuthenticatedUser:
-        resolution = await resolver.execute(user.id, is_admin=user.is_admin)
-        if code not in resolution.modules:
+        if user.erp_database_id is None:
+            raise ModuleAccessDeniedError(code.value)
+        access = await resolver.execute(user.login, user.erp_database_id)
+        if not access.has_access or code not in access.modules:
             raise ModuleAccessDeniedError(code.value)
         return user
 

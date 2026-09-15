@@ -38,6 +38,9 @@ class DatabaseAccess:
     modules: frozenset[ModuleCode]
     user_id_in_database: int | None = None
     is_admin_in_database: bool = False
+    # Hash de los módulos, para que el frontend detecte cambios sin traerse
+    # el bootstrap entero. Vacío cuando no hay acceso: no hay nada que versionar.
+    version: str = ""
 
 
 class ResolveModulesForDatabaseUseCase:
@@ -78,4 +81,5 @@ class ResolveModulesForDatabaseUseCase:
             modules=resolution.modules,
             user_id_in_database=found.user.id,
             is_admin_in_database=found.user.is_admin,
+            version=resolution.version,
         )

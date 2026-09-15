@@ -8,8 +8,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, File, Form, Query, Request, UploadFile, status
 
+from app.infrastructure.config import Settings
+from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
-from app.modules.auth.infrastructure.http.admin import SaviAdminDep
+from app.modules.auth.infrastructure.http.admin import SaviAdminDep, is_platform_admin
 from app.modules.company_knowledge.application.mappers import CompanyDocumentMapper
 from app.modules.company_knowledge.application.requests import (
     SearchTestRequest,
@@ -81,6 +83,19 @@ async def _read_limited(file: UploadFile, limit_mb: int) -> bytes:
     return bytes(buffer)
 
 
+async def _scope_database(
+    admin: AuthenticatedUser, settings: Settings, requested: UUID | None
+) -> UUID | None:
+    """Base a la que se acota la consulta.
+
+    `None` solo para el administrador de la instalación: el de una empresa
+    queda atado a la suya, aunque pida otra por query string.
+    """
+    if await is_platform_admin(admin, settings):
+        return requested
+    return admin.erp_database_id
+
+
 def _parse_modules(values: list[str]) -> list[ModuleCode]:
     try:
         return [ModuleCode(value) for value in values]
@@ -127,7 +142,8 @@ async def upload_document(
 @router.get("", response_model=list[CompanyDocumentResponse])
 async def list_documents(
     use_case: ListUseCaseDep,
-    _admin: SaviAdminDep,
+    admin: SaviAdminDep,
+    settings: SettingsDep,
     status_filter: DocumentStatus | None = Query(default=None, alias="status"),
     visibility: DocumentVisibility | None = Query(default=None),
     module: ModuleCode | None = Query(default=None),
@@ -136,11 +152,14 @@ async def list_documents(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> list[CompanyDocumentResponse]:
+    # Un administrador de EMPRESA ve solo los documentos que alcanzan a su
+    # base; uno de la instalación los ve todos. Cambiar solo el guard no
+    # alcanzaba: la lista devolvía los documentos de todas las empresas.
     documents = await use_case.execute(
         status=status_filter,
         visibility=visibility,
         module=module,
-        database_id=database_id,
+        database_id=await _scope_database(admin, settings, database_id),
         query=q,
         limit=limit,
         offset=offset,

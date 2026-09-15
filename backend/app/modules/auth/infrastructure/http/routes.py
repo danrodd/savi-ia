@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import APIRouter, Request, status
 
 from app.modules.auth.application.requests import LoginRequest, RefreshRequest
@@ -17,14 +19,17 @@ from app.modules.auth.application.responses import (
     ModulesVersionResponse,
     TokenResponse,
 )
+from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.exceptions import InvalidCredentialsError, UserDisabledError
 from app.modules.auth.infrastructure.http.dependencies import (
     CurrentUserDep,
     LoginUseCaseDep,
     LogoutUseCaseDep,
     RefreshUseCaseDep,
-    ResolveUserModulesUseCaseDep,
     SettingsDep,
+)
+from app.modules.erp_databases.infrastructure.http.dependencies import (
+    ResolveModulesForDatabaseUseCaseDep,
 )
 from app.shared.rate_limit import (
     enforce_login_limits,
@@ -34,6 +39,12 @@ from app.shared.rate_limit import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _require_database(user: AuthenticatedUser) -> UUID:
+    """La base del usuario. Nunca es `None`: el token no decodifica sin ella."""
+    assert user.erp_database_id is not None  # noqa: S101
+    return user.erp_database_id
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -93,21 +104,26 @@ async def me(user: CurrentUserDep) -> AuthenticatedUserResponse:
 @router.get("/me/bootstrap", response_model=BootstrapResponse)
 async def bootstrap(
     user: CurrentUserDep,
-    use_case: ResolveUserModulesUseCaseDep,
+    use_case: ResolveModulesForDatabaseUseCaseDep,
 ) -> BootstrapResponse:
     """Snapshot completo: identidad + módulos accesibles + version hash.
 
     El frontend lo llama tras el login y tras detectar cambios de
     versión via /me/modules-version. Es la fuente de verdad para la UI.
+
+    Resuelve contra **la base del usuario**, no contra la base por defecto.
+    Antes usaba un resolver atado a la default: un usuario de otra base
+    recibía los módulos del usuario con el mismo `idUsuario` allá, que es
+    exactamente el cruce de identidades que el multi-BD viene a evitar.
     """
-    resolution = await use_case.execute(user.id, is_admin=user.is_admin)
-    return BootstrapResponse.from_domain(user, resolution)
+    access = await use_case.execute(user.login, _require_database(user))
+    return BootstrapResponse.from_database_access(user, access)
 
 
 @router.get("/me/modules-version", response_model=ModulesVersionResponse)
 async def modules_version(
     user: CurrentUserDep,
-    use_case: ResolveUserModulesUseCaseDep,
+    use_case: ResolveModulesForDatabaseUseCaseDep,
 ) -> ModulesVersionResponse:
     """Hash de versión actual de los módulos del usuario.
 
@@ -115,5 +131,5 @@ async def modules_version(
     devuelve el hash. El cliente lo compara contra el cacheado y, si
     cambió, recarga el bootstrap completo.
     """
-    resolution = await use_case.execute(user.id, is_admin=user.is_admin)
-    return ModulesVersionResponse.from_domain(resolution)
+    access = await use_case.execute(user.login, _require_database(user))
+    return ModulesVersionResponse.from_database_access(access)
