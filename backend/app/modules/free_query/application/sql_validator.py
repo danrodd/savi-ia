@@ -1,7 +1,6 @@
-# pyright: basic
 """Validador estructural del SQL del LLM con sqlglot.
 
-Política:
+Política de FORMA:
 - Una sola sentencia.
 - Solo SELECT (con FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT).
 - Sin OFFSET (impide paginación multi-turno).
@@ -12,7 +11,26 @@ Política:
 - Sin subqueries de profundidad > política.
 - LIMIT obligatorio y ≤ política. Si falta, lo agregamos; si es mayor,
   lo bajamos al cap. Devolvemos el SQL final (puede diferir del input).
+
+Política de CONTENIDO (agregada en la Fase 1 de seguridad):
+- Sin funciones de administración del motor ni de acceso al sistema de
+  archivos.
+- Sin catálogos del sistema.
+
+Por qué hace falta lo segundo: la forma sola no alcanza. Verificado contra el
+ERP de desarrollo, estas consultas pasaban la validación anterior y se
+ejecutaban, porque un `SELECT` que llama funciones no deja de ser un `SELECT`:
+
+    SELECT pg_read_file('postgresql.conf', 0, 60)      → lee archivos del servidor
+    SELECT count(*) FROM pg_shadow WHERE passwd IS NOT NULL  → hashes de contraseñas
+    SELECT pg_cancel_backend(pid) FROM pg_stat_activity      → corta conexiones del ERP
+    SELECT pg_sleep(55)                                      → retiene la conexión
+
+El modo solo lectura del motor **no** las frena: ninguna escribe datos. Y la
+conexión suele ser superusuario (ver `docs/seguridad/02-fase-1-datos-erp.md`),
+con lo que el alcance es la máquina entera, no solo la base.
 """
+
 from __future__ import annotations
 
 import sqlglot
@@ -23,6 +41,44 @@ from app.modules.free_query.domain.errors import AstValidationError
 from app.modules.free_query.domain.policy import FreeQueryPolicy
 
 _DIALECT = "postgres"
+
+# Lista de RECHAZO y no de permiso: el catálogo de funciones de Postgres es
+# enorme y una lista blanca cerrada rompería agregados, fechas y texto, que es
+# el 99% del uso legítimo. Se revisa al subir de versión del motor.
+BLOCKED_FUNCTION_PREFIXES: frozenset[str] = frozenset(
+    {
+        "pg_",  # pg_read_file, pg_sleep, pg_terminate_backend, pg_ls_dir…
+        "lo_",  # objetos grandes: lo_import / lo_export tocan el disco
+        "dblink",  # abre una conexión NUEVA, que no hereda el modo solo lectura
+        "postgres_fdw",
+        "dbms_",  # por si alguna base trae compatibilidad Oracle
+    }
+)
+
+BLOCKED_FUNCTION_NAMES: frozenset[str] = frozenset(
+    {
+        # Cambian la sesión: `statement_timeout`, `default_transaction_read_only`…
+        "set_config",
+        "current_setting",
+        # Lecturas de metadatos por vías indirectas.
+        "query_to_xml",
+        "query_to_xmlschema",
+        "xpath",
+        "to_regclass",
+        "to_regproc",
+    }
+)
+
+# `information_schema` NO se bloquea a propósito: el mensaje de error de
+# `execute_free_query` le pide explícitamente al modelo que la consulte para
+# descubrir nombres de columnas y autocorregirse. Bloquearla lo dejaría en un
+# bucle de intentos fallidos. Solo expone nombres de objetos, no datos ni
+# credenciales, y respeta los permisos del rol.
+BLOCKED_SCHEMAS: frozenset[str] = frozenset({"pg_catalog", "pg_toast"})
+
+# Tablas del sistema accesibles sin calificar el esquema: `SELECT * FROM
+# pg_shadow` funciona sin escribir `pg_catalog.`.
+_BLOCKED_TABLE_PREFIX = "pg_"
 
 
 def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
@@ -50,15 +106,18 @@ def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
 
     statements = [s for s in statements if s is not None]
     if len(statements) != 1:
-        raise AstValidationError(
-            "Solo se permite UNA sentencia SQL por consulta."
-        )
+        raise AstValidationError("Solo se permite UNA sentencia SQL por consulta.")
 
     root = statements[0]
+    if isinstance(root, exp.Union | exp.Intersect | exp.Except):
+        # Antes caían en el mensaje genérico de abajo, que no le decía al
+        # modelo qué había hecho mal: con un `UNION` en la raíz el nodo no es
+        # `Select`, así que `_reject_unions_anywhere` nunca llegaba a correr.
+        kind = type(root).__name__.upper()
+        raise AstValidationError(f"{kind} no está permitido. Hacé una sola consulta por turno.")
     if not isinstance(root, exp.Select):
         raise AstValidationError(
-            "Solo se permite SELECT. Operaciones de escritura, EXEC y DDL "
-            "están bloqueadas."
+            "Solo se permite SELECT. Operaciones de escritura, EXEC y DDL están bloqueadas."
         )
 
     _reject_unions_anywhere(root)
@@ -66,16 +125,23 @@ def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
     _reject_lateral_joins(root)
     _reject_offset(root)
     _reject_select_star_top_level(root)
+    _reject_dangerous_functions(root)
+    _reject_system_catalogs(root)
     _check_subquery_depth(root, policy)
 
     # Saneamos el LIMIT del root: si falta o es mayor que el cap, lo
     # ponemos en el cap.
     _enforce_limit(root, policy)
 
-    # Re-emitimos el SQL desde el AST: formato canónico, identifiers
-    # quoted consistentes, y se descartan posibles comentarios o
-    # caracteres invisibles colados.
-    return root.sql(dialect=_DIALECT, pretty=False)
+    # Re-emitimos el SQL desde el AST: formato canónico, identifiers quoted
+    # consistentes y sin caracteres invisibles colados.
+    #
+    # `comments=False` explícito: por defecto sqlglot los CONSERVA. Un
+    # comentario SQL no se ejecuta, así que no era explotable, pero el
+    # comentario de este código decía que se descartaban y no era cierto —
+    # y no hay motivo para reenviarle al ERP texto libre escrito por el
+    # modelo.
+    return root.sql(dialect=_DIALECT, pretty=False, comments=False)
 
 
 # ── reglas ─────────────────────────────────────────────────────────────
@@ -85,9 +151,7 @@ def _reject_unions_anywhere(root: exp.Select) -> None:
     # `find_all` recorre todo el AST incluyendo subqueries.
     for node in root.find_all(exp.Union, exp.Intersect, exp.Except):
         kind = type(node).__name__.upper()
-        raise AstValidationError(
-            f"{kind} no está permitido. Hacé una sola consulta por turno."
-        )
+        raise AstValidationError(f"{kind} no está permitido. Hacé una sola consulta por turno.")
 
 
 def _reject_with_ctes(root: exp.Select) -> None:
@@ -100,9 +164,7 @@ def _reject_with_ctes(root: exp.Select) -> None:
 
 def _reject_lateral_joins(root: exp.Select) -> None:
     for _ in root.find_all(exp.Lateral):
-        raise AstValidationError(
-            "LATERAL no está permitido. Reemplazalo por un join normal."
-        )
+        raise AstValidationError("LATERAL no está permitido. Reemplazalo por un join normal.")
 
 
 def _reject_offset(root: exp.Select) -> None:
@@ -122,15 +184,50 @@ def _reject_select_star_top_level(root: exp.Select) -> None:
     for projection in root.expressions:
         if isinstance(projection, exp.Star):
             raise AstValidationError(
-                "SELECT * no está permitido. Listá explícitamente las "
-                "columnas que necesitás."
+                "SELECT * no está permitido. Listá explícitamente las columnas que necesitás."
             )
-        if isinstance(projection, exp.Column) and isinstance(
-            projection.this, exp.Star
-        ):
+        if isinstance(projection, exp.Column) and isinstance(projection.this, exp.Star):
             raise AstValidationError(
-                "tabla.* no está permitido. Listá explícitamente las "
-                "columnas que necesitás."
+                "tabla.* no está permitido. Listá explícitamente las columnas que necesitás."
+            )
+
+
+def _function_name(node: exp.Func) -> str:
+    """Nombre invocable del nodo, en minúsculas.
+
+    `sqlglot` modela las funciones conocidas con clases propias (`exp.Sum`,
+    `exp.DateTrunc`…) y las desconocidas como `exp.Anonymous`. Mirar solo
+    `exp.Anonymous` dejaría pasar cualquier función que sqlglot reconozca, así
+    que se pregunta por el nombre con el que se emite."""
+    if isinstance(node, exp.Anonymous):
+        return str(node.name or "").lower()
+    nombre: object = node.sql_name()  # pyright: ignore[reportUnknownMemberType]
+    return str(nombre).lower()
+
+
+def _reject_dangerous_functions(root: exp.Select) -> None:
+    for node in root.find_all(exp.Func):
+        nombre = _function_name(node)
+        if not nombre:
+            continue
+        if nombre in BLOCKED_FUNCTION_NAMES or nombre.startswith(tuple(BLOCKED_FUNCTION_PREFIXES)):
+            raise AstValidationError(
+                f"La función '{nombre}' no está permitida: solo se pueden usar "
+                "funciones de consulta sobre los datos (agregados, fechas, texto), "
+                "no de administración del motor."
+            )
+
+
+def _reject_system_catalogs(root: exp.Select) -> None:
+    for node in root.find_all(exp.Table):
+        esquema = (node.db or "").lower()
+        tabla = (node.name or "").lower()
+        if esquema in BLOCKED_SCHEMAS or tabla.startswith(_BLOCKED_TABLE_PREFIX):
+            objetivo = f"{esquema}.{tabla}".lstrip(".")
+            raise AstValidationError(
+                f"La tabla '{objetivo}' es del catálogo interno de Postgres y no "
+                "se puede consultar. Para descubrir nombres de tablas o columnas "
+                "usá `information_schema`."
             )
 
 

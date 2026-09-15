@@ -4,7 +4,7 @@
 > Esto **no es un PRD**: no define producto nuevo. Es el plan para cerrar
 > defectos ya identificados y verificados, con una spec por frente.
 >
-> Estado: **Fases 0 y 2 implementadas y verificadas** (2026-09-15); el resto, propuesto.
+> Estado: **Fases 0, 1 y 2 implementadas y verificadas** (2026-09-15); quedan la 3 y la 4.
 
 ## Qué resuelve
 
@@ -16,7 +16,7 @@ puede cortar al final de cualquiera.
 | Fase | Objetivo | Hallazgos | Esfuerzo | Bloquea a |
 |---|---|---|---|---|
 | [0 — Cierre urgente](01-fase-0-cierre-urgente.md) ✅ | Sacar la ejecución de código y las llaves del alcance del chat | C1, M2, M3, O3 | ~1 día | Cualquier despliegue |
-| [1 — Datos del ERP](02-fase-1-datos-erp.md) | Que un usuario solo vea los datos que le corresponden | A1, A2, M4, M7 | ~3-4 días | Usuarios reales |
+| [1 — Datos del ERP](02-fase-1-datos-erp.md) ✅ | Que un usuario solo vea los datos que le corresponden | A1, A2, M4, M7 | ~3-4 días | Usuarios reales |
 | [2 — Resistencia](03-fase-2-resistencia.md) ✅ | Que la app aguante abuso y concurrencia | O1, O2, O4, M5 | ~3 días | Usuarios reales |
 | [3 — Multiempresa](04-fase-3-multiempresa.md) | Aislar clientes entre sí | A3, M1, O6 | ~3 días | SAVI Servidor |
 | [4 — Deuda y pulido](05-fase-4-deuda-y-ux.md) | Calidad, costos visibles, UX | M6, M8, M9, O5, O7, bajas | ~4-5 días | — |
@@ -49,10 +49,10 @@ Una fase está cerrada cuando:
 | M2 | `JWT_SECRET` por defecto aceptado | 0 | **hecho** |
 | M3 | Dependencias con CVE | 0 | **hecho** |
 | O3 | `/health` público golpea la BD | 0 | **hecho** |
-| A1 | SQL libre sin permisos del ERP | 1 | pendiente |
-| A2 | Superusuario y funciones peligrosas | 1 | pendiente |
-| M4 | Fronteras de seguridad sin tests | 1 | pendiente |
-| M7 | Error de herramienta crudo al modelo | 1 | pendiente |
+| A1 | SQL libre sin permisos del ERP | 1 | **hecho** |
+| A2 | Superusuario y funciones peligrosas | 1 | **hecho** |
+| M4 | Fronteras de seguridad sin tests | 1 | **hecho** |
+| M7 | Error de herramienta crudo al modelo | 1 | **hecho** |
 | O1 | Sin rate limiting | 2 | **hecho** |
 | O2 | Sin tope de turnos concurrentes | 2 | **hecho** |
 | O4 | Turno sin timeout de pared | 2 | **hecho** |

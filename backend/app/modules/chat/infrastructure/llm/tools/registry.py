@@ -42,11 +42,19 @@ from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.company_knowledge.infrastructure.provider import (
     get_company_knowledge_runtime,
 )
+from app.modules.data_query.domain.exceptions import SemanticQueryError
+from app.modules.free_query.domain.errors import FreeQueryError
 from app.modules.knowledge.infrastructure.catalog_provider import get_catalog
+from app.shared.exceptions import DomainError
 
 log = logging.getLogger(__name__)
 
 _RawHandler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
+
+# Errores cuyo texto está escrito PARA el modelo: le dicen qué corregir. El
+# resto se le devuelve genérico, porque el mensaje de una excepción cualquiera
+# puede traer host, ruta o SQL y el modelo se lo repite al usuario.
+_EXPLAINABLE_ERRORS = (FreeQueryError, SemanticQueryError, DomainError)
 
 _INFO_EMPRESA_DESCRIPTION = (
     "Devuelve los datos básicos de la empresa registrada en el ERP: "
@@ -143,11 +151,23 @@ def _spec(name: str, description: str, parameters: dict[str, Any], raw: _RawHand
     async def handler(args: dict[str, Any]) -> ToolResult:
         try:
             return to_tool_result(await raw(args))
-        except Exception as e:  # noqa: BLE001
-            # Un fallo inesperado vuelve al modelo como error y no corta
-            # el turno: puede corregir el argumento y reintentar.
+        except _EXPLAINABLE_ERRORS as e:
+            # Los errores TIPADOS del dominio (SQL inválido, consulta muy
+            # amplia, entidad desconocida) sí van con su texto: están
+            # redactados a propósito para que el modelo se autocorrija, y ya
+            # pasaron por su propio saneado.
+            log.info("tool_domain_error name=%s error=%s", name, type(e).__name__)
+            return ToolResult(text=str(e), is_error=True)
+        except Exception:  # noqa: BLE001
+            # Un fallo INESPERADO vuelve al modelo como error genérico y no
+            # corta el turno. El texto de la excepción no viaja: puede traer
+            # host, ruta o SQL, y el modelo lo repite al usuario. El detalle
+            # queda en el log, que es donde sirve.
             log.exception("tool_failed name=%s", name)
-            return ToolResult(text=f"La herramienta falló: {e}", is_error=True)
+            return ToolResult(
+                text="La herramienta falló por un problema interno. Probá reformular la consulta.",
+                is_error=True,
+            )
 
     return ToolSpec(name=name, description=description, parameters=parameters, handler=handler)
 
@@ -179,20 +199,13 @@ def build_savi_tools(
     async def consultar_datos(args: dict[str, Any]) -> dict[str, Any]:
         return await consultar_datos_impl(args, erp_database_id=erp_database_id)
 
-    consultar_libre = build_consultar_libre_impl(conversation_id, erp_database_id)
     consultar_conocimiento = build_consultar_conocimiento_impl(
         get_catalog(), allowed_modules, _document_search(document_context)
     )
 
-    return [
+    tools = [
         _spec("info_empresa", _INFO_EMPRESA_DESCRIPTION, INFO_EMPRESA_SCHEMA, info_empresa),
         _spec("consultar_datos", build_description(), CONSULTAR_DATOS_SCHEMA, consultar_datos),
-        _spec(
-            "consultar_libre",
-            _CONSULTAR_LIBRE_DESCRIPTION,
-            CONSULTAR_LIBRE_SCHEMA,
-            consultar_libre,
-        ),
         _spec(
             "consultar_conocimiento",
             _CONSULTAR_CONOCIMIENTO_DESCRIPTION,
@@ -200,3 +213,26 @@ def build_savi_tools(
             consultar_conocimiento,
         ),
     ]
+
+    # SQL libre SOLO para administradores de la base consultada.
+    #
+    # La tool no distingue esquemas ni módulos: escribe la consulta que le
+    # pidan sobre cualquier tabla del ERP. En manos de un usuario con acceso
+    # solo a Ventas, alcanzaba para leer nómina o contabilidad, saltándose los
+    # permisos que el ERP sí aplica en su propia interfaz.
+    #
+    # Es la opción A de `docs/seguridad/02-fase-1-datos-erp.md`: cierra el
+    # agujero ya. La opción B (lista de tablas permitidas por módulo, para que
+    # un usuario común conserve la consulta libre sobre lo suyo) queda para
+    # cuando haya uso real que medir.
+    if allowed_modules is None:
+        tools.insert(
+            2,
+            _spec(
+                "consultar_libre",
+                _CONSULTAR_LIBRE_DESCRIPTION,
+                CONSULTAR_LIBRE_SCHEMA,
+                build_consultar_libre_impl(conversation_id, erp_database_id),
+            ),
+        )
+    return tools

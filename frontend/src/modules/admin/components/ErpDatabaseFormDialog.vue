@@ -162,6 +162,13 @@ async function onSubmit(): Promise<void> {
         <template v-if="testResult.ok">
           <strong>Conexión exitosa.</strong>
           <span v-if="testResult.razon_social"> Empresa: {{ testResult.razon_social }}</span>
+          <!-- Con superusuario, cualquier falla del validador de SQL escala de
+               "leer datos de más" a leer archivos del servidor. No bloquea el
+               alta: hay instalaciones así y romperlas sería peor. -->
+          <span v-if="testResult.is_superuser" class="dbform__warning">
+            El usuario es <strong>superusuario</strong> de Postgres. SAVI solo necesita leer:
+            conviene un rol con permisos de solo lectura.
+          </span>
         </template>
         <template v-else>
           <strong>No se pudo conectar.</strong> {{ testResult.detail }}
@@ -264,6 +271,15 @@ async function onSubmit(): Promise<void> {
   display: block;
   margin-top: var(--space-1);
   font-family: var(--font-mono, monospace);
+}
+
+.dbform__warning {
+  display: block;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-sm);
+  background: var(--surface-warning, rgba(217, 119, 6, 0.1));
+  color: var(--text-warning, #b45309);
 }
 
 .dbform__error {

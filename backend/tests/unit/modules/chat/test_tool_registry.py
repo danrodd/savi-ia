@@ -4,6 +4,7 @@ Las tools se definen una sola vez para todos los proveedores, así que el
 schema es el contrato que ve cualquier modelo y tiene que ser un JSON
 Schema válido y completo.
 """
+
 from __future__ import annotations
 
 import json
@@ -116,12 +117,37 @@ async def test_invalid_argument_comes_back_as_an_error_result(
 
 
 async def test_handler_exception_returns_an_error_instead_of_raising() -> None:
+    """Un fallo inesperado no corta el turno, pero su texto NO viaja al modelo.
+
+    Antes se devolvía `f"La herramienta falló: {e}"`. El mensaje de una
+    excepción cualquiera puede traer host, ruta o el SQL completo, y el modelo
+    se lo repite al usuario. El detalle queda en el log.
+    """
+
     async def boom(_args: dict[str, Any]) -> dict[str, Any]:
-        raise RuntimeError("se cayó la conexión")
+        raise RuntimeError("se cayó la conexión a 10.0.0.5 con clave secreta")
 
     spec = registry._spec("info_empresa", "x", {"type": "object", "properties": {}}, boom)  # pyright: ignore[reportPrivateUsage]
 
     result = await spec.handler({})
 
     assert result.is_error is True
-    assert "se cayó la conexión" in result.text
+    assert "10.0.0.5" not in result.text
+    assert "secreta" not in result.text
+    assert "problema interno" in result.text
+
+
+async def test_typed_domain_errors_keep_their_message() -> None:
+    """Los errores tipados sí llegan enteros: están escritos para que el
+    modelo corrija la consulta y reintente."""
+    from app.modules.free_query.domain.errors import AstValidationError
+
+    async def rechazo(_args: dict[str, Any]) -> dict[str, Any]:
+        raise AstValidationError("SELECT * no está permitido. Listá las columnas.")
+
+    spec = registry._spec("consultar_libre", "x", {"type": "object", "properties": {}}, rechazo)  # pyright: ignore[reportPrivateUsage]
+
+    result = await spec.handler({})
+
+    assert result.is_error is True
+    assert "Listá las columnas" in result.text

@@ -264,14 +264,23 @@ objeto de consulta — NUNCA escribas SQL.
 
 ## SQL libre — fallback cuando lo anterior no alcanza
 
-Tenés la herramienta `consultar_libre` que ejecuta un SELECT SQL contra
-la BD del ERP. **Solo úsala si `consultar_datos` no cubre el caso**:
+La herramienta `consultar_libre` ejecuta un SELECT SQL contra la BD del ERP.
+**Solo la tenés disponible si el usuario es administrador de la base**: para
+el resto ni siquiera aparece en tu lista de herramientas. Si no la ves, no
+la menciones ni prometas consultas que no podés hacer; respondé con lo que
+`consultar_datos` y el conocimiento sí cubren.
+
+Cuando la tengas, **usala solo si `consultar_datos` no cubre el caso**:
 preguntas puntuales sobre tablas no modeladas en el catálogo semántico,
 joins ad-hoc, agregados específicos.
 
 Reglas DURAS de la herramienta (si las rompés, se rechaza la consulta):
 - Solo UN `SELECT` con `FROM`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`,
   `LIMIT`. Sin múltiples statements.
+- Solo funciones de consulta sobre los datos (agregados, fechas, texto).
+  Nada de administración del motor (`pg_*`, `set_config`, `dblink`, `lo_*`)
+  ni del catálogo interno (`pg_catalog`, tablas `pg_*`). Para descubrir
+  nombres de tablas o columnas, `information_schema` sí se puede.
 - Sin `OFFSET`, sin `WITH` (CTEs), sin `UNION`/`INTERSECT`/`EXCEPT`, sin
   `LATERAL`.
 - Sin `SELECT *`: enumerá explícitamente las columnas que necesitás.

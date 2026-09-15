@@ -37,6 +37,8 @@ export interface ConnectionTestResult {
   detail: string
   razon_social: string | null
   missing_tables: string[]
+  /** El usuario del ERP es superusuario de Postgres: se muestra advertencia. */
+  is_superuser: boolean
 }
 
 export interface AvailableErpDatabase {

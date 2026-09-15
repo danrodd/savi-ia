@@ -7,6 +7,7 @@ Sin esa verificación se puede registrar cualquier base, y el error
 aparecería recién a mitad de un chat, con un mensaje que un agente de
 soporte no tiene cómo interpretar.
 """
+
 from __future__ import annotations
 
 import logging
@@ -71,6 +72,12 @@ class PostgresConnectionTester(ConnectionTester):
                     )
 
                 razon_social = await conn.scalar(text(_RAZON_SOCIAL_SQL))
+                # `current_setting` y no `pg_roles`: no requiere permisos
+                # especiales, así que también funciona con el rol acotado que
+                # recomendamos.
+                es_superusuario = (
+                    str(await conn.scalar(text("SELECT current_setting('is_superuser')"))) == "on"
+                )
         except Exception as e:  # noqa: BLE001
             # `Exception` y no `SQLAlchemyError` a propósito: probando
             # contra el ERP real, un host inalcanzable levanta
@@ -96,12 +103,20 @@ class PostgresConnectionTester(ConnectionTester):
             await engine.dispose()
 
         name = str(razon_social) if razon_social else None
+        base = f"Conexión correcta con {name}." if name else "Conexión correcta."
+        if es_superusuario:
+            # Avisar, no bloquear: hay instalaciones así y romperlas sería
+            # peor que el riesgo. Con superusuario, cualquier falla del
+            # validador de SQL escala a leer archivos del servidor.
+            base += (
+                " Atención: el usuario es SUPERUSUARIO de Postgres. Conviene un rol "
+                "de solo lectura; ver la guía de alta de clientes."
+            )
         return ConnectionTestResult(
             ok=True,
-            detail=(
-                f"Conexión correcta con {name}." if name else "Conexión correcta."
-            ),
+            detail=base,
             razon_social=name,
+            is_superuser=es_superusuario,
         )
 
 

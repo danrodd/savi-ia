@@ -4,6 +4,7 @@
 desde `ErpDatabaseDTO`, que directamente no tiene el campo: la regla es
 estructural y no depende de que alguien se acuerde de omitirlo.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -65,6 +66,9 @@ class ConnectionTestResponse(BaseModel):
     # quien configura confirme que apuntó al cliente correcto.
     razon_social: str | None = None
     missing_tables: list[str] = []
+    # El usuario del ERP es superusuario de Postgres: la interfaz lo muestra
+    # como advertencia. No bloquea el alta.
+    is_superuser: bool = False
 
     @classmethod
     def from_result(cls, result: ConnectionTestResult) -> ConnectionTestResponse:
@@ -73,6 +77,7 @@ class ConnectionTestResponse(BaseModel):
             detail=result.detail,
             razon_social=result.razon_social,
             missing_tables=list(result.missing_tables),
+            is_superuser=result.is_superuser,
         )
 
 

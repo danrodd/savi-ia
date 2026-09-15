@@ -2,8 +2,10 @@
 
 > Objetivo: que un usuario solo pueda consultar los datos que le corresponden,
 > y que el SQL generado por la IA no pueda usar el motor como superusuario.
-> Esfuerzo estimado: **3-4 días**.
-> **Tiene una decisión de producto pendiente** (§ A1).
+>
+> **Estado: implementada y verificada el 2026-09-15**, con la **opción A** de
+> § A1 (SQL libre solo para administradores). La opción B queda para cuando
+> haya uso real que medir.
 
 ## Alcance
 
@@ -238,6 +240,61 @@ tipo, no tapar todo.
 **Test:** `test_tool_generic_error_is_sanitized`.
 
 ---
+
+## Verificación (2026-09-15)
+
+### El validador ya no deja pasar lo que antes se ejecutaba
+
+Probado contra el validador real. Todas estas **se ejecutaban** antes:
+
+| Consulta | Antes | Ahora |
+|---|---|---|
+| `pg_read_file('postgresql.conf', …)` | leía archivos del servidor | rechazada |
+| `pg_shadow` / `pg_catalog.pg_user` | hashes de contraseñas | rechazada |
+| `pg_cancel_backend` / `pg_terminate_backend` | cortaba conexiones del ERP | rechazada |
+| `pg_sleep(55)` | retenía la conexión | rechazada |
+| `set_config` / `current_setting` | tocaba la sesión | rechazada |
+| `dblink(...)` / `dblink_exec(...)` en el `FROM` | conexión nueva sin solo lectura | rechazada |
+| `lo_import('/etc/passwd')` | objetos grandes desde disco | rechazada |
+
+Y lo legítimo sigue pasando: `sum`, `count`, `avg`, `date_trunc`, `coalesce`,
+`upper`, `now`, `extract`, `round`, e `information_schema` (que el mensaje de
+error le pide al modelo consultar para autocorregirse).
+
+### Dos defectos que encontraron los tests nuevos
+
+1. **`UNION`, `INTERSECT` y `EXCEPT` se rechazaban por la rama equivocada.** Con uno de esos en la raíz, el nodo no es `Select`, así que `_reject_unions_anywhere` nunca corría y el modelo recibía "Solo se permite SELECT" en lugar del motivo real. Ahora recibe el mensaje específico.
+2. **El código decía que descartaba los comentarios del SQL y no lo hacía.** `sqlglot` los conserva al re-emitir salvo que se pida `comments=False`. No era explotable —un comentario SQL no se ejecuta— pero la afirmación era falsa y no hay motivo para reenviarle al ERP texto libre escrito por el modelo.
+
+### Rol de solo lectura
+
+El SQL de [`rol_lectura_erp.md`](../../backend/docs/rol_lectura_erp.md) se
+ejecutó contra el ERP de desarrollo **dentro de una transacción revertida**,
+para no dejar nada creado:
+
+```
+el rol quedaría con SELECT sobre 509 tablas del ERP
+permisos de escritura otorgados: 0
+es superusuario: False
+tras el rollback, el rol existe: 0
+```
+
+Al probar una conexión, SAVI ahora informa si el usuario es superusuario, y la
+pantalla de bases lo muestra como advertencia. **No bloquea el alta**: hay
+instalaciones así y romperlas sería peor que el riesgo.
+
+### Paso 0 (medir antes de bloquear)
+
+`scripts/audit_free_query.py` lee la tabla de auditoría y reporta tablas,
+esquemas y funciones realmente usadas, más el impacto de los bloqueos nuevos.
+En el entorno de desarrollo la tabla está vacía (nunca se ejecutó una consulta
+libre), así que la decisión de A1 se tomó por diseño; **hay que correrlo
+cuando haya uso real**, sobre todo antes de encarar la opción B.
+
+### Suite
+
+539 tests (70 nuevos: 46 del validador, 18 del compilador, 5 de A1 y 1 de M7).
+`sql_validator.py` salió de `# pyright: basic` y pasa strict.
 
 ## Resultado de la fase
 
