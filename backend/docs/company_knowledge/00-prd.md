@@ -1,6 +1,6 @@
 # PRD — Conocimiento de la empresa (documentos propios)
 
-> Estado: **Fases 1, 2 y 3 implementadas**; pendiente el spike con documentos reales.
+> Estado: **Fases 1, 2 y 3 implementadas**; spike hecho con set sintético, pendiente repetirlo con documentos reales.
 > Ver "Estado de implementación" al final.
 > Fecha: 2026-09-14.
 > Specs por fase:
@@ -263,10 +263,8 @@ Orden obligatorio: 1 → 2 → 3.
   condicional (`complete_processing`: sin eliminar, `processing`, misma
   `version`) y la edición de permisos usa `update_access_metadata`, que no
   toca el estado.
-- **Umbral de similitud 0,82, no 0,3.** Medido con `multilingual-e5-small`:
-  relevantes 0,86–0,90, sin relación 0,76–0,80. Con 0,3 no se filtraba nada
-  y con 0,80 un documento sin relación pasaba en el borde. Es provisorio
-  hasta el spike.
+- **Umbral de similitud 0,80, no 0,3.** e5 comprime los cosenos: con 0,3 no
+  se filtraba nada. Se probó 0,82 y el spike lo bajó a 0,80 (ver abajo).
 - **`unavailable_reason = "processing"`** además de `deleted` y `no_access`,
   para un documento citado que se está reprocesando.
 - **Arranque tolerante.** Si el módulo no puede arrancar (p. ej. tablas sin
@@ -300,14 +298,26 @@ Cambios respecto de la spec de Fase 3:
 
 Hallazgo sobre el umbral de similitud (medido en la interfaz): con 0,80 un
 documento sin relación pasaba en el borde, por eso se subió a 0,82. Aun así,
-"receta de arepas" trae un acta corta con 0,8248. Con este modelo y
-documentos cortos el umbral solo no alcanza; el spike tiene que decidir la
-estrategia (p. ej. exigir más similitud cuando no hay coincidencia léxica).
+"receta de arepas" trae un acta corta con 0,8248. Lo resolvió el spike (abajo).
+
+### Spike del modelo, 2026-09-15
+
+Detalle en [`spike-modelo.md`](spike-modelo.md). Con un set sintético de 8
+documentos (MD, TXT, PDF) y 30 preguntas, comparando 4 modelos y 2 tamaños de
+fragmento por el pipeline real:
+
+- **RNF-08 cumplido:** recall@6 100% en híbrido con todos los modelos.
+- **Se queda `multilingual-e5-small` con fragmento 900.** jina-v2-base-es es
+  mejor (recall@1 96% vs 88%) pero 3,5 veces más lento; queda como mejora.
+- **Umbral de 0,82 a 0,80:** con 0,82 se perdía una paráfrasis real (q13).
+- **Ningún umbral separa las preguntas sin respuesta** con ninguno de los
+  modelos. El umbral solo recorta ruido; el "no encontré información" lo
+  decide el modelo de lenguaje. No se implementa doble umbral.
 
 ### Pendiente
 
-- **Spike con documentos reales** (P1): fija modelo definitivo, tamaño de
-  fragmento y umbral. Sin eso, RNF-08 no está medido.
+- **Repetir el spike con documentos reales** (P1): el set sintético tiene
+  documentos cortos y no distingue bien entre tamaños de fragmento.
 - E2E en Firefox y WebKit.
 - RNF-02 (impacto en el chat con un PDF grande procesándose) y RNF-04
   (50.000 fragmentos) sin medir.
