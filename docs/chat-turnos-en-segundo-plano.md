@@ -146,6 +146,40 @@ a los  5s: 5580 caracteres, interrupted | activo=False
 a los 45s: 5580 caracteres, interrupted | activo=False  <- no crecio
 ```
 
+## Vale para los cuatro proveedores
+
+El cambio vive **por encima** del adaptador: el registro envuelve
+`ChatTurnUseCase.execute()`, y ahí es donde también estaba (y sigue estando) la
+persistencia del parcial al cancelar. Debajo, `ResolvingLLMRunner` elige entre
+`ClaudeAgentRunner`, `GeminiRunner` y `OpenAIRunner`. Ninguno de los tres toca
+la cancelación: no hay un solo `except CancelledError` en los runners.
+
+Claude local y Claude por API key son **el mismo runner**: `credential_kind`
+solo cambia las variables de entorno que recibe el subproceso del CLI
+(`build_claude_env`).
+
+| Proveedor | Estado | Verificado |
+|---|---|---|
+| Claude `local_session` | activo | Medición + E2E de recarga |
+| Claude `api_key` | mismo runner | Por construcción (solo cambia el env) |
+| Gemini `api_key` | configurado | Medición (abajo) |
+| OpenAI `api_key` | **sin credencial** | No probado: no hay clave en este equipo |
+
+Medición con Gemini activo, mismo procedimiento:
+
+```
+conexion cortada a los 2.0s con 0 caracteres
+justo despues: /chat/activo -> {'activo': True}
+a los 10s: sin mensaje todavia          | activo=True
+a los 25s: 5757 caracteres, complete    | activo=False
+a los 70s: 5757 caracteres, complete    | activo=False
+```
+
+Que Gemini funcione es la prueba que más pesa: su adaptador es streaming HTTP,
+no un subproceso, así que si el mecanismo dependiera del transporte se habría
+notado acá. OpenAI comparte esa forma y el mismo caso de uso, pero **queda sin
+medir** hasta que haya una clave.
+
 ## La URL tenía que moverse antes
 
 Un defecto que solo apareció al probar el reload: `ChatView` navegaba a
