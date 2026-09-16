@@ -41,4 +41,38 @@ test.describe('Chat', () => {
     await expect(assistantMessage.locator('.assistant-message__content')).not.toBeEmpty()
     await expect(assistantMessage.locator('.assistant-message__error')).toHaveCount(0)
   })
+
+  test('recargar a mitad de respuesta se reengancha y la respuesta termina', async ({ page }) => {
+    // Turno completo del modelo: el default de 30 s no alcanza.
+    test.setTimeout(240_000)
+
+    await loginAsAdmin(page)
+    await page.goto('/')
+
+    await page.getByPlaceholder('Pregúntale a SAVI…').fill(
+      'Listá 15 funcionalidades del ERP, cada una con dos frases de explicación.',
+    )
+    await page.getByRole('button', { name: 'Enviar' }).click()
+
+    // Hay que esperar la URL de la conversación: sin ella el reload vuelve a
+    // `/` y no habría nada a lo que reengancharse.
+    await expect(page).toHaveURL(/\/c\/[0-9a-f-]+$/, { timeout: 30_000 })
+    await expect(page.getByRole('button', { name: 'Detener' })).toBeVisible()
+
+    await page.reload()
+
+    // Esta es la prueba: tras el reload la interfaz vuelve a mostrar "Detener",
+    // o sea que encontró el turno todavía vivo y se enganchó a él. Antes el
+    // reload mataba la generación y acá no habría más que media frase.
+    await expect(page.getByRole('button', { name: 'Detener' })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.getByRole('button', { name: 'Detener' })).toHaveCount(0, {
+      timeout: 180_000,
+    })
+
+    const assistantMessage = page.locator('.assistant-message').last()
+    await expect(assistantMessage.locator('.assistant-message__content')).not.toBeEmpty()
+    await expect(assistantMessage.locator('.assistant-message__error')).toHaveCount(0)
+  })
 })

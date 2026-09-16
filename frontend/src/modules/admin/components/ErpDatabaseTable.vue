@@ -43,18 +43,18 @@ function statusOf(db: ErpDatabase): { label: string; tone: 'ok' | 'muted' | 'dan
       </thead>
       <tbody>
         <tr v-for="db in databases" :key="db.id" :class="{ 'dbtable__row--inactive': !db.is_active }">
-          <td>
+          <td data-label="Cliente">
             <div class="dbtable__name">
               {{ db.name }}
               <span v-if="db.is_default" class="dbtable__badge dbtable__badge--brand">Predeterminada</span>
             </div>
             <div class="dbtable__code">{{ db.code }}</div>
           </td>
-          <td class="dbtable__mono">
+          <td class="dbtable__mono" data-label="Conexión">
             {{ db.host }}:{{ db.port }}/{{ db.database }}
             <div class="dbtable__sub">{{ db.username }}</div>
           </td>
-          <td>
+          <td data-label="Estado">
             <span class="dbtable__badge" :class="`dbtable__badge--${statusOf(db).tone}`">
               {{ statusOf(db).label }}
             </span>
@@ -62,7 +62,9 @@ function statusOf(db: ErpDatabase): { label: string; tone: 'ok' | 'muted' | 'dan
               Vuelve a ingresar la contraseña.
             </div>
           </td>
-          <td class="dbtable__sub">{{ formatDate(db.last_connection_ok_at) }}</td>
+          <td class="dbtable__sub" data-label="Última conexión exitosa">
+            {{ formatDate(db.last_connection_ok_at) }}
+          </td>
           <td>
             <div class="dbtable__actions">
               <button type="button" class="dbtable__action" :disabled="busyId === db.id" @click="emit('edit', db)">
@@ -250,5 +252,71 @@ function statusOf(db: ErpDatabase): { label: string; tone: 'ok' | 'muted' | 'dan
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
+}
+
+/* En pantallas angostas la tabla pasa a tarjetas.
+   Con scroll horizontal, las acciones (Editar, Predeterminar, Desactivar,
+   Eliminar) son la última columna y quedaban fuera de la pantalla sin ninguna
+   señal de que estuvieran ahí: en un teléfono la fila se veía de solo lectura.
+   Mismo patrón que la tabla de documentos. */
+@media (max-width: 720px) {
+  .dbtable__wrap {
+    overflow-x: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .dbtable,
+  .dbtable tbody,
+  .dbtable tr,
+  .dbtable td {
+    display: block;
+    width: 100%;
+  }
+
+  .dbtable thead {
+    display: none;
+  }
+
+  .dbtable tbody tr {
+    margin-bottom: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface-elev);
+  }
+
+  .dbtable td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Encabezado de la celda, tomado de `data-label`: sin la fila de títulos,
+     una fecha o un host sueltos no dicen de qué son. */
+  .dbtable td[data-label]::before {
+    content: attr(data-label);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-subtle);
+  }
+
+  .dbtable tbody tr td:last-child {
+    border-bottom: none;
+  }
+
+  .dbtable__actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .dbtable__action {
+    border-color: var(--border);
+    padding: var(--space-1) var(--space-3);
+  }
 }
 </style>

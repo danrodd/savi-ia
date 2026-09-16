@@ -13,6 +13,7 @@ const ErpDatabasesView = () => import('@/modules/admin/views/ErpDatabasesView.vu
 const AdminUsageView = () => import('@/modules/admin/views/AdminUsageView.vue')
 const LlmProvidersView = () => import('@/modules/admin/views/LlmProvidersView.vue')
 const CompanyKnowledgeView = () => import('@/modules/admin/views/CompanyKnowledgeView.vue')
+const NotFoundView = () => import('@/components/NotFoundView.vue')
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -95,6 +96,16 @@ const router = createRouter({
       name: 'no-access',
       component: SinAccesoView,
       meta: { requiresAuth: true },
+    },
+    {
+      // Catch-all. Sin esto una URL desconocida no matchea ninguna ruta y el
+      // router no renderiza nada: pantalla en blanco. Va último a propósito —
+      // vue-router respeta el orden de declaración para rutas equivalentes.
+      // Sin `requiresAuth`: mandar al login por un typo confunde más de lo que
+      // ayuda, y la vista no muestra ningún dato.
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFoundView,
     },
   ],
 })

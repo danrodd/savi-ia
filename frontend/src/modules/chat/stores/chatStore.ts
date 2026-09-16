@@ -211,6 +211,10 @@ export const useChatStore = defineStore('chat', () => {
   const unavailableDatabaseIds = ref<Set<string>>(new Set())
 
   let abortController: AbortController | null = null
+  // Distingue "el usuario apretó Detener" de "el usuario se fue de la
+  // conversación". Desde que el turno vive en el servidor los dos abortan el
+  // mismo fetch, pero solo el primero interrumpe la respuesta.
+  let stopRequested = false
 
   const activeConversation = computed(
     () => conversations.value.find((c) => c.id === activeConversationId.value) ?? null,
@@ -286,6 +290,9 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function loadConversation(id: string): Promise<void> {
+    // Solo se suelta el stream local; la respuesta que estuviera generándose
+    // sigue en el servidor y se la vuelve a encontrar al regresar.
+    detachStream()
     activeConversationId.value = id
     loadingMessages.value = true
     messages.value = []
@@ -303,6 +310,26 @@ export const useChatStore = defineStore('chat', () => {
     } finally {
       loadingMessages.value = false
     }
+    await attachIfActive(id)
+  }
+
+  /**
+   * Si quedó una respuesta generándose, se reengancha y se la ve terminar en
+   * vivo. La respuesta en curso todavía no está en la base, así que hace falta
+   * el placeholder: el reenganche lo llena desde el evento 0.
+   */
+  async function attachIfActive(convId: string): Promise<void> {
+    let activo = false
+    try {
+      activo = await agentService.isActive(convId)
+    } catch {
+      return // sin reenganche el chat sigue usable; no vale un error rojo
+    }
+    if (!activo || activeConversationId.value !== convId || streaming.value) return
+
+    messages.value.push(placeholderAssistant())
+    const signal = beginStream()
+    await consumeTurn(convId, agentService.attach(convId, signal), true)
   }
 
   /**
@@ -439,6 +466,7 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   function clearActive(): void {
+    detachStream()
     activeConversationId.value = null
     messages.value = []
     versionsByActiveId.value = {}
@@ -453,12 +481,30 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function runChatTurn(targetConvId: string, body: SendChatBody): Promise<void> {
+    const signal = beginStream()
+    await consumeTurn(targetConvId, agentService.stream(body, signal))
+  }
+
+  function beginStream(): AbortSignal {
     streaming.value = true
     error.value = null
+    stopRequested = false
     abortController = new AbortController()
+    return abortController.signal
+  }
 
+  /**
+   * Consume los eventos de un turno, venga de `POST /chat` o de un reenganche.
+   * Los dos casos pintan lo mismo: la única diferencia es de dónde salen los
+   * eventos.
+   */
+  async function consumeTurn(
+    targetConvId: string,
+    events: AsyncGenerator<ChatEvent, void, void>,
+    reenganche = false,
+  ): Promise<void> {
     try {
-      for await (const ev of agentService.stream(body, abortController.signal)) {
+      for await (const ev of events) {
         if (ev.type === 'title_update') {
           applyTitleUpdate(targetConvId, ev.title)
           continue
@@ -477,12 +523,23 @@ export const useChatStore = defineStore('chat', () => {
     } catch (e) {
       const err = e as Error
       if (err.name === 'AbortError') {
+        // Salvo que haya sido "Detener", el turno sigue vivo en el servidor:
+        // marcarlo como interrumpido sería mentirle al usuario, que al volver
+        // va a encontrar la respuesta completa.
         const last = messages.value[messages.value.length - 1]
-        if (last && last.role === 'assistant') {
+        if (stopRequested && last && last.role === 'assistant') {
           messages.value = [
             ...messages.value.slice(0, -1),
             { ...last, done: true, interrupted: true },
           ]
+        }
+      } else if (reenganche) {
+        // El turno terminó entre el "¿hay algo en curso?" y el reenganche, o
+        // el servidor ya descartó su buffer. No es un error para el usuario:
+        // el mensaje está en la base y lo trae la hidratación de abajo.
+        const last = messages.value[messages.value.length - 1]
+        if (last && last.role === 'assistant' && last.id === null && last.text === '') {
+          messages.value = messages.value.slice(0, -1)
         }
       } else if (isDatabaseUnavailable(err)) {
         // El backend corta antes de abrir el stream: no se persistió nada,
@@ -583,7 +640,30 @@ export const useChatStore = defineStore('chat', () => {
     })
   }
 
-  function stopStream(): void {
+  /**
+   * "Detener" de verdad. Abortar el fetch ya no detiene nada: el turno vive en
+   * el servidor, así que primero se le pide que corte y recién después se
+   * suelta el stream local.
+   */
+  async function stopStream(): Promise<void> {
+    if (!streaming.value) return
+    stopRequested = true
+    const convId = activeConversationId.value
+    if (convId) {
+      try {
+        await agentService.stop(convId)
+      } catch {
+        // Si la llamada falla igual se corta el stream local: el turno termina
+        // solo por timeout y el usuario no queda con un botón trabado.
+      }
+    }
+    abortController?.abort()
+  }
+
+  /** Suelta el stream local sin tocar el turno del servidor. */
+  function detachStream(): void {
+    if (!streaming.value) return
+    stopRequested = false
     abortController?.abort()
   }
 
@@ -619,5 +699,6 @@ export const useChatStore = defineStore('chat', () => {
     editLastUserMessage,
     regenerateLastAssistant,
     stopStream,
+    detachStream,
   }
 })

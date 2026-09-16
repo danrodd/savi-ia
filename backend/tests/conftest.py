@@ -33,8 +33,8 @@ def _reset_rate_limits() -> None:
     orden de ejecución. Se limpia en lugar de desactivar el límite, así los
     tests siguen ejercitando el camino real.
     """
-    from app.modules.chat.infrastructure.http import concurrency
+    from app.modules.chat.infrastructure.http.turn_registry import get_turn_registry
     from app.shared.rate_limit import get_rate_limiter
 
     get_rate_limiter().reset()
-    concurrency.reset_for_tests()
+    get_turn_registry().reset_for_tests()

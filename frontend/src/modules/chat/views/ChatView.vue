@@ -177,13 +177,18 @@ function handleNewChat(): void {
   if (isMobile.value) sidebarOpen.value = false
 }
 
-async function handleSend(text: string): Promise<void> {
-  const wasNew = !activeConversationId.value
-  await store.sendMessage(text)
-  if (wasNew && activeConversationId.value) {
-    router.replace({ name: 'conversation', params: { id: activeConversationId.value } })
-  }
+function handleSend(text: string): void {
+  // Sin `await`: la URL la mueve el watcher de abajo en cuanto existe la
+  // conversación. Esperar al final del turno para navegar dejaba al usuario en
+  // `/` durante toda la respuesta — y un F5 ahí perdía la conversación entera.
+  void store.sendMessage(text)
 }
+
+watch(activeConversationId, (id) => {
+  if (id && route.name === 'home') {
+    router.replace({ name: 'conversation', params: { id } })
+  }
+})
 
 function handleEdit(text: string): void {
   store.editLastUserMessage(text)
@@ -351,7 +356,7 @@ const showConversationShare = computed<boolean>(
         :disabled="activeDatabaseUnavailable || store.llmProviderUnavailable"
         :restore-text="store.rejectedText"
         @send="handleSend"
-        @stop="store.stopStream"
+        @stop="() => void store.stopStream()"
         @restored="store.rejectedText = null"
       />
     </main>

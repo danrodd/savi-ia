@@ -11,14 +11,13 @@ El cuerpo del stream son líneas SSE estándar:
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from dataclasses import asdict
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from fastapi.responses import StreamingResponse
 
 from app.infrastructure.config import get_settings
@@ -26,21 +25,24 @@ from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http.dependencies import CurrentUserDep
 from app.modules.chat.application.requests import ChatRequest
 from app.modules.chat.domain.entities import ChatEvent
-from app.modules.chat.infrastructure.http.concurrency import (
-    acquire_turn_slot,
-    release_turn_slot,
-)
 from app.modules.chat.infrastructure.http.dependencies import (
     ActiveProviderResolverDep,
     ChatTurnUseCaseDep,
+    TurnConversationRepositoryDep,
+)
+from app.modules.chat.infrastructure.http.turn_registry import (
+    RunningTurn,
+    get_turn_registry,
 )
 from app.modules.company_knowledge.application.access import build_access_context
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
+from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.domain.value_objects import ConversationOwner
 from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
 from app.modules.erp_databases.infrastructure.http.dependencies import (
     ResolveModulesForDatabaseUseCaseDep,
 )
+from app.shared.exceptions import NotFoundError
 from app.shared.rate_limit import enforce_chat_limits
 
 log = logging.getLogger(__name__)
@@ -131,41 +133,36 @@ async def chat(
     )
 
     settings = get_settings()
-    # El cupo se toma ACÁ y no dentro del generador: si no hay lugar, el 429
-    # tiene que salir como respuesta HTTP normal. Una vez abierto el SSE ya no
-    # se puede cambiar el status code.
-    await acquire_turn_slot(settings, request.conversation_id)
+
+    async def producer(turno: RunningTurn) -> None:
+        """Lo que corre en la TAREA del turno, ya sin conexión de por medio."""
+        async for event in use_case.execute(
+            request.conversation_id,
+            request.action,
+            request.message,
+            allowed_modules=modules_filter,
+            erp_database_id=conversation_database_id,
+            document_context=document_context,
+        ):
+            turno.publish(event)
+
+    # Arranca acá y no dentro del generador: un rechazo (429 por cupo, 409 por
+    # turno en curso) tiene que salir como respuesta HTTP normal. Con el SSE
+    # ya abierto no se puede cambiar el status code.
+    turno = await get_turn_registry().start(settings, _require(request.conversation_id), producer)
+    return _stream_response(turno)
+
+
+def _stream_response(turno: RunningTurn) -> StreamingResponse:
+    """SSE suscripto a un turno.
+
+    Si el cliente se va, este generador se cancela y la tarea del turno sigue:
+    esa es toda la diferencia con la versión anterior.
+    """
 
     async def event_stream():
-        try:
-            async with asyncio.timeout(settings.chat_turn_timeout_seconds):
-                async for event in use_case.execute(
-                    request.conversation_id,
-                    request.action,
-                    request.message,
-                    allowed_modules=modules_filter,
-                    erp_database_id=conversation_database_id,
-                    document_context=document_context,
-                ):
-                    yield _sse(_event_to_payload(event))
-        except TimeoutError:
-            # `max_agent_turns` acota las rondas de herramienta, no el tiempo.
-            # Sin este reloj, un turno podía quedarse colgado reteniendo el
-            # subproceso del CLI y la conexión. Lo ya generado se persiste por
-            # el mismo camino que la cancelación del cliente.
-            log.warning("chat_turn_timeout conversation_id=%s", request.conversation_id)
-            yield _sse(
-                {
-                    "type": "error",
-                    "message": (
-                        "La consulta tardó demasiado y se detuvo. "
-                        "Probá con una pregunta más acotada."
-                    ),
-                }
-            )
-            yield _sse({"type": "done"})
-        finally:
-            await release_turn_slot(request.conversation_id)
+        async for event in turno.subscribe():
+            yield _sse(_event_to_payload(event))
 
     return StreamingResponse(
         event_stream(),
@@ -176,3 +173,73 @@ async def chat(
             "Connection": "keep-alive",
         },
     )
+
+
+@router.get("/activo")
+async def turno_activo(
+    conversation_id: UUID,
+    user: CurrentUserDep,
+    conversations: TurnConversationRepositoryDep,
+) -> dict[str, bool]:
+    """¿Hay una respuesta en curso en esta conversación?
+
+    Lo consulta la interfaz al abrir una conversación para saber si tiene que
+    reengancharse al stream en lugar de mostrar el hilo y nada más.
+    """
+    await _require_own_conversation(conversations, conversation_id, user)
+    return {"activo": get_turn_registry().running(conversation_id)}
+
+
+@router.get("/stream")
+async def reenganchar(
+    conversation_id: UUID,
+    user: CurrentUserDep,
+    conversations: TurnConversationRepositoryDep,
+) -> StreamingResponse:
+    """Reengancha a un turno en curso: reenvía lo emitido y sigue en vivo."""
+    await _require_own_conversation(conversations, conversation_id, user)
+    turno = get_turn_registry().get(conversation_id)
+    if turno is None:
+        raise NotFoundError("No hay una respuesta en curso en esta conversación.")
+    return _stream_response(turno)
+
+
+@router.post("/detener", status_code=status.HTTP_204_NO_CONTENT)
+async def detener(
+    conversation_id: UUID,
+    user: CurrentUserDep,
+    conversations: TurnConversationRepositoryDep,
+) -> None:
+    """Corta de verdad el turno en curso.
+
+    Hace falta un endpoint porque la generación ya no depende de la conexión:
+    abortar el fetch dejaría de detener nada y el botón "Detener" pasaría a
+    mentir. Idempotente: si no había turno, igual responde 204.
+    """
+    await _require_own_conversation(conversations, conversation_id, user)
+    get_turn_registry().cancel(conversation_id)
+
+
+async def _require_own_conversation(
+    conversations: ConversationRepository, conversation_id: UUID, user: AuthenticatedUser
+) -> None:
+    """404 si la conversación no es del usuario.
+
+    Mismo criterio que el resto: no se distingue "no existe" de "no es tuya".
+
+    El repositorio es el de transacción corta, no el de la sesión del request:
+    `/chat/stream` devuelve un SSE que puede durar minutos y la sesión del
+    request vive hasta que la respuesta termina — sería una conexión del pool
+    retenida todo el reenganche, por una lectura de una fila.
+    """
+    conversation = await conversations.get_by_id(conversation_id)
+    # Se compara contra `owner_erp_database_id` (la base con la que el dueño
+    # inició sesión) y NO contra `erp_database_id` (la base que se consulta):
+    # desde D10 un usuario abre conversaciones de varios clientes sin cambiar
+    # de sesión, así que la segunda no identifica al dueño.
+    if (
+        conversation is None
+        or conversation.user_id != user.id
+        or conversation.owner_erp_database_id != user.erp_database_id
+    ):
+        raise NotFoundError("Conversación no encontrada.")
