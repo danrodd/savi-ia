@@ -16,9 +16,16 @@ SAVI está **bien construido en lo que más cuesta**:
 - credenciales cifradas;
 - 432 tests con Pyright strict.
 
-> **Estado al 2026-09-15:** las Fases 0 y 2 del plan están implementadas y
-> verificadas — C1, M2, M3, O3, O1, O2, O4 y M5 corregidos. Queda abierto lo
-> de datos del ERP (A1, A2), multiempresa (A3, M1, O6) y la deuda.
+> **Estado al 2026-09-15:** las Fases 0 a 3 están implementadas y verificadas,
+> y la 4 va parcial. **Corregidos: el hallazgo crítico, los 6 altos y 11 de los
+> 13 medios.** Queda M9 (unificar el bucle agéntico, a la espera de una key de
+> OpenAI para poder probarlo de punta a punta) y pulido de interfaz.
+>
+> La verificación destapó además **tres bugs que esta revisión no había visto**,
+> porque solo aparecen con la SPA compilada que sirve el backend: la CSP rompía
+> la app instalada, todas las pantallas `/admin/*` devolvían un 404 JSON al
+> recargarlas, y una barra de avance se dibujaba en documentos ya terminados.
+> Están en [`seguridad/05-fase-4-deuda-y-ux.md`](seguridad/05-fase-4-deuda-y-ux.md).
 
 Pero tiene **dos problemas de seguridad que hay que corregir antes de
 cualquier despliegue con usuarios reales**:

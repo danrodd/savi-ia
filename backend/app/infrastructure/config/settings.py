@@ -168,8 +168,15 @@ class Settings(BaseSettings):
     # los toca nunca, y frenan a un script. Medido antes de ponerlos: 50
     # logins fallidos en paralelo se procesaban todos.
     rate_limit_enabled: bool = Field(default=True)
-    # Login: por IP y por código de usuario.
+    # Login, por código de usuario: es el que frena la fuerza bruta contra
+    # una cuenta concreta.
     rate_limit_login_per_minute: int = Field(default=10)
+    # Login, por IP: mucho más holgado a propósito. Una oficina entera sale
+    # por una sola IP detrás de NAT, así que un límite bajo acá no frena a un
+    # atacante (que rota IP) y sí deja afuera a diez compañeros entrando a la
+    # misma hora. Su trabajo es cortar el barrido de muchas cuentas desde un
+    # mismo origen, no proteger una cuenta puntual.
+    rate_limit_login_per_minute_per_ip: int = Field(default=60)
     # Contraseñas malas seguidas antes de bloquear ese login. Las claves del
     # ERP son MD5 sin sal: la ventana sola no frena un ataque lento.
     rate_limit_login_max_failures: int = Field(default=5)

@@ -8,18 +8,31 @@ viable. Ver `docs/seguridad/03-fase-2-resistencia.md`.
 from __future__ import annotations
 
 from collections.abc import Iterator
+from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.exceptions import InvalidCredentialsError
+from app.modules.auth.domain.value_objects import TokenPair
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.auth.infrastructure.http.dependencies import get_login_use_case
 from app.shared.exceptions import register_exception_handlers
 from app.shared.rate_limit import get_rate_limiter
 
 _GOOD = "correcta"
+
+_USUARIO = AuthenticatedUser(
+    id=1,
+    erp_database_id=uuid4(),
+    login="ADMIN",
+    full_name="Administrador",
+    is_admin=True,
+    is_active=True,
+)
+_TOKENS = TokenPair(access_token="a", refresh_token="r", access_token_expires_in=900)
 
 
 class _FakeLoginUseCase:
@@ -33,7 +46,7 @@ class _FakeLoginUseCase:
         self.intentos += 1
         if password != _GOOD:
             raise InvalidCredentialsError
-        raise RuntimeError("no debería llegar acá en estos tests")
+        return _TOKENS, _USUARIO
 
 
 @pytest.fixture
@@ -105,6 +118,22 @@ def test_login_key_ignores_case(client: TestClient) -> None:
         _post(client, login=login)
 
     assert _post(client, login="AdMiN").status_code == 429
+
+
+def test_successful_logins_do_not_exhaust_the_window(
+    client: TestClient, use_case: _FakeLoginUseCase
+) -> None:
+    """Entrar bien muchas veces no es un ataque.
+
+    La ventana por usuario existe para frenar a quien adivina contraseñas, y
+    ese FALLA. Contar también los aciertos dejaba afuera a un usuario legítimo
+    que inicia sesión varias veces en un minuto (y rompía los E2E, que es
+    donde apareció).
+    """
+    for _ in range(20):
+        assert _post(client, password=_GOOD).status_code == 200
+
+    assert use_case.intentos == 20
 
 
 def test_rate_limit_can_be_disabled(

@@ -104,6 +104,16 @@ class SlidingWindowRateLimiter:
             self._failures.pop(key, None)
             self._blocked_until.pop(key, None)
 
+    def forget(self, key: str) -> None:
+        """Borra la ventana de esa clave.
+
+        Para el login: una ventana que cuenta también los intentos EXITOSOS no
+        aporta seguridad —quien adivina contraseñas falla, y para eso está el
+        bloqueo por fallos— y sí castiga a quien entra varias veces seguidas
+        de forma legítima."""
+        with self._lock:
+            self._hits.pop(key, None)
+
     def is_blocked(self, key: str) -> RateLimitDecision:
         with self._lock:
             blocked = self._blocked_until.get(key)

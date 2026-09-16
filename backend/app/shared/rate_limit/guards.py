@@ -56,13 +56,18 @@ def enforce_login_limits(request: Request, settings: Settings, login: str) -> No
     lista de usuarios probando una contraseña común en cada uno."""
     if not settings.rate_limit_enabled:
         return
-    policy = RateLimitPolicy(settings.rate_limit_login_per_minute, _MINUTE)
     normalized = normalize_login_key(login)
     blocked = _limiter.is_blocked(f"login-fallos:{normalized}")
     if not blocked.allowed:
         raise RateLimitExceededError(retry_after_seconds=blocked.retry_after_seconds)
-    _enforce(f"login-ip:{client_ip(request, settings)}", policy)
-    _enforce(f"login-user:{normalized}", policy)
+    _enforce(
+        f"login-ip:{client_ip(request, settings)}",
+        RateLimitPolicy(settings.rate_limit_login_per_minute_per_ip, _MINUTE),
+    )
+    _enforce(
+        f"login-user:{normalized}",
+        RateLimitPolicy(settings.rate_limit_login_per_minute, _MINUTE),
+    )
 
 
 def enforce_refresh_limits(request: Request, settings: Settings) -> None:
@@ -89,7 +94,12 @@ def record_login_failure(settings: Settings, login: str) -> None:
 def record_login_success(settings: Settings, login: str) -> None:
     if not settings.rate_limit_enabled:
         return
-    _limiter.record_success(f"login-fallos:{normalize_login_key(login)}")
+    normalized = normalize_login_key(login)
+    _limiter.record_success(f"login-fallos:{normalized}")
+    # También se libera la ventana por usuario: contar los logins exitosos no
+    # frena a nadie que esté adivinando (ese falla) y sí deja afuera a quien
+    # entra varias veces en un minuto de forma legítima.
+    _limiter.forget(f"login-user:{normalized}")
 
 
 def normalize_login_key(login: str) -> str:

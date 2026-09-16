@@ -48,7 +48,8 @@ infrastructure/ → InMemorySlidingWindow, RateLimitMiddleware
 
 | Ámbito | Clave | Límite por defecto | Respuesta al superarlo |
 |---|---|---|---|
-| `POST /auth/login` | IP + login normalizado | 10 por minuto, 30 por hora | 429 con `Retry-After` |
+| `POST /auth/login` | IP | 60 por minuto | 429 con `Retry-After` |
+| `POST /auth/login` | login normalizado, solo intentos fallidos | 10 por minuto | 429 con `Retry-After` |
 | `POST /auth/login` fallidos consecutivos | mismo login | 5 seguidos → bloqueo 15 min | 429, sin decir si el usuario existe |
 | `POST /auth/refresh` | IP | 30 por minuto | 429 |
 | `POST /chat` | usuario | 20 por minuto, 200 por hora | 429 con `errorCode: rate_limited` |
@@ -249,6 +250,27 @@ Con turnos reales de chat:
 | Dos conversaciones distintas, tope en 1 | una responde, la otra **429 `rate_limited`** |
 | Doble envío sobre la misma conversación, tope por defecto | una responde, la otra **409 `conversation_busy`** |
 
+### Dos calibraciones que corrigió el E2E
+
+La suite de E2E falló con los límites de la spec, y no por culpa del test:
+eran **dos defectos de diseño** que solo se ven con varios inicios de sesión
+seguidos.
+
+**1. El límite por IP era demasiado bajo (10/min).** Una oficina entera sale
+por una sola IP detrás de NAT: diez compañeros entrando a la misma hora se
+bloqueaban entre sí. Y a un atacante no lo frena, porque rota IP. Subido a
+**60/min**; el límite que protege una cuenta concreta es el de por usuario.
+
+**2. La ventana por usuario contaba también los logins EXITOSOS.** Quien
+adivina contraseñas **falla**, y para eso está el bloqueo por fallos
+consecutivos. Contar los aciertos no frenaba a nadie y sí dejaba afuera a un
+usuario legítimo que inicia sesión varias veces en un minuto. Ahora un login
+exitoso libera su ventana, además de limpiar el contador de fallos.
+
+Ninguna de las dos debilita la defensa: los cinco fallos seguidos siguen
+bloqueando el login por quince minutos, y el techo por IP sigue cortando el
+barrido de muchas cuentas desde un mismo origen.
+
 ### Decisiones que cambiaron respecto de la spec
 
 - **Sin dependency de FastAPI para los límites por usuario.** La primera versión exponía `RateLimitedChatUserDep`, pero eso obligaba a `app/shared` a importar la capa HTTP del módulo `auth` — que a su vez importa `shared`: import circular, y una violación de capas. Quedaron funciones (`enforce_chat_limits`, `enforce_upload_limits`) que cada ruta llama con el usuario que **ya** tiene inyectado. De paso evita resolver la autenticación dos veces por pedido.
@@ -258,7 +280,7 @@ Con turnos reales de chat:
 
 ### Suite
 
-469 tests en backend (27 nuevos), 79 en frontend (3 nuevos). Ruff, Pyright
+571 tests en backend, 87 en frontend. E2E de Chromium: 7/7. Ruff, Pyright
 strict, `vue-tsc` y Biome en verde.
 
 ## Resultado de la fase

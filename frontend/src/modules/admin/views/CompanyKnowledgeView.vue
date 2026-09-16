@@ -196,8 +196,11 @@ onUnmounted(() => store.stopPolling())
     <div v-else-if="store.documents.length === 0" class="kview__empty">
       <p>Aún no hay documentos. Sube el primero para que SAVI pueda consultarlo.</p>
       <!-- El botón acá y no solo arriba: quien llega a una pantalla vacía
-           busca la acción en la pantalla vacía. -->
-      <Button @click="uploadOpen = true">Subir documentos</Button>
+           busca la acción en la pantalla vacía.
+           Texto distinto al del encabezado a propósito: dos botones con el
+           mismo nombre accesible en la misma pantalla confunden a un lector
+           de pantalla (y rompieron un E2E por ambigüedad). -->
+      <Button @click="uploadOpen = true">Subir el primer documento</Button>
     </div>
     <template v-else>
       <!-- Filtros solo cuando hay suficientes documentos para que sirvan. -->
