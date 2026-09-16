@@ -18,7 +18,7 @@ from uuid import uuid4
 import pytest
 
 from app.infrastructure.config import Settings
-from app.modules.chat.domain.entities import ChatEvent, TextDeltaEvent
+from app.modules.chat.domain.entities import ChatEvent, DoneEvent, TextDeltaEvent
 from app.modules.chat.infrastructure.http.turn_registry import RunningTurn, TurnRegistry
 from app.shared.exceptions import ConversationBusyError, RateLimitExceededError
 
@@ -236,4 +236,72 @@ async def test_a_finished_conversation_accepts_a_new_turn(registro: TurnRegistry
 
     assert segundo is not primero
     assert registro.running(conversation) is True
+    registro.reset_for_tests()
+
+
+@pytest.mark.asyncio
+async def test_the_slot_comes_back_with_done_not_at_the_end(registro: TurnRegistry) -> None:
+    """Después de `done` el turno sigue vivo esperando el auto-título.
+
+    Retener el cupo ahí son segundos de capacidad tirados —medidos, entre 1,7
+    y 3,4— por algo cosmético. El turno sigue en curso, el cupo no.
+    """
+    settings = _settings(1)
+    conversation = uuid4()
+    titulando = asyncio.Event()
+
+    async def con_titulo(turno: RunningTurn) -> None:
+        turno.publish(_delta("respuesta"))
+        turno.publish(DoneEvent())
+        titulando.set()
+        await asyncio.Event().wait()  # la fase 2 del titulo, que tarda
+
+    turno = await registro.start(settings, conversation, con_titulo)
+    await titulando.wait()
+
+    assert registro.active_count() == 0, "el cupo tiene que estar libre"
+    assert registro.running(conversation) is True, "pero el turno sigue vivo"
+    # Y con el cupo libre, otra conversación puede arrancar aunque el limite
+    # sea 1: eso es exactamente la capacidad que se estaba tirando.
+    await registro.start(settings, uuid4(), _nunca_termina)
+
+    # El candado por conversación NO se suelta: el turno todavía puede escribir.
+    with pytest.raises(ConversationBusyError):
+        await registro.start(settings, conversation, _nunca_termina)
+
+    registro.reset_for_tests()
+    assert turno.slot_released is True
+
+
+@pytest.mark.asyncio
+async def test_the_slot_comes_back_without_done_too(registro: TurnRegistry) -> None:
+    """Un turno que muere por error nunca emitió `done`: el cupo vuelve igual."""
+    settings = _settings(1)
+
+    async def explota(turno: RunningTurn) -> None:
+        raise RuntimeError("boom")
+
+    turno = await registro.start(settings, uuid4(), explota)
+    assert turno.task is not None
+    await turno.task
+
+    assert registro.active_count() == 0
+    assert turno.slot_released is True
+
+
+@pytest.mark.asyncio
+async def test_the_slot_is_returned_once(registro: TurnRegistry) -> None:
+    """`done` y el fin de la tarea no pueden devolver dos cupos."""
+    settings = _settings(2)
+
+    async def corto(turno: RunningTurn) -> None:
+        turno.publish(DoneEvent())
+
+    otro = await registro.start(settings, uuid4(), _nunca_termina)
+    turno = await registro.start(settings, uuid4(), corto)
+    assert turno.task is not None
+    await turno.task
+
+    assert registro.active_count() == 1, "solo se libero el cupo del turno corto"
+    assert otro is not None
     registro.reset_for_tests()

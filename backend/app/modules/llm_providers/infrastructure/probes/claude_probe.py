@@ -15,7 +15,7 @@ from claude_agent_sdk import (
     query,
 )
 
-from app.infrastructure.claude_cli import resolve_cli_path
+from app.infrastructure.claude_cli import ISOLATED_CLI_OPTIONS, resolve_cli_path
 from app.infrastructure.claude_env import build_claude_env
 from app.infrastructure.config import Settings
 from app.modules.llm_providers.domain.entities import LlmProviderConfig
@@ -87,6 +87,8 @@ class ClaudeProbe(ProviderProbe):
                 credential=config.credential,
                 git_bash_path=self._settings.claude_code_git_bash_path,
             ),
+            # Sin la configuración del equipo: ver `ISOLATED_CLI_OPTIONS`.
+            **ISOLATED_CLI_OPTIONS,
         )
         text: list[str] = []
         result: ResultMessage | None = None

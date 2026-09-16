@@ -4,7 +4,7 @@ import logging
 
 from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, TextBlock, query
 
-from app.infrastructure.claude_cli import resolve_cli_path
+from app.infrastructure.claude_cli import ISOLATED_CLI_OPTIONS, resolve_cli_path
 from app.infrastructure.claude_env import build_claude_env
 from app.infrastructure.config import Settings
 from app.modules.chat.domain.interfaces import ActiveProvider, TitleGenerator
@@ -41,6 +41,8 @@ class ClaudeTitleGenerator(TitleGenerator):
                 credential=self._provider.credential,
                 git_bash_path=self._settings.claude_code_git_bash_path,
             ),
+            # Sin la configuración del equipo: ver `ISOLATED_CLI_OPTIONS`.
+            **ISOLATED_CLI_OPTIONS,
         )
         prompt = build_title_prompt(user_msg, assistant_msg)
         parts: list[str] = []

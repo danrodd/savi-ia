@@ -14,7 +14,9 @@ Ahora el turno es una **tarea** y el stream se suscribe a ella:
 Consecuencias que hay que tener presentes:
 
 - **El cupo global se toma y se suelta acá**, no en la conexión. Atado a la
-  conexión se filtraría en cuanto alguien cierre la pestaña.
+  conexión se filtraría en cuanto alguien cierre la pestaña. Se suelta con el
+  evento `done` y no al final de la tarea: después de `done` el turno todavía
+  espera el auto-título, y retener cupo ahí es tirar capacidad.
 - **El registro es el candado por conversación**: si hay turno para esa
   conversación, es que ya hay una respuesta en curso.
 - **Detener necesita un endpoint**: abortar el fetch ya no detiene nada.
@@ -34,7 +36,7 @@ from dataclasses import dataclass, field
 from uuid import UUID
 
 from app.infrastructure.config import Settings
-from app.modules.chat.domain.entities import ChatEvent
+from app.modules.chat.domain.entities import ChatEvent, DoneEvent
 from app.shared.exceptions import ConversationBusyError, RateLimitExceededError
 
 log = logging.getLogger(__name__)
@@ -55,12 +57,19 @@ class RunningTurn:
     done: bool = False
     finished_at: float | None = None
     task: asyncio.Task[None] | None = None
+    # El cupo global se suelta antes que el turno: ver `_liberar_cupo`.
+    slot_released: bool = False
     # Se despierta con cada evento nuevo y al terminar. Los suscriptores lo
     # esperan en lugar de consultar en bucle.
     _pulse: asyncio.Event = field(default_factory=asyncio.Event)
+    # Lo pone el registro. Se dispara con `done`, que es cuando el modelo
+    # terminó de trabajar aunque el turno siga vivo.
+    on_model_done: Callable[[], None] | None = None
 
     def publish(self, event: ChatEvent) -> None:
         self.events.append(event)
+        if isinstance(event, DoneEvent) and self.on_model_done is not None:
+            self.on_model_done()
         self._wake()
 
     def finish(self) -> None:
@@ -135,6 +144,7 @@ class TurnRegistry:
                 detail="SAVI está atendiendo otras consultas. Probá en unos segundos.",
             )
         turno = RunningTurn(conversation_id=conversation_id)
+        turno.on_model_done = lambda: self._liberar_cupo(turno)
         self._turns[conversation_id] = turno
         self._active += 1
 
@@ -169,12 +179,34 @@ class TurnRegistry:
         except Exception:
             log.exception("chat_turn_failed conversation_id=%s", turno.conversation_id)
 
+    def _liberar_cupo(self, turno: RunningTurn) -> None:
+        """Devuelve el cupo global. Idempotente.
+
+        Se llama con el evento `done` —el modelo ya terminó— y no al terminar
+        la tarea. Entre uno y otro el turno todavía espera el auto-título de
+        segunda fase, que son hasta `title_phase2_timeout_s` segundos (medidos:
+        1,7 a 3,4 s). Con tres cupos, retenerlos ahí es tirar capacidad por
+        algo cosmético.
+
+        El turno sigue vivo: el stream queda abierto para emitir `title_update`
+        y el candado por conversación no se suelta hasta que la tarea termine.
+        Lo que se libera es solo el recurso escaso.
+        """
+        if turno.slot_released:
+            return
+        turno.slot_released = True
+        self._active = max(0, self._active - 1)
+
     def _cerrar(self, turno: RunningTurn) -> None:
-        """Cierra el turno y devuelve el cupo. Exactamente una vez por tarea."""
+        """Cierra el turno. Exactamente una vez por tarea.
+
+        También suelta el cupo: un turno que muere por error, cancelación o
+        timeout nunca llegó a emitir `done`.
+        """
+        self._liberar_cupo(turno)
         if turno.done:
             return
         turno.finish()
-        self._active = max(0, self._active - 1)
 
     def get(self, conversation_id: UUID) -> RunningTurn | None:
         return self._turns.get(conversation_id)
