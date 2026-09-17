@@ -50,24 +50,36 @@ const status = computed(() => {
       </span>
     </header>
     <p v-if="!provider.implemented" class="provider-card__muted">Este proveedor aún no está disponible.</p>
-    <dl v-else class="provider-card__summary">
-      <div>
-        <dt><MessageSquare :size="14" aria-hidden="true" /> Modelo de chat</dt>
-        <dd>{{ provider.chat_model ?? 'No definido' }}</dd>
+    <div v-else class="provider-card__body">
+      <div class="provider-card__group">
+        <span class="provider-card__group-label">Modelos</span>
+        <div class="provider-card__model-row">
+          <span class="provider-card__model-tag"><MessageSquare :size="12" aria-hidden="true" /> Chat</span>
+          <code class="provider-card__model-id">{{ provider.chat_model ?? 'No definido' }}</code>
+        </div>
+        <div class="provider-card__model-row">
+          <span class="provider-card__model-tag"><Type :size="12" aria-hidden="true" /> Títulos</span>
+          <code class="provider-card__model-id">{{ provider.title_model ?? 'No definido' }}</code>
+        </div>
       </div>
-      <div>
-        <dt><Type :size="14" aria-hidden="true" /> Modelo de títulos</dt>
-        <dd>{{ provider.title_model ?? 'No definido' }}</dd>
+      <div class="provider-card__status-row">
+        <span
+          class="provider-card__status-item"
+          :class="{ 'provider-card__status-item--warning': !provider.has_credential }"
+        >
+          <KeyRound :size="13" aria-hidden="true" />
+          {{ provider.has_credential ? 'Credencial guardada' : 'Falta configurar credencial' }}
+        </span>
+        <span class="provider-card__status-item">
+          <FlaskConical :size="13" aria-hidden="true" />
+          {{
+            provider.last_test_ok_at
+              ? `Probado el ${new Date(provider.last_test_ok_at).toLocaleString()}`
+              : 'Sin probar'
+          }}
+        </span>
       </div>
-      <div>
-        <dt><FlaskConical :size="14" aria-hidden="true" /> Última prueba</dt>
-        <dd>{{ provider.last_test_ok_at ? new Date(provider.last_test_ok_at).toLocaleString() : 'Sin probar' }}</dd>
-      </div>
-      <div>
-        <dt><KeyRound :size="14" aria-hidden="true" /> Credencial</dt>
-        <dd>{{ provider.has_credential ? 'Guardada' : 'Falta configurar' }}</dd>
-      </div>
-    </dl>
+    </div>
     <p v-if="provider.is_active && provider.chat_model && !provider.pricing[provider.chat_model]" class="provider-card__price-warning">
       El costo de las respuestas no se va a registrar hasta cargar el precio de este modelo.
     </p>
@@ -90,10 +102,16 @@ h2 { margin: 0; font-family: var(--font-display); font-size: 18px; }
 .status { display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-2); padding: 3px 9px; color: var(--text-muted); background: var(--surface-subtle); border-radius: var(--r-pill); font-size: 11px; font-weight: var(--fw-semibold); white-space: nowrap; }
 .status--active { color: var(--success); background: var(--success-soft); }
 .status--warning { color: var(--warning); }
-.provider-card__summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin: var(--space-6) 0; }
-.provider-card__summary dt { display: inline-flex; align-items: center; gap: var(--space-2); }
+.provider-card__body { margin: var(--space-6) 0; }
+.provider-card__group-label { display: block; margin-bottom: var(--space-3); color: var(--text-subtle); font-size: 10px; font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; }
+.provider-card__model-row { display: flex; align-items: center; gap: var(--space-3); }
+.provider-card__model-row + .provider-card__model-row { margin-top: var(--space-2); }
+.provider-card__model-tag { display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-2); width: 62px; color: var(--text-muted); font-size: 12px; }
+.provider-card__model-id { overflow: hidden; padding: 2px 8px; color: var(--text); background: var(--surface-subtle); border-radius: var(--r-sm); font-family: var(--font-mono); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.provider-card__status-row { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.provider-card__status-item { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: 12px; }
+.provider-card__status-item--warning { color: var(--warning); font-weight: var(--fw-medium); }
 .provider-card__muted, .provider-card__price-warning { margin: var(--space-5) 0; color: var(--text-muted); font-size: 13px; }
 .provider-card__price-warning { padding: var(--space-3); color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); border-radius: var(--r-sm); }
 .provider-card__actions { justify-content: flex-end; }
-@media (max-width: 540px) { .provider-card__summary { grid-template-columns: 1fr; } }
 </style>
