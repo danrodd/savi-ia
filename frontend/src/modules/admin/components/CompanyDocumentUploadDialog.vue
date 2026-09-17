@@ -140,6 +140,10 @@ async function onSubmit(): Promise<void> {
   uploading.value = false
   if (uploaded > 0)
     toast.success(uploaded === 1 ? 'Documento subido' : `${uploaded} documentos subidos`)
+  // Si todo salió bien no hace falta que el usuario cierre a mano: el
+  // toast ya confirma y la lista de atrás ya se actualizó. Si algo quedó
+  // duplicado o rechazado, dejamos el modal abierto para que lo vea.
+  if (uploaded > 0 && uploaded === items.value.length) close()
 }
 
 const STATE_LABELS: Record<ItemState, string> = {

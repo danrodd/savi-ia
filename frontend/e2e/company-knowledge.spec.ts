@@ -61,8 +61,9 @@ test.describe('Conocimiento de la empresa', () => {
     await page.getByLabel('Elegir archivos').setInputFiles(FIXTURE)
     await expect(page.getByLabel(`Título de ${TITLE}.pdf`)).toHaveValue(TITLE)
     await page.getByRole('button', { name: 'Subir (1)' }).click()
-    await expect(page.getByText('Subido. Se está procesando.')).toBeVisible({ timeout: 30_000 })
-    await page.getByRole('contentinfo').getByRole('button', { name: 'Cerrar' }).click()
+    // Con todo subido bien el modal se cierra solo: el toast confirma y
+    // la lista de atrás ya trae el documento nuevo.
+    await expect(page.getByRole('dialog')).toBeHidden({ timeout: 30_000 })
 
     const row = page.getByRole('row', { name: new RegExp(TITLE) })
     await expect(row.getByText('Listo')).toBeVisible({ timeout: 120_000 })
