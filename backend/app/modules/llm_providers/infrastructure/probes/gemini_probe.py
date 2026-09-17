@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import AsyncIterable, Callable
 from typing import Protocol, cast
 
@@ -12,6 +13,31 @@ from app.modules.llm_providers.domain.interfaces import ProbeResult, ProviderPro
 from app.modules.llm_providers.domain.value_objects import ModelInfo
 
 log = logging.getLogger(__name__)
+
+# Google devuelve en el mismo catálogo modelos de audio/imagen/video/música,
+# embeddings y research que no sirven para un chat de texto con tools — y
+# generaciones viejas que Google ya empezó a dar de baja para keys nuevas
+# (ver docs/mcp_deferred_tools_gotcha.md para el antecedente del 404).
+# Filtramos a lo que de verdad es elegible como chat/title model.
+_NON_CHAT_PATTERN = re.compile(
+    r"tts|image|banana|embedding|veo|lyria|transcribe|robotics|computer-use|"
+    r"antigravity|deep-research|aqa|live|native-audio|omni",
+    re.IGNORECASE,
+)
+_OLD_GENERATION_PATTERN = re.compile(r"gemini-(1|2)(\.\d+)?-", re.IGNORECASE)
+_PREVIEW_PATTERN = re.compile(r"preview|experimental|exp-", re.IGNORECASE)
+
+
+def _is_chat_eligible(model_id: str) -> bool:
+    if not model_id.startswith("gemini-"):
+        return False
+    if _NON_CHAT_PATTERN.search(model_id):
+        return False
+    if _OLD_GENERATION_PATTERN.search(model_id):
+        return False
+    if _PREVIEW_PATTERN.search(model_id):
+        return False
+    return True
 
 
 class _Models(Protocol):
@@ -44,7 +70,8 @@ class GeminiProbe(ProviderProbe):
             return []
 
     async def _fetch_models(self, config: LlmProviderConfig) -> list[ModelInfo]:
-        pager = await self._client(config.credential or "").aio.models.list()
+        client = self._client(config.credential or "")
+        pager = await client.aio.models.list()
         models: list[ModelInfo] = []
         async for model in pager:
             actions = cast(list[str], getattr(model, "supported_actions", None) or [])
@@ -52,7 +79,7 @@ class GeminiProbe(ProviderProbe):
                 continue
             name = str(getattr(model, "name", "") or "")
             model_id = name.removeprefix("models/")
-            if model_id:
+            if model_id and _is_chat_eligible(model_id):
                 models.append(
                     ModelInfo(
                         id=model_id,
@@ -77,4 +104,5 @@ class GeminiProbe(ProviderProbe):
                 )
             return ProbeResult(ok=False, detail="No se pudo probar Gemini.")
         except Exception:  # noqa: BLE001
+            log.exception("gemini_probe_test_failed")
             return ProbeResult(ok=False, detail="No se pudo probar Gemini.")

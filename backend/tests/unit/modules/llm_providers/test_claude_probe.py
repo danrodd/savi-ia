@@ -82,6 +82,25 @@ async def test_list_models_maps_anthropic_models() -> None:
     assert clients == [(CredentialKind.API_KEY, "secret")]
 
 
+async def test_list_models_excludes_retired_generations() -> None:
+    probe = ClaudeProbe(
+        Settings(agent_db_engine="sqlite"),
+        client_factory=lambda _kind, _credential: _FakeClient(
+            _FakeModels(
+                [
+                    SimpleNamespace(id="claude-sonnet-4-6", display_name="Claude Sonnet"),
+                    SimpleNamespace(id="claude-2.1", display_name="Claude 2.1"),
+                    SimpleNamespace(id="claude-instant-1.2", display_name="Claude Instant"),
+                ]
+            )
+        ),
+    )
+
+    models = await probe.list_models(_config())
+
+    assert [model.id for model in models] == ["claude-sonnet-4-6"]
+
+
 async def test_list_models_uses_auth_token_for_oauth() -> None:
     clients: list[tuple[CredentialKind, str]] = []
     probe = ClaudeProbe(

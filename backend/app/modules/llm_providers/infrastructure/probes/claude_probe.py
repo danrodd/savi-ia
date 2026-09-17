@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from collections.abc import Callable, Sequence
 from typing import Protocol, cast
 
@@ -29,6 +30,12 @@ logger = logging.getLogger(__name__)
 
 _PROBE_TIMEOUT_SECONDS = 90
 _CREDENTIAL_HINTS = ("401", "invalid api key", "authentication", "oauth", "unauthorized")
+# Anthropic saca del catálogo los modelos retirados, pero durante la
+# ventana "deprecated → retired" (mínimo 60 días de aviso, según su
+# política) todavía pueden aparecer listados y fallar al usarlos. Claude
+# 1, Claude 2.x e Instant ya están retirados desde 2024; los excluimos
+# como red de seguridad. https://platform.claude.com/docs/en/about-claude/model-deprecations
+_LEGACY_GENERATION = re.compile(r"^claude-(1(\.\d+)?|instant|2(\.\d+)?)(-|$)", re.IGNORECASE)
 
 
 class _ModelPage(Protocol):
@@ -138,6 +145,7 @@ class ClaudeProbe(ProviderProbe):
             )
             for model in page.data
             if (model_id := str(getattr(model, "id", "") or ""))
+            and not _LEGACY_GENERATION.match(model_id)
         ]
 
     def _client(self, kind: CredentialKind, credential: str) -> _AnthropicClient:

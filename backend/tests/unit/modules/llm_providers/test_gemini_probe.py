@@ -24,8 +24,13 @@ class _Models:
         async def pager():
             for model in (
                 SimpleNamespace(
-                    name="models/gemini-2.5-flash",
-                    display_name="Gemini 2.5 Flash",
+                    name="models/gemini-flash-latest",
+                    display_name="Gemini Flash Latest",
+                    supported_actions=["generateContent"],
+                ),
+                SimpleNamespace(
+                    name="models/gemini-pro-latest",
+                    display_name="Gemini Pro Latest",
                     supported_actions=["generateContent"],
                 ),
                 SimpleNamespace(
@@ -34,8 +39,23 @@ class _Models:
                     supported_actions=["embedContent"],
                 ),
                 SimpleNamespace(
-                    name="models/gemini-2.5-pro",
-                    display_name="Gemini 2.5 Pro",
+                    name="models/gemini-2.5-flash",
+                    display_name="Gemini 2.5 Flash",
+                    supported_actions=["generateContent"],
+                ),
+                SimpleNamespace(
+                    name="models/gemini-3.1-pro-preview",
+                    display_name="Gemini 3.1 Pro Preview",
+                    supported_actions=["generateContent"],
+                ),
+                SimpleNamespace(
+                    name="models/lyria-3.5",
+                    display_name="Lyria 3.5",
+                    supported_actions=["generateContent"],
+                ),
+                SimpleNamespace(
+                    name="models/gemini-2.5-flash-image",
+                    display_name="Nano Banana",
                     supported_actions=["generateContent"],
                 ),
             ):
@@ -50,14 +70,14 @@ class _Client:
 
 
 @pytest.mark.asyncio
-async def test_list_models_filters_to_generate_content_and_normalizes_ids() -> None:
+async def test_list_models_filters_to_chat_eligible_gemini_models() -> None:
     probe = GeminiProbe(client_factory=lambda _: _Client())
 
     models = await probe.list_models(_config())
 
     assert [(model.id, model.display_name) for model in models] == [
-        ("gemini-2.5-flash", "Gemini 2.5 Flash"),
-        ("gemini-2.5-pro", "Gemini 2.5 Pro"),
+        ("gemini-flash-latest", "Gemini Flash Latest"),
+        ("gemini-pro-latest", "Gemini Pro Latest"),
     ]
 
 
