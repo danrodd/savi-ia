@@ -39,7 +39,7 @@ const status = computed(() => {
     <header class="provider-card__header">
       <div class="provider-card__identity">
         <ProviderIcon :kind="provider.provider" :size="24" />
-        <div>
+        <div class="provider-card__identity-text">
           <h2>{{ provider.display_name }}</h2>
           <span class="provider-card__kind">{{ provider.provider }}</span>
         </div>
@@ -80,12 +80,14 @@ const status = computed(() => {
 
 <style scoped>
 .provider-card { padding: var(--space-6); background: var(--surface-elev); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
-.provider-card__header, .provider-card__actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
-.provider-card__identity { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.provider-card__header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-4); }
+.provider-card__actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.provider-card__identity { display: flex; align-items: center; gap: var(--space-3); min-width: 0; flex: 1 1 auto; }
+.provider-card__identity-text { min-width: 0; }
 .provider-card__identity h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 h2 { margin: 0; font-family: var(--font-display); font-size: 18px; }
 .provider-card__kind { color: var(--text-subtle); font-size: 11px; }
-.status { display: inline-flex; align-items: center; gap: var(--space-2); padding: 3px 9px; color: var(--text-muted); background: var(--surface-subtle); border-radius: var(--r-pill); font-size: 11px; font-weight: var(--fw-semibold); white-space: nowrap; }
+.status { display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-2); padding: 3px 9px; color: var(--text-muted); background: var(--surface-subtle); border-radius: var(--r-pill); font-size: 11px; font-weight: var(--fw-semibold); white-space: nowrap; }
 .status--active { color: var(--success); background: var(--success-soft); }
 .status--warning { color: var(--warning); }
 .provider-card__summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin: var(--space-6) 0; }

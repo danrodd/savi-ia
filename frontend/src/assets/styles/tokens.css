@@ -33,6 +33,7 @@
   --success-soft: #e7f5ec;
   --warning: #d97706;
   --danger: #c8202b;
+  --text-danger: #c8202b;
   --focus-ring: 0 0 0 3px var(--brand-ring);
 
   /* Shadows — subtle, dual layer */
@@ -123,6 +124,7 @@
   --success-soft: rgba(74, 222, 128, 0.12);
   --warning: #fb923c;
   --danger: #f25563;
+  --text-danger: #f25563;
 
   /* Shadows — amplified for dark */
   --shadow-xs: 0 1px 0 rgba(0, 0, 0, 0.15);
