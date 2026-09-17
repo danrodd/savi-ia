@@ -53,10 +53,24 @@ const modelFallbackHint = computed(() => {
   }
   return 'Este proveedor no lista modelos. Escribe sus identificadores manualmente.'
 })
+// El proveedor puede haber dado de baja el modelo que ya estaba guardado
+// (nos pasó con Gemini 2.5): si el catálogo nuevo no lo trae, lo agregamos
+// igual para no dejar el select en blanco y perder de vista qué había.
+const catalogModels = computed(() => {
+  const known = new Set(models.value.map((model) => model.id))
+  const missing = [chatModel.value, titleModel.value].filter(
+    (id, index, all) => id && !known.has(id) && all.indexOf(id) === index,
+  )
+  if (missing.length === 0) return models.value
+  return [
+    ...models.value,
+    ...missing.map((id) => ({ id, display_name: `${id} (ya no está en el catálogo)` })),
+  ]
+})
 const filteredModels = computed(() => {
   const query = modelSearch.value.trim().toLowerCase()
-  if (!query) return models.value
-  return models.value.filter((model) =>
+  if (!query) return catalogModels.value
+  return catalogModels.value.filter((model) =>
     `${model.display_name} ${model.id}`.toLowerCase().includes(query),
   )
 })
@@ -79,7 +93,18 @@ function reset(provider: LlmProvider | null): void {
 watch(
   () => props.open,
   (open) => {
-    if (open) reset(props.provider)
+    if (!open) return
+    reset(props.provider)
+    // Ya hay una credencial guardada: traemos el catálogo sin pedirle al
+    // usuario que la vuelva a pegar solo para cambiar el modelo.
+    if (
+      props.provider?.has_credential &&
+      props.provider.implemented &&
+      props.provider.supports_model_listing &&
+      credentialKind.value !== 'local_session'
+    ) {
+      handleTest()
+    }
   },
 )
 watch(
@@ -131,7 +156,8 @@ defineExpose({ applyTestResult })
     <form class="form" @submit.prevent="handleSave">
       <label>Tipo de credencial<select v-model="credentialKind"><option v-for="kind in provider?.credential_kinds" :key="kind" :value="kind">{{ kind }}</option></select></label>
       <div v-if="isLocalSession" class="form__note">Claude usará el login local de este equipo. No necesitas introducir una credencial aquí.</div>
-      <label v-else>Credencial<input v-model="credential" type="password" autocomplete="new-password" placeholder="Déjala vacía para conservar la actual" /></label>
+      <label v-else>Credencial<input v-model="credential" type="password" autocomplete="new-password" :placeholder="provider?.has_credential ? 'Ya hay una guardada — dejala vacía para conservarla' : 'Pegá la API key'" /></label>
+      <p v-if="provider?.has_credential && !credential" class="form__note">🔒 Ya hay una credencial guardada. Podés cambiar solo el modelo sin volver a pegarla.</p>
        <div class="form__test"><Button type="button" variant="secondary" :loading="testing" :disabled="!provider?.implemented" @click="handleTest"><FlaskConical :size="15" aria-hidden="true" /> Probar credencial</Button><span v-if="testDetail" data-testid="provider-test-detail" :class="{ 'form__ok': testResult?.ok }">{{ testDetail }}</span></div>
       <div v-if="models.length > 0" class="form__models">
         <div class="form__catalog-head">

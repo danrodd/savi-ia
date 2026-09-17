@@ -26,4 +26,13 @@ describe('recommendModel', () => {
   it('returns null for an empty catalog', () => {
     expect(recommendModel([])).toBeNull()
   })
+
+  it('prefers the "-latest" alias over a pinned numbered version', () => {
+    const result = recommendModel([
+      { id: 'gemini-3.8-flash', display_name: 'Gemini 3.8 Flash' },
+      { id: 'gemini-flash-latest', display_name: 'Gemini Flash Latest' },
+    ])
+
+    expect(result?.id).toBe('gemini-flash-latest')
+  })
 })

@@ -9,7 +9,10 @@ export function scoreModel(model: ProviderModel): number {
 
   if (/embedding|embed|vision|image|audio|speech|tts|transcri/.test(value)) score -= 100
   if (/realtime|moderation|dall-e|sora|whisper|codex-mini|computer-use/.test(value)) score -= 100
-  if (/preview|experimental|exp|beta|latest/.test(value)) score -= 12
+  if (/preview|experimental|exp|beta/.test(value)) score -= 12
+  // Los alias "-latest" (Gemini) apuntan siempre a la versión vigente: evitan
+  // que un cliente quede pineado a un modelo que el proveedor da de baja.
+  if (/latest/.test(value)) score += 30
   if (/chat|sonnet|opus|gemini|pro|flash|general|text/.test(value)) score += 24
   // Familias generalistas de OpenAI: `gpt-*`, `chatgpt-*` y los `o*` de
   // razonamiento. No fijamos un ID: un modelo nuevo entra sin tocar esto.
