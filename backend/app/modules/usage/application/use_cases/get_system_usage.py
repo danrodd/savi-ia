@@ -19,10 +19,14 @@ class GetSystemUsageUseCase:
         totals = await self._repository.system_totals(period, filters=filters)
         per_user = await self._repository.per_user(period, filters=filters)
         daily = await self._repository.daily_system(period, filters=filters)
+        per_provider = await self._repository.provider_totals_system(period, filters=filters)
+        daily_by_provider = await self._repository.daily_provider_system(period, filters=filters)
         return SystemUsageReportDTO(
             period_start=period.start,
             period_end=period.end,
             totals=totals,
             per_user=per_user,
             daily=daily,
+            per_provider=per_provider,
+            daily_by_provider=daily_by_provider,
         )

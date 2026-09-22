@@ -200,7 +200,9 @@ async def test_usage_filters_provider_and_model_on_all_aggregates(
 
     async with sqlite_sessionmaker() as session:
         repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
-        filters = UsageFilters(provider=" Claude ", model="claude-sonnet")
+        filters = UsageFilters(
+            providers=frozenset({" Claude "}), models=frozenset({"claude-sonnet"})
+        )
 
         assert (await repo.system_totals(_PERIOD, filters=filters)).message_count == 1
         assert len(await repo.daily_system(_PERIOD, filters=filters)) == 1
@@ -209,6 +211,76 @@ async def test_usage_filters_provider_and_model_on_all_aggregates(
         assert (await repo.user_stats(_PERIOD, filters=filters)).active_count == 1
         assert len(await repo.per_conversation(_PERIOD, limit=10, filters=filters)) == 1
 
-        unknown = UsageFilters(provider="Gemini")
+        unknown = UsageFilters(providers=frozenset({"Gemini"}))
         assert (await repo.system_totals(_PERIOD, filters=unknown)).message_count == 0
         assert await repo.daily_system(_PERIOD, filters=unknown) == []
+
+
+async def _seed_second_provider(session: AsyncSession, conversation_id: Any) -> None:
+    """Un segundo turno de OTRO proveedor en la misma conversación: prueba
+    que el desglose por proveedor no mezcla ni pisa filas."""
+    session.add(
+        MessageModel(
+            id=uuid4(),
+            conversation_id=conversation_id,
+            role="assistant",
+            content="respuesta 2",
+            usage={"input_tokens": 60, "output_tokens": 30},
+            cost_usd=Decimal("0.002000"),
+            provider="Gemini",
+            model="gemini-flash-latest",
+            created_at=datetime(2026, 6, 2, 15, 30, tzinfo=UTC),
+        )
+    )
+    await session.commit()
+
+
+async def test_provider_totals_group_by_provider_and_model(sqlite_sessionmaker: Any) -> None:
+    async with sqlite_sessionmaker() as session:
+        conversation = await _seed(session)
+        await _seed_second_provider(session, conversation.id)
+
+    async with sqlite_sessionmaker() as session:
+        repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
+
+        system = await repo.provider_totals_system(_PERIOD)
+        by_provider = {(p.provider, p.model): p.totals for p in system}
+        assert by_provider[("Claude", "claude-sonnet")].input_tokens == 100
+        assert by_provider[("Gemini", "gemini-flash-latest")].input_tokens == 60
+
+        scoped = await repo.provider_totals_for_user(7, _PERIOD, erp_database_id=_DATABASE_ID)
+        assert {p.provider for p in scoped} == {"Claude", "Gemini"}
+
+
+async def test_daily_provider_breaks_down_by_day_and_provider(sqlite_sessionmaker: Any) -> None:
+    async with sqlite_sessionmaker() as session:
+        conversation = await _seed(session)
+        await _seed_second_provider(session, conversation.id)
+
+    async with sqlite_sessionmaker() as session:
+        repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
+
+        system = await repo.daily_provider_system(_PERIOD)
+        assert {(str(d.day), d.provider) for d in system} == {
+            ("2026-06-01", "Claude"),
+            ("2026-06-02", "Gemini"),
+        }
+
+        scoped = await repo.daily_provider_for_user(7, _PERIOD, erp_database_id=_DATABASE_ID)
+        assert len(scoped) == 2
+
+
+async def test_provider_filter_accepts_multiple_values(sqlite_sessionmaker: Any) -> None:
+    """Selección múltiple: dos proveedores a la vez, un tercero se excluye."""
+    async with sqlite_sessionmaker() as session:
+        conversation = await _seed(session)
+        await _seed_second_provider(session, conversation.id)
+
+    async with sqlite_sessionmaker() as session:
+        repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
+        filters = UsageFilters(providers=frozenset({"Claude", "Gemini"}))
+        totals = await repo.system_totals(_PERIOD, filters=filters)
+        assert totals.message_count == 2
+
+        only_claude = UsageFilters(providers=frozenset({"Claude"}))
+        assert (await repo.system_totals(_PERIOD, filters=only_claude)).message_count == 1

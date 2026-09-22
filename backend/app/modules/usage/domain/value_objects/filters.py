@@ -1,15 +1,26 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+
+def _empty_set() -> frozenset[str]:
+    return frozenset()
 
 
 @dataclass(frozen=True, slots=True)
 class UsageFilters:
-    """Optional dimensions used to narrow consumption aggregates."""
+    """Optional dimensions used to narrow consumption aggregates.
 
-    provider: str | None = None
-    model: str | None = None
+    Multi-valued: an empty set means "no filter on this dimension" (same
+    semantics as the old `None`). Several providers can be selected at
+    once, e.g. to compare Claude against Gemini in the same view.
+    """
+
+    providers: frozenset[str] = field(default_factory=_empty_set)
+    models: frozenset[str] = field(default_factory=_empty_set)
 
     def __post_init__(self) -> None:
-        if self.provider is not None:
-            object.__setattr__(self, "provider", self.provider.strip() or None)
-        if self.model is not None:
-            object.__setattr__(self, "model", self.model.strip() or None)
+        object.__setattr__(
+            self, "providers", frozenset(p.strip() for p in self.providers if p.strip())
+        )
+        object.__setattr__(
+            self, "models", frozenset(m.strip() for m in self.models if m.strip())
+        )

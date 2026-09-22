@@ -11,7 +11,9 @@ from app.modules.usage.application.dtos import (
 from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
+    DailyProviderUsage,
     DailyUsage,
+    ProviderUsage,
     UsageTotals,
     UserStats,
     UserUsage,
@@ -56,6 +58,26 @@ class DailyUsageResponse(BaseModel):
         return cls(day=d.day, totals=UsageTotalsResponse.from_vo(d.totals))
 
 
+class ProviderUsageResponse(BaseModel):
+    provider: str | None
+    model: str | None
+    totals: UsageTotalsResponse
+
+    @classmethod
+    def from_vo(cls, p: ProviderUsage) -> "ProviderUsageResponse":
+        return cls(provider=p.provider, model=p.model, totals=UsageTotalsResponse.from_vo(p.totals))
+
+
+class DailyProviderUsageResponse(BaseModel):
+    day: date
+    provider: str | None
+    totals: UsageTotalsResponse
+
+    @classmethod
+    def from_vo(cls, d: DailyProviderUsage) -> "DailyProviderUsageResponse":
+        return cls(day=d.day, provider=d.provider, totals=UsageTotalsResponse.from_vo(d.totals))
+
+
 class UserUsageResponse(BaseModel):
     user_id: int | None
     totals: UsageTotalsResponse
@@ -71,6 +93,8 @@ class UserUsageReportResponse(BaseModel):
     period_end: datetime
     totals: UsageTotalsResponse
     daily: list[DailyUsageResponse]
+    per_provider: list[ProviderUsageResponse]
+    daily_by_provider: list[DailyProviderUsageResponse]
     # Tasa de cambio para que la vista convierta USD → COP. Se expone acá
     # para que haya una única fuente de verdad (configurada en backend).
     usd_to_cop_rate: float
@@ -85,6 +109,10 @@ class UserUsageReportResponse(BaseModel):
             period_end=dto.period_end,
             totals=UsageTotalsResponse.from_vo(dto.totals),
             daily=[DailyUsageResponse.from_vo(d) for d in dto.daily],
+            per_provider=[ProviderUsageResponse.from_vo(p) for p in dto.per_provider],
+            daily_by_provider=[
+                DailyProviderUsageResponse.from_vo(d) for d in dto.daily_by_provider
+            ],
             usd_to_cop_rate=usd_to_cop_rate,
         )
 
@@ -95,6 +123,8 @@ class SystemUsageReportResponse(BaseModel):
     totals: UsageTotalsResponse
     per_user: list[UserUsageResponse]
     daily: list[DailyUsageResponse]
+    per_provider: list[ProviderUsageResponse]
+    daily_by_provider: list[DailyProviderUsageResponse]
     usd_to_cop_rate: float
 
     @classmethod
@@ -107,6 +137,10 @@ class SystemUsageReportResponse(BaseModel):
             totals=UsageTotalsResponse.from_vo(dto.totals),
             per_user=[UserUsageResponse.from_vo(u) for u in dto.per_user],
             daily=[DailyUsageResponse.from_vo(d) for d in dto.daily],
+            per_provider=[ProviderUsageResponse.from_vo(p) for p in dto.per_provider],
+            daily_by_provider=[
+                DailyProviderUsageResponse.from_vo(d) for d in dto.daily_by_provider
+            ],
             usd_to_cop_rate=usd_to_cop_rate,
         )
 

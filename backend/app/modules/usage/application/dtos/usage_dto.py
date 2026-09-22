@@ -3,7 +3,9 @@ from datetime import datetime
 
 from app.modules.usage.domain.value_objects import (
     ConversationStats,
+    DailyProviderUsage,
     DailyUsage,
+    ProviderUsage,
     UsageTotals,
     UserStats,
     UserUsage,
@@ -12,13 +14,15 @@ from app.modules.usage.domain.value_objects import (
 
 @dataclass(frozen=True)
 class UserUsageReportDTO:
-    """Reporte de consumo de un usuario: total + serie diaria."""
+    """Reporte de consumo de un usuario: total + serie diaria + proveedor."""
 
     user_id: int
     period_start: datetime
     period_end: datetime
     totals: UsageTotals
     daily: list[DailyUsage]
+    per_provider: list[ProviderUsage]
+    daily_by_provider: list[DailyProviderUsage]
 
 
 @dataclass(frozen=True)
@@ -30,6 +34,8 @@ class SystemUsageReportDTO:
     totals: UsageTotals
     per_user: list[UserUsage]
     daily: list[DailyUsage]
+    per_provider: list[ProviderUsage]
+    daily_by_provider: list[DailyProviderUsage]
 
 
 @dataclass(frozen=True)

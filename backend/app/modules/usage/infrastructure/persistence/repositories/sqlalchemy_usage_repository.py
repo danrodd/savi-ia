@@ -30,7 +30,9 @@ from app.modules.usage.domain.interfaces import UsageRepository
 from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
+    DailyProviderUsage,
     DailyUsage,
+    ProviderUsage,
     UsageFilters,
     UsagePeriod,
     UsageTotals,
@@ -188,10 +190,10 @@ class SqlAlchemyUsageRepository(UsageRepository):
             if owner_erp_database_id is not None:
                 conditions.append(ConversationModel.owner_erp_database_id == owner_erp_database_id)
         if filters is not None:
-            if filters.provider is not None:
-                conditions.append(MessageModel.provider == filters.provider)
-            if filters.model is not None:
-                conditions.append(MessageModel.model == filters.model)
+            if filters.providers:
+                conditions.append(MessageModel.provider.in_(filters.providers))
+            if filters.models:
+                conditions.append(MessageModel.model.in_(filters.models))
         return and_(*conditions)
 
     async def _totals(
@@ -245,6 +247,74 @@ class SqlAlchemyUsageRepository(UsageRepository):
         rows = (await self._session.execute(stmt)).mappings().all()
         return [DailyUsage(day=_as_date(row["day"]), totals=_row_to_totals(row)) for row in rows]
 
+    async def _provider_totals(
+        self,
+        period: UsagePeriod,
+        *,
+        user_id: int | None,
+        owner_erp_database_id: UUID | None = None,
+        filters: UsageFilters | None = None,
+    ) -> list[ProviderUsage]:
+        """Agregado por (proveedor, modelo). Siempre con modelo: el
+        desglose por proveedor solo lo arma la vista sumando las filas
+        que comparten `provider` — evita duplicar la agregación en SQL."""
+        provider_col = MessageModel.provider.label("provider")
+        model_col = MessageModel.model.label("model")
+        cost = _cost_sum().label("cost_usd")
+        stmt = (
+            select(provider_col, model_col, *_totals_columns())
+            .select_from(MessageModel)
+            .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
+            .where(
+                self._scoped(
+                    period,
+                    user_id=user_id,
+                    owner_erp_database_id=owner_erp_database_id,
+                    filters=filters,
+                )
+            )
+            .group_by(provider_col, model_col)
+            .order_by(cost.desc())
+        )
+        rows = (await self._session.execute(stmt)).mappings().all()
+        return [
+            ProviderUsage(provider=row["provider"], model=row["model"], totals=_row_to_totals(row))
+            for row in rows
+        ]
+
+    async def _daily_provider(
+        self,
+        period: UsagePeriod,
+        *,
+        user_id: int | None,
+        owner_erp_database_id: UUID | None = None,
+        filters: UsageFilters | None = None,
+    ) -> list[DailyProviderUsage]:
+        day = self._day_bucket().label("day")
+        provider_col = MessageModel.provider.label("provider")
+        stmt = (
+            select(day, provider_col, *_totals_columns())
+            .select_from(MessageModel)
+            .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
+            .where(
+                self._scoped(
+                    period,
+                    user_id=user_id,
+                    owner_erp_database_id=owner_erp_database_id,
+                    filters=filters,
+                )
+            )
+            .group_by(day, provider_col)
+            .order_by(day)
+        )
+        rows = (await self._session.execute(stmt)).mappings().all()
+        return [
+            DailyProviderUsage(
+                day=_as_date(row["day"]), provider=row["provider"], totals=_row_to_totals(row)
+            )
+            for row in rows
+        ]
+
     async def totals_for_user(
         self,
         user_id: int,
@@ -275,6 +345,30 @@ class SqlAlchemyUsageRepository(UsageRepository):
             filters=filters,
         )
 
+    async def provider_totals_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> list[ProviderUsage]:
+        return await self._provider_totals(
+            period, user_id=user_id, owner_erp_database_id=erp_database_id, filters=filters
+        )
+
+    async def daily_provider_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> list[DailyProviderUsage]:
+        return await self._daily_provider(
+            period, user_id=user_id, owner_erp_database_id=erp_database_id, filters=filters
+        )
+
     async def system_totals(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> UsageTotals:
@@ -284,6 +378,16 @@ class SqlAlchemyUsageRepository(UsageRepository):
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[DailyUsage]:
         return await self._daily(period, user_id=None, filters=filters)
+
+    async def provider_totals_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[ProviderUsage]:
+        return await self._provider_totals(period, user_id=None, filters=filters)
+
+    async def daily_provider_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DailyProviderUsage]:
+        return await self._daily_provider(period, user_id=None, filters=filters)
 
     async def per_user(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None

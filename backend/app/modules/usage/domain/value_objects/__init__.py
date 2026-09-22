@@ -6,7 +6,9 @@ from app.modules.usage.domain.value_objects.kpis import (
 )
 from app.modules.usage.domain.value_objects.period import UsagePeriod
 from app.modules.usage.domain.value_objects.usage_totals import (
+    DailyProviderUsage,
     DailyUsage,
+    ProviderUsage,
     UsageTotals,
     UserUsage,
 )
@@ -14,7 +16,9 @@ from app.modules.usage.domain.value_objects.usage_totals import (
 __all__ = [
     "ConversationStats",
     "ConversationUsage",
+    "DailyProviderUsage",
     "DailyUsage",
+    "ProviderUsage",
     "UsagePeriod",
     "UsageFilters",
     "UsageTotals",

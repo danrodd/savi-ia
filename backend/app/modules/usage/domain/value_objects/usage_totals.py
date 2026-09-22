@@ -46,6 +46,29 @@ class DailyUsage:
 
 
 @dataclass(frozen=True, slots=True)
+class ProviderUsage:
+    """Consumo agregado de un (proveedor, modelo) en el período consultado.
+
+    Siempre agrupado por modelo: el desglose por proveedor solo (sin
+    modelo) lo arma la vista sumando las filas que comparten `provider`.
+    """
+
+    provider: str | None
+    model: str | None
+    totals: UsageTotals
+
+
+@dataclass(frozen=True, slots=True)
+class DailyProviderUsage:
+    """Consumo agregado de un día, desglosado por proveedor (no por modelo:
+    alimenta la barra apilada, donde una serie por modelo sería ilegible)."""
+
+    day: date
+    provider: str | None
+    totals: UsageTotals
+
+
+@dataclass(frozen=True, slots=True)
 class UserUsage:
     """Consumo agregado de un usuario en el período consultado.
 

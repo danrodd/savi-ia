@@ -19,7 +19,9 @@ from app.modules.usage.domain.interfaces import UsageRepository
 from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
+    DailyProviderUsage,
     DailyUsage,
+    ProviderUsage,
     UsageFilters,
     UsagePeriod,
     UsageTotals,
@@ -77,6 +79,26 @@ class _FakeRepo(UsageRepository):
     ) -> list[DailyUsage]:  # noqa: ARG002
         return []
 
+    async def provider_totals_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> list[ProviderUsage]:  # noqa: ARG002
+        return []
+
+    async def daily_provider_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> list[DailyProviderUsage]:  # noqa: ARG002
+        return []
+
     async def system_totals(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> UsageTotals:  # noqa: ARG002
@@ -90,6 +112,16 @@ class _FakeRepo(UsageRepository):
     async def daily_system(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[DailyUsage]:  # noqa: ARG002
+        return []
+
+    async def provider_totals_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[ProviderUsage]:  # noqa: ARG002
+        return []
+
+    async def daily_provider_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DailyProviderUsage]:  # noqa: ARG002
         return []
 
     async def conversation_stats(

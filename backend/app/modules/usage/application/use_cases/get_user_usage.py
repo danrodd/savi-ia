@@ -27,10 +27,18 @@ class GetUserUsageUseCase:
         daily = await self._repository.daily_for_user(
             user_id, period, erp_database_id=erp_database_id, filters=filters
         )
+        per_provider = await self._repository.provider_totals_for_user(
+            user_id, period, erp_database_id=erp_database_id, filters=filters
+        )
+        daily_by_provider = await self._repository.daily_provider_for_user(
+            user_id, period, erp_database_id=erp_database_id, filters=filters
+        )
         return UserUsageReportDTO(
             user_id=user_id,
             period_start=period.start,
             period_end=period.end,
             totals=totals,
             daily=daily,
+            per_provider=per_provider,
+            daily_by_provider=daily_by_provider,
         )

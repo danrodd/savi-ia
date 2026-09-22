@@ -22,7 +22,9 @@ from app.modules.usage.domain.interfaces import UsageRepository
 from app.modules.usage.domain.value_objects import (
     ConversationStats,
     ConversationUsage,
+    DailyProviderUsage,
     DailyUsage,
+    ProviderUsage,
     UsageFilters,
     UsagePeriod,
     UsageTotals,
@@ -74,6 +76,28 @@ class _FakeUsageRepo(UsageRepository):
         self.calls.append(("daily_for_user", (user_id, period, erp_database_id, filters)))
         return [DailyUsage(day=date(2026, 5, 15), totals=_TOTALS)]
 
+    async def provider_totals_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> list[ProviderUsage]:
+        self.calls.append(("provider_totals_for_user", (user_id, period, erp_database_id, filters)))
+        return [ProviderUsage(provider="claude", model="claude-sonnet-5", totals=_TOTALS)]
+
+    async def daily_provider_for_user(
+        self,
+        user_id: int,
+        period: UsagePeriod,
+        *,
+        erp_database_id: UUID,
+        filters: UsageFilters | None = None,
+    ) -> list[DailyProviderUsage]:
+        self.calls.append(("daily_provider_for_user", (user_id, period, erp_database_id, filters)))
+        return [DailyProviderUsage(day=date(2026, 5, 15), provider="claude", totals=_TOTALS)]
+
     async def system_totals(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> UsageTotals:
@@ -94,6 +118,18 @@ class _FakeUsageRepo(UsageRepository):
     ) -> list[DailyUsage]:
         self.calls.append(("daily_system", (period, filters)))
         return [DailyUsage(day=date(2026, 5, 15), totals=_TOTALS)]
+
+    async def provider_totals_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[ProviderUsage]:
+        self.calls.append(("provider_totals_system", (period, filters)))
+        return [ProviderUsage(provider="claude", model="claude-sonnet-5", totals=_TOTALS)]
+
+    async def daily_provider_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DailyProviderUsage]:
+        self.calls.append(("daily_provider_system", (period, filters)))
+        return [DailyProviderUsage(day=date(2026, 5, 15), provider="claude", totals=_TOTALS)]
 
     async def conversation_stats(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
@@ -140,6 +176,8 @@ async def test_user_usage_arma_reporte_con_totales_y_serie() -> None:
     assert report.totals == _TOTALS
     assert len(report.daily) == 1
     assert report.daily[0].day == date(2026, 5, 15)
+    assert report.per_provider[0].provider == "claude"
+    assert report.daily_by_provider[0].provider == "claude"
 
 
 @pytest.mark.asyncio
@@ -160,7 +198,7 @@ async def test_user_usage_propaga_scope_de_usuario_al_repo() -> None:
 async def test_user_usage_propaga_filtros() -> None:
     repo = _FakeUsageRepo()
     use_case = GetUserUsageUseCase(repo)
-    filters = UsageFilters(provider="Claude", model=" claude-sonnet ")
+    filters = UsageFilters(providers=frozenset({"Claude"}), models=frozenset({" claude-sonnet "}))
 
     await use_case.execute(
         user_id=99,
@@ -192,6 +230,8 @@ async def test_system_usage_arma_reporte_global() -> None:
     # El usuario legado (None) sigue contando.
     assert report.per_user[1].user_id is None
     assert len(report.daily) == 1
+    assert report.per_provider[0].provider == "claude"
+    assert report.daily_by_provider[0].provider == "claude"
 
 
 @pytest.mark.asyncio
@@ -202,4 +242,10 @@ async def test_system_usage_no_filtra_por_usuario() -> None:
     await use_case.execute(period=_PERIOD)
 
     called = {name for name, _ in repo.calls}
-    assert called == {"system_totals", "per_user", "daily_system"}
+    assert called == {
+        "system_totals",
+        "per_user",
+        "daily_system",
+        "provider_totals_system",
+        "daily_provider_system",
+    }
