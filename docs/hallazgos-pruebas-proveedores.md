@@ -16,14 +16,14 @@
 
 ## Resumen de la corrida 1 (Claude)
 
-| # | Hallazgo | Tipo | Severidad |
-|---|---|---|---|
-| 1 | Los filtros de fecha rompen **toda** consulta de ventas | Bug | **Bloqueante** |
-| 2 | El mensaje de error invita al modelo a reintentar en loop | Bug | Alta |
-| 3 | La respuesta no se percibe en streaming: llega completa al final | A investigar | Media |
-| 4 | No hay aviso cuando termina un turno en segundo plano | Falta funcionalidad | Media |
-| 5 | Una pregunta del catálogo de conocimiento no resuelve | A investigar | Baja |
-| 6 | Cartera, proveedores y catálogo respondieron bien | Correcto | — |
+| # | Hallazgo | Tipo | Severidad | Estado |
+|---|---|---|---|---|
+| 1 | Los filtros de fecha rompen **toda** consulta de ventas | Bug | **Bloqueante** | ✅ Corregido (y extendido a filtros numéricos y booleanos, misma clase de bug) |
+| 2 | El mensaje de error invita al modelo a reintentar en loop | Bug | Alta | ⚠️ Parcial — resuelto para tipos, falta la separación general |
+| 3 | La respuesta no se percibe en streaming: llega completa al final | A investigar | Media | 🔍 Descartado bug de backend; ver evidencia de la Corrida 2 |
+| 4 | No hay aviso cuando termina un turno en segundo plano | Falta funcionalidad | Media | ⬜ Abierto |
+| 5 | Una pregunta del catálogo de conocimiento no resuelve | Bug | Baja | ✅ Corregido (el loader nunca leía `shared/faqs/`) |
+| 6 | Cartera, proveedores y catálogo respondieron bien | Correcto | — | — |
 
 ---
 
@@ -111,9 +111,32 @@ fecha, ejecutada contra **Postgres/asyncpg**. Es importante que el test corra
 contra Postgres: SQLite convierte el string en silencio y el bug no se
 reproduce.
 
+### El mismo bug estaba vivo en los filtros numéricos y booleanos
+
+Una auditoría posterior encontró que el primer fix cubría **solo `date`**.
+`FilterValueType` declaraba `"number"` y `"bool"`, pero `_coerce_value` los
+ignoraba: devolvía el valor tal cual. Verificado contra Postgres real:
+
+```
+bind '123'  a bigint  → DataError: 'str' object cannot be interpreted as an integer
+bind 'true' a boolean → DataError
+bind 1      a boolean → DataError
+```
+
+Ocho filtros del catálogo apuntaban a columnas `bigint` o `boolean` sin tipar:
+`terceros.id`, `terceros.es_cliente`, `terceros.es_proveedor`,
+`terceros.activo`, `ventas.cliente_id`, `ventas.numero`,
+`ventas_detalle.producto_id`, `ventas_detalle.cliente_id`.
+
+Era el mismo bug con el mismo disfraz de intermitencia: si el modelo manda el
+id como número anda, si lo manda como string revienta. **Corregido**: los tres
+tipos convierten, `bool` se corta antes que `int` (en Python `True` es `1` y
+habría filtrado por algo que nadie pidió), y hay tests de los tres contra
+Postgres real.
+
 ---
 
-## Hallazgo 2 — El mensaje de error invita a reintentar en loop
+## Hallazgo 2 — El mensaje de error invita a reintentar en loop — PARCIAL
 
 El texto que recibe el modelo dice "problema técnico" e "intentá reformular".
 Ante eso, el modelo asume una falla transitoria de conexión y reintenta — cosa
@@ -137,6 +160,25 @@ Separar los dos casos en el texto que vuelve al modelo:
 
 Hoy los dos caen en el mismo `except Exception` de `run_semantic_query` y salen
 con el mismo texto. Distinguirlos evita el loop y ahorra tokens.
+
+### Qué se hizo y qué falta
+
+**Resuelto para el caso que disparó todo**, como efecto del fix del Hallazgo 1:
+la validación de tipos ahora ocurre en `compile_query`, que está dentro del
+primer `try/except SemanticQueryError` de `run_semantic_query`. Un filtro mal
+tipado sale como *"No pude armar la consulta: el filtro 'fecha' espera una
+fecha en formato AAAA-MM-DD…"* — accionable, y el modelo corrige en vez de
+reintentar igual.
+
+**Falta la separación general.** Cualquier error que ocurra al EJECUTAR
+(timeout, conexión caída, un error de Postgres no previsto) sigue cayendo en el
+`except Exception` genérico y saliendo como "Hubo un problema técnico". Para
+esos casos el texto es razonable — son transitorios de verdad —, pero no hay
+distinción explícita ni un "no reintentes" para los determinísticos que
+todavía puedan escaparse hasta la ejecución.
+
+Queda abierto. Prioridad baja ahora que la causa principal (tipos) se ataja
+antes de llegar ahí.
 
 ---
 
@@ -162,6 +204,29 @@ catálogo). Si eso se escribe progresivamente, la hipótesis 1 es la correcta y
 no hay bug: es cómo responde el modelo. Si tampoco streamea, hay que buscar el
 buffer.
 
+### Evidencia de la Corrida 2 — apunta a la hipótesis 1
+
+En la corrida con Gemini el streaming **sí llegó progresivo**, en muchos
+`text_delta` chicos. La respuesta larga (la tabla mes a mes de 2025) se armó en
+~15 eventos sucesivos:
+
+```
+{"text": "V", ...}
+{"text": "iene **creciendo de forma sostenida** mes a mes a lo largo del ", ...}
+{"text": " 2025. Arrancamos con un ritmo más moderado en mayo y la facturación subió", ...}
+…
+```
+
+O sea: **la plomería SSE entrega deltas a medida que llegan, no bufferea**. Lo
+que se percibió como "todo de golpe" con Claude era la hipótesis 1 — en un
+turno con 10-15 llamadas a herramientas, el modelo no escribe nada hasta tener
+el último resultado, y el texto final es corto.
+
+Queda una comprobación pendiente para cerrarlo del todo: que el componente del
+chat en el navegador pinte esos deltas a medida que llegan (acá se verificó el
+stream del backend, no el render). Pero la hipótesis de "bug de buffering en el
+backend" queda descartada.
+
 ---
 
 ## Hallazgo 4 — Falta el aviso de turno terminado en segundo plano
@@ -179,22 +244,24 @@ de respuestas nuevas, o una notificación del sistema.
 
 ---
 
-## Hallazgo 5 — Una pregunta del catálogo no resuelve
+## Hallazgo 5 — Una pregunta del catálogo no resuelve — CORREGIDO
 
 `¿Cómo le asigno permisos a un usuario?` no resolvió, mientras
 `¿Para qué sirve el formulario frmGestionCartera?` sí. En general el bloque de
 funciones del sistema respondió bien.
 
-Esa pregunta está en las FAQs **compartidas** (`data/shared/faqs/`), no dentro
-de un módulo. Hipótesis a verificar, en este orden:
+**Causa real**: ninguna de las dos hipótesis iniciales (filtro de módulos,
+matching de intención). El loader del catálogo **nunca leía
+`data/shared/faqs/`**. En `load_static_catalog`, el `faqs.extend(...)` vivía
+dentro del loop `for dossier in modules_dir.iterdir()`, que solo recorre
+`modules/<slug>/faqs/`. De `shared/` solo se leía `glossary.json`.
 
-1. El filtro de módulos permitidos (D3) descarta las FAQs compartidas cuando el
-   usuario tiene módulos acotados.
-2. La búsqueda por intención no matchea esa formulación, y haría falta afinar el
-   texto de la FAQ o su indexación.
+Resultado: las 4 FAQs transversales (crear usuario, asignar permisos, crear un
+presupuesto, mantenimiento de vehículo) se cargaban en **cero** archivos. La
+FAQ existía en el repo y era invisible en runtime.
 
-Se verifica llamando `consultar_conocimiento` con `tipo: "faq"` y esa pregunta,
-y comparando con `tipo: "intencion"`.
+**Corregido** en `static_catalog.py`, con test de regresión sobre el catálogo
+mínimo y un sanity check contra el catálogo real.
 
 ---
 
@@ -216,15 +283,32 @@ y comparando con `tipo: "intencion"`.
 
 ### Automatizadas
 
-| Prueba | Cubre | Dónde |
-|---|---|---|
-| Consulta semántica sobre `ventas` con filtro de fecha contra Postgres | Hallazgo 1 | Test de integración del backend |
-| Filtro de fecha con valor inválido devuelve error accionable y no genérico | Hallazgo 2 | Test unitario del compilador |
-| Cada tipo de filtro del catálogo (`date`, `text`, `number`, `bool`) bindea correctamente | Hallazgo 1, prevención | Test unitario del compilador |
-| Pregunta de ventas con rango de fechas de punta a punta | Hallazgos 1 y 2 | E2E con proveedor estable |
+| Prueba | Cubre | Dónde | Estado |
+|---|---|---|---|
+| Consulta semántica sobre `ventas` con filtro de fecha contra Postgres | Hallazgo 1 | `test_query_compiler_postgres_integration.py` | ✅ |
+| Filtro de fecha con valor inválido devuelve error accionable y no genérico | Hallazgo 2 | `test_query_compiler.py` | ✅ |
+| Cada tipo de filtro del catálogo (`date`, `text`, `number`, `bool`) bindea correctamente | Hallazgo 1, prevención | `test_query_compiler.py` + integración contra Postgres | ✅ |
+| Consulta de ventas con rango de fechas de punta a punta | Hallazgos 1 y 2 | `test_catalog_against_real_erp.py` | ✅ |
 
-> El test del hallazgo 1 **debe** correr contra Postgres. Con SQLite el string
-> se convierte solo y el bug queda invisible.
+> Los tests contra Postgres **deben** correr contra Postgres, no SQLite: SQLite
+> convierte los strings en silencio y el bug queda invisible.
+
+> El último no se hizo como E2E de navegador (como decía el plan original) sino
+> como test de integración del backend contra el ERP real. Razón: el camino
+> "punta a punta" que importa es catálogo → compilador → schema real, y eso es
+> determinístico y gratis. Meter al LLM en el medio lo haría lento, costoso y
+> flaky sin cubrir más código propio.
+
+### Riesgo conocido de la suite E2E
+
+`activateStableProvider` (en `frontend/e2e/helpers.ts`) hace un `PUT` del
+proveedor Claude con `credential_kind: 'local_session'`. Como el tipo de
+credencial cambia respecto del guardado, `_candidate` **no preserva la
+credencial anterior**: correr `chat.spec.ts` o `company-knowledge.spec.ts`
+**borra la API key de Anthropic** que haya configurada.
+
+No es un bug introducido acá y no bloquea nada, pero conviene saberlo antes de
+correr la suite E2E en una instalación con credenciales reales cargadas.
 
 ### Manuales, por proveedor
 

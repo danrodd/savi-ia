@@ -170,9 +170,15 @@ Valida que SAVI conozca el producto: módulos, formularios y dónde está cada c
   en el menú.
 - Si inventa un formulario que no existe en el catálogo: **es alucinación**.
 
-El catálogo cubre 11 módulos: activo fijo, cartera financiera, contabilidad,
-cuenta por cobrar, cuenta por pagar, herramientas, inventario, nómina, tercero,
-venta y un grupo compartido. Hay 29 preguntas frecuentes pre-mapeadas.
+El catálogo cubre **10 módulos**: activo fijo, cartera financiera,
+contabilidad, cuenta por cobrar, cuenta por pagar, herramientas, inventario,
+nómina, tercero y venta. Si SAVI responde "10 módulos", está bien: ése es el
+número correcto.
+
+Hay 29 preguntas frecuentes pre-mapeadas. **25 viven dentro de un módulo y 4
+son transversales** (crear usuario, asignar permisos, crear un presupuesto,
+registrar mantenimiento de un vehículo): estas últimas no pertenecen a ningún
+módulo y se guardan aparte, en `shared/faqs/`.
 
 ---
 

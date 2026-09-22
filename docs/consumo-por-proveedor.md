@@ -145,11 +145,14 @@ OpenAI. Bloquea cualquier corrida paga cuyo consumo se quiera medir.
   param sigue llamándose `provider` pero pasa a repetible
   (`?provider=claude&provider=gemini`). Un valor único sigue siendo válido: no
   rompe clientes actuales.
-- VO `ProviderUsage(provider, model, totals)` y
-  `per_provider(period, filters, by_model)` → `GROUP BY provider[, model]`.
-- `daily_by_provider()` → filas planas `(day, provider, totals)`; el frontend
-  pivotea. Se elige esto sobre anidar dentro de `DailyUsage` para no cambiar la
-  forma del dato existente.
+- VO `ProviderUsage(provider, model, totals)`, con dos métodos por scope:
+  `provider_totals_system()` y `provider_totals_for_user()` →
+  `GROUP BY provider, model`. **Siempre** agrupa por modelo (no hay flag
+  `by_model`): el nivel "solo proveedor" lo arma la vista sumando las filas
+  que comparten proveedor, y así no se duplica la agregación en SQL.
+- `daily_provider_system()` / `daily_provider_for_user()` → filas planas
+  `(day, provider, totals)`; el frontend pivotea. Se elige esto sobre anidar
+  dentro de `DailyUsage` para no cambiar la forma del dato existente.
 - ~~`GET /usage/dimensions?from&to`~~ — **no se construyó**, ver sección 8:
   al quedar el filtro solo por proveedor (cerrado, 3 valores), dejó de hacer
   falta.
@@ -194,7 +197,9 @@ y desglose. Es el requisito central.
   dona para comparar magnitudes) más la apilada diaria.
 - Tab KPIs: las tres gráficas actuales recalculadas bajo filtro, más **costo por
   turno comparado entre proveedores** — el número con el que se decide con cuál
-  operar.
+  operar. Sale de `per_provider`, que el panel ya cargaba: sin llamada nueva.
+  Lleva la advertencia de que Claude informa costo real y los otros se estiman,
+  porque un proveedor sin tarifa cargada aparece más barato de lo que es.
 - ~~Drill-down: click en una barra que fija el filtro a esa fecha~~ — **no se
   construyó**, ver sección 8. Identificar qué pasó en un día se hace hoy
   cambiando a "Personalizado" con ese día como rango.
@@ -220,7 +225,7 @@ caché separados, y totales que responden al filtro activo.
 | 1 | `UsageFilters` multivalor, `per_provider`/`daily_by_provider`, `from`/`to`, índice compuesto | Hecho |
 | 2 | `UsageFilterBar` compartida (presets + chips de proveedor) | Hecho |
 | 3 | "Mi consumo": costo por respuesta, desglose expandible, barra apilada | Hecho |
-| 4 | Admin: mismo desglose y barra apilada en "Consumo global" | Hecho |
+| 4 | Admin: mismo desglose y barra apilada en "Consumo global", más costo por turno comparado entre proveedores en KPIs | Hecho |
 
 ### Dos recortes de alcance deliberados frente al diseño original
 
