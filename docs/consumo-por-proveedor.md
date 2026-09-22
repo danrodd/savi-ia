@@ -4,8 +4,9 @@
 > global" del admin) para poder responder: **cuánto gastó cada proveedor, con
 > qué modelo, en qué período**.
 >
-> Estado: **diseñado, sin implementar**. Análisis sobre el código del
-> 2026-09-21.
+> Estado: **implementado** (Fases 1 a 4, 2026-09-21/22). La Fase 0 (cargar
+> tarifas) es una acción manual por instalación, no código — repetirla en
+> cada instancia nueva antes de medir consumo real.
 
 ---
 
@@ -149,8 +150,9 @@ OpenAI. Bloquea cualquier corrida paga cuyo consumo se quiera medir.
 - `daily_by_provider()` → filas planas `(day, provider, totals)`; el frontend
   pivotea. Se elige esto sobre anidar dentro de `DailyUsage` para no cambiar la
   forma del dato existente.
-- `GET /usage/dimensions?from&to` → proveedores y modelos con consumo en el
-  período, con su conteo. Alimenta el filtro sin hardcodear.
+- ~~`GET /usage/dimensions?from&to`~~ — **no se construyó**, ver sección 8:
+  al quedar el filtro solo por proveedor (cerrado, 3 valores), dejó de hacer
+  falta.
 - Parámetros `from` / `to` por fecha, resueltos en la zona de reporte.
 - Migración Alembic con índice compuesto `(role, created_at, provider)`.
   Compuesto simple, **no** parcial: `agent_db` también corre en SQLite para
@@ -163,8 +165,8 @@ hardcodeado del admin:
 
 - Presets: **Hoy · Ayer · 7 días · 30 días · 90 días · Personalizado**.
 - Con "Personalizado", dos campos de fecha.
-- Chips toggleables por proveedor (selección múltiple), poblados desde
-  `/usage/dimensions`.
+- Chips toggleables por proveedor (selección múltiple), estáticos — ver la
+  nota sobre `/usage/dimensions` en la sección 8.
 - El store pasa de `rangeDays` a `from`/`to` explícitos, y de `provider` a
   `providers: string[]`.
 
@@ -193,9 +195,9 @@ y desglose. Es el requisito central.
 - Tab KPIs: las tres gráficas actuales recalculadas bajo filtro, más **costo por
   turno comparado entre proveedores** — el número con el que se decide con cuál
   operar.
-- Para identificar qué pasó: tooltip con el desglose completo del día, y click
-  en una barra que fija el filtro a esa fecha (drill-down hacia las
-  conversaciones más caras de ese día).
+- ~~Drill-down: click en una barra que fija el filtro a esa fecha~~ — **no se
+  construyó**, ver sección 8. Identificar qué pasó en un día se hace hoy
+  cambiando a "Personalizado" con ese día como rango.
 
 ---
 
@@ -210,12 +212,27 @@ caché separados, y totales que responden al filtro activo.
 
 ---
 
-## 8. Orden de trabajo
+## 8. Orden de trabajo — estado real de la entrega
 
-| Fase | Entrega | Bloquea a |
+| Fase | Entrega | Estado |
 |---|---|---|
-| 0 | Tarifas de Gemini y OpenAI cargadas | Cualquier corrida paga medible |
-| 1 | Agregados por proveedor, `/usage/dimensions`, `from`/`to`, índice | Fases 2-4 |
-| 2 | `UsageFilterBar` compartida | Fases 3-4 |
-| 3 | "Mi consumo" rediseñado | — |
-| 4 | Admin: gráficas por proveedor y drill-down | — |
+| 0 | Tarifas de Gemini y OpenAI cargadas | Hecho, por instancia (manual, no código) |
+| 1 | `UsageFilters` multivalor, `per_provider`/`daily_by_provider`, `from`/`to`, índice compuesto | Hecho |
+| 2 | `UsageFilterBar` compartida (presets + chips de proveedor) | Hecho |
+| 3 | "Mi consumo": costo por respuesta, desglose expandible, barra apilada | Hecho |
+| 4 | Admin: mismo desglose y barra apilada en "Consumo global" | Hecho |
+
+### Dos recortes de alcance deliberados frente al diseño original
+
+- **`GET /usage/dimensions` no se construyó.** El diseño original lo proponía
+  para no hardcodear los proveedores del filtro. Pero una vez decidido que el
+  filtro actúa solo sobre proveedor (sección 6) — un conjunto cerrado de 3
+  valores que ya define `ProviderDescriptor` en el backend —, el endpoint
+  dejó de aportar nada: los chips son estáticos
+  (`frontend/src/modules/usage/utils/providers.ts`). Si el filtro alguna vez
+  necesita ser por modelo (que sí rota), ahí sí hace falta ese endpoint.
+- **No hay drill-down** (click en una barra del día para filtrar la tabla de
+  conversaciones a esa fecha). Quedó fuera para acotar el alcance de una
+  entrega ya grande; es la extensión más directa si se pide después —
+  `UsageFilterBar` ya expone `setCustomRange`, así que fijar el rango a un
+  día puntual desde un click es agregar el handler, no rediseñar nada.
