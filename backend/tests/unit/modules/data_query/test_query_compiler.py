@@ -8,6 +8,8 @@ puede cambiar la forma de la consulta.
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 
 from app.modules.data_query.application.query_compiler import compile_query
@@ -48,7 +50,9 @@ ENTIDAD = SemanticEntity(
         "fecha": FieldDef("fecha", 'f."fecha"', "Fecha"),
     },
     filters={
-        "fecha": FilterDef("fecha", 'f."fecha"', (FilterOp.BETWEEN, FilterOp.GTE)),
+        "fecha": FilterDef(
+            "fecha", 'f."fecha"', (FilterOp.BETWEEN, FilterOp.GTE), value_type="date"
+        ),
         "cliente": FilterDef("cliente", 't."nombre"', (FilterOp.CONTAINS, FilterOp.EQ)),
         "numero": FilterDef("numero", 'f."numero"', (FilterOp.EQ,)),
         "estado": FilterDef("estado", 'f."estado"', (FilterOp.IN,)),
@@ -208,6 +212,50 @@ def test_record_mode_requires_the_key_filter() -> None:
 
     with pytest.raises(InvalidQueryError, match="registro"):
         compile_query(query, ENTIDAD)
+
+
+# ── Filtros tipados: fechas se convierten, no se bindean como texto ──────
+#
+# Regresión del bug real de las pruebas con Claude: el LLM manda fechas como
+# string ISO ("2026-03-01"), y asyncpg rechaza un string donde espera un
+# `datetime.date`. El compilador tiene que convertir según `value_type`,
+# no confiar en el tipo que trajo el filtro.
+
+
+def test_date_filter_value_is_coerced_to_a_date_object() -> None:
+    query = _agregado(filtros=[QueryFilter("fecha", FilterOp.GTE, "2026-03-01")])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert date(2026, 3, 1) in compilada.params.values()
+    assert "2026-03-01" not in compilada.params.values()
+
+
+def test_date_filter_between_coerces_both_ends() -> None:
+    query = _agregado(
+        filtros=[QueryFilter("fecha", FilterOp.BETWEEN, ["2025-01-01", "2025-12-31"])]
+    )
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert date(2025, 1, 1) in compilada.params.values()
+    assert date(2025, 12, 31) in compilada.params.values()
+
+
+def test_invalid_date_filter_value_raises_actionable_error() -> None:
+    query = _agregado(filtros=[QueryFilter("fecha", FilterOp.GTE, "no es una fecha")])
+
+    with pytest.raises(InvalidQueryError, match="AAAA-MM-DD"):
+        compile_query(query, ENTIDAD)
+
+
+def test_text_filter_value_is_not_coerced() -> None:
+    """Sin `value_type="date"` el valor viaja tal cual: no todo filtro es fecha."""
+    query = _agregado(filtros=[QueryFilter("cliente", FilterOp.EQ, "2026-03-01")])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert "2026-03-01" in compilada.params.values()
 
 
 def test_record_mode_with_the_key_filter_compiles() -> None:

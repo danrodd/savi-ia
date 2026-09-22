@@ -83,7 +83,7 @@ VENTAS = SemanticEntity(
         ),
     },
     filters={
-        "fecha": FilterDef("fecha", 'f."fecha"', _DATE),
+        "fecha": FilterDef("fecha", 'f."fecha"', _DATE, value_type="date"),
         "cliente_id": FilterDef(
             "cliente_id", 'f."idTercero"', (FilterOp.EQ, FilterOp.IN)
         ),
@@ -150,7 +150,7 @@ VENTAS_DETALLE = SemanticEntity(
     },
     fields={},  # entidad analítica: sin modo detalle/registro
     filters={
-        "fecha": FilterDef("fecha", 'f."fecha"', _DATE),
+        "fecha": FilterDef("fecha", 'f."fecha"', _DATE, value_type="date"),
         "producto_id": FilterDef(
             "producto_id",
             'd."idProducto"',

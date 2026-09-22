@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any, cast
 
 from app.modules.data_query.domain.exceptions import (
@@ -21,7 +22,7 @@ from app.modules.data_query.domain.exceptions import (
     InvalidQueryError,
     UnknownFieldError,
 )
-from app.modules.data_query.domain.semantic_model import SemanticEntity
+from app.modules.data_query.domain.semantic_model import FilterValueType, SemanticEntity
 from app.modules.data_query.domain.semantic_query import (
     FilterOp,
     QueryFilter,
@@ -117,6 +118,25 @@ def _clamp(limite: int, cap: int) -> int:
     return min(limite, cap)
 
 
+def _coerce_value(value: Any, value_type: FilterValueType, campo: str) -> Any:
+    """Convierte el valor del LLM (texto u/o número crudo) al tipo real de
+    la columna. asyncpg es estricto con los tipos y rechaza un string donde
+    espera un `date` — el LLM solo sabe escribir fechas como texto ISO.
+    """
+    if value_type != "date":
+        return value
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            pass
+    raise InvalidQueryError(
+        f"El filtro '{campo}' espera una fecha en formato AAAA-MM-DD, recibí '{value}'."
+    )
+
+
 def _build_where(
     query: SemanticQuery,
     entity: SemanticEntity,
@@ -147,6 +167,7 @@ def _compile_filter(
     valor: Any = flt.valor
 
     if flt.op in _SCALAR_OPS:
+        valor = _coerce_value(valor, fdef.value_type, flt.campo)
         return f"{col} {_SCALAR_OPS[flt.op]} {pc.add(valor)}"
     if flt.op == FilterOp.CONTAINS:
         return f"{col} ILIKE {pc.add(f'%{valor}%')}"
@@ -160,7 +181,9 @@ def _compile_filter(
             raise InvalidQueryError(
                 f"El filtro '{flt.campo}' con 'entre' requiere [inicio, fin]."
             )
-        return f"{col} BETWEEN {pc.add(pair[0])} AND {pc.add(pair[1])}"
+        inicio = _coerce_value(pair[0], fdef.value_type, flt.campo)
+        fin = _coerce_value(pair[1], fdef.value_type, flt.campo)
+        return f"{col} BETWEEN {pc.add(inicio)} AND {pc.add(fin)}"
     if flt.op == FilterOp.IN:
         if isinstance(valor, (list, tuple)):
             values: list[Any] = list(cast(Sequence[Any], valor))
@@ -168,6 +191,7 @@ def _compile_filter(
             values = [valor]
         if not values:
             raise InvalidQueryError(f"El filtro '{flt.campo}' con 'en' requiere valores.")
+        values = [_coerce_value(v, fdef.value_type, flt.campo) for v in values]
         placeholders = ", ".join(pc.add(v) for v in values)
         return f"{col} IN ({placeholders})"
     raise InvalidQueryError(f"Operador no soportado: {flt.op}")

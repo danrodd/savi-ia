@@ -9,8 +9,15 @@ declare.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 from app.modules.data_query.domain.semantic_query import FilterOp
+
+# Tipo de dato real de la columna filtrada. El compilador lo usa para
+# convertir el valor que manda el LLM (siempre texto u/o número crudo)
+# antes de bindearlo — asyncpg es estricto y rechaza un string donde
+# espera un `date`.
+FilterValueType = Literal["text", "date", "number", "bool"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +58,7 @@ class FilterDef:
     sql_column: str   # ej. 'f."idTercero"'
     allowed_ops: tuple[FilterOp, ...]
     requires: tuple[str, ...] = ()
+    value_type: FilterValueType = "text"
 
 
 @dataclass(frozen=True, slots=True)
