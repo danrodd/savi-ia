@@ -260,6 +260,11 @@ def load_static_catalog(root: Path) -> StaticKnowledgeCatalog:
             workflows.extend(_load_dir(dossier / "workflows", WorkflowEntry, optional=True))
             faqs.extend(_load_dir(dossier / "faqs", FaqEntry, optional=True))
 
+    # FAQs transversales (sin módulo dueño, ej. "crear un usuario"). Viven
+    # en `shared/faqs/`, no dentro de ningún `modules/<slug>/`: el loop de
+    # arriba nunca las tocaba y quedaban cargadas siempre en 0 archivos.
+    faqs.extend(_load_dir(root / "shared" / "faqs", FaqEntry, optional=True))
+
     # Glosario: un único archivo con lista. Si no existe, glosario vacío.
     glossary: list[GlossaryEntry] = []
     glossary_path = root / "shared" / "glossary.json"

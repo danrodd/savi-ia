@@ -75,6 +75,18 @@ def _make_minimal_catalog(root: Path) -> None:
             },
         ],
     )
+    _write(
+        root / "shared" / "faqs" / "faq_permisos.json",
+        {
+            "id": "faq_permisos",
+            "question": "¿Cómo asignar permisos a un usuario?",
+            "synonyms": [],
+            "module": None,
+            "answer_summary": "frmPermisoAccionUsuario (módulo Seguridad).",
+            "related_forms": ["frmPermisoAccionUsuario"],
+            "related_workflows": [],
+        },
+    )
 
 
 def test_catalogo_minimo_carga(tmp_path: Path) -> None:
@@ -107,6 +119,18 @@ def test_filtrado_por_modulos_oculta_lo_no_autorizado(tmp_path: Path) -> None:
     assert cat.describe_module(ModuleCode.CONTABILIDAD, allowed_modules=allowed) is None
     assert cat.list_forms_by_module(ModuleCode.CONTABILIDAD, allowed_modules=allowed) == []
     assert cat.search_by_intent("saldo", allowed_modules=allowed, limit=3) == []
+
+
+def test_faqs_compartidas_en_shared_se_cargan(tmp_path: Path) -> None:
+    """Regresión: el loader solo recorría `modules/<slug>/faqs/`. Las FAQs
+    transversales en `shared/faqs/` (sin módulo dueño) nunca se cargaban,
+    así que preguntas como "¿cómo asigno permisos a un usuario?" nunca
+    resolvían aunque la FAQ existiera en el catálogo real."""
+    _make_minimal_catalog(tmp_path)
+    cat = load_static_catalog(tmp_path)
+    hits = cat.answer_faq("¿Cómo le asigno permisos a un usuario?", allowed_modules=None)
+    assert len(hits) == 1
+    assert hits[0].id == "faq_permisos"
 
 
 def test_glosario_es_transversal(tmp_path: Path) -> None:
@@ -177,5 +201,10 @@ def test_catalogo_real_generado_por_bootstrap_carga() -> None:
         limit=3,
     )
     assert len(hits) > 0
+
+    # Las FAQs transversales de `shared/faqs/` (sin módulo dueño) se cargan.
+    faq_hits = cat.answer_faq("¿Cómo le asigno permisos a un usuario?", allowed_modules=None)
+    assert len(faq_hits) > 0
+
     # El top hit debería ser frmConciliacionBancaria.
     assert hits[0].form.name == "frmConciliacionBancaria"
