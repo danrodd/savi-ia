@@ -8,8 +8,10 @@
 
   "compilerOptions": {
     // Vitest runs in a different environment than the application code.
-    // Adjust lib and types accordingly.
-    "lib": [],
+    // Adjust lib and types accordingly. `lib` keeps the same ES2022 baseline
+    // as the app (an empty array drops it and breaks ES2022 built-ins like
+    // `Array.prototype.at`); the DOM comes from the jsdom types instead.
+    "lib": ["ES2022"],
     "types": ["node", "jsdom"],
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
