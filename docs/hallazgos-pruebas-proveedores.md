@@ -372,7 +372,7 @@ que era un bug de SAVI, se probó la key directo contra
 `https://api.openai.com/v1/models` sin pasar por el backend:
 
 ```json
-{"error": {"message": "Incorrect API key provided: sk-proj-***...Y0A1. ...",
+{"error": {"message": "Incorrect API key provided: sk-proj-***...",
            "type": "invalid_request_error", "code": "invalid_api_key"}}
 ```
 
