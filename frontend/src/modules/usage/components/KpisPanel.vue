@@ -10,6 +10,7 @@ import { computed, onMounted } from 'vue'
 import { useUsageStore } from '../stores/usageStore'
 import { downloadCsv, toCsv } from '../utils/csv'
 import { formatCop, formatCopAmount, formatDay, formatTokens, formatUsd } from '../utils/format'
+import { providerLabel } from '../utils/providers'
 import TariffSimulator from './TariffSimulator.vue'
 import UsageChart from './UsageChart.vue'
 
@@ -138,6 +139,57 @@ const tokenOption = computed<Record<string, unknown>>(() => {
   }
 })
 
+// Costo por turno de cada proveedor: el número con el que se decide con
+// cuál operar. Se arma sumando las filas de `per_provider` que comparten
+// proveedor (vienen agrupadas por proveedor+modelo) y dividiendo por sus
+// respuestas — un promedio del total, no el promedio de los promedios.
+const costPerTurnByProvider = computed(() => {
+  // La clave es `string | null` a propósito: un turno legado sin proveedor
+  // tiene que llegar como `null` a `providerLabel` para que lo muestre como
+  // "Sin proveedor" y no como un centinela crudo.
+  const acc = new Map<string | null, { costUsd: number; turns: number }>()
+  for (const row of store.system?.per_provider ?? []) {
+    const key = row.provider
+    const current = acc.get(key) ?? { costUsd: 0, turns: 0 }
+    current.costUsd += row.totals.cost_usd
+    current.turns += row.totals.message_count
+    acc.set(key, current)
+  }
+  return [...acc.entries()]
+    .filter(([, v]) => v.turns > 0)
+    .map(([provider, v]) => ({
+      provider: providerLabel(provider),
+      costPerTurnUsd: v.costUsd / v.turns,
+    }))
+    .sort((a, b) => a.costPerTurnUsd - b.costPerTurnUsd)
+})
+
+const costPerTurnOption = computed<Record<string, unknown>>(() => {
+  const p = palette()
+  const rows = costPerTurnByProvider.value
+  return {
+    tooltip: { trigger: 'axis', valueFormatter: (v: number) => formatCopAmount(v) },
+    grid: { left: 90, right: 24, top: 16, bottom: 32 },
+    xAxis: {
+      type: 'value',
+      axisLabel: { color: p.muted, formatter: (v: number) => formatCopAmount(v) },
+      splitLine: { lineStyle: { color: p.border } },
+    },
+    yAxis: {
+      type: 'category',
+      data: rows.map((r) => r.provider),
+      axisLabel: { color: p.muted },
+    },
+    series: [
+      {
+        type: 'bar',
+        data: rows.map((r) => cop(r.costPerTurnUsd)),
+        itemStyle: { color: p.brand, borderRadius: [0, 3, 3, 0] },
+      },
+    ],
+  }
+})
+
 function userLabel(userId: number | null): string {
   return userId === null ? 'Legado' : `#${userId}`
 }
@@ -256,6 +308,15 @@ onMounted(() => {
         <section class="kp__chart-box">
           <h2 class="kp__chart-title">Composición de tokens</h2>
           <UsageChart :option="tokenOption" :height="300" />
+        </section>
+        <section v-if="costPerTurnByProvider.length > 0" class="kp__chart-box">
+          <h2 class="kp__chart-title">Costo por turno, por proveedor</h2>
+          <UsageChart :option="costPerTurnOption" :height="220" />
+          <p class="kp__chart-note">
+            Ojo al comparar: Claude informa su costo real, Gemini y OpenAI se
+            estiman con la tabla de precios — un proveedor sin tarifa cargada
+            aparece más barato de lo que es.
+          </p>
         </section>
         <section class="kp__chart-box">
           <h2 class="kp__chart-title">Costo por día</h2>
@@ -436,6 +497,13 @@ onMounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: var(--fw-medium);
+}
+
+.kp__chart-note {
+  margin: var(--space-2) 0 0;
+  font-size: 11px;
+  color: var(--text-subtle);
+  line-height: 1.5;
 }
 
 .kp__table-box {
