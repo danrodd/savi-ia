@@ -31,6 +31,7 @@ class LlmProviderDTO:
     implemented: bool
     credential_kinds: tuple[str, ...]
     supports_model_listing: bool
+    reports_cost: bool
     configured: bool
     credential_kind: str | None
     has_credential: bool
@@ -51,6 +52,7 @@ class LlmProviderDTO:
             implemented=descriptor.implemented,
             credential_kinds=tuple(k.value for k in descriptor.credential_kinds),
             supports_model_listing=descriptor.supports_model_listing,
+            reports_cost=descriptor.reports_cost,
             configured=config is not None,
             credential_kind=config.credential_kind.value if config else None,
             has_credential=config.has_credential if config else False,

@@ -17,6 +17,7 @@ class LlmProviderResponse(BaseModel):
     implemented: bool
     credential_kinds: list[str]
     supports_model_listing: bool
+    reports_cost: bool
     configured: bool
     credential_kind: str | None
     has_credential: bool
@@ -35,6 +36,7 @@ class LlmProviderResponse(BaseModel):
             implemented=dto.implemented,
             credential_kinds=list(dto.credential_kinds),
             supports_model_listing=dto.supports_model_listing,
+            reports_cost=dto.reports_cost,
             configured=dto.configured,
             credential_kind=dto.credential_kind,
             has_credential=dto.has_credential,

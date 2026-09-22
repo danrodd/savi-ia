@@ -91,6 +91,8 @@ export interface LlmProvider {
   implemented: boolean
   credential_kinds: LlmCredentialKind[]
   supports_model_listing: boolean
+  /** El proveedor informa el costo facturado del turno: no hay precios que cargar. */
+  reports_cost: boolean
   configured: boolean
   credential_kind: LlmCredentialKind | null
   has_credential: boolean

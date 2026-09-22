@@ -19,6 +19,10 @@ class ProviderDescriptor:
     credential_kinds: tuple[CredentialKind, ...]
     supports_model_listing: bool
     implemented: bool
+    # El proveedor devuelve el costo facturado del turno y no hace falta
+    # cargar precios a mano. Los que no, lo calculan con la tabla de
+    # precios del admin (`compute_cost_usd`): sin precio no hay costo.
+    reports_cost: bool
 
 
 PROVIDER_DESCRIPTORS: tuple[ProviderDescriptor, ...] = (
@@ -33,6 +37,8 @@ PROVIDER_DESCRIPTORS: tuple[ProviderDescriptor, ...] = (
         # API key y OAuth token usan el catálogo directo de Anthropic.
         supports_model_listing=True,
         implemented=True,
+        # `ResultMessage.total_cost_usd` del SDK trae el costo real del turno.
+        reports_cost=True,
     ),
     ProviderDescriptor(
         kind=ProviderKind.GEMINI,
@@ -40,6 +46,7 @@ PROVIDER_DESCRIPTORS: tuple[ProviderDescriptor, ...] = (
         credential_kinds=(CredentialKind.API_KEY,),
         supports_model_listing=True,
         implemented=True,
+        reports_cost=False,
     ),
     ProviderDescriptor(
         kind=ProviderKind.OPENAI,
@@ -48,6 +55,7 @@ PROVIDER_DESCRIPTORS: tuple[ProviderDescriptor, ...] = (
         # `GET /v1/models` lista los modelos visibles para la API key.
         supports_model_listing=True,
         implemented=True,
+        reports_cost=False,
     ),
 )
 

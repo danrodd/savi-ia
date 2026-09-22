@@ -2,6 +2,7 @@
 import {
   CircleCheck,
   CircleDashed,
+  CircleDollarSign,
   Clock,
   FlaskConical,
   KeyRound,
@@ -32,6 +33,17 @@ const status = computed(() => {
   if (p.implemented) return { label: 'Sin configurar', icon: CircleDashed, tone: 'neutral' }
   return { label: 'Próximamente', icon: Clock, tone: 'neutral' }
 })
+
+// Claude devuelve el costo facturado de cada turno, así que no hay precios
+// que cargar. Gemini y OpenAI lo calculan con la tabla del admin: sin el
+// precio del modelo en uso, el turno queda guardado sin costo.
+const missingPrice = computed(
+  () =>
+    !props.provider.reports_cost &&
+    props.provider.is_active &&
+    !!props.provider.chat_model &&
+    !props.provider.pricing[props.provider.chat_model],
+)
 </script>
 
 <template>
@@ -78,10 +90,14 @@ const status = computed(() => {
               : 'Sin probar'
           }}
         </span>
+        <span v-if="provider.reports_cost" class="provider-card__status-item">
+          <CircleDollarSign :size="13" aria-hidden="true" />
+          El proveedor informa el costo de cada respuesta
+        </span>
       </div>
     </div>
-    <p v-if="provider.is_active && provider.chat_model && !provider.pricing[provider.chat_model]" class="provider-card__price-warning">
-      El costo de las respuestas no se va a registrar hasta cargar el precio de este modelo.
+    <p v-if="missingPrice" class="provider-card__price-warning">
+      Falta el precio de {{ provider.chat_model }}: las respuestas se van a guardar sin costo.
     </p>
     <footer class="provider-card__actions">
       <Button variant="secondary" :disabled="!provider.implemented" @click="emit('configure')">{{ provider.configured ? 'Editar' : 'Configurar' }}</Button>
