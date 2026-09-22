@@ -31,12 +31,29 @@ export interface UserUsage {
   totals: UsageTotals
 }
 
+/** Consumo agregado de un (proveedor, modelo). Siempre viene con modelo:
+ * el desglose "por proveedor" se arma sumando las filas que comparten
+ * `provider` en el cliente. */
+export interface ProviderUsage {
+  provider: string | null
+  model: string | null
+  totals: UsageTotals
+}
+
+export interface DailyProviderUsage {
+  day: string
+  provider: string | null
+  totals: UsageTotals
+}
+
 export interface UserUsageReport {
   user_id: number
   period_start: string
   period_end: string
   totals: UsageTotals
   daily: DailyUsage[]
+  per_provider: ProviderUsage[]
+  daily_by_provider: DailyProviderUsage[]
   usd_to_cop_rate: number
 }
 
@@ -46,14 +63,21 @@ export interface SystemUsageReport {
   totals: UsageTotals
   per_user: UserUsage[]
   daily: DailyUsage[]
+  per_provider: ProviderUsage[]
+  daily_by_provider: DailyProviderUsage[]
   usd_to_cop_rate: number
 }
+
+export type UsageProviderKind = 'claude' | 'gemini' | 'openai'
 
 export interface UsageQuery {
   start?: string
   end?: string
-  provider?: 'claude' | 'gemini' | 'openai'
-  model?: string
+  /** Fecha sola (AAAA-MM-DD), interpretada en la zona de reporte del backend. */
+  from?: string
+  to?: string
+  provider?: UsageProviderKind[]
+  model?: string[]
 }
 
 export interface ConversationStats {

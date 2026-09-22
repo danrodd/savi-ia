@@ -1,25 +1,25 @@
 <script setup lang="ts">
 /**
- * Panel "Mi consumo" — total + desglose de tokens + serie diaria del
- * usuario autenticado. Se carga solo (con guarda) al montarse, o sea
- * cuando su tab se activa por primera vez.
+ * Panel "Mi consumo" — total + costo por respuesta + desglose por
+ * proveedor (expandible a modelo) + serie diaria apilada por proveedor.
+ * Se carga solo (con guarda) al montarse, o sea cuando su tab se activa
+ * por primera vez.
  */
 import { computed, onMounted } from 'vue'
 
 import { useUsageStore } from '../stores/usageStore'
-import { formatCop, formatDay, formatTokens, formatUsd } from '../utils/format'
+import { formatCop, formatTokens, formatUsd } from '../utils/format'
+import ProviderBreakdown from './ProviderBreakdown.vue'
+import ProviderDailyChart from './ProviderDailyChart.vue'
 
 const store = useUsageStore()
 const rate = computed(() => store.usdToCopRate)
 
-const dailyMax = computed(() =>
-  (store.mine?.daily ?? []).reduce((max, d) => Math.max(max, d.totals.cost_usd), 0),
-)
-
-function barWidth(costUsd: number): string {
-  if (dailyMax.value <= 0) return '0%'
-  return `${Math.max(2, (costUsd / dailyMax.value) * 100)}%`
-}
+const costPerResponseUsd = computed(() => {
+  const t = store.mine?.totals
+  if (!t || t.message_count === 0) return 0
+  return t.cost_usd / t.message_count
+})
 
 onMounted(() => {
   if (!store.mine && !store.loadingMine) void store.loadMine()
@@ -43,6 +43,11 @@ onMounted(() => {
           <p class="mu__card-foot">
             {{ formatTokens(store.mine.totals.message_count) }} respuestas
           </p>
+        </article>
+        <article class="mu__card">
+          <p class="mu__card-label">Costo por respuesta</p>
+          <p class="mu__card-value">{{ formatCop(costPerResponseUsd, rate) }}</p>
+          <p class="mu__card-foot">{{ formatUsd(costPerResponseUsd) }} USD</p>
         </article>
       </div>
 
@@ -69,20 +74,14 @@ onMounted(() => {
         </div>
       </div>
 
-      <section class="mu__daily" aria-label="Consumo por día">
+      <section class="mu__section" aria-label="Consumo por proveedor">
+        <h2 class="mu__section-title">Por proveedor</h2>
+        <ProviderBreakdown :rows="store.mine.per_provider" :rate="rate" />
+      </section>
+
+      <section v-if="store.mine.daily_by_provider.length > 0" class="mu__section" aria-label="Consumo por día">
         <h2 class="mu__section-title">Por día</h2>
-        <p v-if="store.mine.daily.length === 0" class="mu__hint">
-          Sin consumo en este período.
-        </p>
-        <ul v-else class="mu__day-list">
-          <li v-for="d in store.mine.daily" :key="d.day" class="mu__day">
-            <span class="mu__day-date">{{ formatDay(d.day) }}</span>
-            <span class="mu__day-bar-track">
-              <span class="mu__day-bar" :style="{ width: barWidth(d.totals.cost_usd) }" />
-            </span>
-            <span class="mu__day-cost">{{ formatCop(d.totals.cost_usd, rate) }}</span>
-          </li>
-        </ul>
+        <ProviderDailyChart :daily="store.mine.daily_by_provider" :rate="rate" />
       </section>
     </template>
   </section>
@@ -91,7 +90,7 @@ onMounted(() => {
 <style scoped>
 .mu__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
@@ -166,6 +165,10 @@ onMounted(() => {
   font-variant-numeric: tabular-nums;
 }
 
+.mu__section {
+  margin-bottom: var(--space-6);
+}
+
 .mu__section-title {
   margin: 0 0 var(--space-3);
   font-size: 12px;
@@ -173,51 +176,6 @@ onMounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: var(--fw-medium);
-}
-
-.mu__day-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.mu__day {
-  display: grid;
-  grid-template-columns: 64px 1fr auto;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.mu__day-date {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.mu__day-bar-track {
-  height: 8px;
-  background: var(--surface-subtle);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.mu__day-bar {
-  display: block;
-  height: 100%;
-  background: var(--brand);
-  border-radius: 999px;
-  transition: width var(--duration-slow) var(--ease-out);
-}
-
-.mu__day-cost {
-  font-size: 12px;
-  font-weight: var(--fw-medium);
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
 }
 
 .mu__hint {

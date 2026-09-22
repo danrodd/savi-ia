@@ -3,8 +3,10 @@
  *
  * Sigue el patrón del proyecto: el store ES la capa de datos (no hay
  * vue-query). Mantiene el reporte propio y el global por separado, cada
- * uno con su loading/error, y un rango temporal compartido (7/30/90 días)
- * que se traduce a `start`/`end` ISO al consultar.
+ * uno con su loading/error, y un rango temporal + selección de
+ * proveedores compartidos que se traducen a `from`/`to` (fecha, no
+ * instante) al consultar — el backend corta el día en su zona de
+ * reporte, así "Hoy" y "Ayer" no mezclan turnos de la noche anterior.
  */
 
 import { defineStore } from 'pinia'
@@ -15,18 +17,22 @@ import type {
   ConversationUsage,
   SystemUsageReport,
   UsageKpis,
+  UsageProviderKind,
   UsageQuery,
   UserUsageReport,
 } from '../types'
+import { presetToRange, type RangePreset, toLocalIsoDate } from '../utils/dateRange'
 
-export type RangeDays = 7 | 30 | 90
+export type { RangePreset }
 
 // Tope de filas del detalle por conversación que pedimos al backend.
 const CONVERSATIONS_LIMIT = 500
 
 export const useUsageStore = defineStore('usage', () => {
-  const rangeDays = ref<RangeDays>(30)
-  const provider = ref<UsageQuery['provider']>()
+  const preset = ref<RangePreset>(30)
+  const customFrom = ref<string>(toLocalIsoDate(new Date()))
+  const customTo = ref<string>(toLocalIsoDate(new Date()))
+  const providers = ref<UsageProviderKind[]>([])
   const model = ref('')
 
   const mine = ref<UserUsageReport | null>(null)
@@ -53,15 +59,17 @@ export const useUsageStore = defineStore('usage', () => {
       0,
   )
 
+  function dateRange(): { from: string; to: string } {
+    return presetToRange(preset.value, { from: customFrom.value, to: customTo.value })
+  }
+
   function periodQuery(): UsageQuery {
-    const end = new Date()
-    const start = new Date()
-    start.setDate(start.getDate() - rangeDays.value)
+    const { from, to } = dateRange()
     return {
-      start: start.toISOString(),
-      end: end.toISOString(),
-      provider: provider.value,
-      model: model.value.trim() || undefined,
+      from,
+      to,
+      provider: providers.value.length > 0 ? providers.value : undefined,
+      model: model.value.trim() ? [model.value.trim()] : undefined,
     }
   }
 
@@ -117,33 +125,6 @@ export const useUsageStore = defineStore('usage', () => {
     }
   }
 
-  /** Cambia el rango y recarga lo que ya estaba cargado. */
-  async function setRange(days: RangeDays): Promise<void> {
-    if (days === rangeDays.value) return
-    rangeDays.value = days
-    const tasks: Promise<void>[] = []
-    if (mine.value || loadingMine.value) tasks.push(loadMine())
-    if (system.value || loadingSystem.value) tasks.push(loadSystem())
-    if (kpis.value || loadingKpis.value) tasks.push(loadKpis())
-    if (conversations.value.length > 0 || loadingConversations.value) {
-      tasks.push(loadConversations())
-    }
-    await Promise.all(tasks)
-  }
-
-  async function setProvider(value: UsageQuery['provider']): Promise<void> {
-    if (value === provider.value) return
-    provider.value = value
-    await reloadLoadedReports()
-  }
-
-  async function setModel(value: string): Promise<void> {
-    const next = value.trim()
-    if (next === model.value) return
-    model.value = next
-    await reloadLoadedReports()
-  }
-
   async function reloadLoadedReports(): Promise<void> {
     const tasks: Promise<void>[] = []
     if (mine.value || loadingMine.value) tasks.push(loadMine())
@@ -155,9 +136,40 @@ export const useUsageStore = defineStore('usage', () => {
     await Promise.all(tasks)
   }
 
+  /** Cambia el preset de rango y recarga lo que ya estaba cargado. */
+  async function setPreset(next: RangePreset): Promise<void> {
+    if (next === preset.value) return
+    preset.value = next
+    await reloadLoadedReports()
+  }
+
+  /** Rango personalizado explícito (ambas fechas AAAA-MM-DD). Cambia el
+   * preset a 'custom' si todavía no lo estaba. */
+  async function setCustomRange(from: string, to: string): Promise<void> {
+    customFrom.value = from
+    customTo.value = to
+    preset.value = 'custom'
+    await reloadLoadedReports()
+  }
+
+  /** Selección múltiple de proveedores. Vacío = todos. */
+  async function setProviders(next: UsageProviderKind[]): Promise<void> {
+    providers.value = next
+    await reloadLoadedReports()
+  }
+
+  async function setModel(value: string): Promise<void> {
+    const next = value.trim()
+    if (next === model.value) return
+    model.value = next
+    await reloadLoadedReports()
+  }
+
   return {
-    rangeDays,
-    provider,
+    preset,
+    customFrom,
+    customTo,
+    providers,
     model,
     mine,
     loadingMine,
@@ -172,12 +184,14 @@ export const useUsageStore = defineStore('usage', () => {
     loadingConversations,
     errorConversations,
     usdToCopRate,
+    dateRange,
     loadMine,
     loadSystem,
     loadKpis,
     loadConversations,
-    setRange,
-    setProvider,
+    setPreset,
+    setCustomRange,
+    setProviders,
     setModel,
   }
 })

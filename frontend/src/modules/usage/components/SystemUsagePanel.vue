@@ -8,6 +8,8 @@ import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { useUsageStore } from '../stores/usageStore'
 import { formatCop, formatTokens, formatUsd } from '../utils/format'
+import ProviderBreakdown from './ProviderBreakdown.vue'
+import ProviderDailyChart from './ProviderDailyChart.vue'
 
 const store = useUsageStore()
 const authStore = useAuthStore()
@@ -53,6 +55,20 @@ onMounted(() => {
           </p>
         </article>
       </div>
+
+      <section class="su__ranking" aria-label="Consumo por proveedor">
+        <h2 class="su__section-title">Por proveedor</h2>
+        <ProviderBreakdown :rows="store.system.per_provider" :rate="rate" />
+      </section>
+
+      <section
+        v-if="store.system.daily_by_provider.length > 0"
+        class="su__ranking"
+        aria-label="Consumo por día"
+      >
+        <h2 class="su__section-title">Por día</h2>
+        <ProviderDailyChart :daily="store.system.daily_by_provider" :rate="rate" />
+      </section>
 
       <section class="su__ranking" aria-label="Consumo por usuario">
         <h2 class="su__section-title">Por usuario</h2>
@@ -135,6 +151,10 @@ onMounted(() => {
   color: var(--text-warning, #b45309);
   font-size: 12px;
   line-height: 1.4;
+}
+
+.su__ranking + .su__ranking {
+  margin-top: var(--space-6);
 }
 
 .su__section-title {

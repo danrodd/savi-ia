@@ -45,7 +45,8 @@ export class HttpRequestError extends Error {
 }
 
 export interface RequestOptions {
-  query?: Record<string, string | number | boolean | null | undefined>
+  /** Un valor `string[]` se serializa como parámetro repetido (`?p=a&p=b`). */
+  query?: Record<string, string | number | boolean | string[] | null | undefined>
   headers?: Record<string, string>
   signal?: AbortSignal
 }
@@ -99,6 +100,10 @@ export class HttpClient {
       const params = new URLSearchParams()
       for (const [k, v] of Object.entries(query)) {
         if (v === undefined || v === null) continue
+        if (Array.isArray(v)) {
+          for (const item of v) params.append(k, item)
+          continue
+        }
         params.set(k, String(v))
       }
       const qs = params.toString()

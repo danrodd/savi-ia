@@ -163,7 +163,8 @@ function exportCsv(): void {
     cop(c.cost_usd),
     c.last_activity,
   ])
-  downloadCsv(`consumo-conversaciones-${store.rangeDays}d.csv`, toCsv(headers, rows))
+  const { from, to } = store.dateRange()
+  downloadCsv(`consumo-conversaciones-${from}_a_${to}.csv`, toCsv(headers, rows))
 }
 
 onMounted(() => {

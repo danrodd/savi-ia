@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { formatCop, KpisPanel, SystemUsagePanel, UsageRangeSelector, useUsageStore } from '@/modules/usage'
+import {
+  formatCop,
+  KpisPanel,
+  SystemUsagePanel,
+  UsageFilterBar,
+  useUsageStore,
+} from '@/modules/usage'
 
 type Tab = 'system' | 'kpis'
 
@@ -13,12 +19,6 @@ const TABS: { value: Tab; label: string }[] = [
 const store = useUsageStore()
 const tab = ref<Tab>('system')
 const rate = computed(() => store.usdToCopRate)
-const providerOptions = [
-  { value: undefined, label: 'Todos los proveedores' },
-  { value: 'claude' as const, label: 'Claude' },
-  { value: 'gemini' as const, label: 'Gemini' },
-  { value: 'openai' as const, label: 'OpenAI' },
-]
 </script>
 
 <template>
@@ -46,8 +46,7 @@ const providerOptions = [
           {{ t.label }}
         </button>
       </div>
-      <label class="ausage__filter">Proveedor<select :value="store.provider ?? ''" @change="store.setProvider(($event.target as HTMLSelectElement).value === '' ? undefined : (($event.target as HTMLSelectElement).value as 'claude' | 'gemini' | 'openai'))"><option v-for="option in providerOptions" :key="option.label" :value="option.value ?? ''">{{ option.label }}</option></select></label>
-      <UsageRangeSelector />
+      <UsageFilterBar />
     </div>
 
     <SystemUsagePanel v-if="tab === 'system'" />
@@ -91,10 +90,6 @@ const providerOptions = [
   margin-bottom: var(--space-5);
 }
 
-.ausage__filter { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: 12px; font-weight: var(--fw-medium); }
-.ausage__filter select { min-height: 34px; padding: 0 var(--space-6) 0 var(--space-3); color: var(--text); background: var(--surface-elev); border: 1px solid var(--border); border-radius: var(--r-md); font: inherit; }
-.ausage__filter select:focus-visible { outline: var(--focus-ring); border-color: var(--brand); }
-
 .ausage__tabs {
   display: inline-flex;
   gap: 2px;
@@ -136,8 +131,6 @@ const providerOptions = [
 
 @media (max-width: 620px) {
   .ausage__controls { align-items: stretch; }
-  .ausage__tabs, .ausage__filter, .ausage__controls :deep(.ranges) { width: 100%; }
-  .ausage__filter { justify-content: space-between; }
-  .ausage__filter select { flex: 1; }
+  .ausage__tabs, .ausage__controls :deep(.ufb) { width: 100%; }
 }
 </style>

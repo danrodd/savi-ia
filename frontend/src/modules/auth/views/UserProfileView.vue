@@ -14,7 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import Button from '@/components/ui/Button.vue'
 import { MODULE_LABELS, type ModuleCode, usePermisosStore } from '@/modules/permisos'
-import { MyUsagePanel, UsageRangeSelector } from '@/modules/usage'
+import { MyUsagePanel, UsageFilterBar } from '@/modules/usage'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -161,7 +161,7 @@ onMounted(() => {
     <section v-if="user" id="consumo" ref="usageSection" class="profile__usage" aria-label="Mi consumo">
       <header class="profile__usage-header">
         <h2 class="profile__usage-title">Mi consumo</h2>
-        <UsageRangeSelector />
+        <UsageFilterBar />
       </header>
       <MyUsagePanel />
     </section>
