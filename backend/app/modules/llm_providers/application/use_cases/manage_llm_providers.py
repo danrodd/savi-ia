@@ -76,6 +76,15 @@ class ManageLlmProvidersUseCase:
             if not dto.credential and candidate.credential_kind == stored.credential_kind:
                 candidate.last_test_ok_at = stored.last_test_ok_at
         if candidate.is_active and not candidate.is_usable:
+            # El mensaje tiene que nombrar lo que REALMENTE falta. Decía
+            # siempre "sin credencial", y con `local_session` (que no lleva
+            # credencial por definición) mandaba a buscar donde no estaba:
+            # lo que faltaba eran los IDs de modelo.
+            if not candidate.chat_model or not candidate.title_model:
+                raise ValidationError(
+                    "Este proveedor está activo: indicá el modelo de chat y el "
+                    "de títulos antes de guardar."
+                )
             raise ValidationError(
                 "Este proveedor está activo: no se puede dejar sin credencial."
             )

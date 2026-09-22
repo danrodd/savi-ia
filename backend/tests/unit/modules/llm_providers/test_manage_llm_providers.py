@@ -137,6 +137,32 @@ async def test_activate_without_credential_is_rejected() -> None:
         await use_case.activate("claude")
 
 
+async def test_saving_an_active_provider_without_models_says_so() -> None:
+    """El mensaje tiene que nombrar lo que falta.
+
+    Decía siempre "sin credencial", y con `local_session` — que por
+    definición no lleva credencial — mandaba a buscar donde no estaba el
+    problema: lo que faltaban eran los IDs de modelo.
+    """
+    use_case, repo, _ = _use_case()
+    await repo.save(
+        LlmProviderConfig(
+            provider=ProviderKind.CLAUDE,
+            credential_kind=CredentialKind.LOCAL_SESSION,
+            credential=None,
+            chat_model="claude-sonnet-5",
+            title_model="claude-haiku-4-5",
+            is_active=True,
+        )
+    )
+
+    with pytest.raises(ValidationError, match="modelo de chat"):
+        await use_case.save(
+            "claude",
+            _dto(credential_kind="local_session", chat_model="", title_model=""),
+        )
+
+
 async def test_activate_ok_invalidates_the_resolver_cache() -> None:
     use_case, repo, calls = _use_case()
     await repo.save(

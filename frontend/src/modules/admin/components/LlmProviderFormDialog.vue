@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { FlaskConical } from 'lucide-vue-next'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import { recommendModel } from '../lib/modelRecommendation'
@@ -27,6 +27,14 @@ const emit = defineEmits<{
   test: [SaveLlmProviderRequest]
 }>()
 
+// El valor persistido es jerga interna (`local_session`); lo que ve el
+// administrador tiene que decirle qué va a usar SAVI para autenticarse.
+const CREDENTIAL_KIND_LABELS: Record<LlmCredentialKind, string> = {
+  api_key: 'API key',
+  oauth_token: 'Token OAuth',
+  local_session: 'Sesión de Claude en este equipo',
+}
+
 const credentialKind = ref<LlmCredentialKind>('api_key')
 const credential = ref('')
 const chatModel = ref('')
@@ -44,9 +52,32 @@ const selectedModels = computed(() =>
     (value, index, all) => value && all.indexOf(value) === index,
   ),
 )
+// Sugerencias para cuando NO hay catálogo (el login local de Claude no
+// expone uno) y el ID hay que escribirlo a mano. Se arma con lo que ya
+// sabemos de esta configuración — modelos guardados, precios cargados,
+// catálogo traído en esta misma sesión del diálogo — y recién si no hay
+// nada cae a los alias vigentes de Claude.
+//
+// Los alias sin versión (`claude-sonnet-5`) y no los snapshots fechados:
+// son los que el proveedor mantiene apuntando al modelo vigente. Es una
+// ayuda, no una lista cerrada — el campo sigue aceptando cualquier ID.
+const CLAUDE_MODEL_HINTS = ['claude-sonnet-5', 'claude-opus-5', 'claude-haiku-4-5'] as const
+
+const modelSuggestions = computed<string[]>(() => {
+  const known = new Set<string>()
+  for (const model of models.value) known.add(model.id)
+  for (const id of Object.keys(props.provider?.pricing ?? {})) known.add(id)
+  if (props.provider?.chat_model) known.add(props.provider.chat_model)
+  if (props.provider?.title_model) known.add(props.provider.title_model)
+  if (known.size === 0 && props.provider?.provider === 'claude') {
+    for (const id of CLAUDE_MODEL_HINTS) known.add(id)
+  }
+  return [...known]
+})
+
 const modelFallbackHint = computed(() => {
   if (props.provider?.provider === 'claude' && credentialKind.value === 'local_session') {
-    return 'El login local de Claude no expone un catálogo de modelos. Escribe sus identificadores manualmente.'
+    return 'La sesión de Claude de este equipo no expone un catálogo de modelos. Escribe el identificador o elegí una de las sugerencias del campo.'
   }
   if (props.provider?.provider === 'claude' && props.provider.supports_model_listing) {
     return 'No se pudieron obtener los modelos de Anthropic. Puedes escribir sus identificadores manualmente.'
@@ -119,6 +150,27 @@ watch(credentialKind, (kind) => {
   if (kind === 'local_session') credential.value = ''
 })
 
+// Pegar la credencial ya trae el catálogo: sin esto había que acordarse de
+// apretar "Probar" antes de poder elegir modelo, y el select aparecía vacío
+// como si el proveedor no tuviera ninguno. El debounce evita disparar una
+// prueba por cada tecla cuando se escribe en vez de pegar.
+let credentialDebounce: ReturnType<typeof setTimeout> | undefined
+watch(credential, (value) => {
+  if (credentialDebounce) clearTimeout(credentialDebounce)
+  const canList =
+    props.provider?.implemented === true &&
+    props.provider.supports_model_listing &&
+    credentialKind.value !== 'local_session'
+  // 20 caracteres: una API key de cualquiera de los tres es mucho más larga,
+  // así que no se prueba un valor a medio escribir.
+  if (!canList || value.trim().length < 20) return
+  credentialDebounce = setTimeout(() => handleTest(), 600)
+})
+
+onBeforeUnmount(() => {
+  if (credentialDebounce) clearTimeout(credentialDebounce)
+})
+
 function request(): SaveLlmProviderRequest {
   const body: SaveLlmProviderRequest = {
     credential_kind: credentialKind.value,
@@ -156,7 +208,7 @@ defineExpose({ applyTestResult })
       <ProviderIcon v-if="provider" :kind="provider.provider" :size="24" />
     </template>
     <form class="form" @submit.prevent="handleSave">
-      <label>Tipo de credencial<select v-model="credentialKind"><option v-for="kind in provider?.credential_kinds" :key="kind" :value="kind">{{ kind }}</option></select></label>
+      <label>Tipo de credencial<select v-model="credentialKind"><option v-for="kind in provider?.credential_kinds" :key="kind" :value="kind">{{ CREDENTIAL_KIND_LABELS[kind] ?? kind }}</option></select></label>
       <div v-if="isLocalSession" class="form__note">Claude usará el login local de este equipo. No necesitas introducir una credencial aquí.</div>
       <label v-else>Credencial<input v-model="credential" type="password" autocomplete="new-password" :placeholder="provider?.has_credential ? 'Ya hay una guardada — dejala vacía para conservarla' : 'Pegá la API key'" /></label>
       <p v-if="provider?.has_credential && !credential" class="form__note">🔒 Ya hay una credencial guardada. Podés cambiar solo el modelo sin volver a pegarla.</p>
@@ -171,7 +223,14 @@ defineExpose({ applyTestResult })
         <label>Modelo de títulos<select v-model="titleModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
         <p v-if="filteredModels.length === 0" class="form__hint">No hay modelos que coincidan con la búsqueda.</p>
       </div>
-      <div v-else class="form__models"><label>Modelo de chat<input v-model="chatModel" placeholder="ID del modelo" required /></label><label>Modelo de títulos<input v-model="titleModel" placeholder="ID del modelo" required /></label><p class="form__hint">{{ modelFallbackHint }}</p></div>
+      <div v-else class="form__models">
+        <label>Modelo de chat<input v-model="chatModel" list="savi-model-suggestions" placeholder="ID del modelo" required /></label>
+        <label>Modelo de títulos<input v-model="titleModel" list="savi-model-suggestions" placeholder="ID del modelo" required /></label>
+        <datalist id="savi-model-suggestions">
+          <option v-for="id in modelSuggestions" :key="id" :value="id" />
+        </datalist>
+        <p class="form__hint">{{ modelFallbackHint }}</p>
+      </div>
       <ModelPricingTable :models="selectedModels" :pricing="pricing" />
       <footer class="form__footer"><Button type="button" variant="ghost" @click="emit('update:open', false)">Cancelar</Button><Button type="submit" :loading="saving">Guardar</Button></footer>
     </form>
