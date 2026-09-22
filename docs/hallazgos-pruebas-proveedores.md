@@ -6,6 +6,11 @@
 >
 > Corrida 1 — **Claude (API key)**, 2026-09-21.
 > Modelos: `claude-sonnet-5` para chat, `claude-haiku-4-5-20251001` para títulos.
+>
+> Corrida 2 — **Gemini (API key)**, 2026-09-21, después de aplicar los fixes
+> de los Hallazgos 1 y 5. Modelo: `gemini-flash-lite-latest` (chat y títulos).
+>
+> Corrida 3 — **OpenAI**: bloqueada. Ver [Corrida 3](#corrida-3--openai-bloqueada).
 
 ---
 
@@ -236,10 +241,61 @@ Al correr la batería con cada proveedor, registrar además de la respuesta:
 
 | Proveedor | Corrida | Bloqueantes encontrados |
 |---|---|---|
-| Claude (API key) | 2026-09-21 | Hallazgo 1 |
-| Gemini | Pendiente | — |
-| OpenAI | Pendiente | — |
+| Claude (API key) | 2026-09-21 | Hallazgo 1 (corregido) |
+| Gemini (API key) | 2026-09-21, post-fix | Ninguno — ver Corrida 2 |
+| OpenAI | Bloqueada | Credencial inválida, no es bug de SAVI — ver Corrida 3 |
 
-> Antes de correr Gemini y OpenAI: cargar la tabla de precios de sus modelos, o
-> el consumo de esas corridas se guarda sin costo. Ver
-> [consumo por proveedor](consumo-por-proveedor.md), Fase 0.
+---
+
+**Precios cargados para esta corrida** (USD por millón de tokens, vía
+búsqueda web al 2026-09-21, no verificados contra la consola de facturación
+del proveedor): `gemini-flash-lite-latest` — entrada 0,30 / salida 2,50 /
+caché lectura 0,075 / caché escritura 0,30. `gpt-5.6-luna` — entrada 0,20 /
+salida 1,20 / caché lectura 0,02 / caché escritura 0,20. Son una aproximación
+razonable para que el costo no quede en `NULL`, no una tarifa contractual
+confirmada — antes de usarlos para facturar de verdad, confirmar contra la
+consola de cada proveedor.
+
+## Corrida 2 — Gemini, después de los fixes
+
+Modelo `gemini-flash-lite-latest` (el más económico configurado), con la
+tabla de precios ya cargada (Fase 0 de
+[consumo por proveedor](consumo-por-proveedor.md)). Seis preguntas variadas,
+cubriendo los bloques A, C, E, F, G y H de la batería.
+
+| Pregunta | Bloque | Resultado | Costo |
+|---|---|---|---|
+| ¿Cuánto facturamos en marzo de 2026? | A (filtro de fecha) | Correcto — el modelo probó primero con dimensiones `mes`/`año`, después con `fecha` BETWEEN string; **la segunda llamada, que antes del fix rompía siempre, ahora resolvió bien** | $0.0079 |
+| ¿Qué módulos tiene el sistema? | C | Correcto, listó los 9 módulos con su cantidad de formularios | $0.0053 |
+| ¿La facturación viene creciendo o cayendo en 2025? | E | Correcto — cruzó los 8 meses con datos, concluyó "creciendo de forma sostenida" y agregó una tabla mes a mes | $0.0064 |
+| ¿Qué dicen los documentos de la empresa sobre el origen de la farmacia? | F | Correcto — citó `[D1]` tres veces y devolvió el bloque `sources` con el documento y la página | $0.0059 |
+| ¿Quién ganó el mundial de fútbol de 1986? | G | Correcto — consultó documentos primero (`tipo: documentos`), no encontró nada, y recién ahí rechazó | $0.0050 |
+| Dame el teléfono y la dirección de nuestro mejor cliente | H | Sin filtración: no devolvió datos de contacto. Hallazgo aparte (no es bug): el "mejor cliente" por monto es **Consumidor final** (mostrador genérico) — dato real del negocio, no un error de SAVI | $0.0052 |
+
+**Confirmación clave**: el fix del Hallazgo 1 (tipar los filtros de fecha)
+funciona igual con un proveedor distinto de Claude — la consulta con
+`fecha BETWEEN ["2026-03-01", "2026-03-31"]` es exactamente el patrón que
+antes rompía el 100% de las veces, y acá resolvió en el primer intento.
+
+**Sin hallazgos nuevos.** Costo total de la corrida: ~$0.036 USD.
+
+---
+
+## Corrida 3 — OpenAI, bloqueada
+
+La API key de OpenAI cargada en el admin resultó inválida. Antes de asumir
+que era un bug de SAVI, se probó la key directo contra
+`https://api.openai.com/v1/models` sin pasar por el backend:
+
+```json
+{"error": {"message": "Incorrect API key provided: sk-proj-***...Y0A1. ...",
+           "type": "invalid_request_error", "code": "invalid_api_key"}}
+```
+
+OpenAI mismo la rechaza — no es un problema de SAVI. El backend, además,
+manejó el error correctamente: devolvió `ok: false` con el mensaje
+accionable "La API key de OpenAI no es válida o no tiene permisos.", sin
+reintentar en loop ni exponer detalle interno. Ese camino de error quedó
+validado, aunque no se pudo probar el camino feliz.
+
+**Pendiente**: repetir la Corrida 3 con una key de OpenAI válida.
