@@ -27,8 +27,11 @@ BACKEND = ROOT / "backend"
 
 KNOWLEDGE_DATA = BACKEND / "app" / "modules" / "knowledge" / "data"
 FRONTEND_BUILD = BACKEND / "frontend"
-# Modelo de embeddings de documentos de la empresa (lo baja build.ps1).
+# Caché de modelos de embeddings (la baja build.ps1).
 EMBEDDING_MODELS = BACKEND / ".models"
+# Modelo realmente usado. Debe coincidir con `company_docs_embedding_model`
+# de `settings.py`: si cambia allá, cambiarlo acá.
+EMBEDDING_MODEL_ID = "intfloat/multilingual-e5-small"
 
 
 def _require(path: Path, explanation: str) -> Path:
@@ -40,6 +43,33 @@ def _require(path: Path, explanation: str) -> Path:
     if not path.exists():
         raise SystemExit(f"\n[BUILD ABORTADO] Falta: {path}\n{explanation}\n")
     return path
+
+
+def _embedding_model_datas():
+    """Empaqueta SOLO el modelo de embeddings configurado.
+
+    `.models` es la caché de HuggingFace de la máquina que buildea: junta
+    todo lo que alguien haya probado alguna vez. Copiarla entera metía
+    cinco modelos (2,5 GB) cuando SAVI usa uno, y el instalador terminaba
+    pesando 1,8 GB en vez de ~400 MB.
+
+    Si el modelo configurado cambia en `settings.py`, hay que cambiarlo
+    acá también — y si no está descargado, el build aborta en vez de
+    generar un .exe que falla en el equipo del cliente.
+    """
+    folder = "models--" + EMBEDDING_MODEL_ID.replace("/", "--")
+    model_dir = _require(
+        EMBEDDING_MODELS / folder,
+        f"Es el modelo de embeddings '{EMBEDDING_MODEL_ID}' que usa el\n"
+        "conocimiento de la empresa. Lo descarga build.ps1.",
+    )
+    datas = [(str(model_dir), f"models/{folder}")]
+    # `CACHEDIR.TAG` marca la carpeta como caché de HuggingFace; va junto
+    # al modelo para que la resolución desde el bundle no cambie.
+    tag = EMBEDDING_MODELS / "CACHEDIR.TAG"
+    if tag.exists():
+        datas.append((str(tag), "models"))
+    return datas
 
 
 _require(
@@ -83,7 +113,11 @@ datas = [
     (str(KNOWLEDGE_DATA), "app/modules/knowledge/data"),
     (str(FRONTEND_BUILD), "frontend"),
     # `models_root()` lo busca en `<bundle>/models` cuando está congelado.
-    (str(EMBEDDING_MODELS), "models"),
+    # Solo el modelo EN USO, no la caché entera: `.models` es una caché de
+    # HuggingFace y acumula todo lo que se haya probado alguna vez. Copiarla
+    # completa metía 2 GB de modelos que SAVI no usa y cuadruplicaba el
+    # instalador (1,8 GB contra ~400 MB).
+    *_embedding_model_datas(),
 ]
 # Plantillas .mako que alembic necesita para generar revisiones.
 datas += collect_data_files("alembic")
