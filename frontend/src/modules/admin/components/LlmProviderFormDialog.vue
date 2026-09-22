@@ -75,7 +75,9 @@ const filteredModels = computed(() => {
   )
 })
 
-const recommendedModel = computed(() => recommendModel(models.value))
+const recommendedModel = computed(() =>
+  recommendModel(models.value, props.provider?.provider ?? 'claude'),
+)
 
 function reset(provider: LlmProvider | null): void {
   credentialKind.value = provider?.credential_kind ?? provider?.credential_kinds[0] ?? 'api_key'
