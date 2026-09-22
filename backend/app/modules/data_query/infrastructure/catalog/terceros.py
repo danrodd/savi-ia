@@ -48,10 +48,14 @@ TERCEROS = SemanticEntity(
     },
     filters={
         "nombre": FilterDef("nombre", _NAME, (FilterOp.CONTAINS,)),
-        "id": FilterDef("id", 't."idTercero"', (FilterOp.EQ,)),
-        "es_cliente": FilterDef("es_cliente", 't."cliente"', (FilterOp.EQ,)),
-        "es_proveedor": FilterDef("es_proveedor", 't."proveedor"', (FilterOp.EQ,)),
-        "activo": FilterDef("activo", 't."activo"', (FilterOp.EQ,)),
+        "id": FilterDef("id", 't."idTercero"', (FilterOp.EQ,), value_type="number"),
+        "es_cliente": FilterDef(
+            "es_cliente", 't."cliente"', (FilterOp.EQ,), value_type="bool"
+        ),
+        "es_proveedor": FilterDef(
+            "es_proveedor", 't."proveedor"', (FilterOp.EQ,), value_type="bool"
+        ),
+        "activo": FilterDef("activo", 't."activo"', (FilterOp.EQ,), value_type="bool"),
     },
     record_key="id",
 )

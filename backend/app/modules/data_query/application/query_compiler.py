@@ -118,13 +118,11 @@ def _clamp(limite: int, cap: int) -> int:
     return min(limite, cap)
 
 
-def _coerce_value(value: Any, value_type: FilterValueType, campo: str) -> Any:
-    """Convierte el valor del LLM (texto u/o número crudo) al tipo real de
-    la columna. asyncpg es estricto con los tipos y rechaza un string donde
-    espera un `date` — el LLM solo sabe escribir fechas como texto ISO.
-    """
-    if value_type != "date":
-        return value
+_TRUE_WORDS = frozenset({"true", "sí", "si", "1", "yes", "verdadero"})
+_FALSE_WORDS = frozenset({"false", "no", "0", "falso"})
+
+
+def _coerce_date(value: Any, campo: str) -> Any:
     if isinstance(value, date):
         return value
     if isinstance(value, str):
@@ -135,6 +133,57 @@ def _coerce_value(value: Any, value_type: FilterValueType, campo: str) -> Any:
     raise InvalidQueryError(
         f"El filtro '{campo}' espera una fecha en formato AAAA-MM-DD, recibí '{value}'."
     )
+
+
+def _coerce_number(value: Any, campo: str) -> Any:
+    # `bool` es subclase de `int` en Python: sin este corte, `True` entraría
+    # como el número 1 y la consulta filtraría por algo que nadie pidió.
+    if isinstance(value, bool):
+        raise InvalidQueryError(f"El filtro '{campo}' espera un número, recibí '{value}'.")
+    if isinstance(value, (int, float)):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            try:
+                return float(value)
+            except ValueError:
+                pass
+    raise InvalidQueryError(f"El filtro '{campo}' espera un número, recibí '{value}'.")
+
+
+def _coerce_bool(value: Any, campo: str) -> Any:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in _TRUE_WORDS:
+            return True
+        if lowered in _FALSE_WORDS:
+            return False
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    raise InvalidQueryError(
+        f"El filtro '{campo}' espera sí o no (booleano), recibí '{value}'."
+    )
+
+
+def _coerce_value(value: Any, value_type: FilterValueType, campo: str) -> Any:
+    """Convierte el valor del LLM al tipo real de la columna.
+
+    asyncpg es ESTRICTO: rechaza un string donde la columna es `date`,
+    `bigint` o `boolean`, y el LLM escribe todo como texto con frecuencia.
+    Sin esta conversión la consulta muere con `DataError` y el modelo
+    reintenta en loop creyendo que es una falla de conexión.
+    """
+    if value_type == "date":
+        return _coerce_date(value, campo)
+    if value_type == "number":
+        return _coerce_number(value, campo)
+    if value_type == "bool":
+        return _coerce_bool(value, campo)
+    return value
 
 
 def _build_where(

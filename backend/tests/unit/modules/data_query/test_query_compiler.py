@@ -56,6 +56,10 @@ ENTIDAD = SemanticEntity(
         "cliente": FilterDef("cliente", 't."nombre"', (FilterOp.CONTAINS, FilterOp.EQ)),
         "numero": FilterDef("numero", 'f."numero"', (FilterOp.EQ,)),
         "estado": FilterDef("estado", 'f."estado"', (FilterOp.IN,)),
+        "cliente_id": FilterDef(
+            "cliente_id", 'f."idTercero"', (FilterOp.EQ, FilterOp.IN), value_type="number"
+        ),
+        "activo": FilterDef("activo", 't."activo"', (FilterOp.EQ,), value_type="bool"),
     },
     joins={
         "tercero": JoinDef("tercero", 'JOIN "Tercero" t ON t."id" = f."idTercero"'),
@@ -256,6 +260,80 @@ def test_text_filter_value_is_not_coerced() -> None:
     compilada = compile_query(query, ENTIDAD)
 
     assert "2026-03-01" in compilada.params.values()
+
+
+# ── Filtros numéricos y booleanos ────────────────────────────────────────
+#
+# Misma clase de bug que las fechas: las columnas del ERP son `bigint` y
+# `boolean`, y asyncpg rechaza un string en ambas. Verificado contra
+# Postgres real: `'123'` contra bigint y `'true'` contra boolean tiran
+# `DataError`. El modelo manda strings con frecuencia, así que sin
+# conversión la consulta muere igual que moría con `fecha`.
+
+
+def test_number_filter_coerces_a_numeric_string_to_int() -> None:
+    query = _agregado(filtros=[QueryFilter("cliente_id", FilterOp.EQ, "12345")])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert 12345 in compilada.params.values()
+    assert "12345" not in compilada.params.values()
+
+
+def test_number_filter_accepts_an_int_unchanged() -> None:
+    query = _agregado(filtros=[QueryFilter("cliente_id", FilterOp.EQ, 99)])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert 99 in compilada.params.values()
+
+
+def test_number_filter_coerces_every_value_of_an_in_list() -> None:
+    query = _agregado(filtros=[QueryFilter("cliente_id", FilterOp.IN, ["1", "2", 3])])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert set(compilada.params.values()) == {1, 2, 3}
+
+
+def test_number_filter_rejects_a_non_numeric_value() -> None:
+    query = _agregado(filtros=[QueryFilter("cliente_id", FilterOp.EQ, "no soy un número")])
+
+    with pytest.raises(InvalidQueryError, match="número"):
+        compile_query(query, ENTIDAD)
+
+
+def test_number_filter_rejects_a_boolean() -> None:
+    """`bool` es subclase de `int`: sin el corte explícito, `True` entraría
+    como el número 1 y filtraría por algo que nadie pidió."""
+    query = _agregado(filtros=[QueryFilter("cliente_id", FilterOp.EQ, True)])
+
+    with pytest.raises(InvalidQueryError, match="número"):
+        compile_query(query, ENTIDAD)
+
+
+def test_bool_filter_coerces_the_words_the_model_writes() -> None:
+    for entrada, esperado in (("true", True), ("sí", True), ("no", False), ("false", False)):
+        query = _agregado(filtros=[QueryFilter("activo", FilterOp.EQ, entrada)])
+
+        compilada = compile_query(query, ENTIDAD)
+
+        assert esperado in compilada.params.values(), entrada
+
+
+def test_bool_filter_accepts_a_real_boolean_unchanged() -> None:
+    query = _agregado(filtros=[QueryFilter("activo", FilterOp.EQ, False)])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert False in compilada.params.values()
+
+
+def test_bool_filter_rejects_a_value_that_is_not_yes_or_no() -> None:
+    query = _agregado(filtros=[QueryFilter("activo", FilterOp.EQ, "quizás")])
+
+    with pytest.raises(InvalidQueryError, match="booleano"):
+        compile_query(query, ENTIDAD)
 
 
 def test_record_mode_with_the_key_filter_compiles() -> None:

@@ -47,6 +47,10 @@ _ENTIDAD = SemanticEntity(
     metrics={"total": MetricDef("total", "SUM(total)", "Total")},
     filters={
         "fecha": FilterDef("fecha", '"fecha"', (FilterOp.GTE, FilterOp.BETWEEN), value_type="date"),
+        "cliente_id": FilterDef(
+            "cliente_id", '"cliente_id"', (FilterOp.EQ,), value_type="number"
+        ),
+        "activo": FilterDef("activo", '"activo"', (FilterOp.EQ,), value_type="bool"),
     },
 )
 
@@ -68,12 +72,18 @@ async def temp_table() -> AsyncIterator[AsyncEngine]:
         f"postgresql+asyncpg://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{name}"
     )
     async with engine.begin() as conn:
+        # Los tipos importan: `bigint` y `boolean` son justo donde asyncpg
+        # rechaza un string, igual que `date`.
         await conn.execute(
-            text('CREATE TABLE "ventas_test" (fecha DATE NOT NULL, total NUMERIC NOT NULL)')
+            text(
+                'CREATE TABLE "ventas_test" ('
+                "fecha DATE NOT NULL, total NUMERIC NOT NULL, "
+                "cliente_id BIGINT NOT NULL, activo BOOLEAN NOT NULL)"
+            )
         )
         await conn.execute(
-            text('INSERT INTO "ventas_test" VALUES (:f, :t)'),
-            {"f": date(2026, 3, 15), "t": 1000},
+            text('INSERT INTO "ventas_test" VALUES (:f, :t, :c, :a)'),
+            {"f": date(2026, 3, 15), "t": 1000, "c": 12345, "a": True},
         )
     try:
         yield engine
@@ -97,6 +107,44 @@ async def test_date_filter_binds_against_real_asyncpg(temp_table: AsyncEngine) -
         modo=QueryMode.AGGREGATE,
         metricas=["total"],
         filtros=[QueryFilter("fecha", FilterOp.GTE, "2026-01-01")],
+    )
+    compiled = compile_query(query, _ENTIDAD)
+
+    async with temp_table.connect() as conn:
+        result = await conn.execute(text(compiled.sql), compiled.params)
+        row = result.mappings().one()
+
+    assert float(row["total"]) == 1000.0
+
+
+@pytest.mark.asyncio
+async def test_number_filter_binds_against_a_bigint_column(temp_table: AsyncEngine) -> None:
+    """Sin conversión, `'12345'` contra `BIGINT` tira
+    `DataError: 'str' object cannot be interpreted as an integer`."""
+    query = SemanticQuery(
+        entidad="ventas_test",
+        modo=QueryMode.AGGREGATE,
+        metricas=["total"],
+        filtros=[QueryFilter("cliente_id", FilterOp.EQ, "12345")],
+    )
+    compiled = compile_query(query, _ENTIDAD)
+
+    async with temp_table.connect() as conn:
+        result = await conn.execute(text(compiled.sql), compiled.params)
+        row = result.mappings().one()
+
+    assert float(row["total"]) == 1000.0
+
+
+@pytest.mark.asyncio
+async def test_bool_filter_binds_against_a_boolean_column(temp_table: AsyncEngine) -> None:
+    """Sin conversión, `'true'` contra `BOOLEAN` tira `DataError` — y `1`
+    tampoco cuela: asyncpg no acepta enteros donde espera booleano."""
+    query = SemanticQuery(
+        entidad="ventas_test",
+        modo=QueryMode.AGGREGATE,
+        metricas=["total"],
+        filtros=[QueryFilter("activo", FilterOp.EQ, "true")],
     )
     compiled = compile_query(query, _ENTIDAD)
 
