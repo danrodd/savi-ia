@@ -103,6 +103,22 @@ class _TurnAccumulator:
         self.model: str | None = None
         self.finish_reason: MessageFinishReason = MessageFinishReason.COMPLETE
         self.sources: list[MessageSource] = []
+        # Hubo una tool entre el último texto y el próximo.
+        self._tool_since_text = False
+
+    def separator_before(self, event: ChatEvent) -> TextDeltaEvent | None:
+        """Salto de párrafo cuando el texto se reanuda después de una tool.
+
+        Los modelos escriben un preámbulo ("Déjame revisar los datos..."),
+        llaman a la tool y siguen escribiendo: sin separador el preámbulo
+        quedaba pegado a la respuesta ("...los datos...En 2025 facturaste"),
+        en pantalla y en el mensaje guardado.
+        """
+        if not (isinstance(event, TextDeltaEvent) and self._tool_since_text and event.text):
+            return None
+        if event.text[0].isspace() or self.text_parts[-1][-1:].isspace():
+            return None
+        return TextDeltaEvent(text="\n\n")
 
     def resolve_sources(self, document_context: TurnDocumentContext | None) -> list[MessageSource]:
         """Fuentes válidas citadas hasta ahora. Idempotente: se recalcula
@@ -125,12 +141,14 @@ class _TurnAccumulator:
     def consume(self, event: ChatEvent) -> None:
         if isinstance(event, TextDeltaEvent):
             self.text_parts.append(event.text)
+            self._tool_since_text = False
             if (
                 self.finish_reason == MessageFinishReason.COMPLETE
                 and _TRUNCATION_MARKER in event.text
             ):
                 self.finish_reason = MessageFinishReason.TRUNCATED
         elif isinstance(event, ToolUseEvent):
+            self._tool_since_text = bool(self.text_parts)
             self.tool_invocations[event.id] = ToolInvocation(
                 id=event.id,
                 name=event.name,
@@ -301,9 +319,7 @@ class ChatTurnUseCase:
         # Solo los últimos: `_format_history_block` descarta el resto igual.
         # Traer la conversación entera para tirar casi todo era trabajo puro
         # en cada turno de una conversación larga.
-        history = await self._repository.list_messages(
-            conversation_id, limit=_HISTORY_TURNS
-        )
+        history = await self._repository.list_messages(conversation_id, limit=_HISTORY_TURNS)
         user_message = Message(
             conversation_id=conversation_id,
             role=MessageRole.USER,
@@ -455,6 +471,10 @@ class ChatTurnUseCase:
                 erp_database_id=erp_database_id,
                 document_context=document_context,
             ):
+                separator = accumulator.separator_before(event)
+                if separator is not None:
+                    accumulator.consume(separator)
+                    yield separator
                 accumulator.consume(event)
                 if isinstance(event, DoneEvent):
                     # Las fuentes llegan ANTES de `done`: el frontend cierra
