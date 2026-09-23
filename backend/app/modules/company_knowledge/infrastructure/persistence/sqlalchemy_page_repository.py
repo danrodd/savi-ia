@@ -196,6 +196,9 @@ class SqlAlchemyKnowledgeSettingsRepository(KnowledgeSettingsRepository):
             ai_reading_enabled=row.ai_reading_enabled,
             updated_by_login=row.updated_by_login,
             updated_at=row.updated_at,
+            consent_provider=row.ai_reading_consent_provider,
+            consent_by_login=row.ai_reading_consent_by_login,
+            consent_at=row.ai_reading_consent_at,
         )
 
     async def save(self, settings: KnowledgeSettings) -> KnowledgeSettings:
@@ -207,5 +210,8 @@ class SqlAlchemyKnowledgeSettingsRepository(KnowledgeSettingsRepository):
             row.ai_reading_enabled = settings.ai_reading_enabled
             row.updated_by_login = settings.updated_by_login
             row.updated_at = datetime.now(UTC)
+            row.ai_reading_consent_provider = settings.consent_provider
+            row.ai_reading_consent_by_login = settings.consent_by_login
+            row.ai_reading_consent_at = settings.consent_at
             await session.commit()
         return await self.get()

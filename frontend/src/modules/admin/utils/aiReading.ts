@@ -31,7 +31,15 @@ export async function countPdfPages(file: File): Promise<number | null> {
 
 /** Si un PDF subido ahora se va a leer con IA. */
 export function willReadWithAi(settings: AiReadingSettings | null): boolean {
-  return !!settings && settings.ai_reading_enabled && settings.available
+  return (
+    !!settings && settings.ai_reading_enabled && settings.available && !settings.consent_required
+  )
+}
+
+/** Si activar la lectura necesita que el administrador acepte el aviso. */
+export function needsConsent(settings: AiReadingSettings | null): boolean {
+  if (!settings?.available || !settings.provider) return false
+  return settings.consent_required || settings.consent_provider !== settings.provider
 }
 
 /** Costo estimado en USD, o `null` si no hay precio o páginas. */

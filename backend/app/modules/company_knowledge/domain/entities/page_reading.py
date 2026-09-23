@@ -106,8 +106,22 @@ class AiReadRecord:
 
 @dataclass(frozen=True, slots=True)
 class KnowledgeSettings:
-    """Configuración del módulo. Una sola por instalación."""
+    """Configuración del módulo. Una sola por instalación.
 
-    ai_reading_enabled: bool = True
+    La lectura con IA manda los PDF completos al proveedor, así que viene
+    apagada y necesita que un administrador acepte el envío a un proveedor
+    concreto. Aceptar uno no autoriza a otro: si cambia el proveedor activo,
+    no se manda nada hasta aceptar el nuevo.
+    """
+
+    ai_reading_enabled: bool = False
     updated_by_login: str | None = None
     updated_at: datetime | None = None
+    consent_provider: str | None = None
+    consent_by_login: str | None = None
+    consent_at: datetime | None = None
+
+    def allows_sending_to(self, provider: str | None) -> bool:
+        return (
+            self.ai_reading_enabled and provider is not None and self.consent_provider == provider
+        )

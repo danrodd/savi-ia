@@ -25,3 +25,5 @@ class SearchTestRequest(BaseModel):
 
 class UpdateAiReadingSettingsRequest(BaseModel):
     ai_reading_enabled: bool
+    # Proveedor cuyo aviso de privacidad aceptó el administrador al activar.
+    accept_provider: str | None = Field(default=None, min_length=1, max_length=32)

@@ -193,6 +193,12 @@ class AiReadingSettingsResponse(BaseModel):
     privacy_notice: str
     updated_by_login: str | None
     updated_at: datetime | None
+    # Activada pero sin aceptación para el proveedor activo: pausada.
+    consent_required: bool
+    consent_provider: str | None
+    consent_provider_name: str | None
+    consent_by_login: str | None
+    consent_at: datetime | None
 
     @classmethod
     def from_status(cls, status: AiReadingStatus) -> "AiReadingSettingsResponse":
@@ -209,9 +215,20 @@ class AiReadingSettingsResponse(BaseModel):
             unavailable_reason=status.unavailable_reason,
             privacy_notice=(
                 f"Con la lectura con IA activa, los PDF completos se envían a {target} "
-                "para transcribirlos. Apagala si tus documentos no pueden salir del "
-                "servidor; en ese caso solo se lee el texto digital."
+                "para transcribirlos, y quedan sujetos a sus condiciones de uso de datos. "
+                "Sin ella solo se lee el texto digital y el archivo no sale del servidor. "
+                "En los dos casos, al responder en el chat SAVI envía al proveedor del chat "
+                "los fragmentos de documentos que usa para cada respuesta."
             ),
             updated_by_login=status.updated_by_login,
+            consent_required=status.consent_required,
+            consent_provider=status.consent_provider,
+            consent_provider_name=(
+                _PROVIDER_NAMES.get(status.consent_provider, status.consent_provider)
+                if status.consent_provider
+                else None
+            ),
+            consent_by_login=status.consent_by_login,
+            consent_at=status.consent_at,
             updated_at=status.updated_at,
         )

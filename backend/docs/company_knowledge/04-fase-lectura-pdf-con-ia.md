@@ -398,6 +398,30 @@ no la del tramo.
 - Activar la lectura no reprocesa documentos existentes. Solo aplica a
   lo que se suba después o a lo que se envíe con "Leer con IA".
 
+### 7.1 Consentimiento por proveedor (2026-09-23, antes del piloto)
+
+La primera versión venía **activada por defecto** con el aviso como
+información: una instalación nueva mandaba los PDF escaneados al proveedor
+sin que nadie lo aceptara. Se cambió a consentimiento explícito
+(migración `d7a3f1c9e2b5`):
+
+- La lectura con IA **viene apagada**. Para activarla, el administrador lee
+  el aviso y marca "Entiendo y acepto que los PDF se envíen a
+  {proveedor}". `PUT /ai-reading` recibe `accept_provider`; sin él, activar
+  devuelve 409.
+- Se guarda **a qué proveedor** se aceptó, **quién y cuándo**
+  (`ai_reading_consent_*` en `company_knowledge_settings`), y la pantalla
+  lo muestra.
+- **Aceptar un proveedor no autoriza a otro.** Si cambia el proveedor
+  activo, la lectura queda en pausa (`consent_required`): no se manda
+  nada, los PDF se leen solo por su texto digital, "Leer con IA" se
+  rechaza, y la configuración pide aceptar el nuevo.
+- Las instalaciones que ya existían quedan sin consentimiento hasta que
+  un administrador lo acepte.
+- El aviso ahora también dice que **en el chat** SAVI manda al proveedor
+  del chat los fragmentos de documentos que usa para cada respuesta, con
+  o sin lectura con IA.
+
 ## 8. Frontend
 
 ### 8.1 Configuración en la pantalla de Conocimiento

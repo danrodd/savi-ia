@@ -345,3 +345,38 @@ fragmento por el pipeline real:
 - Instalador de punta a punta (Inno Setup) en una VM limpia: se verificó el bundle de
   PyInstaller, no el `.exe` del instalador.
 
+
+### Antes y durante el piloto con clientes reales (2026-09-23)
+
+Después de las baterías de [lectura](bateria-lectura-ia.md),
+[permisos y bases](bateria-permisos-bases.md) y
+[ciclo de vida](bateria-ciclo-vida.md), el módulo queda listo para un piloto
+controlado. Lo que falta no es lógica del módulo sino operación. Hecho:
+consentimiento por proveedor para la lectura con IA
+([Fase 4, §7.1](04-fase-lectura-pdf-con-ia.md)).
+
+Útiles o necesarios, en orden sugerido:
+
+- **Tope de gasto de la lectura con IA.** Hoy se muestra el costo estimado
+  antes de subir, pero no hay un límite mensual. Una carga grande de
+  escaneados puede consumir el saldo de la cuenta del proveedor, que es la
+  misma del chat.
+- **Límite de tokens por minuto del proveedor.** Con OpenAI la cuenta de
+  prueba tiene 200.000 TPM; ya se reintenta, pero ese es el techo con
+  varios usuarios a la vez. Revisar el nivel de la cuenta del cliente o
+  repartir carga entre proveedores.
+- **Respaldos.** Los archivos se guardan dentro de Postgres (hasta 60 MB
+  cada uno): el respaldo del agente crece con cada documento.
+- **Validar con documentos reales del cliente piloto.** El corpus probado
+  es sintético o público; un administrador del cliente debería revisar
+  ~20 preguntas propias.
+- **Despliegue:** que el `.env` del servidor no fije
+  `COMPANY_DOCS_MAX_CONTEXT_CHARS=6000` (el valor por defecto es 12000);
+  revisar en pantalla el panel de consentimiento y el aviso `ai_failed`.
+- **Calidad de respuesta:** en preguntas que mezclan ERP y documentos,
+  a veces dice "no puedo confirmar las existencias" aun después de
+  consultarlas; una vez respondió como tema ajeno tras borrar un documento.
+- **Otros proveedores (Claude, Gemini) en las baterías de chat**, más
+  volumen y el PDF de 165 páginas.
+- **Siguiente funcionalidad:** importar conocimiento desde links y la
+  página web de la empresa (analizado, sin empezar).

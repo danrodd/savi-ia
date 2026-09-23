@@ -1,8 +1,8 @@
 """Configuración de la lectura con IA y "Leer con IA" de un documento."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from uuid import UUID
 
 from app.modules.company_knowledge.application.use_cases.read_pdf_pages import PDF_MEDIA_TYPE
@@ -47,6 +47,11 @@ class AiReadingStatus:
     unavailable_reason: str | None
     updated_by_login: str | None
     updated_at: datetime | None
+    # Activada pero sin aceptación para el proveedor activo: no se manda nada.
+    consent_required: bool = False
+    consent_provider: str | None = None
+    consent_by_login: str | None = None
+    consent_at: datetime | None = None
 
 
 class _StatusBuilder:
@@ -76,6 +81,14 @@ class _StatusBuilder:
             unavailable_reason=availability.reason,
             updated_by_login=current.updated_by_login,
             updated_at=current.updated_at,
+            consent_required=(
+                current.ai_reading_enabled
+                and availability.available
+                and not current.allows_sending_to(availability.provider)
+            ),
+            consent_provider=current.consent_provider,
+            consent_by_login=current.consent_by_login,
+            consent_at=current.consent_at,
         )
 
     async def _estimate(self, availability: AiReaderAvailability) -> float | None:
@@ -118,13 +131,39 @@ class UpdateAiReadingSettingsUseCase:
         pages: DocumentPageRepository,
     ) -> None:
         self._settings = settings
+        self._readers = readers
         self._status = _StatusBuilder(settings, readers, pages)
 
-    async def execute(self, *, enabled: bool, updated_by_login: str) -> AiReadingStatus:
-        saved = await self._settings.save(
-            KnowledgeSettings(ai_reading_enabled=enabled, updated_by_login=updated_by_login)
-        )
-        return await self._status.build(saved)
+    async def execute(
+        self, *, enabled: bool, updated_by_login: str, accept_provider: str | None = None
+    ) -> AiReadingStatus:
+        """Activa o apaga la lectura con IA.
+
+        Activarla exige haber aceptado el envío al proveedor ACTIVO: en este
+        pedido (`accept_provider`) o antes. Si el aviso se aceptó para otro
+        proveedor, no vale: el administrador tiene que volver a leerlo.
+        """
+        current = await self._settings.get()
+        updated = replace(current, ai_reading_enabled=enabled, updated_by_login=updated_by_login)
+        if enabled:
+            provider = (await self._readers.availability()).provider
+            if accept_provider is not None:
+                if accept_provider != provider:
+                    raise CompanyDocumentConflictError(
+                        "El proveedor de IA cambió mientras revisabas el aviso. "
+                        "Leelo de nuevo y volvé a aceptar."
+                    )
+                updated = replace(
+                    updated,
+                    consent_provider=provider,
+                    consent_by_login=updated_by_login,
+                    consent_at=datetime.now(UTC),
+                )
+            elif provider is None or current.consent_provider != provider:
+                raise CompanyDocumentConflictError(
+                    "Para activar la lectura con IA, aceptá el envío de los PDF al proveedor."
+                )
+        return await self._status.build(await self._settings.save(updated))
 
 
 class ReadCompanyDocumentWithAiUseCase:
@@ -155,7 +194,8 @@ class ReadCompanyDocumentWithAiUseCase:
             raise CompanyDocumentNotFoundError(str(document_id))
         if document.media_type != PDF_MEDIA_TYPE:
             raise CompanyDocumentConflictError("Solo los PDF se pueden leer con IA.")
-        if not (await self._settings.get()).ai_reading_enabled:
+        settings = await self._settings.get()
+        if not settings.ai_reading_enabled:
             raise CompanyDocumentConflictError(
                 "La lectura con IA está desactivada. Activala en la configuración de Conocimiento."
             )
@@ -163,6 +203,11 @@ class ReadCompanyDocumentWithAiUseCase:
         if not availability.available:
             raise CompanyDocumentConflictError(
                 availability.reason or "No hay un proveedor de IA disponible para leer documentos."
+            )
+        if not settings.allows_sending_to(availability.provider):
+            raise CompanyDocumentConflictError(
+                "Nadie aceptó enviar los PDF al proveedor de IA activo. Revisá el aviso en la "
+                "configuración de Conocimiento."
             )
         # Se valida antes de descartar páginas: borrarlas de un documento en
         # curso le quitaría lo que la lectura que está corriendo ya guardó.

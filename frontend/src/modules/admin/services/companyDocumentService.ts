@@ -54,8 +54,12 @@ class CompanyDocumentService {
     return this.http.get<AiReadingSettings>('/ai-reading')
   }
 
-  updateAiReadingSettings(enabled: boolean): Promise<AiReadingSettings> {
-    return this.http.put<AiReadingSettings>('/ai-reading', { ai_reading_enabled: enabled })
+  /** `acceptProvider`: proveedor cuyo aviso de privacidad aceptó el administrador. */
+  updateAiReadingSettings(enabled: boolean, acceptProvider?: string): Promise<AiReadingSettings> {
+    return this.http.put<AiReadingSettings>('/ai-reading', {
+      ai_reading_enabled: enabled,
+      accept_provider: acceptProvider ?? null,
+    })
   }
 
   remove(id: string): Promise<void> {

@@ -104,7 +104,7 @@ def repos(
 # ── Configuración ──────────────────────────────────────────────────────────
 
 
-async def test_ai_reading_is_on_by_default_and_estimates_from_prices(
+async def test_ai_reading_is_off_by_default_and_estimates_from_prices(
     repos: tuple[
         SqlAlchemyDocumentRepository,
         SqlAlchemyDocumentPageRepository,
@@ -114,7 +114,9 @@ async def test_ai_reading_is_on_by_default_and_estimates_from_prices(
     _, pages, settings = repos
     status = await GetAiReadingSettingsUseCase(settings, _Readers(_available()), pages).execute()
 
-    assert (status.enabled, status.available, status.model) == (True, True, "modelo-lectura")
+    # Apagada hasta que un administrador acepte el envío: nada sale sin permiso.
+    assert (status.enabled, status.available, status.model) == (False, True, "modelo-lectura")
+    assert (status.consent_required, status.consent_provider) == (False, None)
     assert status.estimated_usd_per_page == pytest.approx((3200 * 0.1 + 700 * 0.5) / 1e6)
     assert status.uses_subscription is False
 
@@ -181,6 +183,68 @@ async def test_turning_it_off_is_saved_with_who_did_it(
     assert (await settings.get()).ai_reading_enabled is False
 
 
+async def test_enabling_requires_accepting_the_active_provider(
+    repos: tuple[
+        SqlAlchemyDocumentRepository,
+        SqlAlchemyDocumentPageRepository,
+        SqlAlchemyKnowledgeSettingsRepository,
+    ],
+) -> None:
+    _, pages, settings = repos
+    use_case = UpdateAiReadingSettingsUseCase(settings, _Readers(_available("openai")), pages)
+
+    with pytest.raises(CompanyDocumentConflictError, match="aceptá el envío"):
+        await use_case.execute(enabled=True, updated_by_login="ADMIN")
+    with pytest.raises(CompanyDocumentConflictError, match="cambió"):
+        await use_case.execute(enabled=True, updated_by_login="ADMIN", accept_provider="gemini")
+    assert (await settings.get()).ai_reading_enabled is False
+
+    status = await use_case.execute(
+        enabled=True, updated_by_login="ADMIN", accept_provider="openai"
+    )
+
+    assert (status.enabled, status.consent_required) == (True, False)
+    assert (status.consent_provider, status.consent_by_login) == ("openai", "ADMIN")
+    assert status.consent_at is not None
+
+
+async def test_turning_it_back_on_keeps_the_consent_for_the_same_provider(
+    repos: tuple[
+        SqlAlchemyDocumentRepository,
+        SqlAlchemyDocumentPageRepository,
+        SqlAlchemyKnowledgeSettingsRepository,
+    ],
+) -> None:
+    _, pages, settings = repos
+    use_case = UpdateAiReadingSettingsUseCase(settings, _Readers(_available("openai")), pages)
+    await use_case.execute(enabled=True, updated_by_login="ADMIN", accept_provider="openai")
+    await use_case.execute(enabled=False, updated_by_login="OTRO")
+
+    status = await use_case.execute(enabled=True, updated_by_login="OTRO")
+
+    assert status.enabled is True
+    assert status.consent_by_login == "ADMIN"
+
+
+async def test_a_new_active_provider_pauses_reading_until_accepted(
+    repos: tuple[
+        SqlAlchemyDocumentRepository,
+        SqlAlchemyDocumentPageRepository,
+        SqlAlchemyKnowledgeSettingsRepository,
+    ],
+) -> None:
+    documents, pages, settings = repos
+    await settings.save(KnowledgeSettings(ai_reading_enabled=True, consent_provider="openai"))
+    gemini = _Readers(_available("gemini"))
+
+    status = await GetAiReadingSettingsUseCase(settings, gemini, pages).execute()
+    assert (status.enabled, status.consent_required) == (True, True)
+
+    pdf = await documents.save(make_document(media_type="application/pdf"))
+    with pytest.raises(CompanyDocumentConflictError, match="Nadie aceptó"):
+        await ReadCompanyDocumentWithAiUseCase(documents, pages, settings, gemini).execute(pdf.id)
+
+
 def test_privacy_notice_names_the_provider() -> None:
     from app.modules.company_knowledge.application.use_cases import AiReadingStatus
 
@@ -199,6 +263,8 @@ def test_privacy_notice_names_the_provider() -> None:
     )
     assert response.provider_name == "Gemini"
     assert "se envían a Gemini" in response.privacy_notice
+    # El chat también manda fragmentos: el aviso no puede callarlo.
+    assert "fragmentos" in response.privacy_notice
 
 
 # ── Leer con IA ────────────────────────────────────────────────────────────
@@ -212,6 +278,7 @@ async def test_read_with_ai_discards_ai_pages_and_requeues(
     ],
 ) -> None:
     documents, pages, settings = repos
+    await settings.save(KnowledgeSettings(ai_reading_enabled=True, consent_provider="openai"))
     document = await documents.save(
         make_document(media_type="application/pdf", status=DocumentStatus.NO_TEXT)
     )
@@ -243,6 +310,7 @@ async def test_read_with_ai_rejects_what_it_cannot_read(
     ],
 ) -> None:
     documents, pages, settings = repos
+    await settings.save(KnowledgeSettings(ai_reading_enabled=True, consent_provider="openai"))
     markdown = await documents.save(make_document())
     pdf = await documents.save(make_document(media_type="application/pdf"))
     processing = await documents.save(
@@ -301,13 +369,22 @@ def client(
 def test_get_and_put_ai_reading_settings(client: TestClient) -> None:
     body = client.get("/admin/company-documents/ai-reading").json()
     assert (body["ai_reading_enabled"], body["available"], body["provider_name"]) == (
-        True,
+        False,
         True,
         "OpenAI",
     )
     assert body["estimated_usd_per_page"] > 0
 
-    response = client.put("/admin/company-documents/ai-reading", json={"ai_reading_enabled": False})
+    url = "/admin/company-documents/ai-reading"
+    assert client.put(url, json={"ai_reading_enabled": True}).status_code == 409
+    accepted = client.put(url, json={"ai_reading_enabled": True, "accept_provider": "openai"})
+    assert accepted.status_code == 200
+    assert (accepted.json()["consent_provider_name"], accepted.json()["consent_by_login"]) == (
+        "OpenAI",
+        "ADMIN",
+    )
+
+    response = client.put(url, json={"ai_reading_enabled": False})
     assert response.status_code == 200
     assert (response.json()["ai_reading_enabled"], response.json()["updated_by_login"]) == (
         False,
@@ -348,7 +425,8 @@ async def test_read_with_ai_endpoint_returns_the_pending_document(
         SqlAlchemyKnowledgeSettingsRepository,
     ],
 ) -> None:
-    documents, _, _ = repos
+    documents, _, settings = repos
+    await settings.save(KnowledgeSettings(ai_reading_enabled=True, consent_provider="openai"))
     document = await documents.save(
         make_document(media_type="application/pdf", status=DocumentStatus.NO_TEXT)
     )

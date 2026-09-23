@@ -151,6 +151,13 @@ export interface AiReadingSettings {
   privacy_notice: string
   updated_by_login: string | null
   updated_at: string | null
+  /** Activada, pero nadie aceptó el envío al proveedor activo: en pausa. */
+  consent_required: boolean
+  /** Proveedor al que se aceptó enviar los PDF, quién y cuándo. */
+  consent_provider: string | null
+  consent_provider_name: string | null
+  consent_by_login: string | null
+  consent_at: string | null
 }
 
 export interface CompanyDocument {

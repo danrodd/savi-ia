@@ -169,7 +169,17 @@ class ReadPdfPagesUseCase:
         settings = await self._settings.get()
         if not settings.ai_reading_enabled:
             return None
-        return await self._readers.build_reader()
+        reader = await self._readers.build_reader()
+        if reader is not None and not settings.allows_sending_to(reader.provider):
+            # Nadie aceptó enviar los PDF a ESTE proveedor (o cambió el activo):
+            # no se manda nada y se lee solo el texto digital.
+            logger.warning(
+                "company_docs_ai_reading_without_consent provider=%s consented=%s",
+                reader.provider,
+                settings.consent_provider,
+            )
+            return None
+        return reader
 
     async def _read_with_ai(
         self,

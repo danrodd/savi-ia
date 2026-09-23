@@ -10,6 +10,7 @@ import {
   estimateCost,
   formatUsd,
   isPdf,
+  needsConsent,
   pdfReadingHint,
   progressLabel,
   readingDetail,
@@ -29,6 +30,11 @@ function settings(overrides: Partial<AiReadingSettings> = {}): AiReadingSettings
     privacy_notice: 'Se envían a OpenAI.',
     updated_by_login: null,
     updated_at: null,
+    consent_required: false,
+    consent_provider: 'openai',
+    consent_provider_name: 'OpenAI',
+    consent_by_login: 'ADMIN',
+    consent_at: '2026-09-23T18:00:00Z',
     ...overrides,
   }
 }
@@ -59,12 +65,30 @@ describe('isPdf', () => {
   })
 })
 
+describe('needsConsent', () => {
+  it('pide aceptar el aviso si nadie aceptó o si cambió el proveedor', () => {
+    expect(needsConsent(settings())).toBe(false)
+    expect(needsConsent(settings({ consent_provider: null }))).toBe(true)
+    expect(needsConsent(settings({ provider: 'gemini' }))).toBe(true)
+    expect(needsConsent(settings({ consent_required: true }))).toBe(true)
+  })
+
+  it('sin proveedor disponible no hay nada que aceptar', () => {
+    expect(needsConsent(settings({ available: false, consent_provider: null }))).toBe(false)
+    expect(needsConsent(null)).toBe(false)
+  })
+})
+
 describe('estimado de costo', () => {
   it('solo lee con IA si está activa y disponible', () => {
     expect(willReadWithAi(settings())).toBe(true)
     expect(willReadWithAi(settings({ ai_reading_enabled: false }))).toBe(false)
     expect(willReadWithAi(settings({ available: false }))).toBe(false)
     expect(willReadWithAi(null)).toBe(false)
+  })
+
+  it('no lee con IA si el proveedor activo no fue aceptado', () => {
+    expect(willReadWithAi(settings({ consent_required: true }))).toBe(false)
   })
 
   it('multiplica páginas por el precio por página', () => {

@@ -5,6 +5,10 @@
  * Es la única decisión que toma el administrador. No hay una casilla por
  * archivo: con la lectura activa, cada PDF que se suba se lee con IA y el
  * diálogo de subida muestra antes cuánto costaría.
+ *
+ * Activarla manda los PDF completos al proveedor, así que exige aceptar el
+ * aviso para ESE proveedor. Si después cambia el proveedor activo, la
+ * lectura queda en pausa hasta que alguien acepte el nuevo.
  */
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
@@ -13,13 +17,16 @@ import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import { toast } from '@/lib/toast'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
-import { approxUsd } from '../utils/aiReading'
+import { approxUsd, needsConsent } from '../utils/aiReading'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 
 const store = useCompanyDocumentStore()
 const saving = ref(false)
+/** Panel de aceptación abierto al intentar activar sin consentimiento. */
+const askingConsent = ref(false)
+const accepted = ref(false)
 
 const settings = computed(() => store.aiReading)
 const pricePer100 = computed(() => {
@@ -27,25 +34,59 @@ const pricePer100 = computed(() => {
   return perPage === null || perPage === undefined ? null : approxUsd(perPage * 100)
 })
 
+const paused = computed(
+  () => !!settings.value?.ai_reading_enabled && settings.value.consent_required,
+)
+const showConsent = computed(() => askingConsent.value || paused.value)
+const consentRecord = computed(() => {
+  const current = settings.value
+  if (!current?.consent_provider || !current.consent_at) return null
+  const date = new Date(current.consent_at).toLocaleDateString('es-CO', { dateStyle: 'medium' })
+  const who = current.consent_by_login ? ` por ${current.consent_by_login}` : ''
+  return `Envío a ${current.consent_provider_name ?? current.consent_provider} aceptado${who} el ${date}.`
+})
+
 watch(
   () => props.open,
   (open) => {
-    if (open) void store.loadAiReading()
+    if (!open) return
+    askingConsent.value = false
+    accepted.value = false
+    void store.loadAiReading()
   },
   { immediate: true },
 )
 
-async function onToggle(event: Event): Promise<void> {
-  const enabled = (event.target as HTMLInputElement).checked
+async function save(enabled: boolean, acceptProvider?: string): Promise<void> {
   saving.value = true
   try {
-    await store.setAiReading(enabled)
+    await store.setAiReading(enabled, acceptProvider)
+    askingConsent.value = false
+    accepted.value = false
     toast.success(enabled ? 'Lectura con IA activada' : 'Lectura con IA desactivada')
   } catch (e) {
     toast.error((e as Error).message || 'No se pudo guardar la configuración.')
   } finally {
     saving.value = false
   }
+}
+
+async function onToggle(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const enabled = input.checked
+  if (enabled && needsConsent(settings.value)) {
+    // No se activa hasta aceptar el aviso: el interruptor vuelve a su lugar.
+    input.checked = false
+    askingConsent.value = true
+    return
+  }
+  await save(enabled)
+}
+
+async function acceptAndEnable(): Promise<void> {
+  const provider = settings.value?.provider
+  if (!provider || !accepted.value) return
+  await save(true, provider)
 }
 </script>
 
@@ -110,7 +151,42 @@ async function onToggle(event: Event): Promise<void> {
         precio de lista.
       </p>
 
-      <p class="kset__notice">{{ settings.privacy_notice }}</p>
+      <section v-if="showConsent" class="kset__consent" aria-labelledby="kset-consent-title">
+        <p id="kset-consent-title" class="kset__consent-title">
+          <template v-if="paused">
+            La lectura con IA está en pausa: el proveedor activo ahora es
+            {{ settings.provider_name }} y nadie aceptó enviarle los documentos.
+          </template>
+          <template v-else>Antes de activar la lectura con IA</template>
+        </p>
+        <p class="kset__consent-text">{{ settings.privacy_notice }}</p>
+        <label class="kset__check">
+          <input v-model="accepted" type="checkbox" :disabled="saving" />
+          <span>
+            Entiendo y acepto que los PDF se envíen a {{ settings.provider_name }} para leerlos.
+          </span>
+        </label>
+        <div class="kset__consent-actions">
+          <Button
+            v-if="!paused"
+            variant="ghost"
+            :disabled="saving"
+            @click="askingConsent = false"
+          >
+            Cancelar
+          </Button>
+          <Button :disabled="!accepted || saving" @click="acceptAndEnable">
+            {{ paused ? 'Aceptar y reanudar' : 'Aceptar y activar' }}
+          </Button>
+        </div>
+      </section>
+
+      <template v-else>
+        <p class="kset__notice">{{ settings.privacy_notice }}</p>
+        <p v-if="consentRecord && settings.ai_reading_enabled" class="kset__hint">
+          {{ consentRecord }}
+        </p>
+      </template>
       <p class="kset__hint">
         Aplica a lo que se suba desde ahora. Los documentos que ya están cargados se pueden leer con
         IA desde la tabla, con "Leer con IA".
@@ -240,5 +316,42 @@ async function onToggle(event: Event): Promise<void> {
 .kset__notice {
   background: var(--surface-subtle);
   color: var(--text-muted);
+}
+
+.kset__consent {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.kset__consent-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.kset__consent-text {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kset__check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kset__consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 </style>

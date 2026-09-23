@@ -130,8 +130,11 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
     }
   }
 
-  async function setAiReading(enabled: boolean): Promise<AiReadingSettings> {
-    const saved = await companyDocumentService.updateAiReadingSettings(enabled)
+  async function setAiReading(
+    enabled: boolean,
+    acceptProvider?: string,
+  ): Promise<AiReadingSettings> {
+    const saved = await companyDocumentService.updateAiReadingSettings(enabled, acceptProvider)
     aiReading.value = saved
     return saved
   }

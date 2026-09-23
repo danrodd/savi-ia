@@ -210,9 +210,13 @@ class CompanyKnowledgeSettingsModel(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     ai_reading_enabled: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True, server_default="true"
+        Boolean, nullable=False, default=False, server_default="false"
     )
     updated_by_login: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Proveedor al que un administrador aceptó enviar los PDF, quién y cuándo.
+    ai_reading_consent_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    ai_reading_consent_by_login: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    ai_reading_consent_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         UtcDateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )

@@ -204,11 +204,16 @@ class Setup:
 
 
 @pytest.fixture
-def setup(sessionmaker_: async_sessionmaker[AsyncSession], executor: ThreadPoolExecutor) -> Setup:
+async def setup(
+    sessionmaker_: async_sessionmaker[AsyncSession], executor: ThreadPoolExecutor
+) -> Setup:
+    settings = SqlAlchemyKnowledgeSettingsRepository(sessionmaker_)
+    # Activada y aceptada para el proveedor del lector falso (`openai`).
+    await settings.save(KnowledgeSettings(ai_reading_enabled=True, consent_provider="openai"))
     return Setup(
         documents=SqlAlchemyDocumentRepository(sessionmaker_),
         pages=SqlAlchemyDocumentPageRepository(sessionmaker_),
-        settings=SqlAlchemyKnowledgeSettingsRepository(sessionmaker_),
+        settings=settings,
         executor=executor,
         sleeps=_Sleeps(),
     )
@@ -272,6 +277,19 @@ async def test_disabled_ai_reading_keeps_the_text_layer_and_calls_nobody(setup: 
     assert "Manual de caja" in outcome.extracted.pages[0]
     stored = await setup.pages.list_pages(document.id, document.version)
     assert [p.method for p in stored] == [PageRoute.TEXT]
+
+
+async def test_nothing_is_sent_to_a_provider_nobody_accepted(setup: Setup) -> None:
+    """Aceptar el envío a un proveedor no autoriza a otro."""
+    await setup.settings.save(KnowledgeSettings(ai_reading_enabled=True, consent_provider="gemini"))
+    content = make_scanned_pdf(1)
+    document = await setup.document(content)
+    reader = FakeReader()
+
+    outcome = await setup.use_case(reader).execute(document, content)
+
+    assert reader.calls == []
+    assert outcome.ai_page_count == 0
 
 
 async def test_without_a_provider_the_pdf_is_read_with_pypdf(setup: Setup) -> None:

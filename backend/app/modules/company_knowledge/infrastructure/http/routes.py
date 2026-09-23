@@ -193,7 +193,9 @@ async def update_ai_reading_settings(
 ) -> AiReadingSettingsResponse:
     """Activa o apaga la lectura con IA. Aplica a lo que se procese después."""
     reading = await use_case.execute(
-        enabled=request.ai_reading_enabled, updated_by_login=admin.login
+        enabled=request.ai_reading_enabled,
+        updated_by_login=admin.login,
+        accept_provider=request.accept_provider,
     )
     return AiReadingSettingsResponse.from_status(reading)
 
