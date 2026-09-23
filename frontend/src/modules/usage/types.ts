@@ -28,6 +28,18 @@ export interface DailyUsage {
 export interface UserUsage {
   /** `null` = conversaciones legadas anteriores a auth. */
   user_id: number | null
+  /**
+   * Base con la que el usuario inició sesión. Junto con `user_id`
+   * identifica a la persona: el id del ERP se repite entre clientes.
+   */
+  erp_database_id: string | null
+  totals: UsageTotals
+}
+
+/** Consumo por base CONSULTADA: cuánto costó atender a cada cliente. */
+export interface DatabaseUsage {
+  /** `null` = conversaciones legadas anteriores al multi-base. */
+  erp_database_id: string | null
   totals: UsageTotals
 }
 
@@ -65,6 +77,7 @@ export interface SystemUsageReport {
   daily: DailyUsage[]
   per_provider: ProviderUsage[]
   daily_by_provider: DailyProviderUsage[]
+  per_database: DatabaseUsage[]
   usd_to_cop_rate: number
 }
 
@@ -78,6 +91,8 @@ export interface UsageQuery {
   to?: string
   provider?: UsageProviderKind[]
   model?: string[]
+  /** Base(s) consultada(s) por la conversación. */
+  database?: string[]
 }
 
 export interface ConversationStats {
@@ -122,4 +137,6 @@ export interface ConversationUsage {
   total_tokens: number
   cost_usd: number
   last_activity: string
+  /** Base consultada: a qué cliente se atendió. */
+  erp_database_id: string | null
 }

@@ -5,24 +5,37 @@
  */
 import { computed, onMounted } from 'vue'
 
+import { useErpDatabaseStore } from '@/modules/admin/stores/erpDatabaseStore'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { useUsageStore } from '../stores/usageStore'
+import { buildDatabaseRows, databaseLabel } from '../utils/databases'
 import { formatCop, formatTokens, formatUsd } from '../utils/format'
 import ProviderBreakdown from './ProviderBreakdown.vue'
 import ProviderDailyChart from './ProviderDailyChart.vue'
 
 const store = useUsageStore()
 const authStore = useAuthStore()
+const databaseStore = useErpDatabaseStore()
 const rate = computed(() => store.usdToCopRate)
 
-function userLabel(userId: number | null): string {
+// Por base CONSULTADA: cuánto costó atender a cada cliente. Un usuario de
+// soporte atiende a varios desde una sola sesión.
+const databaseRows = computed(() =>
+  buildDatabaseRows(store.system?.per_database ?? [], databaseStore.databases),
+)
+
+// El id del ERP se repite entre clientes: sin la base, el usuario 1 de
+// farmacias y el 1 de frami se ven como la misma persona.
+function userLabel(userId: number | null, databaseId: string | null): string {
   if (userId === null) return 'Sin usuario (legado)'
-  if (userId === authStore.user?.id) return `#${userId} · vos`
-  return `#${userId}`
+  const base = databaseLabel(databaseId, databaseStore.databases)
+  const isMe = userId === authStore.user?.id
+  return `#${userId} · ${base}${isMe ? ' · vos' : ''}`
 }
 
 onMounted(() => {
   if (!store.system && !store.loadingSystem) void store.loadSystem()
+  if (databaseStore.databases.length === 0 && !databaseStore.loading) void databaseStore.load()
 })
 </script>
 
@@ -62,6 +75,34 @@ onMounted(() => {
       </section>
 
       <section
+        v-if="databaseRows.length > 0"
+        class="su__ranking"
+        aria-label="Consumo por cliente"
+      >
+        <h2 class="su__section-title">Por cliente (base consultada)</h2>
+        <table class="su__table">
+          <thead>
+            <tr>
+              <th scope="col">Base</th>
+              <th scope="col" class="su__num">Respuestas</th>
+              <th scope="col" class="su__num">Tokens</th>
+              <th scope="col" class="su__num">Costo</th>
+              <th scope="col" class="su__num">% del costo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in databaseRows" :key="row.key">
+              <td>{{ row.label }}</td>
+              <td class="su__num">{{ formatTokens(row.responses) }}</td>
+              <td class="su__num">{{ formatTokens(row.tokens) }}</td>
+              <td class="su__num su__num--strong">{{ formatCop(row.costUsd, rate) }}</td>
+              <td class="su__num">{{ row.share.toFixed(1) }}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section
         v-if="store.system.daily_by_provider.length > 0"
         class="su__ranking"
         aria-label="Consumo por día"
@@ -85,8 +126,11 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="u in store.system.per_user" :key="u.user_id ?? 'legacy'">
-              <td>{{ userLabel(u.user_id) }}</td>
+            <tr
+              v-for="u in store.system.per_user"
+              :key="`${u.erp_database_id ?? 'legacy'}-${u.user_id ?? 'legacy'}`"
+            >
+              <td>{{ userLabel(u.user_id, u.erp_database_id) }}</td>
               <td class="su__num">{{ formatTokens(u.totals.total_tokens) }}</td>
               <td class="su__num">{{ formatTokens(u.totals.message_count) }}</td>
               <td class="su__num su__num--strong">{{ formatCop(u.totals.cost_usd, rate) }}</td>
