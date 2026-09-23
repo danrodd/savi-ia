@@ -43,7 +43,7 @@ TERCEROS = SemanticEntity(
         "nombre": FieldDef("nombre", _NAME, "Nombre"),
         "es_cliente": FieldDef("es_cliente", 't."cliente"', "Es cliente"),
         "es_proveedor": FieldDef("es_proveedor", 't."proveedor"', "Es proveedor"),
-        "activo": FieldDef("activo", 't."activo"', "Activo"),
+        "activo": FieldDef("activo", 't."estado"', "Activo"),
     },
     filters={
         "nombre": FilterDef("nombre", _NAME, (FilterOp.CONTAINS,)),
@@ -52,7 +52,7 @@ TERCEROS = SemanticEntity(
         "es_proveedor": FilterDef(
             "es_proveedor", 't."proveedor"', (FilterOp.EQ,), value_type="bool"
         ),
-        "activo": FilterDef("activo", 't."activo"', (FilterOp.EQ,), value_type="bool"),
+        "activo": FilterDef("activo", 't."estado"', (FilterOp.EQ,), value_type="bool"),
     },
     record_key="id",
 )
