@@ -224,8 +224,9 @@ por instalación (uvicorn con un worker).
 | 1 | [Ingesta y procesamiento](01-fase-ingesta-y-procesamiento.md) | Spike de modelo, tablas, API de administración, extracción, fragmentación, embeddings, worker y empaquetado del modelo. | Documentos administrables por API y procesados |
 | 2 | [Búsqueda y uso en el chat](02-fase-busqueda-y-chat.md) | Política de acceso, índice híbrido, `tipo = documentos`, citas, fuentes persistidas, descarga y prueba de búsqueda. | SAVI responde con documentos por API |
 | 3 | [Interfaz y verificación](03-fase-interfaz-y-verificacion.md) | Pantalla de administración, fuentes en el chat, E2E y verificación de rendimiento. | Todo desde la UI |
+| 4 | [Lectura de PDF con IA](04-fase-lectura-pdf-con-ia.md) | El proveedor configurado transcribe PDF escaneados, tablas e imágenes por página, con `pypdf` como respaldo, costo registrado y hoja de ruta al modo mixto. | Los escaneos y fichas técnicas dejan de quedar "Sin texto" |
 
-Orden obligatorio: 1 → 2 → 3.
+Orden obligatorio: 1 → 2 → 3. La Fase 4 es posterior a la v1.
 
 ## 13. Glosario
 
