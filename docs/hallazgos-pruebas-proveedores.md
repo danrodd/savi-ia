@@ -4,13 +4,18 @@
 > contra cada proveedor de IA, con el diagnóstico de cada falla y el diseño de
 > su corrección.
 >
-> Corrida 1 — **Claude (API key)**, 2026-09-21.
-> Modelos: `claude-sonnet-5` para chat, `claude-haiku-4-5-20251001` para títulos.
+> Los tres proveedores corrieron **las mismas 6 preguntas**, para que la
+> comparación sea de manzanas con manzanas.
 >
-> Corrida 2 — **Gemini (API key)**, 2026-09-21, después de aplicar los fixes
-> de los Hallazgos 1 y 5. Modelo: `gemini-flash-lite-latest` (chat y títulos).
+> | Corrida | Proveedor | Modelo | Cuándo |
+> |---|---|---|---|
+> | 1 | Claude | `claude-sonnet-5` | 2026-09-21, **antes** de los fixes |
+> | 2 | Gemini | `gemini-flash-lite-latest` | 2026-09-22, después de los fixes |
+> | 3 | OpenAI | `gpt-5.6-luna` | 2026-09-22, después de los fixes |
 >
-> Corrida 3 — **OpenAI**: bloqueada. Ver [Corrida 3](#corrida-3--openai-bloqueada).
+> La corrida 1 es la línea de base: destapó los hallazgos. Las otras dos
+> verifican que las correcciones funcionan con proveedores distintos.
+> Ver la [comparación](#comparación-de-los-tres-proveedores--mismas-6-preguntas).
 
 ---
 
@@ -22,7 +27,7 @@
 | 2 | El mensaje de error invita al modelo a reintentar en loop | Bug | Alta | ⚠️ Parcial — resuelto para tipos, falta la separación general |
 | 3 | La respuesta no se percibe en streaming: llega completa al final | A investigar | Media | 🔍 Descartado bug de backend; ver evidencia de la Corrida 2 |
 | 4 | No hay aviso cuando termina un turno en segundo plano | Falta funcionalidad | Media | ⬜ Abierto |
-| 5 | Una pregunta del catálogo de conocimiento no resuelve | Bug | Baja | ✅ Corregido (el loader nunca leía `shared/faqs/`) |
+| 5 | Una pregunta del catálogo de conocimiento no resuelve | Bug | Baja | ✅ Corregido en DOS capas: el loader no leía `shared/faqs/` **y** `intencion` no miraba FAQs |
 | 6 | Cartera, proveedores y catálogo respondieron bien | Correcto | — | — |
 
 ---
@@ -263,6 +268,34 @@ FAQ existía en el repo y era invisible en runtime.
 **Corregido** en `static_catalog.py`, con test de regresión sobre el catálogo
 mínimo y un sanity check contra el catálogo real.
 
+### Segunda capa: cargar la FAQ no alcanzaba
+
+Este hallazgo se dio por cerrado antes de tiempo. Al correr la batería con
+Gemini, la pregunta **seguía fallando**. La causa tenía dos capas y solo se
+había arreglado una:
+
+| Camino | Estado tras el primer fix |
+|---|---|
+| `tipo: "faq"` → `answer_faq` | ✅ Encontraba `faq_016` |
+| `tipo: "intencion"` → `search_by_intent` | ❌ Solo recorre **formularios**, nunca FAQs |
+
+El modelo usa `tipo: "intencion"` por defecto (así lo dice la descripción de
+la tool), así que nunca llegaba a la FAQ: recibía formularios irrelevantes
+con score 2 (`frmCierreMes` para una pregunta de permisos) e improvisaba.
+
+Se suma que los formularios que la FAQ recomienda —
+`frmPermisoAccionUsuario`, `frmUsuario` — **no existen en el catálogo**: no
+hay dossier del módulo `SEGURIDAD` en `data/modules/`.
+
+**Corregido de verdad**: la rama `intencion` del dispatcher ahora consulta
+también las FAQs y las devuelve junto a los formularios. Verificado con los
+tres proveedores después del fix.
+
+> **Deuda pendiente**: crear el dossier del módulo `SEGURIDAD` con sus
+> formularios. Hoy la respuesta sale de la FAQ, no del catálogo de
+> formularios, así que preguntar directo por `frmUsuario` sigue sin
+> resolver.
+
 ---
 
 ## Hallazgo 6 — Lo que funcionó bien
@@ -323,11 +356,13 @@ Al correr la batería con cada proveedor, registrar además de la respuesta:
 
 ## Estado por proveedor
 
-| Proveedor | Corrida | Bloqueantes encontrados |
-|---|---|---|
-| Claude (API key) | 2026-09-21 | Hallazgo 1 (corregido) |
-| Gemini (API key) | 2026-09-21, post-fix | Ninguno — ver Corrida 2 |
-| OpenAI | Bloqueada | Credencial inválida, no es bug de SAVI — ver Corrida 3 |
+| Proveedor | Corrida | Modelo | Resultado |
+|---|---|---|---|
+| Claude | 2026-09-21, **pre-fix** | `claude-sonnet-5` | Línea de base: destapó los Hallazgos 1 a 5 |
+| Gemini | 2026-09-22, post-fix | `gemini-flash-lite-latest` | ✅ 6/6 · destapó la segunda capa del Hallazgo 5 |
+| OpenAI | 2026-09-22, post-fix | `gpt-5.6-luna` | ✅ 5/6 · no intentó la de proveedores |
+
+Ver la [comparación de los tres](#comparación-de-los-tres-proveedores--mismas-6-preguntas).
 
 ---
 
@@ -365,21 +400,70 @@ antes rompía el 100% de las veces, y acá resolvió en el primer intento.
 
 ---
 
-## Corrida 3 — OpenAI, bloqueada
+## Corrida 3 — OpenAI
 
-La API key de OpenAI cargada en el admin resultó inválida. Antes de asumir
-que era un bug de SAVI, se probó la key directo contra
-`https://api.openai.com/v1/models` sin pasar por el backend:
+Modelo `gpt-5.6-luna` (el económico de su familia: $0,20 entrada / $1,20
+salida por millón), con tarifa cargada antes de gastar crédito.
 
-```json
-{"error": {"message": "Incorrect API key provided: sk-proj-***...",
-           "type": "invalid_request_error", "code": "invalid_api_key"}}
-```
+> **Nota sobre el arranque falso**: el primer intento falló con
+> `invalid_api_key`. Se diagnosticó como una key revocada, y **eso estuvo
+> mal**: la key tenía un carácter de más al final (`…Y0A1` en vez de
+> `…Y0A`), un error de copiado. Sirve como recordatorio de que una key
+> rechazada puede ser un typo antes que una revocación — se descarta
+> comparando el largo, no suponiendo.
+>
+> Lo que sí quedó validado del episodio: el camino de error del backend
+> devuelve `ok: false` con mensaje accionable, sin reintentar en loop ni
+> exponer detalle interno.
 
-OpenAI mismo la rechaza — no es un problema de SAVI. El backend, además,
-manejó el error correctamente: devolvió `ok: false` con el mensaje
-accionable "La API key de OpenAI no es válida o no tiene permisos.", sin
-reintentar en loop ni exponer detalle interno. Ese camino de error quedó
-validado, aunque no se pudo probar el camino feliz.
+---
 
-**Pendiente**: repetir la Corrida 3 con una key de OpenAI válida.
+## Comparación de los tres proveedores — mismas 6 preguntas
+
+Todas las corridas después de aplicar los fixes de los Hallazgos 1 y 5.
+Claude se corrió ANTES de los fixes (por eso falla donde los otros no):
+esa columna es la línea de base que motivó las correcciones.
+
+| Pregunta | Claude (pre-fix) | Gemini | OpenAI |
+|---|---|---|---|
+| Facturación mes a mes de 2025 | ❌ 10 llamadas, se rindió | ✅ 1 llamada · $0,0064 | ✅ 1 llamada, marca meses sin datos · $0,0026 |
+| Descuentos durante 2025 | ⚠️ Costó, respondió | ✅ 1 llamada · $0,0052 | ✅ 1 llamada · $0,0005 |
+| Cartera vencida total | ⚠️ 15 llamadas | ⚠️ 17 llamadas, 2 errores · $0,068 | ⚠️ 6 llamadas, sin errores · $0,0042 |
+| Facturas pendientes a proveedores | ✅ Trajo los datos, acotó a 30 | ⚠️ Derivó al formulario · $0,0079 | ❌ 0 llamadas, no lo intentó · $0,0005 |
+| Cómo asigno permisos a un usuario | ❌ Falló | ✅ Cita `faq_016` · $0,0053 | ✅ Nombra `frmPermisoAccionUsuario` · $0,0006 |
+| Para qué sirve frmGestionCartera | ✅ Bien | ✅ Bien · $0,0051 | ✅ Bien · $0,0005 |
+
+**Costo de las corridas de hoy**: Gemini $0,1029 · OpenAI $0,0088.
+
+### Lo que muestra la comparación
+
+**1. El fix de fechas se confirma en los dos proveedores.** La pregunta que
+con Claude hacía 10 llamadas y terminaba rindiéndose ahora se resuelve en
+**una sola llamada** en Gemini y en OpenAI. No es que los otros modelos
+sean mejores: el bug ya no está.
+
+**2. `gpt-5.6-luna` salió entre 5 y 10 veces más barato que
+`gemini-flash-lite-latest`** en las mismas preguntas ($0,0088 contra
+$0,1029 en total), y con menos llamadas en la consulta cara (6 contra 17).
+
+**3. Números distintos para "cartera vencida" según el proveedor.** Gemini
+respondió ~$2.211 millones de saldo de clientes; OpenAI, $10.906 millones
+sobre 2.500 obligaciones. Ninguno está "mal": la pregunta es ambigua y
+cartera **no está modelada en la capa semántica**, así que cada modelo
+escribe su propio SQL y decide por su cuenta si incluye cuentas por pagar.
+El `DB_MAP` ya advierte que hay que separar CxC de CxP por `tipoDocumento`.
+
+> **Es el argumento más fuerte para modelar cartera en la capa semántica**:
+> mientras dependa de SQL libre, la misma pregunta de negocio devuelve
+> cifras distintas según el modelo que esté activo, y quien pregunta no
+> tiene cómo saber cuál es la correcta.
+
+**4. Criterio muy distinto ante lo que no está modelado.** En "facturas
+pendientes a proveedores": Claude fue por SQL libre y **trajo los datos**
+acotando a las 30 más urgentes; Gemini derivó al formulario correcto;
+OpenAI **no lo intentó siquiera** (0 llamadas a herramientas) pese a tener
+`consultar_libre` disponible. De menor a mayor utilidad para quien
+pregunta: OpenAI < Gemini < Claude.
+
+**5. El fix del Hallazgo 5 funciona en los tres.** OpenAI dio la mejor
+respuesta de las tres: nombra `frmPermisoAccionUsuario` y lista los pasos.
