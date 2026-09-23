@@ -24,6 +24,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationUsage,
     DailyProviderUsage,
     DailyUsage,
+    DatabaseUsage,
     ProviderUsage,
     UsageFilters,
     UsagePeriod,
@@ -86,6 +87,12 @@ class _FakeUsageRepo(UsageRepository):
     ) -> list[ProviderUsage]:
         self.calls.append(("provider_totals_for_user", (user_id, period, erp_database_id, filters)))
         return [ProviderUsage(provider="claude", model="claude-sonnet-5", totals=_TOTALS)]
+
+    async def database_totals_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DatabaseUsage]:
+        self.calls.append(("database_totals_system", (period, filters)))
+        return [DatabaseUsage(erp_database_id=_DATABASE_A, totals=_TOTALS)]
 
     async def daily_provider_for_user(
         self,
@@ -232,6 +239,8 @@ async def test_system_usage_arma_reporte_global() -> None:
     assert len(report.daily) == 1
     assert report.per_provider[0].provider == "claude"
     assert report.daily_by_provider[0].provider == "claude"
+    # Desglose por base consultada: cuánto costó cada cliente.
+    assert report.per_database[0].erp_database_id == _DATABASE_A
 
 
 @pytest.mark.asyncio
@@ -248,4 +257,5 @@ async def test_system_usage_no_filtra_por_usuario() -> None:
         "daily_system",
         "provider_totals_system",
         "daily_provider_system",
+        "database_totals_system",
     }

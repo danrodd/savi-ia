@@ -36,10 +36,13 @@ _FROM_DESC = (
     "reporte. Va junto con 'to'."
 )
 _TO_DESC = (
-    "Fecha de fin (AAAA-MM-DD, inclusive), interpretada en la zona de "
-    "reporte. Va junto con 'from'."
+    "Fecha de fin (AAAA-MM-DD, inclusive), interpretada en la zona de reporte. Va junto con 'from'."
 )
 _PROVIDER_DESC = "Proveedor(es) del modelo. Repetible: ?provider=claude&provider=gemini."
+_DATABASE_DESC = (
+    "Base(s) del ERP CONSULTADA(S) por la conversación (a qué cliente se atendió). "
+    "Repetible: ?database=<id>&database=<id>."
+)
 
 
 def _period_from_dates(from_date: date, to_date: date, tz_name: str) -> UsagePeriod:
@@ -97,10 +100,13 @@ def _require_database(user: AuthenticatedUser) -> UUID:
     return user.erp_database_id
 
 
-def _resolve_filters(provider: list[str] | None, model: list[str] | None) -> UsageFilters:
+def _resolve_filters(
+    provider: list[str] | None, model: list[str] | None, database: list[UUID] | None = None
+) -> UsageFilters:
     return UsageFilters(
         providers=frozenset(provider or ()),
         models=frozenset(model or ()),
+        databases=frozenset(database or ()),
     )
 
 
@@ -119,6 +125,7 @@ async def my_usage(
     to_date: date | None = Query(default=None, alias="to", description=_TO_DESC),
     provider: list[str] | None = Query(default=None, description=_PROVIDER_DESC),
     model: list[str] | None = Query(default=None, description="Modelo(s) utilizado(s)."),
+    database: list[UUID] | None = Query(default=None, description=_DATABASE_DESC),
 ) -> UserUsageReportResponse:
     """Consumo del usuario autenticado: total + serie diaria, en USD.
 
@@ -132,7 +139,7 @@ async def my_usage(
         user.id,
         period,
         erp_database_id=_require_database(user),
-        filters=_resolve_filters(provider, model),
+        filters=_resolve_filters(provider, model, database),
     )
     return UserUsageReportResponse.from_dto(report, usd_to_cop_rate=settings.usd_to_cop_rate)
 
@@ -152,6 +159,7 @@ async def system_usage(
     to_date: date | None = Query(default=None, alias="to", description=_TO_DESC),
     provider: list[str] | None = Query(default=None, description=_PROVIDER_DESC),
     model: list[str] | None = Query(default=None, description="Modelo(s) utilizado(s)."),
+    database: list[UUID] | None = Query(default=None, description=_DATABASE_DESC),
 ) -> SystemUsageReportResponse:
     """Consumo global del sistema (solo admins): total + ranking por
     usuario + serie diaria. 403 si el usuario no es admin.
@@ -159,7 +167,7 @@ async def system_usage(
     period = _resolve_period(
         start, end, from_date, to_date, reporting_timezone=settings.reporting_timezone
     )
-    report = await use_case.execute(period, filters=_resolve_filters(provider, model))
+    report = await use_case.execute(period, filters=_resolve_filters(provider, model, database))
     return SystemUsageReportResponse.from_dto(report, usd_to_cop_rate=settings.usd_to_cop_rate)
 
 
@@ -178,6 +186,7 @@ async def usage_kpis(
     to_date: date | None = Query(default=None, alias="to", description=_TO_DESC),
     provider: list[str] | None = Query(default=None, description=_PROVIDER_DESC),
     model: list[str] | None = Query(default=None, description="Modelo(s) utilizado(s)."),
+    database: list[UUID] | None = Query(default=None, description=_DATABASE_DESC),
 ) -> UsageKpisResponse:
     """KPIs de consumo para definir tarifa (solo admins).
 
@@ -187,7 +196,7 @@ async def usage_kpis(
     period = _resolve_period(
         start, end, from_date, to_date, reporting_timezone=settings.reporting_timezone
     )
-    kpis = await use_case.execute(period, filters=_resolve_filters(provider, model))
+    kpis = await use_case.execute(period, filters=_resolve_filters(provider, model, database))
     return UsageKpisResponse.from_dto(kpis, usd_to_cop_rate=settings.usd_to_cop_rate)
 
 
@@ -206,6 +215,7 @@ async def conversations_usage(
     to_date: date | None = Query(default=None, alias="to", description=_TO_DESC),
     provider: list[str] | None = Query(default=None, description=_PROVIDER_DESC),
     model: list[str] | None = Query(default=None, description="Modelo(s) utilizado(s)."),
+    database: list[UUID] | None = Query(default=None, description=_DATABASE_DESC),
     limit: int = Query(
         default=_CONVERSATIONS_LIMIT_DEFAULT,
         ge=1,
@@ -224,6 +234,6 @@ async def conversations_usage(
     rows = await use_case.execute(
         period,
         limit=limit,
-        filters=_resolve_filters(provider, model),
+        filters=_resolve_filters(provider, model, database),
     )
     return [ConversationUsageResponse.from_vo(r) for r in rows]

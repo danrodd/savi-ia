@@ -8,6 +8,7 @@ from app.modules.usage.domain.value_objects.period import UsagePeriod
 from app.modules.usage.domain.value_objects.usage_totals import (
     DailyProviderUsage,
     DailyUsage,
+    DatabaseUsage,
     ProviderUsage,
     UsageTotals,
     UserUsage,
@@ -18,6 +19,7 @@ __all__ = [
     "ConversationUsage",
     "DailyProviderUsage",
     "DailyUsage",
+    "DatabaseUsage",
     "ProviderUsage",
     "UsagePeriod",
     "UsageFilters",

@@ -21,6 +21,7 @@ class GetSystemUsageUseCase:
         daily = await self._repository.daily_system(period, filters=filters)
         per_provider = await self._repository.provider_totals_system(period, filters=filters)
         daily_by_provider = await self._repository.daily_provider_system(period, filters=filters)
+        per_database = await self._repository.database_totals_system(period, filters=filters)
         return SystemUsageReportDTO(
             period_start=period.start,
             period_end=period.end,
@@ -29,4 +30,5 @@ class GetSystemUsageUseCase:
             daily=daily,
             per_provider=per_provider,
             daily_by_provider=daily_by_provider,
+            per_database=per_database,
         )

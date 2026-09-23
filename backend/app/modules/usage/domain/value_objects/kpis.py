@@ -44,3 +44,5 @@ class ConversationUsage:
     total_tokens: int
     cost_usd: float
     last_activity: datetime
+    # Base del ERP que consultó la conversación (a qué cliente se atendió).
+    erp_database_id: UUID | None = None

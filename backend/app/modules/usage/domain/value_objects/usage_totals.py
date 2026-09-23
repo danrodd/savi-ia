@@ -59,6 +59,20 @@ class ProviderUsage:
 
 
 @dataclass(frozen=True, slots=True)
+class DatabaseUsage:
+    """Consumo agregado por base del ERP CONSULTADA en el período.
+
+    Es la base de la conversación, no la de login del dueño: un usuario de
+    soporte atiende a varios clientes desde una sola sesión, y lo que se
+    quiere saber es cuánto costó cada cliente. `None` agrupa conversaciones
+    legadas anteriores al multi-BD.
+    """
+
+    erp_database_id: UUID | None
+    totals: UsageTotals
+
+
+@dataclass(frozen=True, slots=True)
 class DailyProviderUsage:
     """Consumo agregado de un día, desglosado por proveedor (no por modelo:
     alimenta la barra apilada, donde una serie por modelo sería ilegible)."""
@@ -75,6 +89,12 @@ class UserUsage:
     La identidad es el par `(erp_database_id, user_id)`: el `idUsuario`
     del ERP se repite entre bases de clientes, y agrupar solo por el
     entero fusionaria en una sola fila a personas distintas.
+
+    `erp_database_id` es la base con la que el usuario INICIÓ SESIÓN
+    (`owner_erp_database_id` de la conversación), no la consultada: el
+    `idUsuario` solo significa algo en la base donde se autenticó. Con la
+    consultada, los chats de un usuario de soporte contra otro cliente se
+    le atribuían a quien tuviera ese mismo id en ese cliente.
 
     Ambos pueden ser `None`: corresponde a conversaciones legadas
     anteriores a auth o al multi-BD, que igual costaron tokens.

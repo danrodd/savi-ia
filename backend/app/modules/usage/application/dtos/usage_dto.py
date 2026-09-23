@@ -5,6 +5,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationStats,
     DailyProviderUsage,
     DailyUsage,
+    DatabaseUsage,
     ProviderUsage,
     UsageTotals,
     UserStats,
@@ -36,6 +37,8 @@ class SystemUsageReportDTO:
     daily: list[DailyUsage]
     per_provider: list[ProviderUsage]
     daily_by_provider: list[DailyProviderUsage]
+    # Por base CONSULTADA: cuánto costó atender a cada cliente.
+    per_database: list[DatabaseUsage]
 
 
 @dataclass(frozen=True)

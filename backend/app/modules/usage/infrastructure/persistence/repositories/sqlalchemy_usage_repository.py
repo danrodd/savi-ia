@@ -32,6 +32,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationUsage,
     DailyProviderUsage,
     DailyUsage,
+    DatabaseUsage,
     ProviderUsage,
     UsageFilters,
     UsagePeriod,
@@ -194,6 +195,8 @@ class SqlAlchemyUsageRepository(UsageRepository):
                 conditions.append(MessageModel.provider.in_(filters.providers))
             if filters.models:
                 conditions.append(MessageModel.model.in_(filters.models))
+            if filters.databases:
+                conditions.append(ConversationModel.erp_database_id.in_(filters.databases))
         return and_(*conditions)
 
     async def _totals(
@@ -384,6 +387,25 @@ class SqlAlchemyUsageRepository(UsageRepository):
     ) -> list[ProviderUsage]:
         return await self._provider_totals(period, user_id=None, filters=filters)
 
+    async def database_totals_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DatabaseUsage]:
+        db_id = ConversationModel.erp_database_id.label("erp_database_id")
+        cost = _cost_sum().label("cost_usd")
+        stmt = (
+            select(db_id, *_totals_columns())
+            .select_from(MessageModel)
+            .join(ConversationModel, MessageModel.conversation_id == ConversationModel.id)
+            .where(self._scoped(period, user_id=None, filters=filters))
+            .group_by(db_id)
+            .order_by(cost.desc())
+        )
+        rows = (await self._session.execute(stmt)).mappings().all()
+        return [
+            DatabaseUsage(erp_database_id=row["erp_database_id"], totals=_row_to_totals(row))
+            for row in rows
+        ]
+
     async def daily_provider_system(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[DailyProviderUsage]:
@@ -393,7 +415,11 @@ class SqlAlchemyUsageRepository(UsageRepository):
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[UserUsage]:
         uid = ConversationModel.user_id.label("user_id")
-        db_id = ConversationModel.erp_database_id.label("erp_database_id")
+        # La identidad es la base de LOGIN del dueño, no la consultada: el
+        # `idUsuario` solo significa algo donde se autenticó. Con la
+        # consultada, los chats de soporte contra otro cliente se le
+        # atribuían a quien tuviera ese mismo id en ese cliente.
+        db_id = ConversationModel.owner_erp_database_id.label("erp_database_id")
         cost = _cost_sum().label("cost_usd")
         stmt = (
             select(uid, db_id, *_totals_columns())
@@ -518,7 +544,10 @@ class SqlAlchemyUsageRepository(UsageRepository):
                     ConversationModel.user_id.is_not(None),
                 )
             )
-            .group_by(ConversationModel.user_id)
+            # Por el par (usuario, base de login): el `idUsuario` se repite
+            # entre clientes y agrupar solo por el entero contaba al usuario
+            # 1 de cada cliente como una sola persona.
+            .group_by(ConversationModel.user_id, ConversationModel.owner_erp_database_id)
             .subquery()
         )
         stmt = select(
@@ -546,6 +575,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
                 ConversationModel.id.label("conversation_id"),
                 ConversationModel.user_id.label("user_id"),
                 ConversationModel.title.label("title"),
+                ConversationModel.erp_database_id.label("erp_database_id"),
                 func.count(MessageModel.id).label("turns"),
                 _total_tokens_sum().label("total_tokens"),
                 cost,
@@ -558,6 +588,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
                 ConversationModel.id,
                 ConversationModel.user_id,
                 ConversationModel.title,
+                ConversationModel.erp_database_id,
             )
             .order_by(cost.desc())
             .limit(limit)
@@ -572,6 +603,7 @@ class SqlAlchemyUsageRepository(UsageRepository):
                 total_tokens=int(row["total_tokens"]),
                 cost_usd=float(row["cost_usd"]),
                 last_activity=row["last_activity"],
+                erp_database_id=row["erp_database_id"],
             )
             for row in rows
         ]

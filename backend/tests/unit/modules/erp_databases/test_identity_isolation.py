@@ -8,6 +8,7 @@ B son personas distintas que el código anterior trataba como la misma.
 Todos los escenarios usan **el mismo `user_id` en dos bases**, que es
 exactamente la colisión que hay que impedir.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -116,12 +117,8 @@ async def test_user_only_sees_conversations_of_their_own_client(
     5 del cliente B vería el hilo del usuario 5 del cliente A."""
     repository = SqlAlchemyConversationRepository(session)
 
-    from_a = await repository.list_for_user(
-        _SHARED_USER_ID, owner_erp_database_id=_DATABASE_A
-    )
-    from_b = await repository.list_for_user(
-        _SHARED_USER_ID, owner_erp_database_id=_DATABASE_B
-    )
+    from_a = await repository.list_for_user(_SHARED_USER_ID, owner_erp_database_id=_DATABASE_A)
+    from_b = await repository.list_for_user(_SHARED_USER_ID, owner_erp_database_id=_DATABASE_B)
 
     assert [c.title for c in from_a] == ["Hilo del cliente A"]
     assert [c.title for c in from_b] == ["Hilo del cliente B"]
@@ -141,16 +138,12 @@ async def test_owner_of_other_client_cannot_open_the_conversation(
     )
 
     conversation_a = (
-        await repository.list_for_user(
-            _SHARED_USER_ID, owner_erp_database_id=_DATABASE_A
-        )
+        await repository.list_for_user(_SHARED_USER_ID, owner_erp_database_id=_DATABASE_A)
     )[0]
     use_case = GetConversationWithMessagesUseCase(repository)
 
     # El mismo idUsuario, pero del otro cliente.
-    intruder = ConversationOwner(
-        user_id=_SHARED_USER_ID, erp_database_id=_DATABASE_B
-    )
+    intruder = ConversationOwner(user_id=_SHARED_USER_ID, erp_database_id=_DATABASE_B)
     with pytest.raises(ConversationNotFoundError):
         await use_case.execute(conversation_a.id, expected_owner=intruder)
 
@@ -202,9 +195,7 @@ async def test_conversation_visible_and_ownable_across_queried_databases(
     session.add(cross)
     await session.commit()
 
-    listed = await repository.list_for_user(
-        _SHARED_USER_ID, owner_erp_database_id=_DATABASE_A
-    )
+    listed = await repository.list_for_user(_SHARED_USER_ID, owner_erp_database_id=_DATABASE_A)
     assert "Hilo cruzado" in [c.title for c in listed]
 
     owner = ConversationOwner(user_id=_SHARED_USER_ID, erp_database_id=_DATABASE_A)
@@ -245,3 +236,78 @@ async def test_per_user_ranking_does_not_merge_homonyms(
     assert len(rows) == 2
     assert {r.erp_database_id for r in rows} == {_DATABASE_A, _DATABASE_B}
     assert all(r.user_id == _SHARED_USER_ID for r in rows)
+
+
+async def _add_cross_conversation(session: AsyncSession, tokens: int) -> None:
+    """El usuario 5 del cliente A (soporte) consulta al cliente B."""
+    cross = ConversationModel(
+        id=uuid4(),
+        user_id=_SHARED_USER_ID,
+        erp_database_id=_DATABASE_B,
+        owner_erp_database_id=_DATABASE_A,
+        title="Soporte atendiendo al cliente B",
+    )
+    session.add(cross)
+    await session.flush()
+    session.add(
+        MessageModel(
+            id=uuid4(),
+            conversation_id=cross.id,
+            role="assistant",
+            content="respuesta",
+            usage={"input_tokens": tokens, "output_tokens": 0},
+            cost_usd=Decimal("1.000000"),
+            created_at=datetime(2026, 6, 15, 13, 0, tzinfo=UTC),
+        )
+    )
+    await session.commit()
+
+
+async def test_per_user_ranking_attributes_cross_queries_to_the_login_identity(
+    session: AsyncSession,
+) -> None:
+    """Lo que el usuario 5 de A gastó consultando a B es de él, no del
+    usuario 5 de B.
+
+    El ranking agrupaba por la base CONSULTADA: los 30 tokens del hilo
+    cruzado terminaban sumados a la otra persona.
+    """
+    await _add_cross_conversation(session, tokens=30)
+    repository = SqlAlchemyUsageRepository(session, reporting_timezone="UTC")
+
+    rows = {r.erp_database_id: r.totals.input_tokens for r in await repository.per_user(_PERIOD)}
+
+    assert rows == {_DATABASE_A: 130, _DATABASE_B: 700}
+
+
+async def test_active_users_count_homonyms_as_different_people(
+    session: AsyncSession,
+) -> None:
+    """Dos usuarios 5 de clientes distintos son dos usuarios activos."""
+    repository = SqlAlchemyUsageRepository(session, reporting_timezone="UTC")
+
+    stats = await repository.user_stats(_PERIOD)
+
+    assert stats.active_count == 2
+
+
+async def test_usage_per_database_follows_the_queried_client(
+    session: AsyncSession,
+) -> None:
+    """El desglose por base responde "cuánto costó cada cliente": el hilo
+    cruzado cuenta para B, que es a quien se atendió."""
+    from app.modules.usage.domain.value_objects import UsageFilters
+
+    await _add_cross_conversation(session, tokens=30)
+    repository = SqlAlchemyUsageRepository(session, reporting_timezone="UTC")
+
+    rows = {
+        r.erp_database_id: r.totals.input_tokens
+        for r in await repository.database_totals_system(_PERIOD)
+    }
+    solo_b = await repository.system_totals(
+        _PERIOD, filters=UsageFilters(databases=frozenset({_DATABASE_B}))
+    )
+
+    assert rows == {_DATABASE_A: 100, _DATABASE_B: 730}
+    assert solo_b.input_tokens == 730

@@ -13,6 +13,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationUsage,
     DailyProviderUsage,
     DailyUsage,
+    DatabaseUsage,
     ProviderUsage,
     UsageTotals,
     UserStats,
@@ -78,13 +79,31 @@ class DailyProviderUsageResponse(BaseModel):
         return cls(day=d.day, provider=d.provider, totals=UsageTotalsResponse.from_vo(d.totals))
 
 
+class DatabaseUsageResponse(BaseModel):
+    # Base CONSULTADA. El nombre lo resuelve la vista con el listado de
+    # bases que ya tiene el administrador.
+    erp_database_id: UUID | None
+    totals: UsageTotalsResponse
+
+    @classmethod
+    def from_vo(cls, d: DatabaseUsage) -> "DatabaseUsageResponse":
+        return cls(erp_database_id=d.erp_database_id, totals=UsageTotalsResponse.from_vo(d.totals))
+
+
 class UserUsageResponse(BaseModel):
     user_id: int | None
+    # Base de LOGIN del usuario: junto con `user_id` identifica a la
+    # persona (el id del ERP se repite entre clientes).
+    erp_database_id: UUID | None = None
     totals: UsageTotalsResponse
 
     @classmethod
     def from_vo(cls, u: UserUsage) -> "UserUsageResponse":
-        return cls(user_id=u.user_id, totals=UsageTotalsResponse.from_vo(u.totals))
+        return cls(
+            user_id=u.user_id,
+            erp_database_id=u.erp_database_id,
+            totals=UsageTotalsResponse.from_vo(u.totals),
+        )
 
 
 class UserUsageReportResponse(BaseModel):
@@ -125,6 +144,7 @@ class SystemUsageReportResponse(BaseModel):
     daily: list[DailyUsageResponse]
     per_provider: list[ProviderUsageResponse]
     daily_by_provider: list[DailyProviderUsageResponse]
+    per_database: list[DatabaseUsageResponse]
     usd_to_cop_rate: float
 
     @classmethod
@@ -141,6 +161,7 @@ class SystemUsageReportResponse(BaseModel):
             daily_by_provider=[
                 DailyProviderUsageResponse.from_vo(d) for d in dto.daily_by_provider
             ],
+            per_database=[DatabaseUsageResponse.from_vo(d) for d in dto.per_database],
             usd_to_cop_rate=usd_to_cop_rate,
         )
 
@@ -200,9 +221,7 @@ class UsageKpisResponse(BaseModel):
     usd_to_cop_rate: float
 
     @classmethod
-    def from_dto(
-        cls, dto: UsageKpisDTO, *, usd_to_cop_rate: float
-    ) -> "UsageKpisResponse":
+    def from_dto(cls, dto: UsageKpisDTO, *, usd_to_cop_rate: float) -> "UsageKpisResponse":
         return cls(
             period_start=dto.period_start,
             period_end=dto.period_end,
@@ -229,6 +248,8 @@ class ConversationUsageResponse(BaseModel):
     total_tokens: int
     cost_usd: float
     last_activity: datetime
+    # Base consultada: a qué cliente se atendió en esta conversación.
+    erp_database_id: UUID | None = None
 
     @classmethod
     def from_vo(cls, c: ConversationUsage) -> "ConversationUsageResponse":
@@ -240,4 +261,5 @@ class ConversationUsageResponse(BaseModel):
             total_tokens=c.total_tokens,
             cost_usd=c.cost_usd,
             last_activity=c.last_activity,
+            erp_database_id=c.erp_database_id,
         )

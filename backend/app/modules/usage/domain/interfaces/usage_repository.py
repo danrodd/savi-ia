@@ -6,6 +6,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationUsage,
     DailyProviderUsage,
     DailyUsage,
+    DatabaseUsage,
     ProviderUsage,
     UsageFilters,
     UsagePeriod,
@@ -83,6 +84,11 @@ class UsageRepository(ABC):
     async def provider_totals_system(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[ProviderUsage]: ...
+
+    @abstractmethod
+    async def database_totals_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DatabaseUsage]: ...
 
     @abstractmethod
     async def daily_provider_system(

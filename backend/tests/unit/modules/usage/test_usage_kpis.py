@@ -21,6 +21,7 @@ from app.modules.usage.domain.value_objects import (
     ConversationUsage,
     DailyProviderUsage,
     DailyUsage,
+    DatabaseUsage,
     ProviderUsage,
     UsageFilters,
     UsagePeriod,
@@ -117,6 +118,11 @@ class _FakeRepo(UsageRepository):
     async def provider_totals_system(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[ProviderUsage]:  # noqa: ARG002
+        return []
+
+    async def database_totals_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> list[DatabaseUsage]:  # noqa: ARG002
         return []
 
     async def daily_provider_system(
