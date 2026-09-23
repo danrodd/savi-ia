@@ -45,8 +45,11 @@ const userDisplayName = computed(() => {
 
 const userSubtitle = computed(() => {
   if (!authStore.user) return ''
-  const { login, is_admin } = authStore.user
-  return is_admin ? `${login} · Admin` : login
+  const { login, is_admin, erp_database } = authStore.user
+  // La base va a la vista: soporte entra a varios clientes y tiene que
+  // saber en cuál está la sesión.
+  const parts = [login, is_admin ? 'Admin' : null, erp_database?.code ?? null]
+  return parts.filter(Boolean).join(' · ')
 })
 
 async function onLogout(): Promise<void> {
@@ -157,7 +160,7 @@ function goToAdmin(): void {
             <div class="sidebar__user-avatar" aria-hidden="true">{{ userInitial }}</div>
             <div class="sidebar__user-meta">
               <p class="sidebar__user-name">{{ userDisplayName }}</p>
-              <p v-if="userSubtitle" class="sidebar__user-sub">{{ userSubtitle }}</p>
+              <p v-if="userSubtitle" class="sidebar__user-sub" :title="userSubtitle">{{ userSubtitle }}</p>
             </div>
           </button>
         </Tooltip>

@@ -348,6 +348,7 @@ const showConversationShare = computed<boolean>(
         v-if="showsDatabasePicker && !isReadOnly"
         v-model="selectedDatabaseId"
         :databases="availableDatabases"
+        :session-database-id="authStore.user?.erp_database?.id ?? null"
       />
 
       <Composer
