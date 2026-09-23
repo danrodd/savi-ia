@@ -213,9 +213,9 @@ usuario.
 
 | Tema | Detalle |
 |---|---|
-| **La sesión no dice en qué base está** | `/auth/me` y `/me/bootstrap` no exponen la base de login. La interfaz no puede mostrar "estás en FRAMI". |
-| **"· vos" en el ranking** | Compara solo el `idUsuario`: marca también a un homónimo de otro cliente. Hace falta que la sesión exponga su base (punto anterior). |
-| **Filtro por cliente en la interfaz** | La API ya acepta `?database=`; el panel muestra el desglose pero todavía no tiene un chip para filtrar. |
+| ~~La sesión no dice en qué base está~~ | ✅ Resuelto (`5718433`, `638db1f`): login, `/auth/me` y bootstrap devuelven la base; la tarjeta de usuario la muestra. |
+| ~~"· vos" en el ranking~~ | ✅ Resuelto (`3461bbc`): compara id y base de login. |
+| ~~Filtro por cliente en la interfaz~~ | ✅ Resuelto (`3461bbc`): chips por cliente en las vistas de consumo. El selector del chat ahora es un buscador (`638db1f`). |
 | **SQL libre para soporte** | Los usuarios de soporte son admin, así que tienen `consultar_libre`. Antes del bug 5, Gemini lo usó 11 veces en un turno. Conviene vigilar el costo por turno de soporte. |
 | **Notas crédito** | Solo farmacias tiene notas crédito con saldo vivo. Quedan en su propio bucket; si el negocio define que restan de la cartera, se cambia en `cartera.py`. |
 | **Productos que no son productos** | En farmacias, el "producto" más vendido es `REINTEGRO GASTOS COMUNES EXCLUIDO` (línea contable). Es el dato del ERP, no un error de SAVI. |
