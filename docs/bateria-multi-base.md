@@ -156,7 +156,8 @@ quedaron corregidos antes de la corrida final.
 |---|---|---|
 | **Login** | `SAVIQA`, `SAVIQA@FRAMI`, `SAVIQA@SUR_ANDINA`, `saviqa@frami` (minúsculas), `admin`, `admin@SUR_ANDINA` entran cada uno a su base | ✅ 6/6 — verificado por el `idUsuario` de cada ERP (SAVIQA es 65 / 19 / 22) |
 | | `admin@FRAMI` (no existe ahí), `@NOEXISTE`, clave incorrecta, base borrada | ✅ 4/4 rechazados con 401 genérico, sin decir qué falló |
-| **Selector** | SAVIQA ve las 3 bases; `admin` ve solo farmacias y sur_andina | ✅ 2/2 |
+| **Selector** | `SAVIQA` y `admin` (admins de la instalación) ven las 3 bases; `admin@SUR_ANDINA` y `SAVIQA@FRAMI` ven solo la suya | ✅ 4/4 |
+| **Cruce entre bases** | `admin@SUR_ANDINA` no abre FARMACIAS aunque ahí exista un `ADMIN`; `SAVIQA@FRAMI` no abre SUR_ANDINA | ✅ 2/2 |
 | **Chat cruzado** | Desde la sesión de farmacias, SAVIQA abre chat en cada base | ✅ 3/3 |
 | | El chat en FRAMI responde el NIT de FRAMI | ✅ |
 | | La conversación queda guardada con su base y sus mensajes | ✅ |
