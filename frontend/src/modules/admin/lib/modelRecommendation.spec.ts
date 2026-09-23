@@ -45,6 +45,46 @@ describe('recommendModel', () => {
     expect(recommendModel([], 'claude')).toBeNull()
   })
 
+  it('does not let an OpenAI month-day snapshot pose as a version (openai)', () => {
+    // Caso real del catálogo de OpenAI: `0914` y `0613` son snapshots
+    // mes-día. Tomando el número más alto, `gpt-3.5-turbo-instruct-0914`
+    // puntuaba 1852 y salía recomendado por encima de todo lo moderno.
+    const result = recommendModel(
+      [
+        { id: 'gpt-3.5-turbo-instruct-0914', display_name: 'gpt-3.5-turbo-instruct-0914' },
+        { id: 'gpt-4-0613', display_name: 'gpt-4-0613' },
+        { id: 'gpt-6-luna', display_name: 'gpt-6-luna' },
+      ],
+      'openai',
+    )
+
+    expect(result?.id).toBe('gpt-6-luna')
+  })
+
+  it('prefers the newest generation over a "-latest" alias of an older one (openai)', () => {
+    const result = recommendModel(
+      [
+        { id: 'gpt-5-chat-latest', display_name: 'gpt-5-chat-latest' },
+        { id: 'gpt-6-luna', display_name: 'gpt-6-luna' },
+      ],
+      'openai',
+    )
+
+    expect(result?.id).toBe('gpt-6-luna')
+  })
+
+  it('still uses "-latest" to break a tie inside the same generation (openai)', () => {
+    const result = recommendModel(
+      [
+        { id: 'gpt-6-2026-09-01', display_name: 'gpt-6-2026-09-01' },
+        { id: 'gpt-6-latest', display_name: 'gpt-6-latest' },
+      ],
+      'openai',
+    )
+
+    expect(result?.id).toBe('gpt-6-latest')
+  })
+
   it('prefers the newest Claude generation over an older one with a bigger minor number', () => {
     const result = recommendModel(
       [

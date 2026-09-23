@@ -51,12 +51,21 @@ const scoreClaude: Scorer = (model) => {
 
 // OpenAI: familias generalistas `gpt-*`, `chatgpt-*` y los `o*` de
 // razonamiento. No fijamos un ID puntual: un modelo nuevo entra sin tocar esto.
+//
+// Solo el PRIMER número cuenta como generación, igual que en Claude. Los
+// IDs de OpenAI arrastran snapshots en formato mes-día (`gpt-4-0613`,
+// `gpt-3.5-turbo-instruct-0914`) que son menores a 1000 y se colaban por
+// el filtro de fechas: tomando el máximo, `0914` valía 914 y ponía a un
+// GPT-3.5 de 2023 como el mejor modelo del catálogo.
+//
+// La generación pesa más que el alias `-latest`: `-latest` protege contra
+// que den de baja un snapshot, pero no vuelve nuevo a un modelo viejo.
 const scoreOpenAI: Scorer = (model) => {
   const value = modelText(model)
   let score = excludeNonChat(value)
   if (/(^|[-_/])gpt|chatgpt|(^|[-_/])o\d/.test(value)) score += 24
-  if (/latest/.test(value)) score += 30
-  score += Math.max(...versionNumbers(value), 0) * 2
+  if (/latest/.test(value)) score += 5
+  score += (versionNumbers(value)[0] ?? 0) * 10
   return score
 }
 
