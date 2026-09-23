@@ -53,11 +53,15 @@ Para borrarlo, en cada base:
 DELETE FROM "Seguridad"."Usuario" WHERE codigo = 'SAVIQA';
 ```
 
-> **Dato operativo para soporte**: para que un usuario pueda abrir chats
-> contra un cliente, su **código tiene que existir y estar activo en el ERP
-> de ese cliente**. Se busca por código y los permisos salen de esa base.
-> `admin`, por ejemplo, existe en farmacias y sur_andina pero no en frami,
-> y el selector solo le ofrece esas dos.
+> **Dato operativo para soporte**: un usuario común puede abrir chats
+> contra un cliente solo si su **código existe y está activo en el ERP de
+> ese cliente**; los permisos salen de esa base.
+>
+> Excepción: el **administrador de la instalación** (los códigos de
+> `SAVI_ADMIN_LOGINS`, o el administrador de la base por defecto) ve
+> **todas** las bases activas y entra como administrador aunque su código
+> no exista ahí (`a4b1202`). `admin` de farmacias ve las tres; el `admin`
+> de sur_andina, que es otra persona con el mismo código, no.
 
 ### Validación automática
 
