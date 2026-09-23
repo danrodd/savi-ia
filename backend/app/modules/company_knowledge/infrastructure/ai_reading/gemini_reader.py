@@ -42,7 +42,16 @@ class GeminiPdfReader(PdfPageReader):
     ) -> None:
         self._model = model
         self._price = price
-        self._models: _Models = models or cast(_Models, genai.Client(api_key=api_key).aio.models)
+        # El `Client` se guarda aunque solo se use `aio.models`: su `__del__`
+        # cierra las conexiones HTTP. Guardando solo `aio.models`, el cliente
+        # se liberaba y los tramos siguientes del documento fallaban (medido
+        # en la segunda ronda del spike: todos los pedidos después del
+        # primero, minutos más tarde).
+        self._client: genai.Client | None = None
+        if models is None:
+            self._client = genai.Client(api_key=api_key)
+            models = cast(_Models, self._client.aio.models)
+        self._models: _Models = models
 
     @property
     def provider(self) -> str:

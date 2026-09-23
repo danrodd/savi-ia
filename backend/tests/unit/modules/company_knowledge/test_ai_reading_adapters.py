@@ -55,6 +55,20 @@ def test_parse_keeps_only_pages_of_the_segment_in_order() -> None:
     assert [(p.page_number, p.content) for p in pages] == [(3, "texto"), (4, "texto")]
 
 
+def test_parse_fixes_pages_numbered_from_one_inside_the_segment() -> None:
+    """Gemini numeró el tramo 6-10 como 1-5 (segunda ronda del spike)."""
+    raw = {"paginas": [_page(1, "seis"), _page(2, "siete"), _page(3, "ocho")]}
+
+    pages = parse_transcription(raw, 6, 10)
+
+    assert [(p.page_number, p.content) for p in pages] == [(6, "seis"), (7, "siete"), (8, "ocho")]
+
+
+def test_parse_does_not_shift_when_some_page_is_already_in_range() -> None:
+    raw = {"paginas": [_page(1), _page(6)]}
+    assert [p.page_number for p in parse_transcription(raw, 6, 10)] == [6]
+
+
 def test_parse_accepts_an_already_decoded_dict() -> None:
     assert parse_transcription({"paginas": [_page(1)]}, 1, 1)[0].page_number == 1
 
@@ -228,6 +242,26 @@ async def test_gemini_reader_uses_the_schema_and_no_thinking_config() -> None:
     part = models.calls[0]["contents"][0]
     assert part.inline_data.mime_type == "application/pdf"
     assert result.usage.cost_usd == pytest.approx((800 * 0.3 + 300 * 2.5) / 1e6)
+
+
+def test_gemini_reader_keeps_its_client_alive() -> None:
+    """Regresión: `genai.Client.__del__` cierra las conexiones.
+
+    El lector guardaba solo `client.aio.models`; el recolector de basura
+    liberaba el cliente y todos los tramos después del primero fallaban.
+    """
+    import gc
+    import weakref
+
+    from google import genai
+
+    reader = GeminiPdfReader(model="m", api_key="k", price=None)
+    client = reader._client  # pyright: ignore[reportPrivateUsage]
+    assert isinstance(client, genai.Client)
+    ref = weakref.ref(client)
+    del client
+    gc.collect()
+    assert ref() is not None
 
 
 # ── Qué lector se arma ─────────────────────────────────────────────────────

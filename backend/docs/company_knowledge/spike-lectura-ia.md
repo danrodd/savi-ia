@@ -1,10 +1,13 @@
-# Spike — Lectura de PDF con IA (primera ronda)
+# Spike — Lectura de PDF con IA
 
 > Parte de: [Fase 4 — Lectura de PDF con IA](04-fase-lectura-pdf-con-ia.md) §3
-> Fecha: 2026-09-23. Estado: **primera ronda con un documento sintético**.
-> Falta la ronda con el corpus real (S4, S5 y S6).
+> Fecha: 2026-09-23. Estado: **dos rondas**. La primera con un documento
+> sintético; la segunda con 7 PDF públicos (47 páginas) y los lectores de
+> producción. Falta: un PDF largo (165 páginas, pospuesto) y el token OAuth.
 
-## Documento de prueba
+## Primera ronda: documento sintético
+
+### Documento de prueba
 
 PDF generado para imitar el caso común, un escaneo de celular:
 
@@ -110,3 +113,86 @@ Coinciden con la estimación de §2, salvo Gemini, que salió más barato
   Se usa `low`. El error es del modelo, no del razonamiento: para fichas
   técnicas conviene otro `document_model`.
 - Desactivar la caché de 1 hora en el Agent SDK.
+
+
+## Segunda ronda: corpus público (lectores de producción)
+
+Los lectores reales de SAVI (`OpenAiPdfReader`, `GeminiPdfReader`), con
+tramos de 5 páginas u 8 MB y 3 en paralelo, igual que `ReadPdfPagesUseCase`.
+Claude quedó afuera por costo (suscripción).
+
+### Corpus
+
+| Documento | Fuente | Qué prueba | Págs. |
+|---|---|---|---|
+| Ficha técnica Potabon K | [PDF](https://croper-production.s3.amazonaws.com/product_provider_files/files/000/015/127/original/ficha_tecnica_Potabon_K_20200304090357.pdf.pdf) | Escaneo real de CamScanner con su marca de agua; tabla de porcentajes; NIT | 2 |
+| Solicitud de licencia, Querétaro | [PDF](https://municipiodequeretaro.gob.mx/municipio/repositorios/transparencia/a67/1T22/sds/84S.pdf) | Foto de formulario: casillas, valores a mano, clave catastral (datos personales tachados de origen) | 1 |
+| Guía Rubbermaid | [PDF](https://images.thdstatic.com/catalog/pdfImages/51/51960b5c-3c93-4bf5-8499-87edb6b831b2.pdf) | Diagrama escaneado con medidas, trilingüe | 1 |
+| Ficha bomba Rotoplas | [PDF](https://rotoplas.vteximg.com.br/arquivos/FT-320003.pdf?v=638201110020170000) | Ficha digital con curva de desempeño | 2 |
+| Catálogo bombas Cisealco | [PDF](https://cisealco.com/catalogos/cat_bomb_sixteam.pdf) | Tablas de especificaciones y curvas | 12 |
+| Instalación eléctrica de vivienda | [PDF](https://www3.gobiernodecanarias.org/medusa/ecoblog/mmormarf/files/2015/04/instalacion-electrica-vivienda-2.pdf) | Planos y esquemas unifilares | 16 |
+| Ficha técnica de medicamento (AEMPS) | [PDF](https://cima.aemps.es/cima/pdfs/es/ft/64154/FichaTecnica_64154.html.pdf) | Texto digital denso (control de omisiones) | 13 |
+
+### Resultados
+
+| | `gpt-6-luna` | `gemini-flash-lite-latest` |
+|---|---|---|
+| Costo (47 págs.) | US$0,031 | US$0,095 |
+| **Por 100 páginas** | **~US$0,066** | **~US$0,203** |
+| Tiempo total | 117 s | 65 s |
+| Datos clave en los escaneos (28) | **28/28** | 26/28 |
+| Palabras de `pypdf` presentes (40 págs. digitales) | mediana 98,5 %, P10 87,7 % | mediana 99,4 %, P10 89,6 % (36 págs.) |
+| Números de `pypdf` presentes | mediana 98,6 % | mediana 100 % |
+| Páginas con `[Imagen: …]` / tabla nueva | 25 / 26 de 47 | 24 / 22 de 47 |
+| Errores | ninguno | ver abajo |
+
+Los datos clave son valores verificados a ojo en las imágenes: los
+porcentajes y el NIT de Potabon K, las superficies y el código de formato
+de Querétaro ("FM-170140-001-REV(13)"), y las medidas de Rubbermaid. En
+ninguno de los dos casos se transcribió la marca de agua de CamScanner.
+
+**Sobre el P10 bajo:** lo que "falta" en las páginas por debajo del 90 %
+no son omisiones de la IA:
+- Rotoplas p. 2 (64 %): las marcas de los ejes del gráfico (10, 20, 30…).
+  La IA describe la curva en un `[Imagen: …]` en lugar de copiar cada marca.
+- Canarias (86–90 %): palabras cortadas por `pypdf` al final de línea
+  ("corrie", "interrupt"). Es ruido de la extracción, no de la IA.
+
+La métrica de §11.2 tiene que excluir las marcas de ejes y los fragmentos
+de palabras antes de usarse para decidir la Fase 5.
+
+### Defectos encontrados y corregidos
+
+1. **Gemini: el cliente se cerraba solo.** `genai.Client.__del__` cierra
+   las conexiones HTTP. El lector guardaba solo `client.aio.models`, así
+   que Python liberaba el cliente y **todos** los pedidos fallaban
+   (`ai_error`) cuando el lector se usaba un rato después de crearse, que
+   es lo que pasa con cualquier documento de varios tramos. Corregido: el
+   lector guarda el cliente. Test de regresión con `weakref` + `gc`.
+2. **Gemini numera las páginas desde 1 dentro del tramo** (el tramo 6–10
+   volvió como 1–5), aunque el mensaje pide la numeración del documento.
+   El validador las descartaba por fuera de rango y el tramo caía a
+   `pypdf` como "JSON inválido". Corregido: si ninguna página cae en el
+   rango y todas forman 1..N, se corren al rango real.
+
+### Defectos de Gemini que no se corrigen en código
+
+- **Cambió el separador decimal**: "40.6 cm" → "40,6 cm" y "22.7 kg" →
+  "22,7 kg", contra la regla 2 del prompt.
+- **Marcó 4 páginas digitales de Canarias como ilegibles** y las devolvió
+  vacías. El respaldo conservó el texto de `pypdf` (`_final_text`), pero
+  esas páginas quedaron sin la lectura de la IA.
+
+### Conclusión
+
+- **`gpt-6-luna` es el modelo de lectura recomendado** con este corpus:
+  el más barato (un tercio que Flash-Lite), sin errores y 28/28 en los
+  escaneos. El código mal leído de la primera ronda ("SEO" → "SEQ") no se
+  repitió con documentos reales ("FM-170140-001-REV(13)",
+  "71.765.731-7"), pero sigue siendo el riesgo a vigilar.
+- **Gemini Flash-Lite no se recomienda** para lectura de documentos: es
+  3 veces más caro y alteró números y páginas.
+- **Fase 5:** con la mediana en 98,5 % y el P10 explicado por ruido de
+  medición, la IA no muestra omisiones reales en páginas digitales. La
+  Fase 5 se justifica por costo, no por calidad. Antes hay que ajustar la
+  métrica y medir con el documento largo pospuesto.

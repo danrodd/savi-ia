@@ -12,7 +12,7 @@
 
 ## Resultado esperado
 
-- [ ] Spike cerrado (§3): envío de PDF y salida estructurada verificados en los tres proveedores ✔; **faltan** el token OAuth de Claude y la ronda con el corpus real (S4–S6).
+- [ ] Spike cerrado (§3): S1–S3 ✔ en los tres proveedores; segunda ronda con 7 PDF públicos ✔ (`gpt-6-luna` recomendado, dos defectos de Gemini corregidos). **Faltan** el token OAuth de Claude y el documento largo (165 págs.).
 - [x] Interruptor global "Leer PDF con IA" visible en la pantalla de Conocimiento, con proveedor, modelo y costo estimado por página.
 - [x] Costo estimado del lote en el diálogo de subida, antes de subir.
 - [x] Lectura por tramos de páginas con el prompt y el esquema de §6, en paralelo acotado y con reintentos.
