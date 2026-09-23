@@ -33,6 +33,8 @@ export const useUsageStore = defineStore('usage', () => {
   const customFrom = ref<string>(toLocalIsoDate(new Date()))
   const customTo = ref<string>(toLocalIsoDate(new Date()))
   const providers = ref<UsageProviderKind[]>([])
+  // Bases CONSULTADAS (a qué cliente se atendió). Vacío = todas.
+  const databases = ref<string[]>([])
   const model = ref('')
 
   const mine = ref<UserUsageReport | null>(null)
@@ -70,6 +72,7 @@ export const useUsageStore = defineStore('usage', () => {
       to,
       provider: providers.value.length > 0 ? providers.value : undefined,
       model: model.value.trim() ? [model.value.trim()] : undefined,
+      database: databases.value.length > 0 ? databases.value : undefined,
     }
   }
 
@@ -158,6 +161,12 @@ export const useUsageStore = defineStore('usage', () => {
     await reloadLoadedReports()
   }
 
+  /** Selección múltiple de clientes (base consultada). Vacío = todos. */
+  async function setDatabases(next: string[]): Promise<void> {
+    databases.value = next
+    await reloadLoadedReports()
+  }
+
   async function setModel(value: string): Promise<void> {
     const next = value.trim()
     if (next === model.value) return
@@ -170,6 +179,7 @@ export const useUsageStore = defineStore('usage', () => {
     customFrom,
     customTo,
     providers,
+    databases,
     model,
     mine,
     loadingMine,
@@ -192,6 +202,7 @@ export const useUsageStore = defineStore('usage', () => {
     setPreset,
     setCustomRange,
     setProviders,
+    setDatabases,
     setModel,
   }
 })

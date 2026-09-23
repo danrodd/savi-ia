@@ -4,15 +4,37 @@
  * presets Hoy/Ayer, pensados para cuadrar contra el crédito cargado en un
  * proveedor) + selección múltiple de proveedor. Todo lo que consuma esto
  * responde al mismo filtro: costo total, tokens, serie diaria y desglose.
+ *
+ * Los administradores además filtran por cliente (base consultada): soporte
+ * atiende a varios desde una sola sesión.
  */
 
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import ProviderIcon from '@/modules/admin/components/ProviderIcon.vue'
+import { useErpDatabaseStore } from '@/modules/admin/stores/erpDatabaseStore'
+import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { type RangePreset, useUsageStore } from '../stores/usageStore'
 import type { UsageProviderKind } from '../types'
 import { PROVIDER_LABELS, USAGE_PROVIDERS } from '../utils/providers'
 
 const store = useUsageStore()
+const authStore = useAuthStore()
+const databaseStore = useErpDatabaseStore()
+
+// Solo tiene sentido con más de un cliente, y el listado de bases es de
+// administración: un usuario común no lo puede pedir.
+const showDatabases = computed(
+  () => !!authStore.user?.is_admin && databaseStore.databases.length > 1,
+)
+const databaseOptions = computed(() =>
+  [...databaseStore.databases].sort((a, b) => a.code.localeCompare(b.code)),
+)
+
+onMounted(() => {
+  if (authStore.user?.is_admin && databaseStore.databases.length === 0 && !databaseStore.loading) {
+    void databaseStore.load()
+  }
+})
 
 const PRESETS: { value: RangePreset; label: string }[] = [
   { value: 'today', label: 'Hoy' },
@@ -46,6 +68,12 @@ function toggleProvider(provider: UsageProviderKind): void {
     ? current.filter((p) => p !== provider)
     : [...current, provider]
   void store.setProviders(next)
+}
+
+function toggleDatabase(id: string): void {
+  const current = store.databases
+  const next = current.includes(id) ? current.filter((d) => d !== id) : [...current, id]
+  void store.setDatabases(next)
 }
 </script>
 
@@ -89,6 +117,21 @@ function toggleProvider(provider: UsageProviderKind): void {
       >
         <ProviderIcon :kind="provider" :size="14" />
         {{ PROVIDER_LABELS[provider] }}
+      </button>
+    </div>
+
+    <div v-if="showDatabases" class="ufb__providers" role="group" aria-label="Filtrar por cliente">
+      <button
+        v-for="db in databaseOptions"
+        :key="db.id"
+        type="button"
+        class="ufb__provider-chip"
+        :class="{ 'ufb__provider-chip--active': store.databases.includes(db.id) }"
+        :aria-pressed="store.databases.includes(db.id)"
+        :title="db.name"
+        @click="toggleDatabase(db.id)"
+      >
+        {{ db.code }}
       </button>
     </div>
   </div>

@@ -29,7 +29,10 @@ const databaseRows = computed(() =>
 function userLabel(userId: number | null, databaseId: string | null): string {
   if (userId === null) return 'Sin usuario (legado)'
   const base = databaseLabel(databaseId, databaseStore.databases)
-  const isMe = userId === authStore.user?.id
+  const me = authStore.user
+  // Mismo id Y misma base de login: el id solo no alcanza, se repite entre
+  // clientes (el `admin` de farmacias y el de sur_andina son el id 1).
+  const isMe = userId === me?.id && databaseId === (me?.erp_database?.id ?? null)
   return `#${userId} · ${base}${isMe ? ' · vos' : ''}`
 }
 
