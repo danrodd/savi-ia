@@ -300,3 +300,123 @@ async def test_a_year_range_includes_its_last_day(erp_engine: AsyncEngine) -> No
         )
 
     assert float(rows[0]["monto_total"] or 0) == pytest.approx(float(esperado))
+
+
+# ── Cada columna del catálogo existe en cada ERP ────────────────────────
+#
+# Los tests de arriba cubren consultas puntuales; estos recorren TODO el
+# catálogo. Se escapó así un campo `activo` apuntando a `t."activo"`, que no
+# existe (la columna es `estado`): cualquier búsqueda de terceros en modo
+# detalle devolvía "problema técnico" y el modelo contestaba que el cliente
+# no existía.
+
+_SAMPLE_BY_TYPE: dict[str, Any] = {
+    "date": "2025-06-01",
+    "number": 1,
+    "bool": True,
+    "text": "x",
+}
+
+
+def _catalog_entities() -> list[str]:
+    from app.modules.data_query.infrastructure.catalog import entity_names
+
+    return entity_names()
+
+
+def _sample_filter(entidad: str, nombre: str) -> QueryFilter:
+    entity = get_entity(entidad)
+    assert entity is not None
+    fdef = entity.filters[nombre]
+    op = fdef.allowed_ops[0]
+    valor = _SAMPLE_BY_TYPE[fdef.value_type]
+    if op == FilterOp.BETWEEN:
+        return QueryFilter(nombre, op, [valor, valor])
+    if op == FilterOp.IN:
+        return QueryFilter(nombre, op, [valor])
+    return QueryFilter(nombre, op, valor)
+
+
+def _aggregate(entidad: str, **kwargs: Any) -> SemanticQuery:
+    entity = get_entity(entidad)
+    assert entity is not None
+    dimensiones: list[str] = list(kwargs.pop("dimensiones", []))
+    if entity.require_dimensions and not set(dimensiones) & set(entity.require_dimensions):
+        dimensiones.append(entity.require_dimensions[0])
+    return SemanticQuery(
+        entidad=entidad,
+        modo=QueryMode.AGGREGATE,
+        metricas=kwargs.pop("metricas", [next(iter(entity.metrics))]),
+        dimensiones=dimensiones,
+        limite=1,
+        **kwargs,
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entidad", _catalog_entities())
+async def test_every_field_exists(erp_engine: AsyncEngine, entidad: str) -> None:
+    entity = get_entity(entidad)
+    assert entity is not None
+    if not entity.fields:
+        pytest.skip("sin campos de detalle")
+    query = SemanticQuery(
+        entidad=entidad, modo=QueryMode.DETAIL, campos=list(entity.fields), limite=1
+    )
+
+    await _run(erp_engine, query)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entidad", _catalog_entities())
+async def test_every_metric_and_dimension_exists(erp_engine: AsyncEngine, entidad: str) -> None:
+    entity = get_entity(entidad)
+    assert entity is not None
+
+    await _run(erp_engine, _aggregate(entidad, metricas=list(entity.metrics)))
+    for dimension in entity.dimensions:
+        await _run(erp_engine, _aggregate(entidad, dimensiones=[dimension]))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entidad", _catalog_entities())
+async def test_every_filter_exists(erp_engine: AsyncEngine, entidad: str) -> None:
+    entity = get_entity(entidad)
+    assert entity is not None
+
+    for nombre in entity.filters:
+        await _run(erp_engine, _aggregate(entidad, filtros=[_sample_filter(entidad, nombre)]))
+
+
+@pytest.mark.asyncio
+async def test_ventas_by_client_name_matches_the_chained_lookup(
+    erp_engine: AsyncEngine, erp_name: str
+) -> None:
+    """ "Cuánto nos compró X" en una consulta da lo mismo que buscar el id
+    en `terceros` y filtrar por `cliente_id`."""
+    marcador = {
+        "farmacias_similares": "FARMA4NF",
+        "frami": "MUEBLES PAOLA",
+        "sur_andina": "EQUIRENT",
+    }[erp_name]
+    por_nombre = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="ventas",
+            modo=QueryMode.AGGREGATE,
+            metricas=["monto_total"],
+            filtros=[QueryFilter("cliente", FilterOp.CONTAINS, marcador)],
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        esperado = await conn.scalar(
+            text(
+                'SELECT SUM(f.total) FROM "CuentaCobrar"."Factura" f '
+                'JOIN "Tercero"."Tercero" t ON t."idTercero" = f."idTercero" '
+                "WHERE f.anulada = false AND "
+                '(t."nombreComercial" ILIKE :m OR t."razonSocial" ILIKE :m)'
+            ),
+            {"m": f"%{marcador}%"},
+        )
+
+    assert float(por_nombre[0]["monto_total"]) == pytest.approx(float(esperado))

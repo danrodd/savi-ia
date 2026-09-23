@@ -82,6 +82,10 @@ VENTAS = SemanticEntity(
             (FilterOp.EQ, FilterOp.IN),
             value_type="number",
         ),
+        # Por nombre, para "cuánto nos compró X" en una sola consulta. Sin
+        # él el modelo tenía que buscar el id en `terceros` y encadenar; si
+        # ese primer paso fallaba, contestaba que el cliente no existía.
+        "cliente": FilterDef("cliente", _CLIENTE_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
         "numero": FilterDef("numero", 'f."numero"', (FilterOp.EQ,), value_type="number"),
     },
     record_key="numero",
@@ -151,6 +155,15 @@ VENTAS_DETALLE = SemanticEntity(
             requires=("detalle",),
             value_type="number",
         ),
+        # Por nombre: "cuánto vendimos de tornillos" abarca muchos productos
+        # y no hay un id que lo represente.
+        "producto": FilterDef(
+            "producto",
+            'p."descripcion"',
+            (FilterOp.CONTAINS,),
+            requires=("detalle", "producto"),
+        ),
         "cliente_id": FilterDef("cliente_id", 'f."idTercero"', (FilterOp.EQ,), value_type="number"),
+        "cliente": FilterDef("cliente", _CLIENTE_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
     },
 )
