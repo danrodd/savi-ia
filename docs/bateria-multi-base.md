@@ -12,7 +12,7 @@
 |---|---|
 | Tanda 1 (datos básicos) | **45/45** — OpenAI 18/18 · Gemini 18/18 · Claude 9/9 |
 | Tanda 2 (resto de la batería manual) | OpenAI **28/28** · Gemini **26/28** (2 respuestas válidas con otro criterio, ver [tanda 2](#tanda-2--el-resto-de-la-batería)) |
-| Chequeos del flujo multi-base (API) | **33/33** — login, selector, chat cruzado, rechazos, identidades, consumo |
+| Chequeos del flujo multi-base (API) | **36/36** — login, selector, chat cruzado, rechazos, identidades, consumo |
 | Interfaz (Playwright) | ✅ selector con las 3 bases, chat en FRAMI desde la sesión de farmacias, historial por base, consumo por cliente |
 | Fugas de datos entre clientes | **Ninguna**: cada base probada contra los clientes exclusivos de las otras dos |
 | Bugs encontrados y corregidos | **12**, cada uno con test que lo reproduce (ver [abajo](#bugs-encontrados-y-corregidos)) |
@@ -53,15 +53,18 @@ Para borrarlo, en cada base:
 DELETE FROM "Seguridad"."Usuario" WHERE codigo = 'SAVIQA';
 ```
 
-> **Dato operativo para soporte**: un usuario común puede abrir chats
-> contra un cliente solo si su **código existe y está activo en el ERP de
-> ese cliente**; los permisos salen de esa base.
+> **Dato operativo para soporte**: un usuario común usa **solo la base con
+> la que inició sesión**. Abrir chats contra otros clientes es exclusivo del
+> **administrador de la instalación**: los códigos de `SAVI_ADMIN_LOGINS`, o
+> el administrador de la base por defecto. Entra a todas las bases activas,
+> con su usuario real donde existe o como administrador donde no.
 >
-> Excepción: el **administrador de la instalación** (los códigos de
-> `SAVI_ADMIN_LOGINS`, o el administrador de la base por defecto) ve
-> **todas** las bases activas y entra como administrador aunque su código
-> no exista ahí (`a4b1202`). `admin` de farmacias ve las tres; el `admin`
-> de sur_andina, que es otra persona con el mismo código, no.
+> Por qué no se cruza por código: "mismo código = misma persona" no es
+> cierto entre clientes. `AUX2` es Karen Restrepo en frami e Ingrid Tovar en
+> sur_andina (`a4b1202`, cruce restringido en el commit siguiente).
+>
+> Para que el usuario `SEO` (el mismo superusuario en todos los ERP) atienda
+> a cualquier cliente, agregalo a `SAVI_ADMIN_LOGINS`.
 
 ### Validación automática
 
