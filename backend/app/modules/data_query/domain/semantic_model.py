@@ -106,4 +106,13 @@ class SemanticEntity:
     detail_max_rows: int = 30
     # Nombre del filtro que identifica un registro único (modo RECORD).
     record_key: str | None = None
+    # Dimensiones que un agregado DEBE usar (agrupando o filtrando) para
+    # que el resultado signifique algo. Sin esto, `cartera` devolvía un
+    # total que sumaba lo que deben los clientes con lo que la empresa
+    # debe a proveedores: un número que nadie puede usar.
+    #
+    # Se valida en el compilador y no en la descripción de la tool porque
+    # pedírselo al modelo solo funciona si el modelo hace caso: medido,
+    # Gemini y OpenAI respetaban la regla escrita y Claude la ignoraba.
+    require_dimensions: tuple[str, ...] = ()
     description: str = ""

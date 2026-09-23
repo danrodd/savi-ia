@@ -184,5 +184,13 @@ CARTERA = SemanticEntity(
             "vencida", f"({_VENCIDA})", (FilterOp.EQ,), value_type="bool"
         ),
     },
+    # El compilador RECHAZA un agregado que no separe por alguna de estas.
+    # La regla escrita en `description` no alcanzaba: medido con la misma
+    # pregunta, Gemini y OpenAI la respetaban y Claude devolvía el total
+    # mezclado igual. Acá no depende de que el modelo haga caso.
+    #
+    # Cualquiera de las tres desambigua: `lado` es la gruesa, `tipo` es más
+    # fina, y `tipo_documento` acota a una sola clase de documento.
+    require_dimensions=("lado", "tipo", "tipo_documento"),
     detail_max_rows=30,
 )

@@ -336,6 +336,67 @@ def test_bool_filter_rejects_a_value_that_is_not_yes_or_no() -> None:
         compile_query(query, ENTIDAD)
 
 
+# ── Entidades que no se pueden sumar sin separar ─────────────────────────
+#
+# `cartera` junta lo que los clientes deben con lo que la empresa debe: un
+# total sin agrupar no significa nada. La regla escrita en la descripción
+# de la tool no alcanzó — medido con la misma pregunta, Gemini y OpenAI la
+# respetaban y Claude devolvía el total mezclado igual. El compilador lo
+# rechaza para que la respuesta no dependa de qué proveedor esté activo.
+
+_AMBIGUA = SemanticEntity(
+    name="cartera_test",
+    base_table='"Cartera" c',
+    metrics={"saldo": MetricDef("saldo", 'SUM(c."saldo")', "Saldo")},
+    dimensions={"lado": DimensionDef("lado", 'c."lado"', "Lado")},
+    filters={"lado": FilterDef("lado", 'c."lado"', (FilterOp.EQ,))},
+    require_dimensions=("lado",),
+)
+
+
+def test_aggregate_without_the_required_dimension_is_rejected() -> None:
+    query = SemanticQuery(
+        entidad="cartera_test", modo=QueryMode.AGGREGATE, metricas=["saldo"]
+    )
+
+    with pytest.raises(InvalidQueryError, match="no significa nada"):
+        compile_query(query, _AMBIGUA)
+
+
+def test_grouping_by_the_required_dimension_is_enough() -> None:
+    query = SemanticQuery(
+        entidad="cartera_test",
+        modo=QueryMode.AGGREGATE,
+        metricas=["saldo"],
+        dimensiones=["lado"],
+    )
+
+    compilada = compile_query(query, _AMBIGUA)
+
+    assert "GROUP BY" in compilada.sql.upper()
+
+
+def test_filtering_by_the_required_dimension_is_also_enough() -> None:
+    """Si el usuario pidió una sola punta, el scope ya es inequívoco."""
+    query = SemanticQuery(
+        entidad="cartera_test",
+        modo=QueryMode.AGGREGATE,
+        metricas=["saldo"],
+        filtros=[QueryFilter("lado", FilterOp.EQ, "Clientes")],
+    )
+
+    compilada = compile_query(query, _AMBIGUA)
+
+    assert "Clientes" in compilada.params.values()
+
+
+def test_entities_without_the_rule_are_untouched() -> None:
+    """La restricción es opt-in: `ventas` sigue aceptando un total suelto."""
+    compilada = compile_query(_agregado(), ENTIDAD)
+
+    assert "SELECT" in compilada.sql.upper()
+
+
 def test_record_mode_with_the_key_filter_compiles() -> None:
     query = SemanticQuery(
         entidad="ventas",

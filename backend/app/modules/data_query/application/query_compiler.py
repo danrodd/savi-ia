@@ -112,6 +112,37 @@ def _resolve_fields(query: SemanticQuery, entity: SemanticEntity) -> list[str]:
     return out
 
 
+def _require_disambiguating_dimension(
+    query: SemanticQuery, entity: SemanticEntity, dimensions: list[str]
+) -> None:
+    """Rechaza un agregado que sumaría cosas que no se pueden sumar.
+
+    Hay entidades que juntan realidades opuestas — `cartera` mezcla lo que
+    los clientes deben con lo que la empresa debe. Un total sin separar es
+    un número que no significa nada, y el usuario no tiene cómo notarlo.
+
+    Se valida acá y no en la descripción de la tool a propósito: la regla
+    escrita solo funciona si el modelo la respeta, y medido con la misma
+    pregunta, Gemini y OpenAI la respetaban y Claude no. Acá el sistema
+    responde igual con cualquier proveedor.
+
+    Alcanza con AGRUPAR por la dimensión o FILTRAR por ella: en los dos
+    casos queda claro de qué se está hablando.
+    """
+    if not entity.require_dimensions:
+        return
+    usadas = set(dimensions) | {f.campo for f in query.filtros}
+    if usadas & set(entity.require_dimensions):
+        return
+    opciones = ", ".join(f"'{d}'" for d in entity.require_dimensions)
+    raise InvalidQueryError(
+        f"La entidad '{entity.name}' junta conceptos que no se pueden sumar "
+        f"entre sí, así que un total sin separar no significa nada. Agregá "
+        f"{opciones} a 'dimensiones' para ver el desglose, o filtrá por "
+        f"{opciones} si el usuario pidió una sola parte."
+    )
+
+
 def _clamp(limite: int, cap: int) -> int:
     if limite < 1:
         return 1
@@ -276,6 +307,7 @@ def _compile_aggregate(query: SemanticQuery, entity: SemanticEntity) -> Compiled
             f"(disponibles: {', '.join(entity.metrics)})."
         )
     dimensions = _resolve_dimensions(query, entity)
+    _require_disambiguating_dimension(query, entity, dimensions)
 
     pc = _ParamCounter()
     required_joins: set[str] = set()
