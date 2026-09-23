@@ -203,7 +203,13 @@ def build_buscar_por_intencion_impl(
                 "message": "La consulta llegó vacía. Reformulá la búsqueda.",
             }
         hits = catalog.search_by_intent(query, allowed_modules=allowed_modules, limit=3)
-        if not hits:
+        # `intencion` es el uso POR DEFECTO de la tool, así que tiene que
+        # mirar todo el catálogo. `search_by_intent` solo recorre
+        # formularios: preguntas resueltas por una FAQ transversal (asignar
+        # permisos, crear un usuario) caían en hits irrelevantes de
+        # formularios con score bajo, y el modelo terminaba improvisando.
+        faqs = catalog.answer_faq(query, allowed_modules=allowed_modules, limit=2)
+        if not hits and not faqs:
             return {
                 "matches": [],
                 "message": (
@@ -212,9 +218,12 @@ def build_buscar_por_intencion_impl(
                     "Sugerí preguntar de otra forma o aclarar el tema."
                 ),
             }
-        return {
+        payload: dict[str, Any] = {
             "matches": [{"score": h.score, "form": _form_to_payload(h.form)} for h in hits],
         }
+        if faqs:
+            payload["faqs"] = [_faq_to_payload(f) for f in faqs]
+        return payload
 
     return impl
 
