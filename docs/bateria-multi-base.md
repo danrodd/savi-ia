@@ -10,11 +10,13 @@
 
 | | Resultado |
 |---|---|
-| Preguntas por proveedor y base (corrida final) | **45/45** — OpenAI 18/18 · Gemini 18/18 · Claude 9/9 |
-| Chequeos del flujo multi-base | **33/33** — login, selector, chat cruzado, rechazos, identidades, consumo |
-| Fugas de datos entre clientes | **Ninguna** en 45 turnos + 3 preguntas cruzadas por proveedor |
-| Bugs encontrados y corregidos | **9**, cada uno con test que lo reproduce (ver [abajo](#bugs-encontrados-y-corregidos)) |
-| Tests | Backend 707 · Frontend 118 — todos pasan |
+| Tanda 1 (datos básicos) | **45/45** — OpenAI 18/18 · Gemini 18/18 · Claude 9/9 |
+| Tanda 2 (resto de la batería manual) | OpenAI **28/28** · Gemini **26/28** (2 respuestas válidas con otro criterio, ver [tanda 2](#tanda-2--el-resto-de-la-batería)) |
+| Chequeos del flujo multi-base (API) | **33/33** — login, selector, chat cruzado, rechazos, identidades, consumo |
+| Interfaz (Playwright) | ✅ selector con las 3 bases, chat en FRAMI desde la sesión de farmacias, historial por base, consumo por cliente |
+| Fugas de datos entre clientes | **Ninguna**: cada base probada contra los clientes exclusivos de las otras dos |
+| Bugs encontrados y corregidos | **12**, cada uno con test que lo reproduce (ver [abajo](#bugs-encontrados-y-corregidos)) |
+| Tests | Backend 715 · Frontend 118 — todos pasan |
 
 La primera corrida **no** salió limpia: OpenAI 17/18 y Gemini 16/18. Los
 fallos eran bugs de SAVI, no de los modelos, y la mayoría existía solo en
@@ -109,6 +111,38 @@ encontrar.
 
 ---
 
+## Tanda 2 — el resto de la batería
+
+Todo lo de la [batería manual](#batería-manual-para-correr-desde-la-interfaz)
+que la tanda 1 no cubría: el segundo cliente ajeno de cada base, conteo de
+terceros, periodos relativos, búsquedas por producto, cartera completa,
+conocimiento y un tema fuera de alcance. Corrida con OpenAI y Gemini (28
+preguntas cada uno).
+
+| Pregunta | farmacias | frami | sur_andina | OpenAI | Gemini |
+|---|---|---|---|---|---|
+| Cliente de la **otra** base ajena | EQUIRENT → no | FARMA4NF → no | MUEBLES PAOLA → no | ✅ | ✅ |
+| ¿Cuántos clientes y proveedores? | 17.914 · 1.940 | 2.102 · 584 | 4.622 · 740 | ✅ | ✅ ¹ |
+| Periodo | agosto 2026: $3.305.292.887 | este mes: $167.742.994 | — | ✅ | ✅ |
+| Productos / sucursales | PRINCIPAL, SERVICIOS, KENNEDY | TORNILLO MAD 6, ENCHAPE, ZINCADO | aceite: 15W40 | ✅ | ✅ |
+| Búsqueda por palabra | — | tornillos 2025: $18.836.361 | — | ✅ | ✅ |
+| Serie / promedio | — | año por año 2020 → 2026 | ticket 2025: $2.154.103 | ✅ | ✅ |
+| Cartera vencida total | cobrar $2.194 M · NC $97 M · pagar $8.654 M | — | cobrar $42 M · pagar $137 M | ✅ | ⚠️ ² |
+| Módulos, permisos, frmReciboCliente | igual en las tres | | | ✅ | ✅ |
+| Mundial de 1986 | rechazada | rechazada | rechazada | ✅ | ✅ |
+
+¹ Gemini separa "solo clientes / solo proveedores / ambos" (17.796 + 118 =
+17.914): correcto y más detallado.
+² Gemini respondió solo lo que deben los clientes. En Colombia "cartera"
+suele significar cuentas por cobrar, así que es una lectura válida; OpenAI
+da el desglose completo. Es una diferencia de criterio, no un error de
+datos.
+
+La primera corrida de la tanda 2 encontró los bugs 10, 11 y 12. Todos
+quedaron corregidos antes de la corrida final.
+
+---
+
 ## Flujo multi-base — 33/33
 
 | Grupo | Chequeo | Resultado |
@@ -147,6 +181,9 @@ encontrar.
 | 7 | **Consumo atribuido a otra persona.** El ranking por usuario agrupaba por la base *consultada* | Lo que soporte gastaba consultando a frami se le sumaba **al usuario de frami con el mismo id** | Revisión del flujo | `5404671` |
 | 8 | **Usuarios activos fusionados.** El conteo agrupaba solo por `idUsuario` | `admin` (id 1) de farmacias y `admin` (id 1) de sur_andina contaban como una persona | Revisión del flujo | `5404671` |
 | 9 | **No había consumo por cliente** | Soporte no podía ver cuánto costó atender a cada cliente | Revisión del flujo | `5404671` + `7eb46e4` (vista) |
+| 10 | **`contiene` buscaba la frase literal** | "tornillos" no encontraba "TORNILLO MAD 6 * 2" (49 unidades en vez de 395.507); "aceite de motor" no encontraba "ACEITE MOTOR 15W40" | Tanda 2 | `ecbbf18` |
+| 11 | **El modelo no sabía la fecha de hoy** | "¿Cuánto vendimos este mes?" consultó marzo de 2025 un 23 de septiembre de 2026 | Tanda 2 | `be67c63` |
+| 12 | **Un cliente parecido presentado como el pedido** | En frami, "FARMA4NF" (no existe) → Gemini respondió con el monto de DROGUERIA FUNDAFARMA | Tanda 2 | `43b1b56` |
 
 También se mapeó el `tipoDocumento 13` (devolución en compras, solo en
 frami) en cartera (`c2ed90e`), y el test del catálogo contra el ERP real
@@ -190,6 +227,11 @@ usuario.
 Mismas preguntas para las tres bases, con la respuesta esperada. Entrar con
 `SAVIQA` / `123` y abrir cada chat eligiendo la base en el selector.
 
+> Todas estas preguntas ya corrieron automáticamente (tandas 1 y 2) y el
+> recorrido por la interfaz se verificó con Playwright. Esta sección queda
+> para repetir la prueba a mano, por ejemplo después de agregar un cliente
+> nuevo.
+
 ### Aislamiento — la misma pregunta, tres respuestas
 
 | Pregunta | farmacias | frami | sur_andina |
@@ -223,7 +265,7 @@ vacío y eso es correcto.
 |---|---|
 | `¿Cuánto vendimos este mes?` | $167.742.994 en 258 facturas |
 | `¿Cuáles son los productos más vendidos?` | TORNILLO MAD 6 * 2", SERVICIO ENCHAPE MATERIAL 15 MM FL, TORNILLO MAD ZINCADO 6 * 2 |
-| `¿Cuánto vendimos de tornillos en 2025?` | Suma de productos con "TORNILLO" (usa el filtro nuevo por producto) |
+| `¿Cuánto vendimos de tornillos en 2025?` | $18.836.361 en 395.507 unidades |
 | `¿Cómo evolucionó la facturación año por año desde 2020?` | Serie 2020 → 2026 |
 
 **sur_andina** — 100 veces menos facturas que farmacias.
@@ -231,7 +273,7 @@ vacío y eso es correcto.
 | Pregunta | Esperado |
 |---|---|
 | `¿Qué aceite de motor se vende más?` | ACEITE MOTOR 15W40, luego 20W50 y 5W30 SINTETICO |
-| `¿Cuál es el ticket promedio de 2025?` | ~$2.154.000 |
+| `¿Cuál es el ticket promedio de 2025?` | $2.154.103 |
 | `¿Cuál es nuestra cartera vencida total?` | Por cobrar $42 M · por pagar $137 M (debe más de lo que le deben) |
 
 ### Igual en las tres
