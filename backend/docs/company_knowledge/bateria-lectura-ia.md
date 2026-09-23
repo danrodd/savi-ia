@@ -168,8 +168,8 @@ inventario del ERP, no lo encontró y no siguió buscando. Corregido en
   segunda ronda), no en el chat. Claude no se corrió por costo.
 - **Corpus público y chico** (47 páginas). Falta el documento largo de 165
   páginas, pospuesto.
-- **Un usuario administrador.** Los permisos por visibilidad y módulos ya
-  se probaron en la Fase 2 y no cambiaron.
+- **Un usuario administrador.** Permisos, varias bases y preguntas
+  naturales se prueban en [`bateria-permisos-bases.md`](bateria-permisos-bases.md).
 - La verificación del dato es por texto. Una respuesta con el dato correcto
   y un error al lado pasaría: por eso la tabla de §3 se revisó a mano.
 

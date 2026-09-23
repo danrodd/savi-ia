@@ -301,8 +301,16 @@ def ask(client: httpx.Client, headers: dict[str, str], question: str) -> dict:
                 done = event
             elif kind == "error":
                 error = event.get("message")
-    detail = client.get(f"/conversations/{conversation}", headers=headers).json()
-    assistant = [m for m in detail["messages"] if m["role"] == "assistant"][-1]
+    # La respuesta se guarda en segundo plano al cerrar el stream: se espera
+    # a que aparezca en vez de leerla en el mismo instante.
+    assistant: dict = {}
+    for _ in range(20):
+        detail = client.get(f"/conversations/{conversation}", headers=headers).json()
+        replies = [m for m in detail["messages"] if m["role"] == "assistant"]
+        if replies:
+            assistant = replies[-1]
+            break
+        time.sleep(0.5)
     return {
         "respuesta": "".join(text),
         "fuentes": [

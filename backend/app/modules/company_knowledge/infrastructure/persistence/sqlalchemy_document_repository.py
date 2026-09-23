@@ -107,6 +107,12 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
             model = await session.get(CompanyDocumentModel, document.id)
             if model is None:
                 session.add(self._to_model(document))
+                # Sin `relationship`, SQLAlchemy no sabe que el alcance por
+                # base depende del documento y puede insertarlo primero: en
+                # Postgres eso viola la FK (subir un documento limitado a
+                # ciertas bases daba 500). SQLite de los tests no lo veía
+                # porque no aplica FKs por defecto.
+                await session.flush()
             else:
                 self._apply(model, document)
             await self._replace_databases(session, document)
