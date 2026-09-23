@@ -79,3 +79,13 @@ async def test_without_active_provider_raises_unavailable() -> None:
 
     with pytest.raises(LlmProviderUnavailableError):
         await resolver.resolve()
+
+
+async def test_document_model_defaults_to_the_chat_model() -> None:
+    resolver = CachedActiveProviderResolver(_CountingRepository(_config()))
+    assert (await resolver.resolve()).document_model == "claude-sonnet-4-6"
+
+    config = _config()
+    config.document_model = "claude-haiku-4-5"
+    resolver = CachedActiveProviderResolver(_CountingRepository(config))
+    assert (await resolver.resolve()).document_model == "claude-haiku-4-5"

@@ -4,6 +4,7 @@ Cache en memoria del proceso **sin TTL**: la única forma de cambiar la
 configuración es por este módulo, que invalida explícitamente en `save`
 y `activate`. Expirar por tiempo solo agregaría lecturas a la BD.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -64,6 +65,7 @@ def _to_active_provider(config: LlmProviderConfig | None) -> ActiveProvider:
         kind=config.provider.value,
         chat_model=config.chat_model,
         title_model=config.title_model,
+        document_model=config.document_model or config.chat_model,
         credential_kind=config.credential_kind.value,
         credential=config.credential,
         pricing={

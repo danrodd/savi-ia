@@ -1,3 +1,4 @@
+from app.modules.company_knowledge.domain.value_objects.reading import AiReadErrorCode
 from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatusCode,
 )
@@ -26,7 +27,7 @@ class CompanyDocumentFileTooLargeError(DomainError):
 
 class UnsupportedCompanyDocumentMediaTypeError(DomainError):
     def __init__(self) -> None:
-        super().__init__("Tipo de archivo no soportado. Se aceptan PDF con texto, TXT y Markdown.")
+        super().__init__("Tipo de archivo no soportado. Se aceptan PDF, TXT y Markdown.")
 
 
 class CompanyDocumentIndexLimitReachedError(DomainError):
@@ -63,3 +64,17 @@ class EmbedderUnavailableError(DomainError):
             "El modelo de embeddings no está disponible; no se pueden procesar "
             "documentos en este momento."
         )
+
+
+class AiReadingError(Exception):
+    """El proveedor no pudo leer un tramo.
+
+    No es un error de dominio que llegue a HTTP: lo maneja la lectura, que
+    reintenta si `retryable` y, si no, usa el texto de `pypdf` para esas
+    páginas. El mensaje nunca incluye contenido del documento.
+    """
+
+    def __init__(self, code: AiReadErrorCode, *, retryable: bool, detail: str = "") -> None:
+        super().__init__(detail or code.value)
+        self.code = code
+        self.retryable = retryable

@@ -23,10 +23,13 @@ from app.infrastructure.config.settings import Settings
 from app.infrastructure.database.base import Base
 from app.modules.auth.infrastructure.persistence.models import RefreshTokenModel
 from app.modules.company_knowledge.infrastructure.persistence.models import (
+    CompanyDocumentAiReadModel,
     CompanyDocumentBlobModel,
     CompanyDocumentChunkModel,
     CompanyDocumentDatabaseModel,
     CompanyDocumentModel,
+    CompanyDocumentPageModel,
+    CompanyKnowledgeSettingsModel,
 )
 from app.modules.conversations.infrastructure.persistence.models import (
     ConversationModel,
@@ -58,6 +61,9 @@ _REGISTERED_MODELS = (
     CompanyDocumentDatabaseModel,
     CompanyDocumentBlobModel,
     CompanyDocumentChunkModel,
+    CompanyDocumentPageModel,
+    CompanyDocumentAiReadModel,
+    CompanyKnowledgeSettingsModel,
 )
 
 

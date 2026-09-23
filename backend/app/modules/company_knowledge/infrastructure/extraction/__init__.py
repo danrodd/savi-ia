@@ -12,6 +12,9 @@ from app.modules.company_knowledge.infrastructure.extraction.pdf_extractor impor
     PdfTextExtractor,
     normalize_text,
 )
+from app.modules.company_knowledge.infrastructure.extraction.pdf_page_analyzer import (
+    PypdfPageAnalyzer,
+)
 from app.modules.company_knowledge.infrastructure.extraction.text_extractor import (
     DispatchTextExtractor,
 )
@@ -22,6 +25,7 @@ __all__ = [
     "MARKDOWN_MEDIA_TYPE",
     "PDF_MEDIA_TYPE",
     "PdfTextExtractor",
+    "PypdfPageAnalyzer",
     "SUPPORTED_MEDIA_TYPES",
     "TEXT_MEDIA_TYPE",
     "decode_text",

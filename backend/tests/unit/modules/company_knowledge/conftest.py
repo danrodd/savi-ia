@@ -7,6 +7,8 @@
   hashing de tokens: textos que comparten palabras quedan cerca. Alcanza
   para probar el pipeline y el índice sin descargar nada.
 - `make_pdf`: PDF mínimo válido con capa de texto, escrito a mano.
+- `make_scanned_pdf`: PDF de páginas que son solo una imagen, sin capa de
+  texto: lo que produce un escáner o una app de fotos del celular.
 """
 
 from __future__ import annotations
@@ -33,10 +35,13 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
 )
 from app.modules.company_knowledge.infrastructure.index.tokenizer import tokenize
 from app.modules.company_knowledge.infrastructure.persistence.models import (
+    CompanyDocumentAiReadModel,
     CompanyDocumentBlobModel,
     CompanyDocumentChunkModel,
     CompanyDocumentDatabaseModel,
     CompanyDocumentModel,
+    CompanyDocumentPageModel,
+    CompanyKnowledgeSettingsModel,
 )
 from app.modules.conversations.infrastructure.persistence.models import (
     ConversationModel,
@@ -61,6 +66,9 @@ async def sessionmaker_(tmp_path: Path) -> AsyncIterator[async_sessionmaker[Asyn
                 CompanyDocumentDatabaseModel.__table__,
                 CompanyDocumentBlobModel.__table__,
                 CompanyDocumentChunkModel.__table__,
+                CompanyDocumentPageModel.__table__,
+                CompanyDocumentAiReadModel.__table__,
+                CompanyKnowledgeSettingsModel.__table__,
             ],
         )
     yield async_sessionmaker(bind=engine, expire_on_commit=False, autoflush=False)
@@ -122,6 +130,46 @@ def make_pdf(pages: Sequence[str]) -> bytes:
             b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream"
         )
     objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+
+    out = bytearray(b"%PDF-1.4\n")
+    offsets: list[int] = []
+    for number, body in enumerate(objects, start=1):
+        offsets.append(len(out))
+        out += f"{number} 0 obj\n".encode() + body + b"\nendobj\n"
+    xref = len(out)
+    out += f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode()
+    for offset in offsets:
+        out += f"{offset:010d} 00000 n \n".encode()
+    out += f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF".encode()
+    return bytes(out)
+
+
+def make_scanned_pdf(page_count: int, *, width: int = 40, height: int = 60) -> bytes:
+    """PDF 1.4 con una imagen gris por página y ninguna capa de texto."""
+    objects: list[bytes] = []
+    page_ids = [3 + 3 * i for i in range(page_count)]
+    objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
+    kids = " ".join(f"{pid} 0 R" for pid in page_ids)
+    objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {page_count} >>".encode())
+    pixels = bytes([180]) * (width * height)
+    for page_id in page_ids:
+        content_id, image_id = page_id + 1, page_id + 2
+        objects.append(
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            f"/Resources << /XObject << /Im1 {image_id} 0 R >> >> "
+            f"/Contents {content_id} 0 R >>".encode()
+        )
+        stream = b"q 612 0 0 792 0 0 cm /Im1 Do Q"
+        objects.append(
+            b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream"
+        )
+        objects.append(
+            f"<< /Type /XObject /Subtype /Image /Width {width} /Height {height} "
+            f"/ColorSpace /DeviceGray /BitsPerComponent 8 /Length {len(pixels)} >>".encode()
+            + b"\nstream\n"
+            + pixels
+            + b"\nendstream"
+        )
 
     out = bytearray(b"%PDF-1.4\n")
     offsets: list[int] = []

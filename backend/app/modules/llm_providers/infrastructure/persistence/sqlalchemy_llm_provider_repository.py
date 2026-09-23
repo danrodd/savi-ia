@@ -4,6 +4,7 @@ Es la **frontera del cifrado**: la entidad viaja con la credencial en
 claro, la columna la guarda cifrada, y la traducción ocurre acá y solo
 acá.
 """
+
 from __future__ import annotations
 
 import logging
@@ -129,6 +130,7 @@ class SqlAlchemyLlmProviderRepository(LlmProviderRepository):
             credentials_unreadable=unreadable,
             chat_model=row.chat_model,
             title_model=row.title_model,
+            document_model=row.document_model,
             pricing=_pricing_from_json(row.pricing),
             is_active=row.is_active,
             last_test_ok_at=row.last_test_ok_at,
@@ -140,6 +142,7 @@ class SqlAlchemyLlmProviderRepository(LlmProviderRepository):
         row.credential_kind = config.credential_kind.value
         row.chat_model = config.chat_model
         row.title_model = config.title_model
+        row.document_model = config.document_model
         row.pricing = _pricing_to_json(config.pricing)
         row.last_test_ok_at = config.last_test_ok_at
         if config.credential_kind == CredentialKind.LOCAL_SESSION:

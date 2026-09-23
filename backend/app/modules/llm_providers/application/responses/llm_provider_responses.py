@@ -1,4 +1,5 @@
 """Responses del módulo. **Ninguna incluye la credencial.**"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -24,6 +25,7 @@ class LlmProviderResponse(BaseModel):
     credentials_unreadable: bool
     chat_model: str | None
     title_model: str | None
+    document_model: str | None
     pricing: dict[str, ModelPricingPayload]
     is_active: bool
     last_test_ok_at: datetime | None
@@ -43,6 +45,7 @@ class LlmProviderResponse(BaseModel):
             credentials_unreadable=dto.credentials_unreadable,
             chat_model=dto.chat_model,
             title_model=dto.title_model,
+            document_model=dto.document_model,
             pricing={
                 model: ModelPricingPayload(
                     input=p.input,

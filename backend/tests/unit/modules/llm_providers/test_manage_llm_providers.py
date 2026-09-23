@@ -193,3 +193,20 @@ async def test_unsupported_credential_kind_is_rejected() -> None:
 
     with pytest.raises(ValidationError):
         await use_case.save("claude", _dto(credential_kind="not-a-kind"))
+
+
+async def test_document_model_is_saved_kept_when_omitted_and_cleared_when_empty() -> None:
+    use_case, repo, _ = _use_case()
+
+    await use_case.save("claude", _dto(document_model="claude-sonnet-5"))
+    stored = await repo.get(ProviderKind.CLAUDE)
+    assert stored is not None and stored.document_model == "claude-sonnet-5"
+
+    # Omitido (`None`): conserva el guardado, como la credencial.
+    dto = await use_case.save("claude", _dto(credential=""))
+    assert dto.document_model == "claude-sonnet-5"
+
+    # Vacío: vuelve a usar el modelo de chat.
+    await use_case.save("claude", _dto(credential="", document_model=""))
+    stored = await repo.get(ProviderKind.CLAUDE)
+    assert stored is not None and stored.document_model is None

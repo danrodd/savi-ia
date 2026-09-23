@@ -15,9 +15,11 @@ from app.modules.auth.infrastructure.http.admin import SaviAdminDep, is_platform
 from app.modules.company_knowledge.application.mappers import CompanyDocumentMapper
 from app.modules.company_knowledge.application.requests import (
     SearchTestRequest,
+    UpdateAiReadingSettingsRequest,
     UpdateCompanyDocumentRequest,
 )
 from app.modules.company_knowledge.application.responses import (
+    AiReadingSettingsResponse,
     CompanyDocumentResponse,
     CompanyDocumentUsageResponse,
     SearchTestResponse,
@@ -34,13 +36,16 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentVisibility,
 )
 from app.modules.company_knowledge.infrastructure.http.dependencies import (
+    AiReadingSettingsUseCaseDep,
     DeleteUseCaseDep,
     GetUseCaseDep,
     ListUseCaseDep,
+    ReadWithAiUseCaseDep,
     ReplaceUseCaseDep,
     ReprocessUseCaseDep,
     SearchTestUseCaseDep,
     SettingsDep,
+    UpdateAiReadingSettingsUseCaseDep,
     UpdateUseCaseDep,
     UploadUseCaseDep,
     UsageUseCaseDep,
@@ -172,6 +177,27 @@ async def usage(use_case: UsageUseCaseDep, _admin: SaviAdminDep) -> CompanyDocum
     return CompanyDocumentUsageResponse.from_dto(await use_case.execute())
 
 
+@router.get("/ai-reading", response_model=AiReadingSettingsResponse)
+async def get_ai_reading_settings(
+    use_case: AiReadingSettingsUseCaseDep, _admin: SaviAdminDep
+) -> AiReadingSettingsResponse:
+    """Interruptor de la lectura de PDF con IA, proveedor, modelo y costo estimado."""
+    return AiReadingSettingsResponse.from_status(await use_case.execute())
+
+
+@router.put("/ai-reading", response_model=AiReadingSettingsResponse)
+async def update_ai_reading_settings(
+    request: UpdateAiReadingSettingsRequest,
+    use_case: UpdateAiReadingSettingsUseCaseDep,
+    admin: SaviAdminDep,
+) -> AiReadingSettingsResponse:
+    """Activa o apaga la lectura con IA. Aplica a lo que se procese después."""
+    reading = await use_case.execute(
+        enabled=request.ai_reading_enabled, updated_by_login=admin.login
+    )
+    return AiReadingSettingsResponse.from_status(reading)
+
+
 @router.post("/search-test", response_model=SearchTestResponse)
 async def search_test(
     request: SearchTestRequest, use_case: SearchTestUseCaseDep, admin: SaviAdminDep
@@ -241,6 +267,14 @@ async def replace_document(
 async def reprocess_document(
     document_id: UUID, use_case: ReprocessUseCaseDep, _admin: SaviAdminDep
 ) -> CompanyDocumentResponse:
+    return _response(await use_case.execute(document_id))
+
+
+@router.post("/{document_id}/read-with-ai", response_model=CompanyDocumentResponse)
+async def read_document_with_ai(
+    document_id: UUID, use_case: ReadWithAiUseCaseDep, _admin: SaviAdminDep
+) -> CompanyDocumentResponse:
+    """Descarta lo leído con IA de la versión vigente y lo vuelve a leer."""
     return _response(await use_case.execute(document_id))
 
 

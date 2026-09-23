@@ -15,6 +15,9 @@ _FAILED_MESSAGES: dict[DocumentStatusCode, str] = {
     DocumentStatusCode.ENCODING_UNSUPPORTED: "La codificación del archivo no es compatible.",
     DocumentStatusCode.TOO_MANY_PAGES: "El PDF supera el máximo de páginas permitido.",
     DocumentStatusCode.TOO_MANY_CHUNKS: "El documento genera demasiados fragmentos.",
+    DocumentStatusCode.AI_UNREADABLE: (
+        "La IA no pudo leer ninguna página: las imágenes están borrosas o son ilegibles."
+    ),
     DocumentStatusCode.INDEX_LIMIT_REACHED: (
         "La instalación alcanzó el límite de fragmentos. Eliminá documentos para liberar espacio."
     ),
@@ -38,6 +41,9 @@ class CompanyDocumentMapper:
             chunk_count=document.chunk_count,
             char_count=document.char_count,
             embedding_model=document.embedding_model,
+            reading_method=document.reading_method,
+            ai_page_count=document.ai_page_count,
+            ai_cost_usd=document.ai_cost_usd,
             visibility=document.visibility,
             modules=[module.value for module in document.modules],
             all_databases=document.all_databases,
@@ -59,7 +65,9 @@ class CompanyDocumentMapper:
         ):
             return None
         if document.status == DocumentStatus.NO_TEXT:
-            return "El PDF parece escaneado; no tiene texto seleccionable."
+            if document.status_code == DocumentStatusCode.AI_UNREADABLE:
+                return _FAILED_MESSAGES[DocumentStatusCode.AI_UNREADABLE]
+            return "El PDF parece escaneado; no tiene texto seleccionable. Podés leerlo con IA."
         if document.status_code is None:
             return _DEFAULT_ERROR
         return _FAILED_MESSAGES.get(document.status_code, _DEFAULT_ERROR)

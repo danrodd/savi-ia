@@ -113,8 +113,9 @@ class Settings(BaseSettings):
     free_query_max_estimated_rows: int = Field(default=1000)
 
     # ── Conocimiento de la empresa (documentos propios) ──────────────────
-    # Límites de carga por archivo y por documento.
-    company_docs_max_file_mb: int = Field(default=20)
+    # Límites de carga por archivo y por documento. 60 MB porque un PDF
+    # armado con fotos del celular pesa 1-5 MB por página.
+    company_docs_max_file_mb: int = Field(default=60)
     company_docs_max_pages: int = Field(default=500)
     company_docs_max_chunks_per_doc: int = Field(default=2000)
     # Tope de la instalación. El worker lo verifica antes de guardar.
@@ -141,6 +142,16 @@ class Settings(BaseSettings):
     company_docs_search_limit: int = Field(default=6)
     company_docs_search_max_per_document: int = Field(default=3)
     company_docs_max_context_chars: int = Field(default=6000)
+    # Lectura de PDF con IA (Fase 4). Un tramo agrupa páginas consecutivas
+    # hasta el tope de páginas o de MB, lo que llegue primero. Los tramos de
+    # un mismo documento van en paralelo acotado para no competir con el
+    # chat por el cupo del proveedor.
+    company_docs_ai_concurrency: int = Field(default=3, ge=1, le=8)
+    company_docs_ai_pages_per_request: int = Field(default=5, ge=1, le=20)
+    company_docs_ai_max_request_mb: int = Field(default=8, ge=1, le=30)
+    company_docs_ai_timeout_s: float = Field(default=120.0, gt=0)
+    company_docs_ai_retry_attempts: int = Field(default=3, ge=1, le=6)
+    company_docs_ai_retry_base_delay_s: float = Field(default=2.0, ge=0)
 
     # ── Auth ─────────────────────────────────────────────────────────────
     # Secreto para firmar los JWT. Fuera de `development` el default hace

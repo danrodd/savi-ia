@@ -7,6 +7,7 @@ from app.modules.company_knowledge.application.dtos import (
     CompanyDocumentDTO,
     CompanyDocumentUsageDTO,
 )
+from app.modules.company_knowledge.application.use_cases.ai_reading import AiReadingStatus
 from app.modules.company_knowledge.application.use_cases.document_access import (
     SearchTestResult,
 )
@@ -32,8 +33,14 @@ class CompanyDocumentResponse(BaseModel):
     # Vive en memoria del proceso, no en la base (ver `infrastructure/progress.py`).
     progress_done: int | None = None
     progress_total: int | None = None
+    # `reading` (leyendo con IA) o `indexing`.
+    progress_stage: str | None = None
     char_count: int
     embedding_model: str | None
+    # Solo PDF: `text`, `ai` o `mixed`. `None` hasta procesarlo.
+    reading_method: str | None = None
+    ai_page_count: int = 0
+    ai_cost_usd: float | None = None
     visibility: str
     modules: list[str]
     all_databases: bool
@@ -64,8 +71,12 @@ class CompanyDocumentResponse(BaseModel):
             chunk_count=dto.chunk_count,
             progress_done=progress.done if progress else None,
             progress_total=progress.total if progress else None,
+            progress_stage=progress.stage if progress else None,
             char_count=dto.char_count,
             embedding_model=dto.embedding_model,
+            reading_method=dto.reading_method.value if dto.reading_method else None,
+            ai_page_count=dto.ai_page_count,
+            ai_cost_usd=dto.ai_cost_usd,
             visibility=dto.visibility.value,
             modules=dto.modules,
             all_databases=dto.all_databases,
@@ -162,4 +173,45 @@ class SearchTestResponse(BaseModel):
                 )
                 for doc in result.excluded_documents
             ],
+        )
+
+
+_PROVIDER_NAMES = {"claude": "Claude", "openai": "OpenAI", "gemini": "Gemini"}
+
+
+class AiReadingSettingsResponse(BaseModel):
+    """Estado de la lectura de PDF con IA para la pantalla de Conocimiento."""
+
+    ai_reading_enabled: bool
+    available: bool
+    provider: str | None
+    provider_name: str | None
+    model: str | None
+    uses_subscription: bool
+    estimated_usd_per_page: float | None
+    unavailable_reason: str | None
+    privacy_notice: str
+    updated_by_login: str | None
+    updated_at: datetime | None
+
+    @classmethod
+    def from_status(cls, status: AiReadingStatus) -> "AiReadingSettingsResponse":
+        name = _PROVIDER_NAMES.get(status.provider or "", status.provider)
+        target = name or "el proveedor de IA configurado"
+        return cls(
+            ai_reading_enabled=status.enabled,
+            available=status.available,
+            provider=status.provider,
+            provider_name=name,
+            model=status.model,
+            uses_subscription=status.uses_subscription,
+            estimated_usd_per_page=status.estimated_usd_per_page,
+            unavailable_reason=status.unavailable_reason,
+            privacy_notice=(
+                f"Con la lectura con IA activa, los PDF completos se envían a {target} "
+                "para transcribirlos. Apagala si tus documentos no pueden salir del "
+                "servidor; en ese caso solo se lee el texto digital."
+            ),
+            updated_by_login=status.updated_by_login,
+            updated_at=status.updated_at,
         )

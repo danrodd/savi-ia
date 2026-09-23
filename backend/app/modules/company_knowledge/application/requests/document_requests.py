@@ -21,3 +21,7 @@ class SearchTestRequest(BaseModel):
     erp_database_id: UUID
     # Probar como otro usuario: su `codigo` del ERP en esa base.
     as_login: str | None = Field(default=None, min_length=1, max_length=50)
+
+
+class UpdateAiReadingSettingsRequest(BaseModel):
+    ai_reading_enabled: bool

@@ -28,4 +28,6 @@ class DocumentStatusCode(StrEnum):
     TOO_MANY_PAGES = "too_many_pages"
     TOO_MANY_CHUNKS = "too_many_chunks"
     INDEX_LIMIT_REACHED = "index_limit_reached"
+    # Leído con IA y ninguna página resultó legible (foto borrosa, etc.).
+    AI_UNREADABLE = "ai_unreadable"
     INTERNAL_ERROR = "internal_error"

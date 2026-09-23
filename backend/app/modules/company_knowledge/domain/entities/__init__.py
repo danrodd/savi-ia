@@ -5,6 +5,16 @@ from app.modules.company_knowledge.domain.entities.company_document import (
 from app.modules.company_knowledge.domain.entities.document_access_view import (
     DocumentAccessView,
 )
+from app.modules.company_knowledge.domain.entities.page_reading import (
+    AiPageContent,
+    AiReadRecord,
+    AiReadResult,
+    AiReadUsage,
+    KnowledgeSettings,
+    PageMetrics,
+    PdfAnalysis,
+    ReadPage,
+)
 from app.modules.company_knowledge.domain.entities.processing import (
     ChunkDraft,
     ExtractedText,
@@ -12,6 +22,14 @@ from app.modules.company_knowledge.domain.entities.processing import (
 )
 
 __all__ = [
+    "AiPageContent",
+    "AiReadRecord",
+    "AiReadResult",
+    "AiReadUsage",
+    "KnowledgeSettings",
+    "PageMetrics",
+    "PdfAnalysis",
+    "ReadPage",
     "ChunkDraft",
     "CompanyDocument",
     "DocumentAccessView",

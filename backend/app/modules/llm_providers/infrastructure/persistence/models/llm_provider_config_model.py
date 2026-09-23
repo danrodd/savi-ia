@@ -4,6 +4,7 @@ Una fila por proveedor de IA. La credencial se guarda cifrada con la
 misma clave que las contraseñas del ERP (`ERP_CREDENTIALS_KEY`) y nunca
 sale del backend.
 """
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -31,6 +32,8 @@ class LlmProviderConfigModel(Base):
     )
     chat_model: Mapped[str] = mapped_column(String(120), nullable=False)
     title_model: Mapped[str] = mapped_column(String(120), nullable=False)
+    # Lectura de documentos con IA. `NULL` = usar `chat_model`.
+    document_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
     # `{ "<model_id>": { "input", "output", "cache_read", "cache_write" } }`
     # en USD por millón de tokens.
     pricing: Mapped[dict[str, Any]] = mapped_column(

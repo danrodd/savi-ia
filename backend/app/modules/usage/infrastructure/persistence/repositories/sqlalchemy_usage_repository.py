@@ -18,10 +18,13 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Integer, RowMapping, Select, and_, cast, func, select
+from sqlalchemy import Integer, RowMapping, Select, and_, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
+from app.modules.company_knowledge.infrastructure.persistence.models import (
+    CompanyDocumentAiReadModel,
+)
 from app.modules.conversations.infrastructure.persistence.models.conversation_model import (
     ConversationModel,
     MessageModel,
@@ -33,6 +36,8 @@ from app.modules.usage.domain.value_objects import (
     DailyProviderUsage,
     DailyUsage,
     DatabaseUsage,
+    DocumentReadingModelUsage,
+    DocumentReadingUsage,
     ProviderUsage,
     UsageFilters,
     UsagePeriod,
@@ -386,6 +391,72 @@ class SqlAlchemyUsageRepository(UsageRepository):
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[ProviderUsage]:
         return await self._provider_totals(period, user_id=None, filters=filters)
+
+    async def document_reading_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> DocumentReadingUsage:
+        read = CompanyDocumentAiReadModel
+        # Las páginas cuentan solo si la IA las devolvió; un pedido que cayó
+        # al texto de `pypdf` se pagó igual (o falló) pero no leyó nada.
+        pages = func.sum(
+            case((read.outcome != "fallback", read.page_to - read.page_from + 1), else_=0)
+        )
+        conditions: list[ColumnElement[bool]] = [
+            read.created_at >= period.start,
+            read.created_at < period.end,
+        ]
+        if filters is not None:
+            if filters.providers:
+                conditions.append(read.provider.in_(filters.providers))
+            if filters.models:
+                conditions.append(read.model.in_(filters.models))
+            if filters.databases:
+                conditions.append(read.uploaded_by_database_id.in_(filters.databases))
+        stmt = (
+            select(
+                read.provider,
+                read.model,
+                func.count(read.id).label("requests"),
+                pages.label("pages"),
+                func.coalesce(func.sum(read.input_tokens), 0).label("input_tokens"),
+                func.coalesce(func.sum(read.output_tokens), 0).label("output_tokens"),
+                func.coalesce(func.sum(read.cost_usd), Decimal("0")).label("cost_usd"),
+                # Pedidos que la IA respondió sin tarifa: los fallidos no tienen
+                # costo que faltar.
+                func.sum(
+                    case(
+                        (and_(read.cost_usd.is_(None), read.outcome != "fallback"), 1),
+                        else_=0,
+                    )
+                ).label("untariffed"),
+            )
+            .where(and_(*conditions))
+            .group_by(read.provider, read.model)
+            .order_by(read.provider, read.model)
+        )
+        rows = (await self._session.execute(stmt)).mappings().all()
+        per_model = [
+            DocumentReadingModelUsage(
+                provider=str(row["provider"]),
+                model=str(row["model"]),
+                requests=int(row["requests"] or 0),
+                pages=int(row["pages"] or 0),
+                input_tokens=int(row["input_tokens"] or 0),
+                output_tokens=int(row["output_tokens"] or 0),
+                cost_usd=Decimal(str(row["cost_usd"] or 0)),
+                untariffed_count=int(row["untariffed"] or 0),
+            )
+            for row in rows
+        ]
+        return DocumentReadingUsage(
+            requests=sum(m.requests for m in per_model),
+            pages=sum(m.pages for m in per_model),
+            input_tokens=sum(m.input_tokens for m in per_model),
+            output_tokens=sum(m.output_tokens for m in per_model),
+            cost_usd=sum((m.cost_usd for m in per_model), Decimal("0")),
+            untariffed_count=sum(m.untariffed_count for m in per_model),
+            per_model=per_model,
+        )
 
     async def database_totals_system(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None

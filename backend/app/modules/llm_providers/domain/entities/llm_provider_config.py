@@ -4,6 +4,7 @@ La entidad viaja con la credencial **en claro**; el repositorio es la
 frontera del cifrado. Nunca sale del backend: los DTOs de salida no
 tienen el campo.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -23,6 +24,8 @@ class LlmProviderConfig:
     credential_kind: CredentialKind
     chat_model: str
     title_model: str
+    # Modelo para leer documentos. `None` = usar `chat_model`.
+    document_model: str | None = None
     # `None` con `local_session` o si no se cargó todavía.
     credential: str | None = None
     pricing: dict[str, ModelPricing] = field(default_factory=dict[str, ModelPricing])

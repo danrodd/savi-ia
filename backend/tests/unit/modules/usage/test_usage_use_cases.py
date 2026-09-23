@@ -25,6 +25,7 @@ from app.modules.usage.domain.value_objects import (
     DailyProviderUsage,
     DailyUsage,
     DatabaseUsage,
+    DocumentReadingUsage,
     ProviderUsage,
     UsageFilters,
     UsagePeriod,
@@ -87,6 +88,12 @@ class _FakeUsageRepo(UsageRepository):
     ) -> list[ProviderUsage]:
         self.calls.append(("provider_totals_for_user", (user_id, period, erp_database_id, filters)))
         return [ProviderUsage(provider="claude", model="claude-sonnet-5", totals=_TOTALS)]
+
+    async def document_reading_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> DocumentReadingUsage:
+        self.calls.append(("document_reading_system", (period, filters)))
+        return DocumentReadingUsage(requests=2, pages=7, cost_usd=Decimal("0.004"))
 
     async def database_totals_system(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
@@ -241,6 +248,11 @@ async def test_system_usage_arma_reporte_global() -> None:
     assert report.daily_by_provider[0].provider == "claude"
     # Desglose por base consultada: cuánto costó cada cliente.
     assert report.per_database[0].erp_database_id == _DATABASE_A
+    # La lectura de documentos con IA viene aparte del chat.
+    assert (report.document_reading.pages, report.document_reading.cost_usd) == (
+        7,
+        Decimal("0.004"),
+    )
 
 
 @pytest.mark.asyncio
@@ -258,4 +270,5 @@ async def test_system_usage_no_filtra_por_usuario() -> None:
         "provider_totals_system",
         "daily_provider_system",
         "database_totals_system",
+        "document_reading_system",
     }

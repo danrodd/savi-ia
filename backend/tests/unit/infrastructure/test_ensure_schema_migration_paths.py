@@ -102,6 +102,12 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
     document_columns = _table_columns(db_path, "company_documents")
     assert {"title", "sha256", "visibility", "all_databases"}.issubset(document_columns)
     assert "uq_company_documents_sha256" in _index_names(db_path, "company_documents")
+    # Lectura de PDF con IA (Fase 4).
+    assert {"reading_method", "ai_page_count", "ai_cost_usd"}.issubset(document_columns)
+    assert "document_model" in llm_columns
+    assert "method" in _table_columns(db_path, "company_document_pages")
+    assert "cost_usd" in _table_columns(db_path, "company_document_ai_reads")
+    assert "ai_reading_enabled" in _table_columns(db_path, "company_knowledge_settings")
 
     engine = create_engine(f"sqlite:///{db_path.as_posix()}")
     try:
@@ -109,7 +115,7 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     finally:
         engine.dispose()
-        assert version == "b3e1f9a2c7d4"
+        assert version == "c4d8e2f6a1b9"
 
 
 def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
@@ -210,6 +216,12 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert "uq_llm_provider_configs_active" in _index_names(
         db_path, "llm_provider_configs"
     )
+    # La migración de la lectura con IA también corre por el camino `upgrade`.
+    assert "document_model" in llm_columns
+    assert {"reading_method", "ai_page_count", "ai_cost_usd"}.issubset(
+        _table_columns(db_path, "company_documents")
+    )
+    assert "method" in _table_columns(db_path, "company_document_pages")
 
     engine = create_engine(f"sqlite:///{db_path.as_posix()}")
     try:
@@ -231,4 +243,4 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert row.erp_database_id == queried_database_id
     # ...y la identidad se backfillea desde la base consultada.
     assert row.owner_erp_database_id == queried_database_id
-    assert version == "b3e1f9a2c7d4"
+    assert version == "c4d8e2f6a1b9"

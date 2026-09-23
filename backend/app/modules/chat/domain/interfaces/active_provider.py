@@ -4,6 +4,7 @@ El chat no importa `llm_providers`: depende de este puerto, y la
 implementación vive allá. Se resuelve **por turno**, así cambiar el
 proveedor o su credencial desde administración aplica sin reiniciar.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -26,6 +27,9 @@ class ActiveProvider:
     chat_model: str
     title_model: str
     credential_kind: str
+    # Modelo para leer documentos; el resolver ya aplica el default
+    # (`chat_model`). Vacío solo en tests que no lo necesitan.
+    document_model: str = ""
     # En claro, solo en memoria del proceso. Nunca va a un log.
     credential: str | None = field(default=None, repr=False)
     pricing: dict[str, ModelPrice] = field(default_factory=dict[str, ModelPrice])

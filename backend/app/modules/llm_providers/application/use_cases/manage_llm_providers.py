@@ -9,6 +9,7 @@ Reglas del dominio que viven acá y no en HTTP:
 - **Invalidar la cache del resolver** tras `save` y `activate`: sin eso,
   el cambio no aplicaría al turno siguiente.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
@@ -181,6 +182,11 @@ class ManageLlmProvidersUseCase:
             credentials_unreadable=unreadable,
             chat_model=dto.chat_model,
             title_model=dto.title_model,
+            document_model=(
+                (dto.document_model or None)
+                if dto.document_model is not None
+                else (stored.document_model if stored else None)
+            ),
             pricing=(
                 dict(dto.pricing)
                 if dto.pricing is not None

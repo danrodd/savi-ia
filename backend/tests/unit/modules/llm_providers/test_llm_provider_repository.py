@@ -112,3 +112,17 @@ async def test_local_session_stores_no_credential(
     assert fetched is not None
     assert fetched.credential is None
     assert fetched.credentials_unreadable is False
+
+
+async def test_document_model_round_trips(
+    sessionmaker_: async_sessionmaker[AsyncSession],
+) -> None:
+    repo = _repo(sessionmaker_)
+    config = _config()
+    config.document_model = "claude-sonnet-5"
+    await repo.save(config)
+
+    fetched = await repo.get(ProviderKind.CLAUDE)
+
+    assert fetched is not None
+    assert fetched.document_model == "claude-sonnet-5"

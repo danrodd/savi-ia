@@ -5,24 +5,40 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.infrastructure.config import Settings, get_settings
+from app.infrastructure.database import get_agent_sessionmaker
 from app.modules.company_knowledge.application.use_cases import (
     DeleteCompanyDocumentUseCase,
     DownloadCompanyDocumentUseCase,
+    GetAiReadingSettingsUseCase,
     GetCompanyDocumentUsageUseCase,
     GetCompanyDocumentUseCase,
     ListCompanyDocumentsUseCase,
+    ReadCompanyDocumentWithAiUseCase,
     ReplaceCompanyDocumentUseCase,
     ReprocessCompanyDocumentUseCase,
     TestDocumentSearchUseCase,
+    UpdateAiReadingSettingsUseCase,
     UpdateCompanyDocumentUseCase,
     UploadCompanyDocumentUseCase,
 )
 from app.modules.company_knowledge.domain.interfaces import (
+    AiReaderAvailability,
+    AiReaderProvider,
     DocumentIndex,
+    DocumentPageRepository,
+    KnowledgeSettingsRepository,
+    PdfPageReader,
+)
+from app.modules.company_knowledge.infrastructure.ai_reading import (
+    ActiveProviderAiReaderProvider,
 )
 from app.modules.company_knowledge.infrastructure.extraction import ContentMediaTypeSniffer
 from app.modules.company_knowledge.infrastructure.http.repository_dependency import (
     DocumentRepositoryDep,
+)
+from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_page_repository import (  # noqa: E501
+    SqlAlchemyDocumentPageRepository,
+    SqlAlchemyKnowledgeSettingsRepository,
 )
 from app.modules.company_knowledge.infrastructure.provider import (
     get_company_knowledge_runtime,
@@ -33,6 +49,9 @@ from app.modules.conversations.infrastructure.http.dependencies import (
 from app.modules.erp_databases.infrastructure.http.dependencies import (
     ErpDatabaseRepositoryDep,
     ResolveModulesForDatabaseUseCaseDep,
+)
+from app.modules.llm_providers.infrastructure.active_provider_resolver import (
+    get_active_provider_resolver,
 )
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -50,6 +69,52 @@ def _notify_worker() -> None:
 
 
 DocumentIndexDep = Annotated[DocumentIndex | None, Depends(get_document_index)]
+
+
+def get_page_repository() -> DocumentPageRepository:
+    runtime = get_company_knowledge_runtime()
+    if runtime is not None and runtime.pages is not None:
+        return runtime.pages
+    return SqlAlchemyDocumentPageRepository(get_agent_sessionmaker())
+
+
+def get_knowledge_settings_repository() -> KnowledgeSettingsRepository:
+    runtime = get_company_knowledge_runtime()
+    if runtime is not None and runtime.knowledge_settings is not None:
+        return runtime.knowledge_settings
+    return SqlAlchemyKnowledgeSettingsRepository(get_agent_sessionmaker())
+
+
+class _NoReaders(AiReaderProvider):
+    """Sin resolver de proveedores (el `lifespan` no corrió): nada que leer."""
+
+    async def availability(self) -> AiReaderAvailability:
+        return AiReaderAvailability(
+            available=False, reason="No hay un proveedor de IA configurado."
+        )
+
+    async def build_reader(self) -> PdfPageReader | None:
+        return None
+
+
+def get_ai_reader_provider(settings: SettingsDep) -> AiReaderProvider:
+    runtime = get_company_knowledge_runtime()
+    if runtime is not None and runtime.readers is not None:
+        return runtime.readers
+    try:
+        resolver = get_active_provider_resolver()
+    except RuntimeError:
+        return _NoReaders()
+    return ActiveProviderAiReaderProvider(
+        resolver, git_bash_path=settings.claude_code_git_bash_path
+    )
+
+
+PageRepositoryDep = Annotated[DocumentPageRepository, Depends(get_page_repository)]
+KnowledgeSettingsRepositoryDep = Annotated[
+    KnowledgeSettingsRepository, Depends(get_knowledge_settings_repository)
+]
+AiReaderProviderDep = Annotated[AiReaderProvider, Depends(get_ai_reader_provider)]
 
 
 def get_upload_use_case(
@@ -82,6 +147,34 @@ def get_reprocess_use_case(
     repository: DocumentRepositoryDep, index: DocumentIndexDep
 ) -> ReprocessCompanyDocumentUseCase:
     return ReprocessCompanyDocumentUseCase(repository, _notify_worker, index)
+
+
+def get_read_with_ai_use_case(
+    repository: DocumentRepositoryDep,
+    pages: PageRepositoryDep,
+    knowledge_settings: KnowledgeSettingsRepositoryDep,
+    readers: AiReaderProviderDep,
+    index: DocumentIndexDep,
+) -> ReadCompanyDocumentWithAiUseCase:
+    return ReadCompanyDocumentWithAiUseCase(
+        repository, pages, knowledge_settings, readers, _notify_worker, index
+    )
+
+
+def get_ai_reading_settings_use_case(
+    knowledge_settings: KnowledgeSettingsRepositoryDep,
+    readers: AiReaderProviderDep,
+    pages: PageRepositoryDep,
+) -> GetAiReadingSettingsUseCase:
+    return GetAiReadingSettingsUseCase(knowledge_settings, readers, pages)
+
+
+def get_update_ai_reading_settings_use_case(
+    knowledge_settings: KnowledgeSettingsRepositoryDep,
+    readers: AiReaderProviderDep,
+    pages: PageRepositoryDep,
+) -> UpdateAiReadingSettingsUseCase:
+    return UpdateAiReadingSettingsUseCase(knowledge_settings, readers, pages)
 
 
 def get_delete_use_case(
@@ -117,6 +210,15 @@ DeleteUseCaseDep = Annotated[DeleteCompanyDocumentUseCase, Depends(get_delete_us
 ListUseCaseDep = Annotated[ListCompanyDocumentsUseCase, Depends(get_list_use_case)]
 GetUseCaseDep = Annotated[GetCompanyDocumentUseCase, Depends(get_get_use_case)]
 UsageUseCaseDep = Annotated[GetCompanyDocumentUsageUseCase, Depends(get_usage_use_case)]
+ReadWithAiUseCaseDep = Annotated[
+    ReadCompanyDocumentWithAiUseCase, Depends(get_read_with_ai_use_case)
+]
+AiReadingSettingsUseCaseDep = Annotated[
+    GetAiReadingSettingsUseCase, Depends(get_ai_reading_settings_use_case)
+]
+UpdateAiReadingSettingsUseCaseDep = Annotated[
+    UpdateAiReadingSettingsUseCase, Depends(get_update_ai_reading_settings_use_case)
+]
 
 
 def get_download_use_case(

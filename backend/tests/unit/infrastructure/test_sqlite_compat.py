@@ -284,3 +284,65 @@ async def test_provider_filter_accepts_multiple_values(sqlite_sessionmaker: Any)
 
         only_claude = UsageFilters(providers=frozenset({"Claude"}))
         assert (await repo.system_totals(_PERIOD, filters=only_claude)).message_count == 1
+
+
+async def test_document_reading_spend_is_aggregated_apart_from_chat(
+    sqlite_sessionmaker: Any,
+) -> None:
+    from app.modules.company_knowledge.infrastructure.persistence.models import (
+        CompanyDocumentAiReadModel,
+    )
+
+    uploader_db = uuid4()
+
+    def read(**overrides: Any) -> CompanyDocumentAiReadModel:
+        values: dict[str, Any] = {
+            "document_id": uuid4(),
+            "version": 1,
+            "page_from": 1,
+            "page_to": 5,
+            "provider": "openai",
+            "model": "gpt-6-luna",
+            "input_tokens": 1000,
+            "output_tokens": 200,
+            "cost_usd": Decimal("0.002"),
+            "outcome": "ok",
+            "uploaded_by_login": "ADMIN",
+            "uploaded_by_database_id": uploader_db,
+            "created_at": datetime(2026, 9, 1, tzinfo=UTC),
+        }
+        values.update(overrides)
+        return CompanyDocumentAiReadModel(**values)
+
+    async with sqlite_sessionmaker() as session:
+        session.add_all(
+            [
+                read(),
+                # Cayó al texto de pypdf: cuenta el pedido, no las páginas.
+                read(page_from=6, page_to=8, cost_usd=None, outcome="fallback"),
+                # Sin tarifa cargada.
+                read(provider="gemini", model="flash", page_to=2, cost_usd=None),
+                # Fuera del período.
+                read(created_at=datetime(2025, 1, 1, tzinfo=UTC)),
+            ]
+        )
+        await session.commit()
+
+    async with sqlite_sessionmaker() as session:
+        repo = SqlAlchemyUsageRepository(session, reporting_timezone="America/Bogota")
+        usage = await repo.document_reading_system(_PERIOD)
+        only_openai = await repo.document_reading_system(
+            _PERIOD, filters=UsageFilters(providers=frozenset({"openai"}))
+        )
+        other_client = await repo.document_reading_system(
+            _PERIOD, filters=UsageFilters(databases=frozenset({uuid4()}))
+        )
+
+    assert (usage.requests, usage.pages, usage.untariffed_count) == (3, 7, 1)
+    assert usage.cost_usd == Decimal("0.002")
+    assert [(m.provider, m.pages) for m in usage.per_model] == [
+        ("gemini", 2),
+        ("openai", 5),
+    ]
+    assert (only_openai.requests, only_openai.pages) == (2, 5)
+    assert other_client.requests == 0

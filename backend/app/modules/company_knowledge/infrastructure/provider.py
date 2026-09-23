@@ -15,10 +15,22 @@ from dataclasses import dataclass
 
 from app.infrastructure.config.settings import Settings
 from app.infrastructure.database import get_agent_sessionmaker
+from app.modules.chat.domain.interfaces import ActiveProviderResolver
 from app.modules.company_knowledge.application.use_cases import (
+    AiReadingLimits,
     ProcessNextCompanyDocumentUseCase,
+    ReadPdfPagesUseCase,
 )
-from app.modules.company_knowledge.domain.interfaces import DocumentRepository
+from app.modules.company_knowledge.domain.interfaces import (
+    AiReaderProvider,
+    DocumentPageRepository,
+    DocumentRepository,
+    KnowledgeSettingsRepository,
+)
+from app.modules.company_knowledge.infrastructure.ai_reading import (
+    PROMPT_VERSION,
+    ActiveProviderAiReaderProvider,
+)
 from app.modules.company_knowledge.infrastructure.chunking.structural_chunker import (
     StructuralChunker,
 )
@@ -26,7 +38,10 @@ from app.modules.company_knowledge.infrastructure.embeddings import (
     FastEmbedEmbedder,
     models_root,
 )
-from app.modules.company_knowledge.infrastructure.extraction import DispatchTextExtractor
+from app.modules.company_knowledge.infrastructure.extraction import (
+    DispatchTextExtractor,
+    PypdfPageAnalyzer,
+)
 from app.modules.company_knowledge.infrastructure.index import (
     InMemoryDocumentIndex,
     SearchSettings,
@@ -34,9 +49,16 @@ from app.modules.company_knowledge.infrastructure.index import (
 from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_document_repository import (  # noqa: E501
     SqlAlchemyDocumentRepository,
 )
+from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_page_repository import (  # noqa: E501
+    SqlAlchemyDocumentPageRepository,
+    SqlAlchemyKnowledgeSettingsRepository,
+)
 from app.modules.company_knowledge.infrastructure.processing import (
     CompanyDocumentWorker,
     PipelineDocumentProcessor,
+)
+from app.modules.llm_providers.infrastructure.active_provider_resolver import (
+    get_active_provider_resolver,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,6 +73,11 @@ class CompanyKnowledgeRuntime:
     search_executor: ThreadPoolExecutor
     search_limit: int = 6
     load_task: asyncio.Task[None] | None = None
+    # Lectura de PDF con IA. `readers` es `None` si el resolver de
+    # proveedores no arrancó (tests que no pasan por el `lifespan`).
+    pages: DocumentPageRepository | None = None
+    knowledge_settings: KnowledgeSettingsRepository | None = None
+    readers: AiReaderProvider | None = None
 
     def notify_worker(self) -> None:
         if self.worker is not None:
@@ -60,8 +87,25 @@ class CompanyKnowledgeRuntime:
 _runtime: CompanyKnowledgeRuntime | None = None
 
 
+def _active_provider_resolver() -> ActiveProviderResolver | None:
+    try:
+        return get_active_provider_resolver()
+    except RuntimeError:
+        return None
+
+
 def build_runtime(settings: Settings) -> CompanyKnowledgeRuntime:
     repository = SqlAlchemyDocumentRepository(get_agent_sessionmaker())
+    pages = SqlAlchemyDocumentPageRepository(get_agent_sessionmaker())
+    knowledge_settings = SqlAlchemyKnowledgeSettingsRepository(get_agent_sessionmaker())
+    resolver = _active_provider_resolver()
+    readers = (
+        None
+        if resolver is None
+        else ActiveProviderAiReaderProvider(
+            resolver, git_bash_path=settings.claude_code_git_bash_path
+        )
+    )
     # Hilos de ONNX acotados: la mitad de los núcleos queda para el chat.
     threads = max(1, (os.cpu_count() or 2) // 2)
     embedder = FastEmbedEmbedder(
@@ -95,6 +139,26 @@ def build_runtime(settings: Settings) -> CompanyKnowledgeRuntime:
             executor=ingest_executor,
             max_chunks_per_document=settings.company_docs_max_chunks_per_doc,
         )
+        pdf_reader = (
+            None
+            if readers is None
+            else ReadPdfPagesUseCase(
+                analyzer=PypdfPageAnalyzer(settings.company_docs_max_pages),
+                pages=pages,
+                settings=knowledge_settings,
+                readers=readers,
+                executor=ingest_executor,
+                prompt_version=PROMPT_VERSION,
+                limits=AiReadingLimits(
+                    concurrency=settings.company_docs_ai_concurrency,
+                    pages_per_request=settings.company_docs_ai_pages_per_request,
+                    max_request_bytes=settings.company_docs_ai_max_request_mb * 1024 * 1024,
+                    timeout_s=settings.company_docs_ai_timeout_s,
+                    retry_attempts=settings.company_docs_ai_retry_attempts,
+                    retry_base_delay_s=settings.company_docs_ai_retry_base_delay_s,
+                ),
+            )
+        )
         worker = CompanyDocumentWorker(
             repository=repository,
             use_case=ProcessNextCompanyDocumentUseCase(
@@ -102,6 +166,7 @@ def build_runtime(settings: Settings) -> CompanyKnowledgeRuntime:
                 processor,
                 settings.company_docs_max_total_chunks,
                 index,
+                pdf_reader,
             ),
             embedding_model=embedder.model_name,
         )
@@ -112,6 +177,9 @@ def build_runtime(settings: Settings) -> CompanyKnowledgeRuntime:
         ingest_executor=ingest_executor,
         search_executor=search_executor,
         search_limit=settings.company_docs_search_limit,
+        pages=pages,
+        knowledge_settings=knowledge_settings,
+        readers=readers,
     )
 
 

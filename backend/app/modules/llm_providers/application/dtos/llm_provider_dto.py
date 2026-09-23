@@ -4,6 +4,7 @@
 campo directamente no existe en `LlmProviderDTO`. La regla es
 estructural, no depende de que alguien se acuerde de omitirlo.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,6 +19,8 @@ class SaveLlmProviderDTO:
     credential_kind: str
     chat_model: str
     title_model: str
+    # `None` = conservar el guardado; vacío = usar el modelo de chat.
+    document_model: str | None = None
     # Vacía = conservar la guardada.
     credential: str = ""
     # `None` = conservar los precios guardados.
@@ -38,6 +41,7 @@ class LlmProviderDTO:
     credentials_unreadable: bool
     chat_model: str | None
     title_model: str | None
+    document_model: str | None
     pricing: dict[str, ModelPricing]
     is_active: bool
     last_test_ok_at: datetime | None
@@ -59,6 +63,7 @@ class LlmProviderDTO:
             credentials_unreadable=config.credentials_unreadable if config else False,
             chat_model=config.chat_model if config else None,
             title_model=config.title_model if config else None,
+            document_model=config.document_model if config else None,
             pricing=dict(config.pricing) if config else {},
             is_active=config.is_active if config else False,
             last_test_ok_at=config.last_test_ok_at if config else None,

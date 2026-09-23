@@ -1,7 +1,15 @@
 import logging
-from uuid import UUID
+from dataclasses import replace
 
-from app.modules.company_knowledge.domain.exceptions import EmbedderUnavailableError
+from app.modules.company_knowledge.application.use_cases.read_pdf_pages import (
+    PDF_MEDIA_TYPE,
+    ReadPdfPagesUseCase,
+)
+from app.modules.company_knowledge.domain.entities.company_document import CompanyDocument
+from app.modules.company_knowledge.domain.exceptions import (
+    DocumentExtractionError,
+    EmbedderUnavailableError,
+)
 from app.modules.company_knowledge.domain.interfaces import (
     DocumentIndex,
     DocumentProcessor,
@@ -32,11 +40,15 @@ class ProcessNextCompanyDocumentUseCase:
         processor: DocumentProcessor,
         max_total_chunks: int,
         index: DocumentIndex | None = None,
+        pdf_reader: ReadPdfPagesUseCase | None = None,
     ) -> None:
         self._repository = repository
         self._processor = processor
         self._max_total_chunks = max_total_chunks
         self._index = index
+        # `None` (tests de la Fase 1) = el PDF se extrae como siempre, con
+        # `pypdf` y sin guardar páginas.
+        self._pdf_reader = pdf_reader
 
     async def execute(self) -> bool:
         """`True` si procesó un documento; `False` si no había trabajo.
@@ -48,7 +60,7 @@ class ProcessNextCompanyDocumentUseCase:
         if document is None:
             return False
 
-        outcome = await self._run_pipeline(document.id, document.version, document.media_type)
+        outcome = await self._run_pipeline(document)
         if outcome.status == DocumentStatus.READY:
             outcome = await self._enforce_installation_limit(outcome)
 
@@ -82,20 +94,41 @@ class ProcessNextCompanyDocumentUseCase:
             await self._index.publish_document(document.id)
         return True
 
-    async def _run_pipeline(
-        self, document_id: UUID, version: int, media_type: str
-    ) -> ProcessingOutcome:
-        content = await self._repository.get_blob(document_id)
+    async def _run_pipeline(self, document: CompanyDocument) -> ProcessingOutcome:
+        content = await self._repository.get_blob(document.id)
         if content is None:
             return ProcessingOutcome.failed(DocumentStatusCode.INTERNAL_ERROR)
         try:
-            return await self._processor.process(content, media_type, document_id)
+            if self._pdf_reader is not None and document.media_type == PDF_MEDIA_TYPE:
+                return await self._read_pdf(self._pdf_reader, document, content)
+            return await self._processor.process(content, document.media_type, document.id)
         except EmbedderUnavailableError:
-            await self._repository.release_claim(document_id, version)
+            await self._repository.release_claim(document.id, document.version)
             raise
         except Exception:
-            logger.exception("company_docs_processing_failed document=%s", document_id)
+            logger.exception("company_docs_processing_failed document=%s", document.id)
             return ProcessingOutcome.failed(DocumentStatusCode.INTERNAL_ERROR)
+
+    async def _read_pdf(
+        self, reader: ReadPdfPagesUseCase, document: CompanyDocument, content: bytes
+    ) -> ProcessingOutcome:
+        try:
+            reading = await reader.execute(document, content)
+        except DocumentExtractionError as exc:
+            return ProcessingOutcome.failed(exc.status_code)
+        # El umbral de "parece escaneado" solo aplica si ninguna página la leyó
+        # la IA: es la detección de siempre para la lectura con `pypdf`.
+        outcome = await self._processor.process_pages(
+            reading.extracted, document.id, detect_scanned=reading.ai_page_count == 0
+        )
+        if outcome.status == DocumentStatus.NO_TEXT and reading.ai_page_count > 0:
+            outcome = replace(outcome, status_code=DocumentStatusCode.AI_UNREADABLE)
+        return replace(
+            outcome,
+            reading_method=reading.reading_method,
+            ai_page_count=reading.ai_page_count,
+            ai_cost_usd=reading.ai_cost_usd,
+        )
 
     async def _enforce_installation_limit(self, outcome: ProcessingOutcome) -> ProcessingOutcome:
         # `total_chunks` ya no cuenta los fragmentos previos de este documento:
@@ -107,5 +140,8 @@ class ProcessNextCompanyDocumentUseCase:
                 status_code=DocumentStatusCode.INDEX_LIMIT_REACHED,
                 page_count=outcome.page_count,
                 char_count=outcome.char_count,
+                reading_method=outcome.reading_method,
+                ai_page_count=outcome.ai_page_count,
+                ai_cost_usd=outcome.ai_cost_usd,
             )
         return outcome

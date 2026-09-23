@@ -66,6 +66,18 @@ class PipelineDocumentProcessor(DocumentProcessor):
             self._executor, self._process_sync, content, media_type, document_id
         )
 
+    async def process_pages(
+        self,
+        extracted: ExtractedText,
+        document_id: UUID | None = None,
+        *,
+        detect_scanned: bool = True,
+    ) -> ProcessingOutcome:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            self._executor, self._index_sync, extracted, document_id, detect_scanned
+        )
+
     def _process_sync(
         self, content: bytes, media_type: str, document_id: UUID | None = None
     ) -> ProcessingOutcome:
@@ -75,8 +87,17 @@ class PipelineDocumentProcessor(DocumentProcessor):
             return ProcessingOutcome.failed(exc.status_code)
         except UnsupportedCompanyDocumentMediaTypeError:
             return ProcessingOutcome.failed(DocumentStatusCode.ENCODING_UNSUPPORTED)
+        return self._index_sync(extracted, document_id, True)
 
-        if _has_no_text(extracted):
+    def _index_sync(
+        self, extracted: ExtractedText, document_id: UUID | None, detect_scanned: bool
+    ) -> ProcessingOutcome:
+        # `detect_scanned` aplica el umbral de caracteres por página que
+        # delata un escaneo sin capa de texto. Con páginas leídas por la IA
+        # no corresponde: una página de foto puede tener poco texto y ser
+        # válida; ahí solo cuenta que haya algo.
+        empty = extracted.char_count == 0 or (detect_scanned and _has_no_text(extracted))
+        if empty:
             return ProcessingOutcome(
                 status=DocumentStatus.NO_TEXT,
                 page_count=extracted.page_count,

@@ -7,6 +7,7 @@ from app.modules.usage.domain.value_objects import (
     DailyProviderUsage,
     DailyUsage,
     DatabaseUsage,
+    DocumentReadingUsage,
     ProviderUsage,
     UsageFilters,
     UsagePeriod,
@@ -94,6 +95,13 @@ class UsageRepository(ABC):
     async def daily_provider_system(
         self, period: UsagePeriod, *, filters: UsageFilters | None = None
     ) -> list[DailyProviderUsage]: ...
+
+    @abstractmethod
+    async def document_reading_system(
+        self, period: UsagePeriod, *, filters: UsageFilters | None = None
+    ) -> DocumentReadingUsage:
+        """Gasto de la lectura de PDF con IA. `databases` filtra por la base
+        de quien subió el documento: la lectura no consulta ninguna base."""
 
     @abstractmethod
     async def conversation_stats(

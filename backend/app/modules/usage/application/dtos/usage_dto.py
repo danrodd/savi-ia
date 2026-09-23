@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from app.modules.usage.domain.value_objects import (
@@ -6,6 +6,7 @@ from app.modules.usage.domain.value_objects import (
     DailyProviderUsage,
     DailyUsage,
     DatabaseUsage,
+    DocumentReadingUsage,
     ProviderUsage,
     UsageTotals,
     UserStats,
@@ -39,6 +40,7 @@ class SystemUsageReportDTO:
     daily_by_provider: list[DailyProviderUsage]
     # Por base CONSULTADA: cuánto costó atender a cada cliente.
     per_database: list[DatabaseUsage]
+    document_reading: DocumentReadingUsage = field(default_factory=DocumentReadingUsage)
 
 
 @dataclass(frozen=True)

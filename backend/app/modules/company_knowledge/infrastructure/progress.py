@@ -28,6 +28,8 @@ from uuid import UUID
 class Progress:
     done: int
     total: int
+    # `reading`: páginas leídas con IA; `indexing`: fragmentos vectorizados.
+    stage: str = "indexing"
 
     @property
     def percent(self) -> int:
@@ -41,15 +43,15 @@ class ProgressRegistry:
         self._lock = threading.Lock()
         self._by_document: dict[UUID, Progress] = {}
 
-    def start(self, document_id: UUID, total: int) -> None:
+    def start(self, document_id: UUID, total: int, stage: str = "indexing") -> None:
         with self._lock:
-            self._by_document[document_id] = Progress(0, total)
+            self._by_document[document_id] = Progress(0, total, stage)
 
     def advance(self, document_id: UUID, done: int) -> None:
         with self._lock:
             actual = self._by_document.get(document_id)
             if actual is not None:
-                self._by_document[document_id] = Progress(done, actual.total)
+                self._by_document[document_id] = Progress(done, actual.total, actual.stage)
 
     def finish(self, document_id: UUID) -> None:
         with self._lock:

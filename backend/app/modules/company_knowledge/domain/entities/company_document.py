@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
+from app.modules.company_knowledge.domain.value_objects.reading import ReadingMethod
 from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatus,
     DocumentStatusCode,
@@ -31,6 +32,10 @@ class CompanyDocument:
     chunk_count: int = 0
     char_count: int = 0
     embedding_model: str | None = None
+    # Cómo se leyó (solo PDF): `None` hasta procesarlo o en TXT/Markdown.
+    reading_method: ReadingMethod | None = None
+    ai_page_count: int = 0
+    ai_cost_usd: float | None = None
     visibility: DocumentVisibility = DocumentVisibility.ADMINS
     modules: list[ModuleCode] = field(default_factory=list[ModuleCode])
     all_databases: bool = True

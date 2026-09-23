@@ -1,12 +1,14 @@
 """Modelos ORM para `agent_db` del módulo `company_knowledge`.
 
-Cuatro tablas: documento, su alcance por base, el blob original y los
-fragmentos con sus vectores. Los bytes de `embedding` son `float32`
+Documento, su alcance por base, el blob original, los fragmentos con sus
+vectores y, desde la lectura con IA, las páginas leídas, el registro de
+gasto y la configuración del módulo. Los bytes de `embedding` son `float32`
 little-endian normalizados (`dim × 4`), portables entre Postgres y SQLite
 sin extensiones.
 """
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -15,6 +17,7 @@ from sqlalchemy import (
     Index,
     Integer,
     LargeBinary,
+    Numeric,
     String,
     Text,
     func,
@@ -41,6 +44,11 @@ class CompanyDocumentModel(Base):
     chunk_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     char_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     embedding_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    reading_method: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    ai_page_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    ai_cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6), nullable=True)
     visibility: Mapped[str] = mapped_column(String(16), nullable=False)
     modules: Mapped[list[str]] = mapped_column(
         JsonType, nullable=False, default=list, server_default="[]"
@@ -124,4 +132,87 @@ class CompanyDocumentChunkModel(Base):
 
     __table_args__ = (
         Index("ix_company_document_chunks_document_ordinal", "document_id", "ordinal"),
+    )
+
+
+class CompanyDocumentPageModel(Base):
+    """Página leída de una versión del documento.
+
+    Guarda el texto final (de `pypdf` o de la IA) y las métricas de `pypdf`
+    que deciden el modo mixto de la Fase 5.
+    """
+
+    __tablename__ = "company_document_pages"
+
+    document_id: Mapped[UUID] = mapped_column(
+        UuidType,
+        ForeignKey("company_documents.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    page_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    method: Mapped[str] = mapped_column(String(8), nullable=False)
+    page_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    legible: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    pypdf_chars: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    image_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    max_image_pixels: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    ai_error: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    prompt_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        UtcDateTime, server_default=func.now(), nullable=False
+    )
+
+
+class CompanyDocumentAiReadModel(Base):
+    """Un pedido al proveedor de IA para leer un tramo. Sin contenido.
+
+    Sin FK al documento: el gasto queda registrado aunque el documento se
+    dé de baja.
+    """
+
+    __tablename__ = "company_document_ai_reads"
+
+    id: Mapped[UUID] = mapped_column(UuidType, primary_key=True, default=uuid4)
+    document_id: Mapped[UUID] = mapped_column(UuidType, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    page_from: Mapped[int] = mapped_column(Integer, nullable=False)
+    page_to: Mapped[int] = mapped_column(Integer, nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    model: Mapped[str] = mapped_column(String(120), nullable=False)
+    input_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    output_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6), nullable=True)
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    uploaded_by_login: Mapped[str] = mapped_column(String(50), nullable=False)
+    uploaded_by_database_id: Mapped[UUID | None] = mapped_column(UuidType, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        UtcDateTime, server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_company_document_ai_reads_created_at", "created_at", "provider"),
+        Index("ix_company_document_ai_reads_document", "document_id", "version"),
+    )
+
+
+class CompanyKnowledgeSettingsModel(Base):
+    """Configuración del módulo. Una sola fila (`id = 1`)."""
+
+    __tablename__ = "company_knowledge_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    ai_reading_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    updated_by_login: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        UtcDateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )

@@ -2,6 +2,7 @@
 
 La credencial **solo** viaja de entrada.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -23,6 +24,8 @@ class SaveLlmProviderRequest(BaseModel):
     credential: str = Field(default="", max_length=4096)
     chat_model: str = Field(min_length=1, max_length=120)
     title_model: str = Field(min_length=1, max_length=120)
+    # Omitido = conservar el guardado; vacío = usar el modelo de chat.
+    document_model: str | None = Field(default=None, max_length=120)
     pricing: dict[str, ModelPricingPayload] | None = None
 
     def to_dto(self) -> SaveLlmProviderDTO:
@@ -31,6 +34,7 @@ class SaveLlmProviderRequest(BaseModel):
             credential=self.credential.strip(),
             chat_model=self.chat_model.strip(),
             title_model=self.title_model.strip(),
+            document_model=(None if self.document_model is None else self.document_model.strip()),
             pricing=(
                 None
                 if self.pricing is None

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any, cast
 from uuid import UUID
 
@@ -27,12 +28,14 @@ from app.modules.company_knowledge.domain.value_objects import (
     DocumentStatus,
     DocumentStatusCode,
     DocumentVisibility,
+    ReadingMethod,
 )
 from app.modules.company_knowledge.infrastructure.persistence.models import (
     CompanyDocumentBlobModel,
     CompanyDocumentChunkModel,
     CompanyDocumentDatabaseModel,
     CompanyDocumentModel,
+    CompanyDocumentPageModel,
 )
 
 
@@ -64,6 +67,19 @@ def _to_status_code(value: str | None) -> DocumentStatusCode | None:
         return DocumentStatusCode(value)
     except ValueError:
         return DocumentStatusCode.INTERNAL_ERROR
+
+
+def _to_reading_method(value: str | None) -> ReadingMethod | None:
+    if value is None:
+        return None
+    try:
+        return ReadingMethod(value)
+    except ValueError:
+        return None
+
+
+def _to_decimal(value: float | None) -> Decimal | None:
+    return None if value is None else Decimal(str(round(value, 6)))
 
 
 def _to_visibility(value: str) -> DocumentVisibility:
@@ -395,6 +411,9 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
             model.char_count = outcome.char_count
             model.chunk_count = len(outcome.chunks) if is_ready else 0
             model.embedding_model = outcome.embedding_model if is_ready else None
+            model.reading_method = outcome.reading_method.value if outcome.reading_method else None
+            model.ai_page_count = outcome.ai_page_count
+            model.ai_cost_usd = _to_decimal(outcome.ai_cost_usd)
             model.processed_at = now
             model.updated_at = now
             await session.commit()
@@ -447,6 +466,13 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
             await session.execute(
                 delete(CompanyDocumentDatabaseModel).where(
                     CompanyDocumentDatabaseModel.document_id == document_id
+                )
+            )
+            # Las páginas leídas son contenido del documento: se van con él.
+            # El registro de gasto de la lectura con IA se conserva.
+            await session.execute(
+                delete(CompanyDocumentPageModel).where(
+                    CompanyDocumentPageModel.document_id == document_id
                 )
             )
             await session.commit()
@@ -509,6 +535,9 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
             chunk_count=model.chunk_count,
             char_count=model.char_count,
             embedding_model=model.embedding_model,
+            reading_method=_to_reading_method(model.reading_method),
+            ai_page_count=model.ai_page_count or 0,
+            ai_cost_usd=float(model.ai_cost_usd) if model.ai_cost_usd is not None else None,
             visibility=_to_visibility(model.visibility),
             modules=_to_modules(model.modules or []),
             all_databases=model.all_databases,
@@ -538,6 +567,9 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
             chunk_count=document.chunk_count,
             char_count=document.char_count,
             embedding_model=document.embedding_model,
+            reading_method=document.reading_method.value if document.reading_method else None,
+            ai_page_count=document.ai_page_count,
+            ai_cost_usd=_to_decimal(document.ai_cost_usd),
             visibility=document.visibility.value,
             modules=[module.value for module in document.modules],
             all_databases=document.all_databases,
@@ -564,6 +596,9 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
         model.chunk_count = document.chunk_count
         model.char_count = document.char_count
         model.embedding_model = document.embedding_model
+        model.reading_method = document.reading_method.value if document.reading_method else None
+        model.ai_page_count = document.ai_page_count
+        model.ai_cost_usd = _to_decimal(document.ai_cost_usd)
         model.visibility = document.visibility.value
         model.modules = [module.value for module in document.modules]
         model.all_databases = document.all_databases

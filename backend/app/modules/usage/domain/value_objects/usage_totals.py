@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 from uuid import UUID
@@ -103,3 +103,37 @@ class UserUsage:
     user_id: int | None
     totals: UsageTotals
     erp_database_id: UUID | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentReadingModelUsage:
+    """Lectura de PDF con IA de un (proveedor, modelo) en el período."""
+
+    provider: str
+    model: str
+    requests: int = 0
+    pages: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: Decimal = Decimal("0")
+    # Pedidos sin tarifa cargada: su costo no está en `cost_usd`.
+    untariffed_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentReadingUsage:
+    """Gasto de leer documentos con IA, aparte del chat.
+
+    `pages` cuenta solo las páginas que la IA devolvió; los pedidos que
+    cayeron al texto de `pypdf` suman en `requests` pero no en `pages`.
+    """
+
+    requests: int = 0
+    pages: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: Decimal = Decimal("0")
+    untariffed_count: int = 0
+    per_model: list[DocumentReadingModelUsage] = field(
+        default_factory=list[DocumentReadingModelUsage]
+    )

@@ -14,6 +14,8 @@ from app.modules.usage.domain.value_objects import (
     DailyProviderUsage,
     DailyUsage,
     DatabaseUsage,
+    DocumentReadingModelUsage,
+    DocumentReadingUsage,
     ProviderUsage,
     UsageTotals,
     UserStats,
@@ -77,6 +79,54 @@ class DailyProviderUsageResponse(BaseModel):
     @classmethod
     def from_vo(cls, d: DailyProviderUsage) -> "DailyProviderUsageResponse":
         return cls(day=d.day, provider=d.provider, totals=UsageTotalsResponse.from_vo(d.totals))
+
+
+class DocumentReadingModelUsageResponse(BaseModel):
+    provider: str
+    model: str
+    requests: int
+    pages: int
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    untariffed_count: int
+
+    @classmethod
+    def from_vo(cls, m: DocumentReadingModelUsage) -> "DocumentReadingModelUsageResponse":
+        return cls(
+            provider=m.provider,
+            model=m.model,
+            requests=m.requests,
+            pages=m.pages,
+            input_tokens=m.input_tokens,
+            output_tokens=m.output_tokens,
+            cost_usd=float(m.cost_usd),
+            untariffed_count=m.untariffed_count,
+        )
+
+
+class DocumentReadingUsageResponse(BaseModel):
+    """Lectura de PDF con IA, separada del chat."""
+
+    requests: int
+    pages: int
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    untariffed_count: int
+    per_model: list[DocumentReadingModelUsageResponse]
+
+    @classmethod
+    def from_vo(cls, d: DocumentReadingUsage) -> "DocumentReadingUsageResponse":
+        return cls(
+            requests=d.requests,
+            pages=d.pages,
+            input_tokens=d.input_tokens,
+            output_tokens=d.output_tokens,
+            cost_usd=float(d.cost_usd),
+            untariffed_count=d.untariffed_count,
+            per_model=[DocumentReadingModelUsageResponse.from_vo(m) for m in d.per_model],
+        )
 
 
 class DatabaseUsageResponse(BaseModel):
@@ -145,6 +195,8 @@ class SystemUsageReportResponse(BaseModel):
     per_provider: list[ProviderUsageResponse]
     daily_by_provider: list[DailyProviderUsageResponse]
     per_database: list[DatabaseUsageResponse]
+    # Lectura de PDF con IA: gasto aparte del chat (no está en `totals`).
+    document_reading: DocumentReadingUsageResponse
     usd_to_cop_rate: float
 
     @classmethod
@@ -162,6 +214,7 @@ class SystemUsageReportResponse(BaseModel):
                 DailyProviderUsageResponse.from_vo(d) for d in dto.daily_by_provider
             ],
             per_database=[DatabaseUsageResponse.from_vo(d) for d in dto.per_database],
+            document_reading=DocumentReadingUsageResponse.from_vo(dto.document_reading),
             usd_to_cop_rate=usd_to_cop_rate,
         )
 

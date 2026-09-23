@@ -6,6 +6,7 @@ from app.modules.company_knowledge.domain.value_objects import (
     DocumentStatus,
     DocumentStatusCode,
     DocumentVisibility,
+    ReadingMethod,
 )
 
 
@@ -24,6 +25,9 @@ class CompanyDocumentDTO:
     chunk_count: int
     char_count: int
     embedding_model: str | None
+    reading_method: ReadingMethod | None
+    ai_page_count: int
+    ai_cost_usd: float | None
     visibility: DocumentVisibility
     modules: list[str]
     all_databases: bool
