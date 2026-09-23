@@ -18,6 +18,10 @@ _FAILED_MESSAGES: dict[DocumentStatusCode, str] = {
     DocumentStatusCode.AI_UNREADABLE: (
         "La IA no pudo leer ninguna página: las imágenes están borrosas o son ilegibles."
     ),
+    DocumentStatusCode.AI_FAILED: (
+        "No se pudo leer con IA: el proveedor activo no respondió. Revisá su configuración "
+        "y el modelo de lectura, y después usá «Leer con IA»."
+    ),
     DocumentStatusCode.INDEX_LIMIT_REACHED: (
         "La instalación alcanzó el límite de fragmentos. Eliminá documentos para liberar espacio."
     ),
@@ -65,8 +69,12 @@ class CompanyDocumentMapper:
         ):
             return None
         if document.status == DocumentStatus.NO_TEXT:
-            if document.status_code == DocumentStatusCode.AI_UNREADABLE:
-                return _FAILED_MESSAGES[DocumentStatusCode.AI_UNREADABLE]
+            code = document.status_code
+            if code is not None and code in (
+                DocumentStatusCode.AI_UNREADABLE,
+                DocumentStatusCode.AI_FAILED,
+            ):
+                return _FAILED_MESSAGES[code]
             return "El PDF parece escaneado; no tiene texto seleccionable. Podés leerlo con IA."
         if document.status_code is None:
             return _DEFAULT_ERROR

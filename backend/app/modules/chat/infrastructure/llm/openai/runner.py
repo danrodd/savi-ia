@@ -20,7 +20,7 @@ from collections.abc import AsyncIterator, Awaitable
 from typing import Any, Protocol, cast
 from uuid import UUID
 
-from openai import AsyncOpenAI
+from openai import APIConnectionError, APIError, AsyncOpenAI
 
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
@@ -71,6 +71,18 @@ class _AsyncClient(Protocol):
 def _status(error: Exception) -> int | None:
     value = getattr(error, "status_code", None)
     return value if isinstance(value, int) else None
+
+
+def _transient(error: Exception, code: int | None) -> bool:
+    """Errores pasajeros que se reintentan antes del primer token.
+
+    Además de 429 y 5xx: un corte de conexión o timeout no trae código HTTP,
+    y el límite de tokens por minuto puede llegar como evento `error` dentro
+    del stream (`APIError` con `code="rate_limit_exceeded"` y sin estado).
+    """
+    if code in _RETRYABLE_STATUS or isinstance(error, APIConnectionError):
+        return True
+    return isinstance(error, APIError) and error.code == "rate_limit_exceeded"
 
 
 def _quota_exhausted(error: Exception) -> bool:
@@ -248,7 +260,7 @@ class OpenAIRunner(LLMRunner):
                         )
                     )
                     return
-                if code in _RETRYABLE_STATUS and not first_token:
+                if _transient(error, code) and not first_token:
                     retry_attempt += 1
                     if retry_attempt <= self._settings.openai_retry_attempts:
                         log.warning(
@@ -281,6 +293,7 @@ class OpenAIRunner(LLMRunner):
                     selected_model,
                     code,
                     retry_attempt,
+                    exc_info=error,
                 )
                 yield ErrorEvent(
                     message=(

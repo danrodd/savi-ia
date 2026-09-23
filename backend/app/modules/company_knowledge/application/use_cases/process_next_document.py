@@ -123,6 +123,10 @@ class ProcessNextCompanyDocumentUseCase:
         )
         if outcome.status == DocumentStatus.NO_TEXT and reading.ai_page_count > 0:
             outcome = replace(outcome, status_code=DocumentStatusCode.AI_UNREADABLE)
+        elif outcome.status == DocumentStatus.NO_TEXT and reading.ai_failed_page_count > 0:
+            # Sin este código el aviso sería "parece escaneado, leelo con IA",
+            # y volver a intentarlo fallaría igual hasta corregir el proveedor.
+            outcome = replace(outcome, status_code=DocumentStatusCode.AI_FAILED)
         return replace(
             outcome,
             reading_method=reading.reading_method,

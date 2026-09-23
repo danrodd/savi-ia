@@ -104,6 +104,11 @@ def test_oversized_upload_is_413(client: TestClient) -> None:
     assert (response.status_code, response.json()["errorCode"]) == (413, "file_too_large")
 
 
+def test_empty_upload_is_rejected(client: TestClient) -> None:
+    response = _upload(client, b"")
+    assert response.status_code == 422
+
+
 def test_binary_upload_is_415(client: TestClient) -> None:
     response = _upload(client, bytes(range(256)) * 8, name="virus.md")
     assert (response.status_code, response.json()["errorCode"]) == (415, "unsupported_media_type")

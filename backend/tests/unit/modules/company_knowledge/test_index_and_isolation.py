@@ -11,7 +11,10 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
-from app.modules.chat.infrastructure.llm.tools.documents import build_document_search
+from app.modules.chat.infrastructure.llm.tools.documents import (
+    build_document_listing,
+    build_document_search,
+)
 from app.modules.company_knowledge.application.use_cases import (
     ProcessNextCompanyDocumentUseCase,
 )
@@ -236,3 +239,62 @@ async def test_document_content_cannot_close_the_delimited_block(env: Env) -> No
     content = payload["matches"][0]["contenido"]
     assert content.count("»»»") == 1 and content.count("«««") == 1
     assert "[D1]" in payload["nota"] or "D1" in payload["matches"][0]["ref"]
+
+
+# ── Listado de documentos ────────────────────────────────────────────────
+
+
+async def _listing_titles(env: Env, access: DocumentAccessContext) -> list[str]:
+    listing = build_document_listing(env.index, TurnDocumentContext(access=access))
+    return [item["titulo"] for item in (await listing())["documentos"]]
+
+
+async def test_listing_applies_the_same_filter_as_search(env: Env) -> None:
+    await env.add("Política general.", title="Política de cartera")
+    await env.add(f"Acta {SENTINEL}.", title="Acta de junta", visibility=DocumentVisibility.ADMINS)
+    await env.add(
+        "Cierre contable.",
+        title="Cierre",
+        visibility=DocumentVisibility.MODULES,
+        modules=[ModuleCode.CONTABILIDAD],
+    )
+    await env.add("Manual B.", title="Manual base B", all_databases=False, database_ids=[BASE_B])
+
+    assert await _listing_titles(env, USER) == ["Política de cartera"]
+    assert await _listing_titles(env, ADMIN) == ["Acta de junta", "Cierre", "Política de cartera"]
+
+
+async def test_listing_follows_removals_and_permission_changes(env: Env) -> None:
+    kept = await env.add("Horarios.", title="Horarios")
+    removed = await env.add("Uniformes.", title="Uniformes")
+    await env.repo.soft_delete(removed)
+    await env.index.remove_document(removed)
+
+    stored = await env.repo.get_by_id(kept)
+    assert stored is not None
+    stored.visibility = DocumentVisibility.ADMINS
+    await env.repo.update_access_metadata(stored)
+    await env.index.update_metadata(kept)
+
+    assert await _listing_titles(env, USER) == []
+    assert await _listing_titles(env, ADMIN) == ["Horarios"]
+
+
+async def test_empty_listing_is_a_note_not_an_error(env: Env) -> None:
+    listing = build_document_listing(env.index, TurnDocumentContext(access=USER))
+    result = await listing()
+    assert result["documentos"] == [] and "nota" in result
+
+
+async def test_search_note_sends_changing_data_to_the_erp(env: Env) -> None:
+    await env.add("Bomba sumergible de 2 HP.", title="Ficha bomba")
+    payload = json.loads(await _tool_output(env, USER, "bomba sumergible"))
+    assert "consultar_datos" in payload["nota"]
+
+
+async def test_a_question_that_also_asks_for_stock_flags_the_erp_part(env: Env) -> None:
+    await env.add("Potabon K: pH entre 6 y 7.", title="Ficha Potabon")
+    mixed = json.loads(await _tool_output(env, USER, "pH del Potabon K y cuántas existencias hay"))
+    plain = json.loads(await _tool_output(env, USER, "pH del Potabon K"))
+    assert "consultar_datos" in mixed["pendiente_erp"]
+    assert "pendiente_erp" not in plain

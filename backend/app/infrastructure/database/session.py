@@ -34,7 +34,13 @@ async def get_agent_session() -> AsyncIterator[AsyncSession]:
             raise
 
 
-AgentSessionDep = Annotated[AsyncSession, Depends(get_agent_session)]
+# `scope="function"`: el commit ocurre ANTES de mandar la respuesta. Con el
+# alcance por defecto ("request") FastAPI responde primero y confirma
+# después, así que un cliente rápido que crea una conversación y manda el
+# primer mensaje en seguida recibía 404: la fila todavía no era visible.
+# Ninguna ruta que use esta sesión hace streaming (el chat usa sesiones
+# cortas propias), así que cerrarla al terminar la función es seguro.
+AgentSessionDep = Annotated[AsyncSession, Depends(get_agent_session, scope="function")]
 
 # `get_erp_session` / `ErpSessionDep` se eliminaron: con varias bases de
 # clientes no hay una sesión "del ERP" resoluble sin saber cuál. Los

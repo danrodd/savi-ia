@@ -210,3 +210,10 @@ async def test_documentos_without_index_returns_a_note_not_an_error(tmp_path: An
     impl = build_consultar_conocimiento_impl(load_static_catalog(tmp_path), None, None)
     result = await impl({"tipo": "documentos", "consulta": "politica"})
     assert result["matches"] == [] and "error" not in result
+
+
+async def test_documentos_disponibles_without_index_returns_a_note(tmp_path: Any) -> None:
+    assert "documentos_disponibles" in CONSULTAR_CONOCIMIENTO_SCHEMA["properties"]["tipo"]["enum"]
+    impl = build_consultar_conocimiento_impl(load_static_catalog(tmp_path), None, None, None)
+    result = await impl({"tipo": "documentos_disponibles", "consulta": ""})
+    assert result["documentos"] == [] and "error" not in result

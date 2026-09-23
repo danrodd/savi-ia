@@ -370,6 +370,7 @@ KNOWLEDGE_TIPOS: tuple[str, ...] = (
     "modulos_disponibles",
     "formulario",
     "documentos",
+    "documentos_disponibles",
 )
 
 
@@ -377,6 +378,7 @@ def build_consultar_conocimiento_impl(
     catalog: KnowledgeCatalog,
     allowed_modules: frozenset[ModuleCode] | None,
     document_search: Callable[[str], Awaitable[dict[str, Any]]] | None = None,
+    document_listing: Callable[[], Awaitable[dict[str, Any]]] | None = None,
 ) -> Callable[[dict[str, Any]], Any]:
     """Constructor de la tool unificada del catálogo.
 
@@ -414,6 +416,10 @@ def build_consultar_conocimiento_impl(
             if document_search is None:
                 return {"matches": [], "nota": "No hay documentos de la empresa disponibles."}
             return await document_search(consulta)
+        if tipo == "documentos_disponibles":
+            if document_listing is None:
+                return {"documentos": [], "nota": "No hay documentos de la empresa disponibles."}
+            return await document_listing()
 
         return {
             "error": (

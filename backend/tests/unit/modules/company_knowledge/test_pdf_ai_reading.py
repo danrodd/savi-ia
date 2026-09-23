@@ -16,6 +16,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.modules.company_knowledge.application.mappers.document_mapper import (
+    CompanyDocumentMapper,
+)
 from app.modules.company_knowledge.application.use_cases import (
     AiReadingLimits,
     ProcessNextCompanyDocumentUseCase,
@@ -541,6 +544,27 @@ async def test_an_illegible_scan_is_reported_as_unreadable_by_ai(setup: Setup) -
         DocumentStatus.NO_TEXT,
         DocumentStatusCode.AI_UNREADABLE,
     )
+
+
+async def test_a_failing_provider_on_a_scan_says_so_instead_of_suggesting_ai(
+    setup: Setup,
+) -> None:
+    """Con el proveedor caído, "leelo con IA" fallaría otra vez: el aviso es otro."""
+    document = await setup.document(make_scanned_pdf(1))
+    reader = FakeReader(
+        fail_times=99, error=AiReadingError(AiReadErrorCode.PROVIDER_ERROR, retryable=False)
+    )
+
+    await _worker(setup, reader).execute()
+
+    saved = await setup.documents.get_by_id(document.id)
+    assert saved is not None
+    assert (saved.status, saved.status_code) == (
+        DocumentStatus.NO_TEXT,
+        DocumentStatusCode.AI_FAILED,
+    )
+    message = CompanyDocumentMapper.status_message(saved)
+    assert message is not None and "proveedor" in message
 
 
 async def test_a_short_ai_page_is_not_treated_as_a_scan(setup: Setup) -> None:

@@ -69,6 +69,8 @@ class PdfReadingOutcome:
     reading_method: ReadingMethod
     ai_page_count: int
     ai_cost_usd: float | None
+    # Páginas que se mandaron a la IA y cayeron al respaldo de `pypdf`.
+    ai_failed_page_count: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,6 +159,7 @@ class ReadPdfPagesUseCase:
             extracted=extracted,
             reading_method=_reading_method(ai_page_count, analysis.page_count),
             ai_page_count=ai_page_count,
+            ai_failed_page_count=sum(1 for page in read.values() if page.ai_error is not None),
             ai_cost_usd=(
                 await self._pages.ai_cost(document.id, document.version) if used_ai else None
             ),

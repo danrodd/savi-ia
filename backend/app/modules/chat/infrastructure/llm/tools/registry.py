@@ -25,7 +25,9 @@ from app.modules.chat.infrastructure.llm.tools.consultar_libre import (
     build_consultar_libre_impl,
 )
 from app.modules.chat.infrastructure.llm.tools.documents import (
+    DocumentListing,
     DocumentSearch,
+    build_document_listing,
     build_document_search,
 )
 from app.modules.chat.infrastructure.llm.tools.info_empresa import info_empresa_impl
@@ -110,7 +112,9 @@ _CONSULTAR_CONOCIMIENTO_DESCRIPTION = (
     "  * 'documentos': documentos PROPIOS de la empresa (políticas, "
     "procedimientos, reglamentos, actas, normas internas). `consulta` = la "
     "pregunta del usuario. Cada resultado trae `ref` (D1, D2…): citala entre "
-    "corchetes, [D1], justo después de la afirmación que respalda.\n\n"
+    "corchetes, [D1], justo después de la afirmación que respalda.\n"
+    "  * 'documentos_disponibles': lista los títulos de los documentos de la "
+    "empresa que el usuario puede consultar. `consulta` = '' (vacío).\n\n"
     "El response trae `matches` (para intencion), `module`, `workflow`, "
     "`faqs`, `entry` o `modules` según el tipo. **Si la respuesta trae "
     "datos, ESOS DATOS SON REALES — usalos para componer tu respuesta. "
@@ -184,6 +188,13 @@ def _document_search(document_context: TurnDocumentContext | None) -> DocumentSe
     return build_document_search(runtime.index, document_context, limit=runtime.search_limit)
 
 
+def _document_listing(document_context: TurnDocumentContext | None) -> DocumentListing | None:
+    runtime = get_company_knowledge_runtime()
+    if runtime is None or document_context is None:
+        return None
+    return build_document_listing(runtime.index, document_context)
+
+
 def build_savi_tools(
     *,
     conversation_id: UUID | None,
@@ -200,7 +211,10 @@ def build_savi_tools(
         return await consultar_datos_impl(args, erp_database_id=erp_database_id)
 
     consultar_conocimiento = build_consultar_conocimiento_impl(
-        get_catalog(), allowed_modules, _document_search(document_context)
+        get_catalog(),
+        allowed_modules,
+        _document_search(document_context),
+        _document_listing(document_context),
     )
 
     tools = [

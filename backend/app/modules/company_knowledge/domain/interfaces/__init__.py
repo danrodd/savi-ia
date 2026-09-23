@@ -2,6 +2,7 @@ from app.modules.company_knowledge.domain.interfaces.chunker import Chunker
 from app.modules.company_knowledge.domain.interfaces.document_index import (
     ChunkHit,
     DocumentIndex,
+    IndexedDocument,
     IndexStatus,
 )
 from app.modules.company_knowledge.domain.interfaces.document_processor import (
@@ -44,6 +45,7 @@ __all__ = [
     "DocumentProcessor",
     "DocumentRepository",
     "Embedder",
+    "IndexedDocument",
     "IndexStatus",
     "MediaTypeSniffer",
     "ProcessingOutcome",

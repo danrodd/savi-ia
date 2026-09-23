@@ -83,7 +83,9 @@ CONSULTAR_CONOCIMIENTO_SCHEMA: dict[str, Any] = {
         "tipo": {"type": "string", "enum": list(KNOWLEDGE_TIPOS)},
         "consulta": {
             "type": "string",
-            "description": "Texto de la búsqueda. Vacío para 'modulos_disponibles'.",
+            "description": (
+                "Texto de la búsqueda. Vacío para 'modulos_disponibles' y 'documentos_disponibles'."
+            ),
         },
     },
     "required": ["tipo", "consulta"],

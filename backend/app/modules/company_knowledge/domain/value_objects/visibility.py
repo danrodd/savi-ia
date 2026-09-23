@@ -30,4 +30,7 @@ class DocumentStatusCode(StrEnum):
     INDEX_LIMIT_REACHED = "index_limit_reached"
     # Leído con IA y ninguna página resultó legible (foto borrosa, etc.).
     AI_UNREADABLE = "ai_unreadable"
+    # La IA no respondió (modelo inexistente, clave, saldo, tiempo) y sin
+    # ella el PDF no tiene texto.
+    AI_FAILED = "ai_failed"
     INTERNAL_ERROR = "internal_error"

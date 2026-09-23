@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import httpx
 import pytest
+from openai import APIConnectionError, APIError
 
 from app.infrastructure.config import Settings
 from app.modules.chat.domain.entities import (
@@ -223,6 +225,64 @@ async def test_runner_falls_back_before_first_token(monkeypatch: pytest.MonkeyPa
     assert responses.models[-1] == "gpt-5.6-luna"
     done = next(e for e in events if isinstance(e, DoneEvent))
     assert done.model == "gpt-5.6-luna"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "failure",
+    [
+        APIConnectionError(request=httpx.Request("POST", "https://api")),
+        # El límite de tokens por minuto llega como evento `error` del stream.
+        APIError(
+            "Rate limit reached for gpt-6-luna on tokens per min (TPM)",
+            httpx.Request("POST", "https://api"),
+            body={"code": "rate_limit_exceeded", "message": "Rate limit reached"},
+        ),
+    ],
+    ids=["conexion", "limite_por_minuto"],
+)
+async def test_runner_retries_transient_failures_before_first_token(
+    monkeypatch: pytest.MonkeyPatch, failure: Exception
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [],
+    )
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr("asyncio.sleep", no_sleep)
+
+    class _FlakyResponses:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        async def create(self, **_kwargs: object):
+            self.calls += 1
+            attempt = self.calls
+
+            async def events():
+                if attempt == 1:
+                    raise failure
+                yield _text("ok")
+                yield _completed()
+
+            return events()
+
+    responses = _FlakyResponses()
+    settings = Settings(openai_retry_attempts=2, openai_retry_base_delay_s=0)
+
+    events = [
+        event
+        async for event in OpenAIRunner(
+            settings, _provider(), client=SimpleNamespace(responses=responses)
+        ).stream_turn("consulta")
+    ]
+
+    assert responses.calls == 2
+    assert not any(isinstance(e, ErrorEvent) for e in events)
+    assert any(isinstance(e, DoneEvent) for e in events)
 
 
 def test_usage_mapping_subtracts_cached_from_input() -> None:

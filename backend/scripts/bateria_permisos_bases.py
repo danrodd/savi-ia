@@ -710,6 +710,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", type=Path, default=CORPUS)
     parser.add_argument("--reusar", action="store_true", help="no vuelve a subir los documentos")
+    parser.add_argument("--casos", nargs="*", help="solo estos casos (y los que siguen)")
+    parser.add_argument("--repetir", type=int, default=1, help="veces que corre cada caso")
     args = parser.parse_args()
     generate_corpus(args.corpus)
 
@@ -725,7 +727,12 @@ def main() -> None:
         sessions: dict[str, Session] = {}
         conversations: dict[str, tuple[str, str]] = {}
         results = []
-        for case in CASES:
+        selected = [
+            case
+            for case in CASES
+            if not args.casos or case.id in args.casos or case.sigue in args.casos
+        ]
+        for case in [case for case in selected for _ in range(args.repetir)]:
             session = sessions.setdefault(case.login, Session(client, case.login))
             if case.sigue:
                 conversation = conversations[case.sigue][0]

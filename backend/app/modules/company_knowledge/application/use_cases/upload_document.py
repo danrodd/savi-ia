@@ -15,6 +15,7 @@ from app.modules.company_knowledge.domain.entities.company_document import (
 from app.modules.company_knowledge.domain.exceptions import (
     CompanyDocumentFileTooLargeError,
     CompanyDocumentIndexLimitReachedError,
+    CompanyDocumentInvalidError,
     DuplicateCompanyDocumentError,
 )
 from app.modules.company_knowledge.domain.interfaces import (
@@ -59,6 +60,8 @@ class UploadCompanyDocumentUseCase:
         uploaded_by_database_id: UUID,
         uploaded_by_user_id: int,
     ) -> CompanyDocument:
+        if not content:
+            raise CompanyDocumentInvalidError("El archivo está vacío.")
         max_bytes = self._settings.company_docs_max_file_mb * 1024 * 1024
         if len(content) > max_bytes:
             raise CompanyDocumentFileTooLargeError(self._settings.company_docs_max_file_mb)

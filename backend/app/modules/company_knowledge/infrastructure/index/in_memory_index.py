@@ -38,6 +38,7 @@ from app.modules.company_knowledge.domain.interfaces import (
     DocumentIndex,
     DocumentRepository,
     Embedder,
+    IndexedDocument,
     IndexStatus,
 )
 from app.modules.company_knowledge.domain.services.document_access_policy import (
@@ -189,6 +190,23 @@ class InMemoryDocumentIndex(DocumentIndex):
         )
 
     # ── Búsqueda ─────────────────────────────────────────────────────────
+    async def list_documents(self, ctx: DocumentAccessContext) -> list[IndexedDocument]:
+        snapshot = self._snapshot
+        if not self._loaded:
+            return []
+        documents = [
+            IndexedDocument(
+                document_id=doc.view.id,
+                title=doc.view.title,
+                version=doc.view.version,
+                page_count=doc.view.page_count,
+                updated_at=doc.view.updated_at,
+            )
+            for doc in snapshot.docs
+            if can_read(doc.view, ctx)
+        ]
+        return sorted(documents, key=lambda document: document.title.casefold())
+
     async def search(
         self, query: str, ctx: DocumentAccessContext, *, limit: int = 6
     ) -> list[ChunkHit]:

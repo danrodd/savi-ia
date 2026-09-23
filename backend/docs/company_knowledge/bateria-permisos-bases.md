@@ -12,7 +12,7 @@
 |---|---|---|
 | **Permisos** | **11/11** en todas las corridas | Usuarios no administradores no ven documentos restringidos, ni preguntando directo, ni indirecto, ni con manipulación |
 | **Varias bases** | **9/9** en todas las corridas | Respuestas que se contradicen entre clientes: cada chat responde con la de su base, sin mezclar |
-| **Preguntas naturales** | **15/15** en la corrida final; C08 es intermitente (§5.1) | Informales, con errores, de seguimiento, ambiguas, comparativas, inexistentes, ERP + documento, en inglés |
+| **Preguntas naturales** | **15/15** en las corridas finales; C08 mejoró de 5/9 a 23/25 (§5.1) | Informales, con errores, de seguimiento, ambiguas, comparativas, inexistentes, ERP + documento, en inglés |
 
 **Ninguna corrida filtró un dato restringido** (ni en la respuesta ni en las
 fuentes citadas) **ni mezcló datos entre bases**. Ninguna respuesta dijo
@@ -156,26 +156,41 @@ Después del cambio, las baterías de [lectura](bateria-lectura-ia.md)
 
 ## 5. Limitaciones conocidas
 
-### 5.1 Preguntas que mezclan ERP y documentos: intermitente
+### 5.1 Preguntas que mezclan ERP y documentos
 
-"¿Tenemos Potabon K en inventario? ¿Y qué pH tiene?" consultó el inventario
-en **5 de 9** intentos (4 corridas + 5 repeticiones). Cuando no consulta,
-da el pH correcto y dice que no puede confirmar el inventario. **Nunca
-inventó existencias.** Con `gpt-6-luna` la regla del prompt no alcanza para
-que siempre use las dos fuentes; queda para medir con los otros proveedores.
+Primera medición: "¿Tenemos Potabon K en inventario? ¿Y qué pH tiene?"
+consultó el inventario en **5 de 9** intentos. Cuando no consultaba, daba
+el pH correcto y decía que no podía confirmar el inventario. **Nunca inventó
+existencias.**
+
+Corrección (2026-09-23, [batería de ciclo de vida](bateria-ciclo-vida.md)):
+la regla del prompt sola no alcanzaba con `gpt-6-luna`. Ahora la respuesta
+de la búsqueda en documentos trae la indicación en el mismo lugar donde el
+modelo decide: siempre, una nota de que existencias, precios y saldos se
+consultan en el ERP; y si la consulta pide alguno de esos datos, un campo
+`pendiente_erp` explícito. Resultado, en 28
+intentos: **23 de 25 respuestas consultaron el ERP** (los otros 3 fueron
+turnos caídos por el límite de tokens por minuto, corregido en la
+[batería de ciclo de vida, §3.4](bateria-ciclo-vida.md#34-el-límite-de-tokens-por-minuto-de-openai-no-se-reintentaba)).
+Sigue sin ser 100 %: cuando no consulta, dice que no puede confirmar las
+existencias, sin inventarlas.
 
 ### 5.2 Pregunta ambigua
 
-C05 ahora pregunta cuál bomba y lista las opciones, pero agrega "las fichas
-disponibles no indican el peso", que es falso para el catálogo Cisealco.
-Con el modelo precisado (C03, C04) responde bien.
+Antes, C05 preguntaba cuál bomba pero agregaba "las fichas disponibles no
+indican el peso", que es falso para el catálogo Cisealco. Se agregó al
+prompt que no afirme que un documento no trae un dato hasta saber cuál es.
+En las 4 corridas posteriores preguntó cuál, con las opciones, sin decir de
+más.
 
-### 5.3 SAVI no puede listar todos los documentos
+### 5.3 Listado de documentos (resuelto)
 
-"Listame todos los documentos" devuelve los que salen en la búsqueda para
-esa frase, no el catálogo completo. No filtra documentos restringidos, pero
-tampoco sirve como inventario de lo cargado. La lista completa está en la
-pantalla de Conocimiento (administradores).
+Antes, "listame todos los documentos" devolvía solo lo que salía en la
+búsqueda para esa frase. Ahora hay un `tipo` más en `consultar_conocimiento`,
+`documentos_disponibles` (siguen siendo 4 tools), que lista título, páginas
+y fecha de **todos** los documentos que el usuario puede ver, con el mismo
+filtro de permisos y base que la búsqueda. Probado en la
+[batería de ciclo de vida](bateria-ciclo-vida.md) (L01, L02).
 
 ### 5.4 Alcance de esta batería
 

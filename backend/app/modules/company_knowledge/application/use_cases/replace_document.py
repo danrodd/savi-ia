@@ -9,6 +9,7 @@ from app.modules.company_knowledge.domain.entities.company_document import (
 )
 from app.modules.company_knowledge.domain.exceptions import (
     CompanyDocumentFileTooLargeError,
+    CompanyDocumentInvalidError,
     CompanyDocumentNotFoundError,
     DuplicateCompanyDocumentError,
 )
@@ -44,6 +45,8 @@ class ReplaceCompanyDocumentUseCase:
         if document is None or document.is_deleted:
             raise CompanyDocumentNotFoundError(str(document_id))
 
+        if not content:
+            raise CompanyDocumentInvalidError("El archivo está vacío.")
         max_bytes = self._settings.company_docs_max_file_mb * 1024 * 1024
         if len(content) > max_bytes:
             raise CompanyDocumentFileTooLargeError(self._settings.company_docs_max_file_mb)

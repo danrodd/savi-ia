@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
@@ -24,6 +25,8 @@ class DocumentAccessView:
     database_ids: frozenset[UUID]
     title: str = ""
     version: int = 1
+    page_count: int | None = None
+    updated_at: datetime | None = None
 
     @staticmethod
     def from_document(
@@ -39,4 +42,6 @@ class DocumentAccessView:
             database_ids=database_ids,
             title=document.title,
             version=document.version,
+            page_count=document.page_count,
+            updated_at=document.updated_at,
         )
