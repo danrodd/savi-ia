@@ -3,12 +3,14 @@
 - BootstrapResponse → respuesta de /auth/me/bootstrap.
 - ModulesVersionResponse → respuesta del polling de version.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel
 
 from app.modules.auth.application.responses.auth_responses import (
     AuthenticatedUserResponse,
+    SessionDatabaseResponse,
 )
 from app.modules.auth.application.use_cases.resolve_modules_for_database import (
     DatabaseAccess,
@@ -44,7 +46,10 @@ class BootstrapResponse(BaseModel):
 
     @classmethod
     def from_database_access(
-        cls, user: AuthenticatedUser, access: DatabaseAccess
+        cls,
+        user: AuthenticatedUser,
+        access: DatabaseAccess,
+        erp_database: SessionDatabaseResponse | None = None,
     ) -> BootstrapResponse:
         """Desde el acceso resuelto contra LA base del usuario.
 
@@ -52,7 +57,7 @@ class BootstrapResponse(BaseModel):
         por defecto: un usuario de otra base recibía los módulos del usuario
         con el mismo `idUsuario` allá."""
         return cls(
-            user=AuthenticatedUserResponse.from_domain(user),
+            user=AuthenticatedUserResponse.from_domain(user, erp_database),
             modules=sorted(m.value for m in access.modules),
             version=access.version,
         )

@@ -9,7 +9,7 @@ interfaz mostraba un conjunto de módulos y el agente aplicaba otro.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -22,7 +22,9 @@ from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.value_objects import ModuleCode
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.auth.infrastructure.http.dependencies import get_current_user
+from app.modules.erp_databases.domain.entities import ErpDatabase
 from app.modules.erp_databases.infrastructure.http.dependencies import (
+    get_erp_database_repository,
     get_resolve_modules_for_database_use_case,
 )
 from app.shared.exceptions import register_exception_handlers
@@ -36,6 +38,17 @@ USUARIO = AuthenticatedUser(
     is_admin=False,
     is_active=True,
 )
+BASE = ErpDatabase(id=BASE_DEL_USUARIO, code="FRAMI", name="frami")
+
+
+class _BasesFalsas:
+    """Registro de bases en memoria: la ruta solo lee código y nombre."""
+
+    def __init__(self, *bases: ErpDatabase) -> None:
+        self._bases = {b.id: b for b in bases}
+
+    async def get_by_id(self, database_id: UUID) -> ErpDatabase | None:
+        return self._bases.get(database_id)
 
 
 class _ResolverFalso:
@@ -67,6 +80,7 @@ def client(resolver: _ResolverFalso) -> Iterator[TestClient]:
     register_exception_handlers(app)
     app.dependency_overrides[get_current_user] = lambda: USUARIO
     app.dependency_overrides[get_resolve_modules_for_database_use_case] = lambda: resolver
+    app.dependency_overrides[get_erp_database_repository] = lambda: _BasesFalsas(BASE)
     yield TestClient(app)
 
 
@@ -96,3 +110,19 @@ def test_modules_version_resolves_against_the_user_database(
     assert response.status_code == 200
     assert response.json()["version"] == "hash-de-la-base-del-usuario"
     assert resolver.llamadas == [("JPEREZ", BASE_DEL_USUARIO)]
+
+
+def test_bootstrap_says_which_database_the_session_is_in(client: TestClient) -> None:
+    """La interfaz muestra "estás en FRAMI" y distingue al usuario de sus
+    homónimos en otros clientes: el `idUsuario` se repite entre bases."""
+    body = client.get("/auth/me/bootstrap").json()
+
+    assert body["user"]["erp_database"] == {
+        "id": str(BASE_DEL_USUARIO),
+        "code": "FRAMI",
+        "name": "frami",
+    }
+
+
+def test_me_says_which_database_the_session_is_in(client: TestClient) -> None:
+    assert client.get("/auth/me").json()["erp_database"]["code"] == "FRAMI"

@@ -17,6 +17,7 @@ from app.modules.auth.application.responses import (
     AuthenticatedUserResponse,
     BootstrapResponse,
     ModulesVersionResponse,
+    SessionDatabaseResponse,
     TokenResponse,
 )
 from app.modules.auth.domain.entities import AuthenticatedUser
@@ -29,6 +30,7 @@ from app.modules.auth.infrastructure.http.dependencies import (
     SettingsDep,
 )
 from app.modules.erp_databases.infrastructure.http.dependencies import (
+    ErpDatabaseRepositoryDep,
     ResolveModulesForDatabaseUseCaseDep,
 )
 from app.shared.rate_limit import (
@@ -47,12 +49,26 @@ def _require_database(user: AuthenticatedUser) -> UUID:
     return user.erp_database_id
 
 
+async def _session_database(
+    user: AuthenticatedUser, repository: ErpDatabaseRepositoryDep
+) -> SessionDatabaseResponse | None:
+    """Código y nombre de la base de login, para que la interfaz diga en
+    qué cliente está la sesión."""
+    if user.erp_database_id is None:
+        return None
+    database = await repository.get_by_id(user.erp_database_id)
+    if database is None:
+        return None
+    return SessionDatabaseResponse(id=database.id, code=database.code, name=database.name)
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(
     http_request: Request,
     request: LoginRequest,
     use_case: LoginUseCaseDep,
     settings: SettingsDep,
+    databases: ErpDatabaseRepositoryDep,
 ) -> TokenResponse:
     # El límite va ANTES del caso de uso: si corriera después, cada intento
     # rechazado igual pagaría el viaje al ERP y el hash, que es justo el
@@ -64,7 +80,7 @@ async def login(
         record_login_failure(settings, request.login)
         raise
     record_login_success(settings, request.login)
-    return TokenResponse.from_domain(tokens, user)
+    return TokenResponse.from_domain(tokens, user, await _session_database(user, databases))
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -73,12 +89,13 @@ async def refresh(
     request: RefreshRequest,
     use_case: RefreshUseCaseDep,
     settings: SettingsDep,
+    databases: ErpDatabaseRepositoryDep,
 ) -> TokenResponse:
     # Por IP: acá todavía no hay usuario resuelto, y sin límite el refresh es
     # un oráculo gratis para probar tokens.
     enforce_refresh_limits(http_request, settings)
     tokens, user = await use_case.execute(request.refresh_token)
-    return TokenResponse.from_domain(tokens, user)
+    return TokenResponse.from_domain(tokens, user, await _session_database(user, databases))
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -95,16 +112,19 @@ async def logout(
 
 
 @router.get("/me", response_model=AuthenticatedUserResponse)
-async def me(user: CurrentUserDep) -> AuthenticatedUserResponse:
+async def me(
+    user: CurrentUserDep, databases: ErpDatabaseRepositoryDep
+) -> AuthenticatedUserResponse:
     """Devuelve el usuario del access token actual. Lo usa el frontend
     para hidratar la sesión al recargar la página."""
-    return AuthenticatedUserResponse.from_domain(user)
+    return AuthenticatedUserResponse.from_domain(user, await _session_database(user, databases))
 
 
 @router.get("/me/bootstrap", response_model=BootstrapResponse)
 async def bootstrap(
     user: CurrentUserDep,
     use_case: ResolveModulesForDatabaseUseCaseDep,
+    databases: ErpDatabaseRepositoryDep,
 ) -> BootstrapResponse:
     """Snapshot completo: identidad + módulos accesibles + version hash.
 
@@ -117,7 +137,9 @@ async def bootstrap(
     exactamente el cruce de identidades que el multi-BD viene a evitar.
     """
     access = await use_case.execute(user.login, _require_database(user))
-    return BootstrapResponse.from_database_access(user, access)
+    return BootstrapResponse.from_database_access(
+        user, access, await _session_database(user, databases)
+    )
 
 
 @router.get("/me/modules-version", response_model=ModulesVersionResponse)

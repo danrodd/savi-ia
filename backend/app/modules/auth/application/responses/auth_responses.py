@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 from app.modules.auth.domain.entities import AuthenticatedUser
@@ -21,15 +23,30 @@ class TokenResponse(BaseModel):
 
     @classmethod
     def from_domain(
-        cls, tokens: TokenPair, user: AuthenticatedUser
+        cls,
+        tokens: TokenPair,
+        user: AuthenticatedUser,
+        erp_database: "SessionDatabaseResponse | None" = None,
     ) -> "TokenResponse":
         return cls(
             access_token=tokens.access_token,
             refresh_token=tokens.refresh_token,
             token_type=tokens.token_type,
             expires_in=tokens.access_token_expires_in,
-            user=AuthenticatedUserResponse.from_domain(user),
+            user=AuthenticatedUserResponse.from_domain(user, erp_database),
         )
+
+
+class SessionDatabaseResponse(BaseModel):
+    """La base del ERP con la que el usuario inició sesión.
+
+    La interfaz la muestra ("estás en FRAMI") y la usa para distinguir al
+    usuario de sus homónimos: el `idUsuario` se repite entre clientes.
+    """
+
+    id: UUID
+    code: str
+    name: str
 
 
 class AuthenticatedUserResponse(BaseModel):
@@ -43,14 +60,19 @@ class AuthenticatedUserResponse(BaseModel):
     login: str
     full_name: str
     is_admin: bool
+    # `None` solo si la base se borró después de emitir el token.
+    erp_database: SessionDatabaseResponse | None = None
 
     @classmethod
-    def from_domain(cls, user: AuthenticatedUser) -> "AuthenticatedUserResponse":
+    def from_domain(
+        cls, user: AuthenticatedUser, erp_database: SessionDatabaseResponse | None = None
+    ) -> "AuthenticatedUserResponse":
         return cls(
             id=user.id,
             login=user.login,
             full_name=user.full_name,
             is_admin=user.is_admin,
+            erp_database=erp_database,
         )
 
 

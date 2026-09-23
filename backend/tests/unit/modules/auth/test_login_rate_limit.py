@@ -8,7 +8,7 @@ viable. Ver `docs/seguridad/03-fase-2-resistencia.md`.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -19,6 +19,8 @@ from app.modules.auth.domain.exceptions import InvalidCredentialsError
 from app.modules.auth.domain.value_objects import TokenPair
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.auth.infrastructure.http.dependencies import get_login_use_case
+from app.modules.erp_databases.domain.entities import ErpDatabase
+from app.modules.erp_databases.infrastructure.http.dependencies import get_erp_database_repository
 from app.shared.exceptions import register_exception_handlers
 from app.shared.rate_limit import get_rate_limiter
 
@@ -32,6 +34,18 @@ _USUARIO = AuthenticatedUser(
     is_admin=True,
     is_active=True,
 )
+
+
+class _BasesFalsas:
+    """Registro de bases en memoria: la ruta solo lee código y nombre."""
+
+    def __init__(self, *bases: ErpDatabase) -> None:
+        self._bases = {b.id: b for b in bases}
+
+    async def get_by_id(self, database_id: UUID) -> ErpDatabase | None:
+        return self._bases.get(database_id)
+
+
 _TOKENS = TokenPair(access_token="a", refresh_token="r", access_token_expires_in=900)
 
 
@@ -60,6 +74,7 @@ def client(use_case: _FakeLoginUseCase) -> Iterator[TestClient]:
     app.include_router(auth_router)
     register_exception_handlers(app)
     app.dependency_overrides[get_login_use_case] = lambda: use_case
+    app.dependency_overrides[get_erp_database_repository] = lambda: _BasesFalsas()
     get_rate_limiter().reset()
     yield TestClient(app)
     get_rate_limiter().reset()
