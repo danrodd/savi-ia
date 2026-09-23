@@ -8,6 +8,7 @@ puede cambiar la forma de la consulta.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 import pytest
@@ -251,15 +252,64 @@ def test_date_filter_value_is_coerced_to_a_date_object() -> None:
     assert "2026-03-01" not in compilada.params.values()
 
 
-def test_date_filter_between_coerces_both_ends() -> None:
+def test_date_filter_between_includes_the_whole_last_day() -> None:
+    """`entre 2025-01-01 y 2025-12-31` incluye TODO el 31 de diciembre.
+
+    Las columnas de fecha del ERP son timestamp con hora: un `BETWEEN` con
+    '2025-12-31' corta en la medianoche y deja afuera el último día. Se
+    compila como rango semiabierto hasta el día siguiente.
+    """
     query = _agregado(
         filtros=[QueryFilter("fecha", FilterOp.BETWEEN, ["2025-01-01", "2025-12-31"])]
     )
 
     compilada = compile_query(query, ENTIDAD)
 
+    assert "BETWEEN" not in compilada.sql
+    assert 'f."fecha" >= ' in compilada.sql
+    assert 'f."fecha" < ' in compilada.sql
     assert date(2025, 1, 1) in compilada.params.values()
-    assert date(2025, 12, 31) in compilada.params.values()
+    assert date(2026, 1, 1) in compilada.params.values()
+
+
+_ENTIDAD_FECHAS = replace(
+    ENTIDAD,
+    filters={
+        **ENTIDAD.filters,
+        "fecha": FilterDef(
+            "fecha",
+            'f."fecha"',
+            (FilterOp.EQ, FilterOp.NE, FilterOp.GT, FilterOp.GTE, FilterOp.LT, FilterOp.LTE),
+            value_type="date",
+        ),
+    },
+)
+
+
+@pytest.mark.parametrize(
+    ("op", "fragmento", "fechas"),
+    [
+        (
+            FilterOp.EQ,
+            'f."fecha" >= :p0 AND f."fecha" < :p1',
+            [date(2026, 8, 31), date(2026, 9, 1)],
+        ),
+        (FilterOp.NE, 'f."fecha" < :p0 OR f."fecha" >= :p1', [date(2026, 8, 31), date(2026, 9, 1)]),
+        (FilterOp.LTE, 'f."fecha" < :p0', [date(2026, 9, 1)]),
+        (FilterOp.GT, 'f."fecha" >= :p0', [date(2026, 9, 1)]),
+        (FilterOp.GTE, 'f."fecha" >= :p0', [date(2026, 8, 31)]),
+        (FilterOp.LT, 'f."fecha" < :p0', [date(2026, 8, 31)]),
+    ],
+)
+def test_scalar_date_filter_treats_a_date_as_the_whole_day(
+    op: FilterOp, fragmento: str, fechas: list[date]
+) -> None:
+    query = _agregado(filtros=[QueryFilter("fecha", op, "2026-08-31")])
+
+    compilada = compile_query(query, _ENTIDAD_FECHAS)
+
+    assert fragmento in compilada.sql
+    assert list(compilada.params.values()) == fechas
 
 
 def test_invalid_date_filter_value_raises_actionable_error() -> None:
@@ -371,9 +421,7 @@ _AMBIGUA = SemanticEntity(
 
 
 def test_aggregate_without_the_required_dimension_is_rejected() -> None:
-    query = SemanticQuery(
-        entidad="cartera_test", modo=QueryMode.AGGREGATE, metricas=["saldo"]
-    )
+    query = SemanticQuery(entidad="cartera_test", modo=QueryMode.AGGREGATE, metricas=["saldo"])
 
     with pytest.raises(InvalidQueryError, match="no significa nada"):
         compile_query(query, _AMBIGUA)

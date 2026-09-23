@@ -10,11 +10,12 @@
 - Todos los valores van como bind params (`:p0`, `:p1`, …) — cero
   interpolación de strings, cero inyección posible.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, cast
 
 from app.modules.data_query.domain.exceptions import (
@@ -38,6 +39,8 @@ _SCALAR_OPS = {
     FilterOp.LT: "<",
     FilterOp.LTE: "<=",
 }
+
+_ONE_DAY = timedelta(days=1)
 
 
 def _empty_params() -> dict[str, Any]:
@@ -95,9 +98,7 @@ def _resolve_dimensions(query: SemanticQuery, entity: SemanticEntity) -> list[st
     out: list[str] = []
     for d in query.dimensiones:
         if d not in entity.dimensions:
-            raise UnknownFieldError(
-                "dimensión", d, entity.name, list(entity.dimensions)
-            )
+            raise UnknownFieldError("dimensión", d, entity.name, list(entity.dimensions))
         out.append(d)
     return out
 
@@ -201,9 +202,7 @@ def _coerce_bool(value: Any, campo: str) -> Any:
             return False
     if isinstance(value, int) and value in (0, 1):
         return bool(value)
-    raise InvalidQueryError(
-        f"El filtro '{campo}' espera sí o no (booleano), recibí '{value}'."
-    )
+    raise InvalidQueryError(f"El filtro '{campo}' espera sí o no (booleano), recibí '{value}'.")
 
 
 def _coerce_value(value: Any, value_type: FilterValueType, campo: str) -> Any:
@@ -245,30 +244,28 @@ def _compile_filter(
     if fdef is None:
         raise UnknownFieldError("filtro", flt.campo, entity.name, list(entity.filters))
     if flt.op not in fdef.allowed_ops:
-        raise FilterOpNotAllowedError(
-            flt.campo, flt.op.value, [o.value for o in fdef.allowed_ops]
-        )
+        raise FilterOpNotAllowedError(flt.campo, flt.op.value, [o.value for o in fdef.allowed_ops])
     required_joins.update(fdef.requires)
     col = fdef.sql_column
     valor: Any = flt.valor
 
     if flt.op in _SCALAR_OPS:
         valor = _coerce_value(valor, fdef.value_type, flt.campo)
+        if _is_whole_day(valor):
+            return _whole_day_scalar(col, flt.op, valor, pc)
         return f"{col} {_SCALAR_OPS[flt.op]} {pc.add(valor)}"
     if flt.op == FilterOp.CONTAINS:
         return f"{col} ILIKE {pc.add(f'%{valor}%')}"
     if flt.op == FilterOp.BETWEEN:
         if not isinstance(valor, (list, tuple)):
-            raise InvalidQueryError(
-                f"El filtro '{flt.campo}' con 'entre' requiere [inicio, fin]."
-            )
+            raise InvalidQueryError(f"El filtro '{flt.campo}' con 'entre' requiere [inicio, fin].")
         pair: Sequence[Any] = cast(Sequence[Any], valor)
         if len(pair) != 2:
-            raise InvalidQueryError(
-                f"El filtro '{flt.campo}' con 'entre' requiere [inicio, fin]."
-            )
+            raise InvalidQueryError(f"El filtro '{flt.campo}' con 'entre' requiere [inicio, fin].")
         inicio = _coerce_value(pair[0], fdef.value_type, flt.campo)
         fin = _coerce_value(pair[1], fdef.value_type, flt.campo)
+        if _is_whole_day(inicio) and _is_whole_day(fin):
+            return f"({col} >= {pc.add(inicio)} AND {col} < {pc.add(fin + _ONE_DAY)})"
         return f"{col} BETWEEN {pc.add(inicio)} AND {pc.add(fin)}"
     if flt.op == FilterOp.IN:
         if isinstance(valor, (list, tuple)):
@@ -283,6 +280,33 @@ def _compile_filter(
     raise InvalidQueryError(f"Operador no soportado: {flt.op}")
 
 
+def _is_whole_day(value: Any) -> bool:
+    # `datetime` es subclase de `date`: un valor con hora conserva la
+    # comparación exacta que pidió el modelo.
+    return type(value) is date
+
+
+def _whole_day_scalar(col: str, op: FilterOp, day: date, pc: _ParamCounter) -> str:
+    """Una fecha sin hora es el DÍA COMPLETO, aunque la columna sea timestamp.
+
+    Las columnas de fecha del ERP son `timestamptz` con hora. Comparar
+    contra '2025-12-31' compara contra la medianoche: `<=` y `BETWEEN`
+    dejaban afuera todo el último día y `=` no matcheaba casi nada. Medido
+    en farmacias_similares: "facturación 2025" perdía $17,9 M del 31 de
+    diciembre, y cada total mensual perdía su último día.
+    """
+    next_day = day + _ONE_DAY
+    if op == FilterOp.EQ:
+        return f"({col} >= {pc.add(day)} AND {col} < {pc.add(next_day)})"
+    if op == FilterOp.NE:
+        return f"({col} < {pc.add(day)} OR {col} >= {pc.add(next_day)})"
+    if op == FilterOp.GT:
+        return f"{col} >= {pc.add(next_day)}"
+    if op == FilterOp.LTE:
+        return f"{col} < {pc.add(next_day)}"
+    return f"{col} {_SCALAR_OPS[op]} {pc.add(day)}"  # GTE y LT ya son exactos
+
+
 def _emit_joins(entity: SemanticEntity, required: set[str]) -> str:
     # Emite los joins necesarios en el orden de declaración del catálogo
     # (Python preserva orden de inserción del dict) — así las dependencias
@@ -291,9 +315,7 @@ def _emit_joins(entity: SemanticEntity, required: set[str]) -> str:
     return ("\n  " + "\n  ".join(parts)) if parts else ""
 
 
-def _order_clause(
-    query: SemanticQuery, valid_aliases: set[str]
-) -> str:
+def _order_clause(query: SemanticQuery, valid_aliases: set[str]) -> str:
     if query.orden is None:
         return ""
     if query.orden.campo not in valid_aliases:
@@ -377,9 +399,7 @@ def _compile_detail(query: SemanticQuery, entity: SemanticEntity) -> CompiledQue
 
 def _compile_record(query: SemanticQuery, entity: SemanticEntity) -> CompiledQuery:
     if entity.record_key is None:
-        raise InvalidQueryError(
-            f"La entidad '{entity.name}' no soporta el modo 'registro'."
-        )
+        raise InvalidQueryError(f"La entidad '{entity.name}' no soporta el modo 'registro'.")
     has_key_filter = any(f.campo == entity.record_key for f in query.filtros)
     if not has_key_filter:
         raise InvalidQueryError(

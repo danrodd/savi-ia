@@ -274,3 +274,29 @@ async def test_cartera_lado_filter_matches_a_single_bucket(
     rows = await _run(erp_engine, query)
 
     assert {str(r["lado"]) for r in rows} == {lado_esperado}
+
+
+@pytest.mark.asyncio
+async def test_a_year_range_includes_its_last_day(erp_engine: AsyncEngine) -> None:
+    """ "Facturación 2025" = la suma exacta del año, 31 de diciembre incluido.
+
+    `fecha` es timestamptz con hora: con `BETWEEN ... AND '2025-12-31'` el
+    último día quedaba afuera (farmacias_similares perdía $17,9 M).
+    """
+    query = SemanticQuery(
+        entidad="ventas",
+        modo=QueryMode.AGGREGATE,
+        metricas=["monto_total"],
+        filtros=[QueryFilter("fecha", FilterOp.BETWEEN, ["2025-01-01", "2025-12-31"])],
+    )
+
+    rows = await _run(erp_engine, query)
+    async with erp_engine.connect() as conn:
+        esperado = await conn.scalar(
+            text(
+                'SELECT COALESCE(SUM(total), 0) FROM "CuentaCobrar"."Factura" '
+                "WHERE anulada = false AND fecha >= '2025-01-01' AND fecha < '2026-01-01'"
+            )
+        )
+
+    assert float(rows[0]["monto_total"] or 0) == pytest.approx(float(esperado))
