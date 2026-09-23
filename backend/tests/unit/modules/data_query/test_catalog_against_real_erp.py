@@ -114,6 +114,71 @@ async def test_ventas_detalle_by_product_runs_with_its_joins(
 
 
 @pytest.mark.asyncio
+async def test_cartera_splits_receivables_from_payables(erp_engine: AsyncEngine) -> None:
+    """El caso que motivó la entidad: "cartera vencida" daba números
+    distintos según el proveedor de IA porque cada uno decidía por su
+    cuenta si incluía las cuentas por pagar. Agrupada por `lado`, la
+    respuesta dice de qué está hablando."""
+    query = SemanticQuery(
+        entidad="cartera",
+        modo=QueryMode.AGGREGATE,
+        metricas=["saldo_vencido", "documentos"],
+        dimensiones=["lado"],
+        filtros=[QueryFilter("vencida", FilterOp.EQ, True)],
+    )
+
+    rows = await _run(erp_engine, query)
+
+    lados = {str(r["lado"]) for r in rows}
+    assert "Por cobrar a clientes" in lados
+    assert "Por pagar a proveedores" in lados
+    # Las notas crédito NO se suman a lo por cobrar: tienen saldo positivo
+    # pero reducen la deuda del cliente, así que van en su propio bucket.
+    assert "Notas crédito a clientes" in lados
+    assert all(float(r["saldo_vencido"]) >= 0 for r in rows)
+
+
+@pytest.mark.asyncio
+async def test_cartera_by_type_covers_every_document_kind(erp_engine: AsyncEngine) -> None:
+    """Los seis `tipoDocumento` tienen etiqueta: ninguno cae en
+    'Sin clasificar', que es la señal de que apareció uno nuevo."""
+    query = SemanticQuery(
+        entidad="cartera",
+        modo=QueryMode.AGGREGATE,
+        metricas=["saldo"],
+        dimensiones=["tipo"],
+        limite=20,
+    )
+
+    rows = await _run(erp_engine, query)
+
+    assert rows
+    sin_clasificar = [r for r in rows if str(r["tipo"]) == "Sin clasificar"]
+    assert not sin_clasificar, (
+        "apareció un tipoDocumento no mapeado en cartera.py — hay que "
+        f"identificarlo y agregarlo: {sin_clasificar}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_cartera_by_tercero_emits_its_join(erp_engine: AsyncEngine) -> None:
+    """La dimensión `tercero` necesita el join a `Tercero.Tercero`."""
+    query = SemanticQuery(
+        entidad="cartera",
+        modo=QueryMode.AGGREGATE,
+        metricas=["saldo"],
+        dimensiones=["tercero"],
+        filtros=[QueryFilter("tipo_documento", FilterOp.EQ, "2")],
+        limite=5,
+    )
+
+    rows = await _run(erp_engine, query)
+
+    assert rows
+    assert "tercero" in rows[0]
+
+
+@pytest.mark.asyncio
 async def test_terceros_with_a_boolean_filter_runs(erp_engine: AsyncEngine) -> None:
     """Filtro booleano contra la columna real: el modelo escribe "true"
     como texto y antes del fix asyncpg lo rechazaba."""

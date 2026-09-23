@@ -6,6 +6,7 @@ Para agregar una entidad nueva: definila en su módulo y registrala en
 from __future__ import annotations
 
 from app.modules.data_query.domain.semantic_model import SemanticEntity
+from app.modules.data_query.infrastructure.catalog.cartera import CARTERA
 from app.modules.data_query.infrastructure.catalog.terceros import TERCEROS
 from app.modules.data_query.infrastructure.catalog.ventas import VENTAS, VENTAS_DETALLE
 
@@ -13,6 +14,7 @@ _ENTITIES: dict[str, SemanticEntity] = {
     VENTAS.name: VENTAS,
     VENTAS_DETALLE.name: VENTAS_DETALLE,
     TERCEROS.name: TERCEROS,
+    CARTERA.name: CARTERA,
 }
 
 
