@@ -8,6 +8,7 @@ from fastapi import Depends
 from app.infrastructure.config import Settings, get_settings
 from app.infrastructure.database import get_agent_sessionmaker
 from app.modules.auth.application.use_cases import ResolveModulesForDatabaseUseCase
+from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.persistence import (
     ErpPermissionRepositoryFactory,
     ErpSeoPlanRepositoryFactory,
@@ -96,7 +97,16 @@ def get_resolve_modules_for_database_use_case() -> ResolveModulesForDatabaseUseC
         ),
         ErpPermissionRepositoryFactory(provider),
         ErpSeoPlanRepositoryFactory(provider),
+        is_platform_admin=_is_platform_admin,
     )
+
+
+async def _is_platform_admin(user: AuthenticatedUser) -> bool:
+    """El administrador de la instalación entra a todas las bases. Import
+    adentro: `auth.infrastructure.http.admin` importa de este módulo."""
+    from app.modules.auth.infrastructure.http.admin import is_platform_admin
+
+    return await is_platform_admin(user, get_settings())
 
 
 def get_list_available_use_case(

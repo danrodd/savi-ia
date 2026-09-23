@@ -183,7 +183,9 @@ class _Access:
     def __init__(self, access: DatabaseAccess) -> None:
         self._access = access
 
-    async def execute(self, login: str, database_id: UUID) -> DatabaseAccess:
+    async def execute(
+        self, login: str, database_id: UUID, *, identity: object = None
+    ) -> DatabaseAccess:
         return self._access
 
 

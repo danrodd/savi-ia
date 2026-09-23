@@ -112,7 +112,9 @@ class DownloadCompanyDocumentUseCase:
             raise not_found
 
         # 3. La política, con los permisos del usuario en ESA base.
-        access = await self._access_resolver.execute(user.login, conversation.erp_database_id)
+        access = await self._access_resolver.execute(
+            user.login, conversation.erp_database_id, identity=user
+        )
         if not access.has_access:
             raise not_found
         ctx = build_access_context(

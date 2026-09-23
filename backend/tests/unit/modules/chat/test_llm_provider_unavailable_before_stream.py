@@ -5,6 +5,7 @@ Mismo patrón que `test_database_unavailable_before_stream.py`: se llama
 al handler HTTP directo, con dobles mínimos, porque la decisión vive en
 el endpoint y no en el caso de uso.
 """
+
 from __future__ import annotations
 
 from typing import cast
@@ -39,7 +40,9 @@ class _StubChatTurnUseCase:
 
 
 class _AvailableModulesResolver:
-    async def execute(self, login: str, database_id: UUID) -> DatabaseAccess:
+    async def execute(
+        self, login: str, database_id: UUID, *, identity: object = None
+    ) -> DatabaseAccess:
         return DatabaseAccess(has_access=True, modules=frozenset(), is_admin_in_database=True)
 
 

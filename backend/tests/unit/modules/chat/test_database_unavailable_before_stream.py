@@ -11,6 +11,7 @@ los ignora), con dobles mínimos: no hace falta un `ChatTurnUseCase` real
 con su runner y sus writers para probar esta única decisión, que vive
 en el endpoint, no en el caso de uso.
 """
+
 from __future__ import annotations
 
 from typing import cast
@@ -51,7 +52,9 @@ class _StubModulesResolver:
     def __init__(self, access: DatabaseAccess) -> None:
         self._access = access
 
-    async def execute(self, login: str, database_id: UUID) -> DatabaseAccess:
+    async def execute(
+        self, login: str, database_id: UUID, *, identity: object = None
+    ) -> DatabaseAccess:
         return self._access
 
 

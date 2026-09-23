@@ -153,12 +153,17 @@ class Settings(BaseSettings):
     # Issuer claim del JWT — útil cuando varios servicios firman.
     jwt_issuer: str = Field(default="savi")
 
-    # Códigos de usuario que reciben la sección de administración de SAVI
-    # aunque el ERP no los marque como `administrador`. Vacío por default.
+    # Códigos de usuario que administran la INSTALACIÓN (soporte). Vacío por
+    # default: entonces lo es solo el administrador de la base por defecto.
     #
-    # Alcance limitado a propósito: SOLO habilita esa sección. No otorga
-    # módulos del ERP ni cambia qué datos puede consultar el usuario —
-    # administrar conexiones y tener acceso a datos son cosas distintas.
+    # Un administrador de la instalación gestiona bases, proveedores de IA y
+    # consumo global, y además abre chats contra CUALQUIER base activa como
+    # administrador, aunque su código no exista en ella (ver
+    # `ResolveModulesForDatabaseUseCase`).
+    #
+    # OJO: se compara solo el código. Si un cliente tiene un usuario con el
+    # mismo código (por ejemplo `ADMIN`), también recibe el rol. Listá
+    # códigos exclusivos de soporte, nunca uno genérico como `ADMIN`.
     savi_admin_logins: str = Field(default="")
 
     cors_allowed_origins: str = Field(default="http://localhost:5173,http://localhost:3000")

@@ -15,6 +15,7 @@ import asyncio
 from app.modules.auth.application.use_cases.resolve_modules_for_database import (
     ResolveModulesForDatabaseUseCase,
 )
+from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.erp_databases.application.dtos import AvailableDatabaseDTO
 from app.modules.erp_databases.domain.interfaces import ErpDatabaseRepository
 
@@ -28,14 +29,16 @@ class ListAvailableDatabasesUseCase:
         self._repository = repository
         self._access = access_resolver
 
-    async def execute(self, login: str) -> list[AvailableDatabaseDTO]:
+    async def execute(
+        self, login: str, *, identity: AuthenticatedUser | None = None
+    ) -> list[AvailableDatabaseDTO]:
         databases = await self._repository.list_all(include_inactive=False)
 
         # Se chequea el acceso a todas las bases en paralelo: cada una es
         # una consulta a un ERP distinto y hacerlas en serie escalaría mal
         # con muchos clientes registrados.
         checks = await asyncio.gather(
-            *(self._access.execute(login, d.id) for d in databases)
+            *(self._access.execute(login, d.id, identity=identity) for d in databases)
         )
 
         return [

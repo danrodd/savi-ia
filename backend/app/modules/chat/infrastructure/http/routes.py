@@ -104,7 +104,9 @@ async def chat(
     # del SSE ya no se puede cambiar el status code). El resolver, además,
     # aplica D3: los módulos se leen de ESA base, matcheando por `codigo`,
     # no se heredan de la base de identidad del usuario.
-    access = await modules_resolver.execute(user.login, _require(conversation_database_id))
+    access = await modules_resolver.execute(
+        user.login, _require(conversation_database_id), identity=user
+    )
     if not access.has_access:
         raise ErpDatabaseUnavailableError(
             str(conversation_database_id),

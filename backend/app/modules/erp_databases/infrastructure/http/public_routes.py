@@ -27,7 +27,7 @@ async def list_available(
 
     El acceso se resuelve por `codigo` contra cada base (D3): una base
     donde el usuario no existe o está inactivo no aparece, aunque esté
-    activa.
+    activa. Excepción: el administrador de la instalación ve todas.
     """
-    results = await use_case.execute(user.login)
+    results = await use_case.execute(user.login, identity=user)
     return [AvailableDatabaseResponse.from_dto(r) for r in results]

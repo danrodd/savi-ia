@@ -9,6 +9,7 @@ Lo que se protege — el corazón de D3:
 - Una base donde el usuario no existe o está inactivo no da acceso, y no
   aparece en el selector.
 """
+
 from __future__ import annotations
 
 from uuid import UUID, uuid4
@@ -212,11 +213,113 @@ async def test_available_lists_only_databases_with_access() -> None:
         },
         perms={_DB_A: {"VENTA"}},
     )
-    use_case = ListAvailableDatabasesUseCase(
-        _FakeDatabaseRepo(databases), resolver
-    )
+    use_case = ListAvailableDatabasesUseCase(_FakeDatabaseRepo(databases), resolver)
 
     available = await use_case.execute("JPEREZ")
 
     assert [a.code for a in available] == ["NORTE"]
     assert all(isinstance(a, AvailableDatabaseDTO) for a in available)
+
+
+# ── Administrador de la instalación (soporte) ────────────────────────
+#
+# Entra a cualquier base activa como administrador, aunque su código no
+# exista ahí: si no, soporte tenía que cerrar sesión y volver a entrar con
+# `CODIGO@BASE` para cada cliente.
+
+_SOPORTE = AuthenticatedUser(
+    id=1, erp_database_id=_DB_A, login="ADMIN", full_name="Soporte", is_admin=True, is_active=True
+)
+# Mismo código, OTRA persona: el administrador del cliente B.
+_ADMIN_DE_B = AuthenticatedUser(
+    id=1, erp_database_id=_DB_B, login="ADMIN", full_name="Admin B", is_admin=True, is_active=True
+)
+
+
+async def _solo_soporte(user: AuthenticatedUser) -> bool:
+    """Política de prueba: administra la instalación quien entró por A."""
+    return user.erp_database_id == _DB_A and user.is_admin
+
+
+def _resolver_con_politica(users: dict[UUID, UserRepository]) -> ResolveModulesForDatabaseUseCase:
+    return ResolveModulesForDatabaseUseCase(
+        _FakeUserFactory(users), _FakePermFactory({}), _FakePlanFactory(), _solo_soporte
+    )
+
+
+async def test_platform_admin_enters_a_base_where_their_code_does_not_exist() -> None:
+    resolver = _resolver_con_politica({_DB_B: _AbsentUserRepo()})
+
+    access = await resolver.execute("ADMIN", _DB_B, identity=_SOPORTE)
+
+    assert access.has_access is True
+    assert access.is_admin_in_database is True
+    # No hay identidad en esa base: no se inventa un idUsuario.
+    assert access.user_id_in_database is None
+
+
+async def test_company_admin_with_the_same_code_does_not_get_other_clients() -> None:
+    """El admin del cliente B también se llama ADMIN: la política mira la
+    identidad completa, no el código."""
+    resolver = _resolver_con_politica({_DB_A: _AbsentUserRepo()})
+
+    access = await resolver.execute("ADMIN", _DB_A, identity=_ADMIN_DE_B)
+
+    assert access.has_access is False
+
+
+async def test_platform_admin_respects_an_explicit_deactivation() -> None:
+    """Si el código existe en la base y el ERP lo desactivó, gana el bloqueo."""
+    resolver = _resolver_con_politica(
+        {_DB_B: _FakeUserRepo(user_id=7, is_admin=False, is_active=False)}
+    )
+
+    access = await resolver.execute("ADMIN", _DB_B, identity=_SOPORTE)
+
+    assert access.has_access is False
+
+
+async def test_without_identity_the_exception_does_not_apply() -> None:
+    """Simular qué vería un login (prueba de búsqueda) no pasa identidad:
+    se resuelve solo por el código, como un usuario común."""
+    resolver = _resolver_con_politica({_DB_B: _AbsentUserRepo()})
+
+    access = await resolver.execute("ADMIN", _DB_B)
+
+    assert access.has_access is False
+
+
+async def test_platform_admin_cannot_enter_an_unusable_base() -> None:
+    resolver = _resolver_con_politica({})
+
+    access = await resolver.execute("ADMIN", uuid4(), identity=_SOPORTE)
+
+    assert access.has_access is False
+
+
+async def test_selector_lists_every_active_base_for_the_platform_admin() -> None:
+    """Soporte existe en A y no en B: igual ve las dos."""
+    resolver = _resolver_con_politica(
+        {_DB_A: _FakeUserRepo(user_id=1, is_admin=True), _DB_B: _AbsentUserRepo()}
+    )
+    bases = _FakeDatabaseRepo([_db(_DB_A, "A"), _db(_DB_B, "B")])
+
+    visibles = await ListAvailableDatabasesUseCase(bases, resolver).execute(
+        "ADMIN", identity=_SOPORTE
+    )
+
+    assert {d.code for d in visibles} == {"A", "B"}
+
+
+async def test_selector_keeps_company_admins_in_their_own_bases() -> None:
+    """El admin de B existe en B y no en A: ve solo B."""
+    resolver = _resolver_con_politica(
+        {_DB_A: _AbsentUserRepo(), _DB_B: _FakeUserRepo(user_id=1, is_admin=True)}
+    )
+    bases = _FakeDatabaseRepo([_db(_DB_A, "A"), _db(_DB_B, "B")])
+
+    visibles = await ListAvailableDatabasesUseCase(bases, resolver).execute(
+        "ADMIN", identity=_ADMIN_DE_B
+    )
+
+    assert {d.code for d in visibles} == {"B"}

@@ -74,7 +74,7 @@ async def create_conversation(
     # Se valida el acceso con D3 —no se acepta a ciegas—: un usuario no
     # puede abrir una conversación contra un cliente donde no existe.
     database_id = request.erp_database_id or _require_database(user)
-    access = await access_resolver.execute(user.login, database_id)
+    access = await access_resolver.execute(user.login, database_id, identity=user)
     if not access.has_access:
         raise ErpDatabaseUnavailableError(
             str(database_id),
@@ -149,7 +149,7 @@ async def _resolve_source_availability(
     database_id = response.conversation.erp_database_id
     if not sources or database_id is None:
         return
-    access = await access_resolver.execute(user.login, database_id)
+    access = await access_resolver.execute(user.login, database_id, identity=user)
     if not access.has_access:
         for source in sources:
             source.available = False
