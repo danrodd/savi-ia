@@ -312,9 +312,12 @@ async def test_selector_lists_every_active_base_for_the_platform_admin() -> None
 
 
 async def test_selector_keeps_company_admins_in_their_own_bases() -> None:
-    """El admin de B existe en B y no en A: ve solo B."""
+    """El admin de B ve solo B, aunque su código exista en A."""
     resolver = _resolver_con_politica(
-        {_DB_A: _AbsentUserRepo(), _DB_B: _FakeUserRepo(user_id=1, is_admin=True)}
+        {
+            _DB_A: _FakeUserRepo(user_id=1, is_admin=True),
+            _DB_B: _FakeUserRepo(user_id=1, is_admin=True),
+        }
     )
     bases = _FakeDatabaseRepo([_db(_DB_A, "A"), _db(_DB_B, "B")])
 
@@ -323,3 +326,64 @@ async def test_selector_keeps_company_admins_in_their_own_bases() -> None:
     )
 
     assert {d.code for d in visibles} == {"B"}
+
+
+# ── Un usuario común no cruza a otra base ────────────────────────────
+#
+# "Mismo código = misma persona" no es cierto entre clientes. Medido en los
+# ERP locales: `AUX2` es Karen Restrepo en frami e Ingrid Tovar en
+# sur_andina. Con el cruce por código, Karen entraba a sur_andina con los
+# permisos de Ingrid.
+
+_KAREN = AuthenticatedUser(
+    id=12, erp_database_id=_DB_A, login="AUX2", full_name="Karen", is_admin=False, is_active=True
+)
+
+
+async def test_regular_user_cannot_enter_another_base_with_the_same_code() -> None:
+    resolver = _resolver_con_politica(
+        {
+            _DB_A: _FakeUserRepo(user_id=12, is_admin=False),
+            _DB_B: _FakeUserRepo(user_id=40, is_admin=True),  # Ingrid, admin en B
+        }
+    )
+
+    access = await resolver.execute("AUX2", _DB_B, identity=_KAREN)
+
+    assert access.has_access is False
+    assert access.modules == frozenset()
+
+
+async def test_regular_user_keeps_access_to_their_own_base() -> None:
+    resolver = _resolver_con_politica({_DB_A: _FakeUserRepo(user_id=12, is_admin=False)})
+
+    access = await resolver.execute("AUX2", _DB_A, identity=_KAREN)
+
+    assert access.has_access is True
+    assert access.user_id_in_database == 12
+
+
+async def test_selector_shows_a_regular_user_only_their_own_base() -> None:
+    resolver = _resolver_con_politica(
+        {
+            _DB_A: _FakeUserRepo(user_id=12, is_admin=False),
+            _DB_B: _FakeUserRepo(user_id=40, is_admin=True),
+        }
+    )
+    bases = _FakeDatabaseRepo([_db(_DB_A, "A"), _db(_DB_B, "B")])
+
+    visibles = await ListAvailableDatabasesUseCase(bases, resolver).execute("AUX2", identity=_KAREN)
+
+    assert {d.code for d in visibles} == {"A"}
+
+
+async def test_platform_admin_uses_their_real_permissions_where_their_code_exists() -> None:
+    """Si soporte tiene usuario en la base destino, entra con ese usuario
+    (su idUsuario y permisos de ahí), no con un administrador genérico."""
+    resolver = _resolver_con_politica({_DB_B: _FakeUserRepo(user_id=7, is_admin=False)})
+
+    access = await resolver.execute("ADMIN", _DB_B, identity=_SOPORTE)
+
+    assert access.has_access is True
+    assert access.user_id_in_database == 7
+    assert access.is_admin_in_database is False
