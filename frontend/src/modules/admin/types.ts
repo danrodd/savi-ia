@@ -99,6 +99,8 @@ export interface LlmProvider {
   credentials_unreadable: boolean
   chat_model: string | null
   title_model: string | null
+  /** Modelo para leer documentos. `null` = usa el modelo de chat. */
+  document_model: string | null
   pricing: Record<string, ModelPricing>
   is_active: boolean
   last_test_ok_at: string | null
@@ -109,6 +111,8 @@ export interface SaveLlmProviderRequest {
   credential?: string
   chat_model: string
   title_model: string
+  /** Omitido = conservar el guardado; vacío = usar el modelo de chat. */
+  document_model?: string
   pricing?: Record<string, ModelPricing>
 }
 
@@ -128,6 +132,26 @@ export interface ProviderTestResponse {
 
 export type DocumentVisibility = 'all' | 'modules' | 'admins'
 export type DocumentStatus = 'pending' | 'processing' | 'ready' | 'no_text' | 'failed'
+export type ReadingMethod = 'text' | 'ai' | 'mixed'
+export type DocumentProgressStage = 'reading' | 'indexing'
+
+/** Lectura de PDF con IA: interruptor y con qué se lee. */
+export interface AiReadingSettings {
+  ai_reading_enabled: boolean
+  /** Hay un proveedor activo que puede leer documentos. */
+  available: boolean
+  provider: string | null
+  provider_name: string | null
+  model: string | null
+  /** Claude por sesión o token OAuth: la lectura gasta el límite de la suscripción. */
+  uses_subscription: boolean
+  /** `null` si el modelo no tiene precios cargados. */
+  estimated_usd_per_page: number | null
+  unavailable_reason: string | null
+  privacy_notice: string
+  updated_by_login: string | null
+  updated_at: string | null
+}
 
 export interface CompanyDocument {
   id: string
@@ -147,8 +171,14 @@ export interface CompanyDocument {
    */
   progress_done: number | null
   progress_total: number | null
+  /** `reading`: leyendo con IA; `indexing`: indexando. */
+  progress_stage: DocumentProgressStage | null
   char_count: number
   embedding_model: string | null
+  /** Solo PDF. `null` hasta procesarlo. */
+  reading_method: ReadingMethod | null
+  ai_page_count: number
+  ai_cost_usd: number | null
   visibility: DocumentVisibility
   modules: string[]
   all_databases: boolean

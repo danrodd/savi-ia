@@ -5,6 +5,9 @@
  * Secuencial a propósito: un error en un archivo no cancela los demás y cada
  * uno muestra su resultado (subido, duplicado o rechazado con el motivo del
  * backend, que es quien valida el contenido real).
+ *
+ * Cada PDF cuenta sus páginas en el navegador al elegirlo, para mostrar si
+ * se leerá con IA y cuánto costaría antes de subir.
  */
 import { computed, ref, watch } from 'vue'
 
@@ -14,6 +17,13 @@ import { HttpRequestError } from '@/lib/HttpClient'
 import { toast } from '@/lib/toast'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 import type { DocumentPermissions } from '../types'
+import {
+  batchSummary,
+  countPdfPages,
+  isPdf,
+  pdfReadingHint,
+  willReadWithAi,
+} from '../utils/aiReading'
 import {
   ACCEPT_ATTRIBUTE,
   checkFile,
@@ -31,9 +41,12 @@ interface UploadItem {
   title: string
   state: ItemState
   message: string | null
+  /** Solo PDF: `undefined` mientras se cuentan, `null` si no se pudo. */
+  pages?: number | null
+  pdf: boolean
 }
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   databases: { id: string; name: string }[]
 }>()
@@ -53,6 +66,20 @@ const finished = computed(
     items.value.every((i) => i.state !== 'queued' && i.state !== 'uploading'),
 )
 const pendingCount = computed(() => items.value.filter((i) => i.state === 'queued').length)
+const queuedPdfPages = computed(() =>
+  items.value.filter((i) => i.pdf && i.state === 'queued').map((i) => i.pages),
+)
+const summary = computed(() => batchSummary(queuedPdfPages.value, store.aiReading))
+const readsWithAi = computed(() => willReadWithAi(store.aiReading))
+
+// La configuración puede haber cambiado desde que se abrió la pantalla.
+watch(
+  () => props.open,
+  (open) => {
+    if (open) void store.loadAiReading()
+  },
+  { immediate: true },
+)
 
 watch(
   () => items.value.length,
@@ -74,14 +101,26 @@ function close(): void {
 function addFiles(files: FileList | File[]): void {
   for (const file of Array.from(files)) {
     const check = checkFile(file)
+    const key = `${file.name}-${file.size}-${file.lastModified}-${items.value.length}`
+    const pdf = check.ok && isPdf(file)
     items.value.push({
-      key: `${file.name}-${file.size}-${file.lastModified}-${items.value.length}`,
+      key,
       file,
       title: titleFromFilename(file.name),
       state: check.ok ? 'queued' : 'failed',
       message: check.ok ? null : (check.reason ?? null),
+      pdf,
+      pages: undefined,
     })
+    if (pdf) void countPages(key, file)
   }
+}
+
+async function countPages(key: string, file: File): Promise<void> {
+  const pages = await countPdfPages(file)
+  // Se busca de nuevo: el archivo pudo quitarse mientras se contaba.
+  const item = items.value.find((i) => i.key === key)
+  if (item) item.pages = pages
 }
 
 function onInput(event: Event): void {
@@ -159,7 +198,7 @@ const STATE_LABELS: Record<ItemState, string> = {
   <Dialog
     :open="open"
     title="Subir documentos"
-    description="PDF con texto, TXT o Markdown, hasta 20 MB cada uno."
+    description="PDF (con texto o escaneados), TXT o Markdown, hasta 60 MB cada uno."
     :max-width="620"
     :close-on-overlay="false"
     @update:open="(value) => (value ? emit('update:open', true) : close())"
@@ -193,6 +232,8 @@ const STATE_LABELS: Record<ItemState, string> = {
         />
       </div>
 
+      <p v-if="summary" class="docup__summary">{{ summary }}</p>
+
       <ul v-if="items.length > 0" class="docup__list">
         <li v-for="item in items" :key="item.key" class="docup__item" :class="`docup__item--${item.state}`">
           <div class="docup__item-main">
@@ -204,6 +245,9 @@ const STATE_LABELS: Record<ItemState, string> = {
               :aria-label="`Título de ${item.file.name}`"
             />
             <span class="docup__file-name">{{ item.file.name }}</span>
+            <span v-if="item.pdf && item.state === 'queued'" class="docup__reading">
+              {{ pdfReadingHint(item.pages, store.aiReading) }}
+            </span>
           </div>
           <div class="docup__item-status">
             <span class="docup__state">{{ STATE_LABELS[item.state] }}</span>
@@ -223,7 +267,13 @@ const STATE_LABELS: Record<ItemState, string> = {
 
       <CompanyDocumentPermissionsFields v-model="permissions" :databases="databases" />
 
-      <p class="docup__notice">
+      <p v-if="readsWithAi && store.aiReading" class="docup__notice">
+        {{ store.aiReading.privacy_notice }}
+        <template v-if="store.aiReading.uses_subscription">
+          La lectura consume el límite de tu suscripción de Claude.
+        </template>
+      </p>
+      <p v-else class="docup__notice">
         Cuando un documento sirve para responder, los fragmentos relevantes se envían al proveedor de
         IA configurado, igual que los datos del ERP.
       </p>
@@ -251,6 +301,18 @@ const STATE_LABELS: Record<ItemState, string> = {
 .docup {
   display: grid;
   gap: var(--space-4);
+}
+
+.docup__summary {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+.docup__reading {
+  font-size: 12px;
+  color: var(--text-subtle);
 }
 
 .docup__drop {

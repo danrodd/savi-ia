@@ -8,10 +8,12 @@ import { toast } from '@/lib/toast'
 import CompanyDocumentEditDialog from '../components/CompanyDocumentEditDialog.vue'
 import CompanyDocumentTable from '../components/CompanyDocumentTable.vue'
 import CompanyDocumentUploadDialog from '../components/CompanyDocumentUploadDialog.vue'
+import CompanyKnowledgeSettingsDialog from '../components/CompanyKnowledgeSettingsDialog.vue'
 import DocumentSearchTestDialog from '../components/DocumentSearchTestDialog.vue'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 import { useErpDatabaseStore } from '../stores/erpDatabaseStore'
 import type { CompanyDocument } from '../types'
+import { approxUsd, estimateCost, willReadWithAi } from '../utils/aiReading'
 import { ACCEPT_ATTRIBUTE, checkFile, formatBytes } from '../utils/companyDocuments'
 
 const store = useCompanyDocumentStore()
@@ -19,6 +21,8 @@ const databaseStore = useErpDatabaseStore()
 
 const uploadOpen = ref(false)
 const searchOpen = ref(false)
+const settingsOpen = ref(false)
+const readingWithAi = ref<CompanyDocument | null>(null)
 const editing = ref<CompanyDocument | null>(null)
 const removing = ref<CompanyDocument | null>(null)
 const replacing = ref<CompanyDocument | null>(null)
@@ -63,8 +67,7 @@ const visibleDocuments = computed(() => {
       document.original_filename.toLowerCase().includes(term)
     const group = statusFilter.value
     const matchesStatus =
-      group === 'todos' ||
-      (STATUS_GROUPS[group] as readonly string[]).includes(document.status)
+      group === 'todos' || (STATUS_GROUPS[group] as readonly string[]).includes(document.status)
     return matchesTerm && matchesStatus
   })
 })
@@ -77,6 +80,28 @@ const editOpen = computed({
     if (!open) editing.value = null
   },
 })
+const aiReadingAvailable = computed(() => willReadWithAi(store.aiReading))
+
+const readWithAiOpen = computed({
+  get: () => readingWithAi.value !== null,
+  set: (open: boolean) => {
+    if (!open) readingWithAi.value = null
+  },
+})
+
+/** Confirmación con el costo: releer un documento grande no es gratis. */
+const readWithAiDescription = computed(() => {
+  const document = readingWithAi.value
+  if (!document) return ''
+  const cost = estimateCost(document.page_count, store.aiReading)
+  const pages = document.page_count ? `${document.page_count} páginas` : 'el documento'
+  const price = cost === null ? '' : ` Costo estimado: ${approxUsd(cost)}.`
+  return (
+    `Se descarta lo leído antes y se vuelven a leer ${pages} con ${store.aiReading?.provider_name ?? 'IA'}.` +
+    price
+  )
+})
+
 const removeOpen = computed({
   get: () => removing.value !== null,
   set: (open: boolean) => {
@@ -134,6 +159,19 @@ function onReprocess(document: CompanyDocument): void {
   })
 }
 
+async function onConfirmReadWithAi(): Promise<void> {
+  const document = readingWithAi.value
+  if (!document) return
+  await withBusy(document, async () => {
+    try {
+      await store.readWithAi(document.id)
+      toast.success(`${document.title} se está leyendo con IA`)
+    } catch (e) {
+      toast.error((e as Error).message || 'No se pudo leer con IA.')
+    }
+  })
+}
+
 async function onConfirmRemove(): Promise<void> {
   const document = removing.value
   if (!document) return
@@ -146,6 +184,7 @@ async function onConfirmRemove(): Promise<void> {
 onMounted(() => {
   void databaseStore.load()
   void store.load()
+  void store.loadAiReading()
   store.startPolling()
 })
 
@@ -163,6 +202,7 @@ onUnmounted(() => store.stopPolling())
         </p>
       </div>
       <div class="kview__actions">
+        <Button variant="ghost" @click="settingsOpen = true">Configuración</Button>
         <Button variant="secondary" :disabled="store.documents.length === 0" @click="searchOpen = true">
           Probar búsqueda
         </Button>
@@ -231,9 +271,11 @@ onUnmounted(() => store.stopPolling())
         :documents="visibleDocuments"
         :database-names="databaseNames"
         :busy-id="busyId"
+        :ai-reading-available="aiReadingAvailable"
         @edit="(document) => (editing = document)"
         @replace="onReplace"
         @reprocess="onReprocess"
+        @read-with-ai="(document) => (readingWithAi = document)"
         @remove="(document) => (removing = document)"
       />
     </template>
@@ -250,6 +292,14 @@ onUnmounted(() => store.stopPolling())
     <CompanyDocumentUploadDialog v-model:open="uploadOpen" :databases="databases" />
     <CompanyDocumentEditDialog v-model:open="editOpen" :document="editing" :databases="databases" />
     <DocumentSearchTestDialog v-model:open="searchOpen" :databases="databases" />
+    <CompanyKnowledgeSettingsDialog v-model:open="settingsOpen" />
+    <ConfirmDialog
+      v-model:open="readWithAiOpen"
+      :title="`Leer con IA: ${readingWithAi?.title ?? ''}`"
+      :description="readWithAiDescription"
+      confirm-label="Leer con IA"
+      :on-confirm="onConfirmReadWithAi"
+    />
     <ConfirmDialog
       v-model:open="removeOpen"
       :title="`Eliminar ${removing?.title ?? ''}`"

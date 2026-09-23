@@ -93,8 +93,8 @@ describe('narrowsAccess', () => {
 describe('checkFile', () => {
   it('rechaza extensiones no soportadas y archivos grandes', () => {
     expect(checkFile(new File(['x'], 'foto.png')).ok).toBe(false)
-    const big = new File([new Uint8Array(21 * 1024 * 1024)], 'manual.pdf')
-    expect(checkFile(big)).toEqual({ ok: false, reason: 'Supera el límite de 20 MB.' })
+    const big = new File([new Uint8Array(61 * 1024 * 1024)], 'manual.pdf')
+    expect(checkFile(big)).toEqual({ ok: false, reason: 'Supera el límite de 60 MB.' })
     expect(checkFile(new File(['# hola'], 'Manual.MD')).ok).toBe(true)
   })
 })

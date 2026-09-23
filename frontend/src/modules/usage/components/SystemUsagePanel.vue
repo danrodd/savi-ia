@@ -20,6 +20,12 @@ const rate = computed(() => store.usdToCopRate)
 
 // Por base CONSULTADA: cuánto costó atender a cada cliente. Un usuario de
 // soporte atiende a varios desde una sola sesión.
+// La lectura de documentos con IA viene aparte del chat (`totals` es solo
+// el chat): el total del sistema los suma, y cada uno se ve por separado.
+const documents = computed(() => store.system?.document_reading ?? null)
+const chatCostUsd = computed(() => store.system?.totals.cost_usd ?? 0)
+const totalCostUsd = computed(() => chatCostUsd.value + (documents.value?.cost_usd ?? 0))
+
 const databaseRows = computed(() =>
   buildDatabaseRows(store.system?.per_database ?? [], databaseStore.databases),
 )
@@ -52,8 +58,12 @@ onMounted(() => {
       <div class="su__cards">
         <article class="su__card su__card--primary">
           <p class="su__card-label">Costo total del sistema</p>
-          <p class="su__card-value">{{ formatCop(store.system.totals.cost_usd, rate) }}</p>
-          <p class="su__card-foot">{{ formatUsd(store.system.totals.cost_usd) }} USD</p>
+          <p class="su__card-value">{{ formatCop(totalCostUsd, rate) }}</p>
+          <p class="su__card-foot">{{ formatUsd(totalCostUsd) }} USD</p>
+          <p v-if="documents && documents.requests > 0" class="su__card-foot">
+            Chat {{ formatCop(chatCostUsd, rate) }} · Documentos
+            {{ formatCop(documents.cost_usd, rate) }}
+          </p>
           <!-- Sin esto, las respuestas de un modelo sin tarifa se suman como
                cero y el total parece completo cuando no lo es. -->
           <p v-if="store.system.totals.untariffed_count > 0" class="su__card-warning">
@@ -72,8 +82,41 @@ onMounted(() => {
         </article>
       </div>
 
+      <section
+        v-if="documents && documents.requests > 0"
+        class="su__ranking"
+        aria-label="Lectura de documentos con IA"
+      >
+        <h2 class="su__section-title">Lectura de documentos con IA</h2>
+        <p v-if="documents.untariffed_count > 0" class="su__card-warning">
+          {{ documents.untariffed_count }}
+          {{ documents.untariffed_count === 1 ? 'lectura' : 'lecturas' }} sin tarifa cargada: el
+          costo real es mayor.
+        </p>
+        <table class="su__table">
+          <thead>
+            <tr>
+              <th scope="col">Modelo</th>
+              <th scope="col" class="su__num">Páginas</th>
+              <th scope="col" class="su__num">Pedidos</th>
+              <th scope="col" class="su__num">Tokens</th>
+              <th scope="col" class="su__num">Costo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in documents.per_model" :key="`${row.provider}-${row.model}`">
+              <td>{{ row.provider }} · <code>{{ row.model }}</code></td>
+              <td class="su__num">{{ formatTokens(row.pages) }}</td>
+              <td class="su__num">{{ formatTokens(row.requests) }}</td>
+              <td class="su__num">{{ formatTokens(row.input_tokens + row.output_tokens) }}</td>
+              <td class="su__num su__num--strong">{{ formatCop(row.cost_usd, rate) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
       <section class="su__ranking" aria-label="Consumo por proveedor">
-        <h2 class="su__section-title">Por proveedor</h2>
+        <h2 class="su__section-title">Chat por proveedor</h2>
         <ProviderBreakdown :rows="store.system.per_provider" :rate="rate" />
       </section>
 

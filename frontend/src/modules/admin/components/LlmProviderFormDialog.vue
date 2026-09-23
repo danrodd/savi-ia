@@ -39,6 +39,8 @@ const credentialKind = ref<LlmCredentialKind>('api_key')
 const credential = ref('')
 const chatModel = ref('')
 const titleModel = ref('')
+// Vacío = lee documentos con el modelo de chat.
+const documentModel = ref('')
 const pricing = ref<Record<string, ModelPricing>>({})
 const models = ref<ProviderModel[]>([])
 const modelSearch = ref('')
@@ -48,7 +50,7 @@ const isLocalSession = computed(
   () => props.provider?.provider === 'claude' && credentialKind.value === 'local_session',
 )
 const selectedModels = computed(() =>
-  [chatModel.value, titleModel.value].filter(
+  [chatModel.value, titleModel.value, documentModel.value].filter(
     (value, index, all) => value && all.indexOf(value) === index,
   ),
 )
@@ -62,6 +64,11 @@ const selectedModels = computed(() =>
 // son los que el proveedor mantiene apuntando al modelo vigente. Es una
 // ayuda, no una lista cerrada — el campo sigue aceptando cualquier ID.
 const CLAUDE_MODEL_HINTS = ['claude-sonnet-5', 'claude-opus-5', 'claude-haiku-4-5'] as const
+
+// Lo que midió el spike: los modelos livianos confundieron un número y un
+// código en una ficha técnica escaneada.
+const DOCUMENT_MODEL_HINT =
+  'Lee los PDF con IA (escaneos, tablas, planos). Conviene un modelo que no confunda números ni códigos: los más livianos a veces lo hacen.'
 
 const modelSuggestions = computed<string[]>(() => {
   const known = new Set<string>()
@@ -89,7 +96,7 @@ const modelFallbackHint = computed(() => {
 // igual para no dejar el select en blanco y perder de vista qué había.
 const catalogModels = computed(() => {
   const known = new Set(models.value.map((model) => model.id))
-  const missing = [chatModel.value, titleModel.value].filter(
+  const missing = [chatModel.value, titleModel.value, documentModel.value].filter(
     (id, index, all) => id && !known.has(id) && all.indexOf(id) === index,
   )
   if (missing.length === 0) return models.value
@@ -115,6 +122,7 @@ function reset(provider: LlmProvider | null): void {
   credential.value = ''
   chatModel.value = provider?.chat_model ?? ''
   titleModel.value = provider?.title_model ?? ''
+  documentModel.value = provider?.document_model ?? ''
   pricing.value = Object.fromEntries(
     Object.entries(provider?.pricing ?? {}).map(([key, value]) => [key, { ...value }]),
   )
@@ -176,6 +184,8 @@ function request(): SaveLlmProviderRequest {
     credential_kind: credentialKind.value,
     chat_model: chatModel.value.trim(),
     title_model: titleModel.value.trim(),
+    // Siempre se manda: vacío le dice al backend "usá el de chat".
+    document_model: documentModel.value.trim(),
     pricing: pricing.value,
   }
   if (credential.value) body.credential = credential.value
@@ -221,11 +231,15 @@ defineExpose({ applyTestResult })
         <p v-if="recommendedModel" class="form__recommendation">Recomendado: <strong>{{ recommendedModel.display_name }}</strong> ({{ recommendedModel.id }}). Puedes cambiarlo manualmente.</p>
         <label>Modelo de chat<select v-model="chatModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
         <label>Modelo de títulos<select v-model="titleModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
+        <label>Modelo de lectura de documentos<select v-model="documentModel"><option value="">El mismo del chat</option><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }} ({{ model.id }})</option></select></label>
+        <p class="form__hint">{{ DOCUMENT_MODEL_HINT }}</p>
         <p v-if="filteredModels.length === 0" class="form__hint">No hay modelos que coincidan con la búsqueda.</p>
       </div>
       <div v-else class="form__models">
         <label>Modelo de chat<input v-model="chatModel" list="savi-model-suggestions" placeholder="ID del modelo" required /></label>
         <label>Modelo de títulos<input v-model="titleModel" list="savi-model-suggestions" placeholder="ID del modelo" required /></label>
+        <label>Modelo de lectura de documentos<input v-model="documentModel" list="savi-model-suggestions" placeholder="Vacío: el mismo del chat" /></label>
+        <p class="form__hint">{{ DOCUMENT_MODEL_HINT }}</p>
         <datalist id="savi-model-suggestions">
           <option v-for="id in modelSuggestions" :key="id" :value="id" />
         </datalist>

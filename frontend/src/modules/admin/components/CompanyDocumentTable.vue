@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CompanyDocument } from '../types'
+import { canReadWithAi, progressLabel, READING_LABELS, readingDetail } from '../utils/aiReading'
 import { formatBytes, isInProgress, visibilityLabel } from '../utils/companyDocuments'
 import CompanyDocumentStatusBadge from './CompanyDocumentStatusBadge.vue'
 
@@ -7,12 +8,15 @@ const props = defineProps<{
   documents: CompanyDocument[]
   databaseNames: Record<string, string>
   busyId: string | null
+  /** La lectura con IA está activa y hay proveedor: se ofrece "Leer con IA". */
+  aiReadingAvailable: boolean
 }>()
 
 const emit = defineEmits<{
   edit: [document: CompanyDocument]
   replace: [document: CompanyDocument]
   reprocess: [document: CompanyDocument]
+  readWithAi: [document: CompanyDocument]
   remove: [document: CompanyDocument]
 }>()
 
@@ -61,6 +65,14 @@ function detail(document: CompanyDocument): string {
           <td>
             <div class="dbtable__name">{{ document.title }}</div>
             <div class="dbtable__sub">{{ detail(document) }}</div>
+            <span
+              v-if="document.reading_method"
+              class="dbtable__tag"
+              :class="`dbtable__tag--${document.reading_method}`"
+              :title="readingDetail(document) ?? undefined"
+            >
+              Leído con {{ READING_LABELS[document.reading_method] }}
+            </span>
           </td>
           <td data-label="Quién lo ve">{{ visibilityLabel(document) }}</td>
           <td class="dbtable__sub" data-label="Bases">{{ scopeLabel(document) }}</td>
@@ -76,7 +88,10 @@ function detail(document: CompanyDocument): string {
                 />
               </span>
               <span class="dbtable__sub">
-                {{ progressOf(document)?.done }} de {{ progressOf(document)?.total }} fragmentos
+                {{
+                  progressLabel(document) ??
+                  `${progressOf(document)?.done} de ${progressOf(document)?.total} fragmentos`
+                }}
               </span>
             </div>
             <div v-if="document.status_message" class="dbtable__sub dbtable__sub--danger">
@@ -112,6 +127,17 @@ function detail(document: CompanyDocument): string {
                 @click="emit('reprocess', document)"
               >
                 Reprocesar
+              </button>
+              <!-- Destacado en "Sin texto": es justo el caso que la IA resuelve. -->
+              <button
+                v-if="aiReadingAvailable && canReadWithAi(document)"
+                type="button"
+                class="dbtable__action"
+                :class="{ 'dbtable__action--primary': document.status === 'no_text' }"
+                :disabled="busyId === document.id"
+                @click="emit('readWithAi', document)"
+              >
+                Leer con IA
               </button>
               <button
                 type="button"
@@ -177,6 +203,16 @@ function detail(document: CompanyDocument): string {
   color: var(--text-muted);
 }
 
+.dbtable__tag {
+  display: inline-block;
+  margin-top: var(--space-1);
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+}
+
 .dbtable__progress {
   display: grid;
   gap: 2px;
@@ -227,6 +263,11 @@ function detail(document: CompanyDocument): string {
 .dbtable__action:hover:not(:disabled) {
   background: var(--surface-subtle);
   color: var(--text);
+}
+
+.dbtable__action--primary {
+  border-color: var(--brand-ring, var(--border));
+  color: var(--brand, var(--text));
 }
 
 .dbtable__action--danger:hover:not(:disabled) {

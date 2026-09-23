@@ -1,7 +1,7 @@
 # Fase 4 — Lectura de PDF con IA
 
 > Parte de: [PRD — Conocimiento de la empresa](00-prd.md)
-> Estado: **propuesta**.
+> Estado: **implementada** (backend `45c5ea2`, frontend en el commit siguiente).
 > Cambio visible: los PDF escaneados, las fichas técnicas y los planos
 > dejan de quedar en "Sin texto". La IA del proveedor configurado los
 > transcribe (texto, tablas y descripción de imágenes) y SAVI responde
@@ -12,17 +12,17 @@
 
 ## Resultado esperado
 
-- [ ] Spike cerrado (§3): envío de PDF y salida estructurada verificados en los tres proveedores, incluido Claude con sesión local y token OAuth.
-- [ ] Interruptor global "Leer PDF con IA" visible en la pantalla de Conocimiento, con proveedor, modelo y costo estimado por página.
-- [ ] Costo estimado del lote en el diálogo de subida, antes de subir.
-- [ ] Lectura por tramos de páginas con el prompt y el esquema de §6, en paralelo acotado y con reintentos.
-- [ ] Respaldo con `pypdf` por tramo cuando la IA falla o no está disponible.
-- [ ] Páginas leídas guardadas: reprocesar no vuelve a pagar y un reinicio retoma donde iba.
-- [ ] Costo de la lectura registrado y visible en el módulo de uso.
-- [ ] Métricas de `pypdf` por página guardadas para decidir la Fase 5 (§11).
-- [ ] Botón "Leer con IA" para documentos existentes.
-- [ ] Límite de tamaño de archivo ajustado para escaneos de celular.
-- [ ] Tests unitarios, de integración y E2E (§12).
+- [ ] Spike cerrado (§3): envío de PDF y salida estructurada verificados en los tres proveedores ✔; **faltan** el token OAuth de Claude y la ronda con el corpus real (S4–S6).
+- [x] Interruptor global "Leer PDF con IA" visible en la pantalla de Conocimiento, con proveedor, modelo y costo estimado por página.
+- [x] Costo estimado del lote en el diálogo de subida, antes de subir.
+- [x] Lectura por tramos de páginas con el prompt y el esquema de §6, en paralelo acotado y con reintentos.
+- [x] Respaldo con `pypdf` por tramo cuando la IA falla o no está disponible.
+- [x] Páginas leídas guardadas: reprocesar no vuelve a pagar y un reinicio retoma donde iba.
+- [x] Costo de la lectura registrado y visible en el módulo de uso.
+- [x] Métricas de `pypdf` por página guardadas para decidir la Fase 5 (§11).
+- [x] Botón "Leer con IA" para documentos existentes.
+- [x] Límite de tamaño de archivo ajustado para escaneos de celular.
+- [ ] Tests (§12): unitarios e integración ✔ (backend 791, frontend 135); verificado en la interfaz real con `gpt-6-luna`. **Falta** el E2E de Playwright versionado (los actuales activan Claude y gastan su cuota).
 
 ---
 
@@ -177,7 +177,7 @@ Worker toma el documento (cola actual, uno a la vez)
   | Proveedor | Envío del tramo | Salida estructurada | Razonamiento |
   |---|---|---|---|
   | Claude | Bloque `document` base64, en modo de entrada en streaming del Agent SDK | `output_format` (`json_schema`); leer `ResultMessage.structured_output` | `thinking={"type": "disabled"}`; `max_turns=3` |
-  | OpenAI | `input_file` con `file_data` base64, en Responses | `text.format` `json_schema` strict | Esfuerzo mínimo que acepte el modelo |
+  | OpenAI | `input_file` con `file_data` base64, en Responses | `text.format` `json_schema` strict | `reasoning.effort = low` (`minimal` no existe en GPT-6; si el modelo no acepta el parámetro, se repite sin él) |
   | Gemini | `Part.from_bytes(..., "application/pdf")` | `response_json_schema` | No enviar `thinking_config`: `thinking_budget=0` devuelve 400 |
 
 - `PipelineDocumentProcessor` gana `process_pages(extracted)`, que
@@ -301,8 +301,8 @@ IA. Cuesta milisegundos por página.
 
 | Método y ruta | Qué hace |
 |---|---|
-| `GET /admin/company-knowledge/settings` | `ai_reading_enabled`, proveedor y modelo de lectura, `available` (hay proveedor usable y el spike lo habilitó para la credencial), `estimated_usd_per_page` (`null` sin precios) y `privacy_notice`. |
-| `PUT /admin/company-knowledge/settings` | Cambia `ai_reading_enabled`. Solo administradores. |
+| `GET /admin/company-documents/ai-reading` | `ai_reading_enabled`, proveedor y modelo de lectura, `available` (hay proveedor usable y el spike lo habilitó para la credencial), `estimated_usd_per_page` (`null` sin precios) y `privacy_notice`. |
+| `PUT /admin/company-documents/ai-reading` | Cambia `ai_reading_enabled`. Solo administradores. |
 | `POST /admin/company-documents/{id}/read-with-ai` | Encola el documento para leerlo con IA **de nuevo**: descarta las páginas `ai` de la versión vigente. |
 | `POST /admin/company-documents/{id}/reprocess` | Sin cambios de contrato. Ahora reutiliza las páginas guardadas. |
 | `GET /admin/company-documents/{id}` | Suma `reading_method`, `ai_page_count` y `ai_cost_usd`. |
@@ -446,9 +446,14 @@ Abre un diálogo con:
 ### 8.4 Módulo de uso
 
 - Nueva fuente **"Lectura de documentos"**, desde
-  `company_document_ai_reads`.
-- Suma al total y a los cortes por proveedor y por modelo. Se muestra
-  separada del chat para que se pueda ver cuánto cuesta cada cosa.
+  `company_document_ai_reads`: `document_reading` en el reporte global,
+  con páginas, pedidos, tokens y costo por proveedor y modelo. Respeta los
+  filtros de período, proveedor, modelo y cliente (por la base de quien
+  subió el documento).
+- **Implementado aparte del chat**: `totals` y los cortes existentes
+  siguen siendo solo del chat, para no mezclar métricas por respuesta. La
+  tarjeta del costo total suma los dos y muestra el desglose "Chat ·
+  Documentos".
 - Se atribuye al administrador que subió el documento.
 - No entra en el ranking de conversaciones.
 

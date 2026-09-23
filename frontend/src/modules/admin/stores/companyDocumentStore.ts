@@ -11,6 +11,7 @@ import { computed, ref } from 'vue'
 
 import { companyDocumentService } from '../services/companyDocumentService'
 import type {
+  AiReadingSettings,
   CompanyDocument,
   CompanyDocumentUsage,
   DocumentPermissions,
@@ -25,6 +26,8 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
   const usage = ref<CompanyDocumentUsage | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  /** `null` hasta cargarla; si falla, la subida sigue funcionando sin estimado. */
+  const aiReading = ref<AiReadingSettings | null>(null)
   let pollTimer: ReturnType<typeof setTimeout> | null = null
   let polling = false
 
@@ -119,6 +122,27 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
     return queued
   }
 
+  async function loadAiReading(): Promise<void> {
+    try {
+      aiReading.value = await companyDocumentService.aiReadingSettings()
+    } catch {
+      aiReading.value = null
+    }
+  }
+
+  async function setAiReading(enabled: boolean): Promise<AiReadingSettings> {
+    const saved = await companyDocumentService.updateAiReadingSettings(enabled)
+    aiReading.value = saved
+    return saved
+  }
+
+  async function readWithAi(id: string): Promise<CompanyDocument> {
+    const queued = await companyDocumentService.readWithAi(id)
+    upsert(queued)
+    scheduleNextPoll()
+    return queued
+  }
+
   async function remove(id: string): Promise<void> {
     await companyDocumentService.remove(id)
     documents.value = documents.value.filter((d) => d.id !== id)
@@ -129,6 +153,7 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
     usage,
     loading,
     error,
+    aiReading,
     hasInProgress,
     load,
     refresh,
@@ -138,6 +163,9 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
     update,
     replace,
     reprocess,
+    readWithAi,
+    loadAiReading,
+    setAiReading,
     remove,
   }
 })

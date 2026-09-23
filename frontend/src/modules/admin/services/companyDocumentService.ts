@@ -1,5 +1,6 @@
 import { HttpClient } from '@/lib/HttpClient'
 import type {
+  AiReadingSettings,
   CompanyDocument,
   CompanyDocumentUsage,
   DocumentPermissions,
@@ -42,6 +43,19 @@ class CompanyDocumentService {
 
   reprocess(id: string): Promise<CompanyDocument> {
     return this.http.post<CompanyDocument>(`/${id}/reprocess`)
+  }
+
+  /** Descarta lo leído con IA de la versión vigente y lo vuelve a leer. */
+  readWithAi(id: string): Promise<CompanyDocument> {
+    return this.http.post<CompanyDocument>(`/${id}/read-with-ai`)
+  }
+
+  aiReadingSettings(): Promise<AiReadingSettings> {
+    return this.http.get<AiReadingSettings>('/ai-reading')
+  }
+
+  updateAiReadingSettings(enabled: boolean): Promise<AiReadingSettings> {
+    return this.http.put<AiReadingSettings>('/ai-reading', { ai_reading_enabled: enabled })
   }
 
   remove(id: string): Promise<void> {

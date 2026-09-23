@@ -103,5 +103,10 @@ Coinciden con la estimación de §2, salvo Gemini, que salió más barato
 - Corpus real (S4, S5 y S6): fotos de celular reales, fichas técnicas,
   planos y PDF digitales para medir omisiones.
 - Token OAuth de Claude.
-- Esfuerzo de razonamiento mínimo en OpenAI y su efecto en la fidelidad.
+- ~~Esfuerzo de razonamiento mínimo en OpenAI~~: probado con `gpt-6-luna`.
+  `minimal` devuelve 400 (acepta `none`, `low`, `medium`, `high`, `xhigh`,
+  `max`). Con `none` y con `low` siguió leyendo mal el código de referencia
+  (con `none` coló una letra cirílica: "SE-BС450"); `low` cuesta ~15 % más.
+  Se usa `low`. El error es del modelo, no del razonamiento: para fichas
+  técnicas conviene otro `document_model`.
 - Desactivar la caché de 1 hora en el Agent SDK.

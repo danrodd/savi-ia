@@ -69,6 +69,30 @@ export interface UserUsageReport {
   usd_to_cop_rate: number
 }
 
+/** Lectura de PDF con IA de un (proveedor, modelo). */
+export interface DocumentReadingModelUsage {
+  provider: string
+  model: string
+  requests: number
+  /** Páginas que la IA devolvió; los pedidos que cayeron a pypdf no suman. */
+  pages: number
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+  untariffed_count: number
+}
+
+/** Gasto de leer documentos con IA. NO está incluido en `totals` (que es el chat). */
+export interface DocumentReadingUsage {
+  requests: number
+  pages: number
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+  untariffed_count: number
+  per_model: DocumentReadingModelUsage[]
+}
+
 export interface SystemUsageReport {
   period_start: string
   period_end: string
@@ -78,6 +102,8 @@ export interface SystemUsageReport {
   per_provider: ProviderUsage[]
   daily_by_provider: DailyProviderUsage[]
   per_database: DatabaseUsage[]
+  /** Opcional: un backend anterior a la lectura con IA no lo manda. */
+  document_reading?: DocumentReadingUsage
   usd_to_cop_rate: number
 }
 

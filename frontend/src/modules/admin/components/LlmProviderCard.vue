@@ -4,6 +4,7 @@ import {
   CircleDashed,
   CircleDollarSign,
   Clock,
+  FileText,
   FlaskConical,
   KeyRound,
   MessageSquare,
@@ -72,6 +73,10 @@ const missingPrice = computed(
         <div class="provider-card__model-row">
           <span class="provider-card__model-tag"><Type :size="12" aria-hidden="true" /> Títulos</span>
           <code class="provider-card__model-id">{{ provider.title_model ?? 'No definido' }}</code>
+        </div>
+        <div class="provider-card__model-row">
+          <span class="provider-card__model-tag"><FileText :size="12" aria-hidden="true" /> Documentos</span>
+          <code class="provider-card__model-id">{{ provider.document_model ?? provider.chat_model ?? 'No definido' }}</code>
         </div>
       </div>
       <div class="provider-card__status-row">

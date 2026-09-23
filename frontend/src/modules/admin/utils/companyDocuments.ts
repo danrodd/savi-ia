@@ -15,7 +15,8 @@ import type {
   ExclusionReason,
 } from '../types'
 
-export const MAX_FILE_MB = 20
+// Mismo límite que el backend: un PDF de fotos del celular pesa 1-5 MB por página.
+export const MAX_FILE_MB = 60
 export const ACCEPTED_EXTENSIONS = ['.pdf', '.txt', '.md', '.markdown'] as const
 export const ACCEPT_ATTRIBUTE = ACCEPTED_EXTENSIONS.join(',')
 
