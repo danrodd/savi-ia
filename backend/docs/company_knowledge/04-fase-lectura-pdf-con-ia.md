@@ -88,10 +88,15 @@ septiembre de 2026, en USD por millón de tokens.
 - La salida es la parte que más pesa.
 - Un manual digital de 500 páginas cuesta ~US$0,30 con `gpt-6-luna` y
   ~US$3 con Haiku.
-- Se usa el **modelo liviano** configurado del proveedor (el campo
-  `title_model`: Haiku, `gpt-6-luna`, Flash-Lite). Si el spike (§3)
-  muestra que no alcanza la calidad, se agrega un campo propio
-  `document_model` en `llm_provider_configs`.
+- **Modelo de lectura**: campo propio `document_model` en
+  `llm_provider_configs`, que por defecto toma el `chat_model`. En la
+  primera ronda del spike, Haiku cambió "4.000" por "4 000" y
+  `gpt-6-luna` leyó mal un código de referencia
+  ([spike](spike-lectura-ia.md)). Con Claude, el valor por defecto es
+  Sonnet. El administrador puede elegir un modelo más barato sabiendo el
+  riesgo.
+- Costos reales de la primera ronda por 100 páginas: `gpt-6-luna`
+  ~US$0,06, Flash-Lite ~US$0,07, Haiku ~US$0,68 y Sonnet 5 ~US$1,02.
 - **Hallazgo de configuración:** en la instalación de desarrollo, Claude
   no tiene precios cargados (`pricing = {}`). Sin precios, la lectura se
   registra con costo desconocido, igual que hoy el chat. La pantalla lo
@@ -119,7 +124,12 @@ Preguntas que el spike responde, por proveedor:
 | S5 | ¿Cuánto cuesta y tarda de verdad? | Tokens y segundos por página reales, para corregir la tabla de §2 y el estimador (§8.2). |
 | S6 | Tramo máximo | Páginas y MB por pedido sin errores ni timeouts. Punto de partida: 5 páginas u 8 MB. |
 
-Resultado en `spike-lectura-ia.md` en esta carpeta.
+Resultado en [`spike-lectura-ia.md`](spike-lectura-ia.md).
+
+**Estado tras la primera ronda (documento sintético):**
+- S1 y S3 resueltos en los tres proveedores.
+- S2 resuelto para la sesión local; falta confirmar el token OAuth.
+- S4, S5 y S6 esperan el corpus real.
 
 ## 4. Flujo
 
@@ -162,6 +172,14 @@ Worker toma el documento (cola actual, uno a la vez)
   `ActiveProviderResolver` actual. Siguen el patrón de los generadores de
   título (`chat/infrastructure/llm/*/title_generator.py`): llamada única,
   sin herramientas, credencial solo en memoria.
+- Parámetros por proveedor, según el spike:
+
+  | Proveedor | Envío del tramo | Salida estructurada | Razonamiento |
+  |---|---|---|---|
+  | Claude | Bloque `document` base64, en modo de entrada en streaming del Agent SDK | `output_format` (`json_schema`); leer `ResultMessage.structured_output` | `thinking={"type": "disabled"}`; `max_turns=3` |
+  | OpenAI | `input_file` con `file_data` base64, en Responses | `text.format` `json_schema` strict | Esfuerzo mínimo que acepte el modelo |
+  | Gemini | `Part.from_bytes(..., "application/pdf")` | `response_json_schema` | No enviar `thinking_config`: `thinking_budget=0` devuelve 400 |
+
 - `PipelineDocumentProcessor` gana `process_pages(extracted)`, que
   recibe un `ExtractedText` ya armado y hace solo fragmentación y
   embeddings. `process()` sigue igual para TXT y MD.
@@ -212,6 +230,12 @@ Worker toma el documento (cola actual, uno a la vez)
 | `reading_method` | `String(8)` NULL | `text` \| `ai` \| `mixed`. Se calcula al terminar. |
 | `ai_page_count` | `Integer` default 0 | |
 | `ai_cost_usd` | `Numeric` NULL | Suma de la versión vigente. |
+
+**`llm_provider_configs`** (columna nueva)
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `document_model` | `String` NULL | Modelo de lectura de documentos. `NULL` = usar `chat_model`. Se edita en la pantalla de proveedores, junto a los otros dos modelos. |
 
 **`company_knowledge_settings`** (nueva, una sola fila)
 
@@ -306,7 +330,8 @@ Tu tarea es TRANSCRIBIR, no resumir ni interpretar. Reglas:
    de lectura, en el idioma original.
 2. Copia números, unidades, códigos, referencias, fechas y nombres
    exactamente como aparecen. No redondees, no conviertas unidades y no
-   corrijas nada.
+   corrijas nada. Conserva los separadores de miles y decimales tal cual
+   (4.000 se escribe 4.000; 3,7 se escribe 3,7).
 3. Convierte las tablas a tablas Markdown y conserva los encabezados de
    columna. Si una tabla sigue en la página siguiente, repite los
    encabezados.
@@ -314,7 +339,8 @@ Tu tarea es TRANSCRIBIR, no resumir ni interpretar. Reglas:
 5. Describe cada imagen, diagrama, plano o gráfico en un bloque
    "[Imagen: ...]": qué muestra, sus etiquetas, medidas, valores y
    relaciones que sirvan para responder preguntas. No describas logos ni
-   adornos.
+   adornos. Omite las marcas de agua de las aplicaciones de escaneo (por
+   ejemplo, "Escaneado con CamScanner").
 6. En formularios, escribe "Campo: valor" y marca las casillas como
    [x] o [ ].
 7. Si una parte no se lee, escribe [ilegible]. Si la página entera no se
@@ -388,6 +414,10 @@ Abre un diálogo con:
 - El aviso de privacidad (§7).
 - Si `available = false`: interruptor deshabilitado y el motivo (sin
   proveedor activo o credencial no compatible).
+- Con Claude por sesión local o token OAuth: *"La lectura consume el
+  límite de tu suscripción de Claude. Una carga grande puede dejar el chat
+  sin servicio hasta que el límite se renueve."* El costo se muestra como
+  referencia de precio de lista.
 
 ### 8.2 Diálogo de subida (`CompanyDocumentUploadDialog.vue`)
 
