@@ -472,3 +472,34 @@ def test_record_mode_with_the_key_filter_compiles() -> None:
     compilada = compile_query(query, ENTIDAD)
 
     assert "F-001" in compilada.params.values()
+
+
+# ── `contiene` busca palabras, no la frase literal ────────────────────────
+
+
+def test_contains_matches_every_word_ignoring_articles() -> None:
+    """ "aceite de motor" tiene que encontrar "ACEITE MOTOR 15W40"."""
+    query = _agregado(filtros=[QueryFilter("cliente", FilterOp.CONTAINS, "aceite de motor")])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert set(compilada.params.values()) == {"%aceite%", "%motor%"}
+    assert compilada.sql.count("ILIKE") == 2
+    assert " AND " in compilada.sql
+
+
+def test_contains_drops_the_plural() -> None:
+    """ "tornillos" tiene que encontrar "TORNILLO MAD 6 * 2"."""
+    query = _agregado(filtros=[QueryFilter("cliente", FilterOp.CONTAINS, "tornillos")])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert list(compilada.params.values()) == ["%tornillo%"]
+
+
+def test_contains_with_only_stopwords_keeps_the_raw_value() -> None:
+    query = _agregado(filtros=[QueryFilter("cliente", FilterOp.CONTAINS, "de")])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert list(compilada.params.values()) == ["%de%"]

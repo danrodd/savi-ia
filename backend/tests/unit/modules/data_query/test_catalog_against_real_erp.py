@@ -420,3 +420,46 @@ async def test_ventas_by_client_name_matches_the_chained_lookup(
         )
 
     assert float(por_nombre[0]["monto_total"]) == pytest.approx(float(esperado))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("erp", "busqueda", "patron"),
+    [
+        ("frami", "tornillos", "%TORNILLO%"),
+        ("sur_andina", "aceite de motor", "%ACEITE%MOTOR%"),
+    ],
+)
+async def test_product_search_by_words_matches_how_users_ask(
+    erp_engine: AsyncEngine, erp_name: str, erp: str, busqueda: str, patron: str
+) -> None:
+    """Como pregunta la gente contra cómo están escritos los productos.
+
+    Con la frase literal, "tornillos" en frami traía 49 unidades (solo los
+    productos escritos en plural) en vez de 395.507, y "aceite de motor"
+    en sur_andina no traía nada.
+    """
+    if erp_name != erp:
+        pytest.skip("el caso es propio de otro cliente")
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="ventas_detalle",
+            modo=QueryMode.AGGREGATE,
+            metricas=["unidades"],
+            filtros=[QueryFilter("producto", FilterOp.CONTAINS, busqueda)],
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        esperado = await conn.scalar(
+            text(
+                'SELECT SUM(d.cantidad) FROM "CuentaCobrar"."Factura" f '
+                'JOIN "CuentaCobrar"."DetalleFactura" d ON d."idFactura" = f."idFactura" '
+                'JOIN "Inventario"."Producto" p ON p."idProducto" = d."idProducto" '
+                "WHERE f.anulada = false AND p.descripcion ILIKE :p"
+            ),
+            {"p": patron},
+        )
+
+    assert esperado
+    assert float(rows[0]["unidades"]) == pytest.approx(float(esperado))

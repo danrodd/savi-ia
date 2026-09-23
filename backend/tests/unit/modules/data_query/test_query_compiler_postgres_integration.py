@@ -11,6 +11,7 @@ Se salta si no hay un Postgres alcanzable en `localhost:5432` con
 `postgres`/`1234` (mismo host que `test_postgres_connection_tester.py`).
 Crea y borra su propia tabla de prueba; no toca ninguna base de un cliente.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -47,9 +48,7 @@ _ENTIDAD = SemanticEntity(
     metrics={"total": MetricDef("total", "SUM(total)", "Total")},
     filters={
         "fecha": FilterDef("fecha", '"fecha"', (FilterOp.GTE, FilterOp.BETWEEN), value_type="date"),
-        "cliente_id": FilterDef(
-            "cliente_id", '"cliente_id"', (FilterOp.EQ,), value_type="number"
-        ),
+        "cliente_id": FilterDef("cliente_id", '"cliente_id"', (FilterOp.EQ,), value_type="number"),
         "activo": FilterDef("activo", '"activo"', (FilterOp.EQ,), value_type="bool"),
     },
 )
@@ -59,8 +58,12 @@ _ENTIDAD = SemanticEntity(
 async def temp_table() -> AsyncIterator[AsyncEngine]:
     try:
         admin = await asyncpg.connect(
-            host=_HOST, port=_PORT, user=_USER, password=_PASSWORD,
-            database="postgres", timeout=3,
+            host=_HOST,
+            port=_PORT,
+            user=_USER,
+            password=_PASSWORD,
+            database="postgres",
+            timeout=3,
         )
     except Exception as e:  # noqa: BLE001
         pytest.skip(f"No hay Postgres alcanzable en {_HOST}:{_PORT}: {e}")
@@ -68,9 +71,7 @@ async def temp_table() -> AsyncIterator[AsyncEngine]:
     await admin.execute(f'CREATE DATABASE "{name}"')
     await admin.close()
 
-    engine = create_async_engine(
-        f"postgresql+asyncpg://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{name}"
-    )
+    engine = create_async_engine(f"postgresql+asyncpg://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{name}")
     async with engine.begin() as conn:
         # Los tipos importan: `bigint` y `boolean` son justo donde asyncpg
         # rechaza un string, igual que `date`.
@@ -90,8 +91,12 @@ async def temp_table() -> AsyncIterator[AsyncEngine]:
     finally:
         await engine.dispose()
         admin = await asyncpg.connect(
-            host=_HOST, port=_PORT, user=_USER, password=_PASSWORD,
-            database="postgres", timeout=3,
+            host=_HOST,
+            port=_PORT,
+            user=_USER,
+            password=_PASSWORD,
+            database="postgres",
+            timeout=3,
         )
         await admin.execute(f'DROP DATABASE "{name}" WITH (FORCE)')
         await admin.close()

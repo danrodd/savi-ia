@@ -255,7 +255,10 @@ def _compile_filter(
             return _whole_day_scalar(col, flt.op, valor, pc)
         return f"{col} {_SCALAR_OPS[flt.op]} {pc.add(valor)}"
     if flt.op == FilterOp.CONTAINS:
-        return f"{col} ILIKE {pc.add(f'%{valor}%')}"
+        terms = _search_terms(str(valor))
+        if len(terms) == 1:
+            return f"{col} ILIKE {pc.add(f'%{terms[0]}%')}"
+        return "(" + " AND ".join(f"{col} ILIKE {pc.add(f'%{t}%')}" for t in terms) + ")"
     if flt.op == FilterOp.BETWEEN:
         if not isinstance(valor, (list, tuple)):
             raise InvalidQueryError(f"El filtro '{flt.campo}' con 'entre' requiere [inicio, fin].")
@@ -278,6 +281,37 @@ def _compile_filter(
         placeholders = ", ".join(pc.add(v) for v in values)
         return f"{col} IN ({placeholders})"
     raise InvalidQueryError(f"Operador no soportado: {flt.op}")
+
+
+# Palabras que el usuario escribe pero los nombres del ERP no llevan
+# ("aceite DE motor" contra "ACEITE MOTOR 15W40").
+_STOPWORDS = frozenset(
+    {"de", "del", "la", "las", "el", "los", "y", "en", "para", "por", "con", "a", "al"}
+)
+
+
+def _stem(word: str) -> str:
+    """Quita el plural: el usuario pregunta por "tornillos" y el producto
+    se llama "TORNILLO MAD 6 * 2". La raíz es substring de ambas formas."""
+    if len(word) > 5 and word.endswith("es"):
+        return word[:-2]
+    if len(word) > 4 and word.endswith("s"):
+        return word[:-1]
+    return word
+
+
+def _search_terms(value: str) -> list[str]:
+    """`contiene` busca PALABRAS, no la frase literal.
+
+    Con la frase literal, "tornillos" no matcheaba "TORNILLO MAD" y
+    "aceite de motor" no matcheaba "ACEITE MOTOR 15W40": el modelo
+    respondía que no había ventas, o sumaba solo los productos escritos
+    en plural. Cada palabra (sin artículos, sin plural) tiene que aparecer,
+    en cualquier orden.
+    """
+    words = [w for w in value.lower().split() if w not in _STOPWORDS]
+    terms = [_stem(w) for w in words]
+    return terms or [value]
 
 
 def _is_whole_day(value: Any) -> bool:
