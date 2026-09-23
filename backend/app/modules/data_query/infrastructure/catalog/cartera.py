@@ -105,6 +105,11 @@ CARTERA = SemanticEntity(
         "nada. Siempre: (a) agrupá por la dimensión 'lado', o (b) filtrá "
         "por 'lado' si el usuario pidió una sola punta. Si la pregunta no "
         "aclara cuál quiere, devolvé el desglose por 'lado' y que elija.\n"
+        "El filtro 'lado' usa SIEMPRE el operador 'contiene', con una "
+        "palabra suelta: 'clientes' o 'proveedores'. Sus valores son "
+        "etiquetas largas ('Por cobrar a clientes', 'Notas crédito a "
+        "clientes', 'Por pagar a proveedores'), así que no las escribas "
+        "completas.\n"
         "Para las ventas facturadas usá 'ventas', que es otra cosa."
     ),
     joins={
@@ -165,7 +170,15 @@ CARTERA = SemanticEntity(
         # usuario pide una sola punta ("cuánto nos deben los clientes").
         # Sin este filtro tenía que conocer los enteros de `tipoDocumento`,
         # y terminaba devolviendo el total mezclado.
-        "lado": FilterDef("lado", f"({_LADO_LABEL})", (FilterOp.EQ, FilterOp.CONTAINS)),
+        #
+        # SOLO 'contiene', nunca '=': los valores son etiquetas largas
+        # ("Por pagar a proveedores") y el modelo filtraba por 'proveedores'
+        # a secas. Con '=' eso devolvía CERO EN SILENCIO — medido con
+        # gpt-6-luna, que respondió "no hay facturas pendientes a
+        # proveedores" habiendo $9.120 millones. Un filtro que no matchea
+        # tiene que fallar fuerte, no devolver vacío: sin '=' el compilador
+        # rechaza con la lista de operadores válidos y el modelo corrige.
+        "lado": FilterDef("lado", f"({_LADO_LABEL})", (FilterOp.CONTAINS,)),
         "tipo_documento": FilterDef(
             "tipo_documento",
             'ft."tipoDocumento"',

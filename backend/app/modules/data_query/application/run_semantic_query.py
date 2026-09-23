@@ -93,8 +93,13 @@ def _format_result(result: QueryResult, labels: dict[str, str]) -> str:
 
     note = ""
     if result.truncated:
+        # El aviso tiene que decir QUÉ HACER, no solo que se cortó: sin la
+        # instrucción, el modelo sumaba las filas visibles y presentaba ese
+        # subtotal como el total del negocio.
         note = (
-            f"\n\n_(Mostrando los primeros {result.row_count}. Para ver algo "
-            "puntual, dame un criterio más específico.)_"
+            f"\n\n_(Se cortó en {result.row_count} filas y hay más. NO sumes "
+            "estas filas para dar un total: ese número sería solo de esta "
+            "página. Para totales usá modo 'agregado' con métricas, o afiná "
+            "los filtros para acotar la búsqueda.)_"
         )
     return table + note

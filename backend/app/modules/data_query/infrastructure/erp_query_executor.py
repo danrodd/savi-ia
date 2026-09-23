@@ -41,6 +41,13 @@ async def execute_compiled(
                 break
             rows.append(dict(row))
 
+    # Llegar justo al LIMIT significa que casi con seguridad hay más filas.
+    # Sin esta marca el modelo recibe N filas sin saber que se cortaron,
+    # suma esa página y la presenta como total — medido: $82 M sobre 19
+    # documentos cuando el total real eran $9.120 M sobre 1.491.
+    if compiled.limit is not None and len(rows) >= compiled.limit:
+        truncated = True
+
     columns = list(rows[0].keys()) if rows else []
     return QueryResult(
         entidad=entidad,

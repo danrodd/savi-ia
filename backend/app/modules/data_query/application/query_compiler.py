@@ -53,6 +53,12 @@ class CompiledQuery:
     sql: str
     params: dict[str, Any] = field(default_factory=_empty_params)
     select_labels: dict[str, str] = field(default_factory=_empty_labels)  # alias → label
+    # LIMIT aplicado. Viaja hasta el executor para poder avisar cuando el
+    # resultado se cortó: sin esto, el modelo recibe N filas sin saber si
+    # son todas, suma esa página y la presenta como total. Medido: con
+    # `gpt-6-luna`, "pendientes a proveedores" reportó $82 M sobre 19
+    # documentos cuando el total real eran $9.120 M sobre 1.491.
+    limit: int | None = None
 
 
 class _ParamCounter:
@@ -337,9 +343,10 @@ def _compile_aggregate(query: SemanticQuery, entity: SemanticEntity) -> Compiled
     if group_exprs:
         sql += "\nGROUP BY " + ", ".join(group_exprs)
     sql += _order_clause(query, valid_aliases)
-    sql += f"\nLIMIT {_clamp(query.limite, entity.aggregate_max_rows)}"
+    limite = _clamp(query.limite, entity.aggregate_max_rows)
+    sql += f"\nLIMIT {limite}"
 
-    return CompiledQuery(sql=sql, params=pc.params, select_labels=labels)
+    return CompiledQuery(sql=sql, params=pc.params, select_labels=labels, limit=limite)
 
 
 def _compile_detail(query: SemanticQuery, entity: SemanticEntity) -> CompiledQuery:
@@ -362,9 +369,10 @@ def _compile_detail(query: SemanticQuery, entity: SemanticEntity) -> CompiledQue
     if where:
         sql += f"\nWHERE {where}"
     sql += _order_clause(query, set(fields))
-    sql += f"\nLIMIT {_clamp(query.limite, entity.detail_max_rows)}"
+    limite = _clamp(query.limite, entity.detail_max_rows)
+    sql += f"\nLIMIT {limite}"
 
-    return CompiledQuery(sql=sql, params=pc.params, select_labels=labels)
+    return CompiledQuery(sql=sql, params=pc.params, select_labels=labels, limit=limite)
 
 
 def _compile_record(query: SemanticQuery, entity: SemanticEntity) -> CompiledQuery:

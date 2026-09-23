@@ -171,6 +171,22 @@ def test_limit_is_capped_by_the_entity() -> None:
     assert "LIMIT 100" in compilada.sql
 
 
+def test_the_applied_limit_travels_with_the_query() -> None:
+    """El executor lo necesita para avisar que el resultado se cortó.
+
+    Sin esto el modelo recibía N filas sin saber si eran todas, sumaba esa
+    página y la presentaba como total del negocio — medido: $82 M sobre 19
+    documentos cuando el total real eran $9.120 M sobre 1.491.
+    """
+    assert compile_query(_agregado(limite=99999), ENTIDAD).limit == 100
+    assert compile_query(_agregado(limite=5), ENTIDAD).limit == 5
+
+    detalle = SemanticQuery(
+        entidad="ventas", modo=QueryMode.DETAIL, campos=["numero"], limite=99999
+    )
+    assert compile_query(detalle, ENTIDAD).limit == 30
+
+
 def test_detail_mode_has_its_own_cap() -> None:
     query = SemanticQuery(entidad="ventas", modo=QueryMode.DETAIL, campos=["numero"], limite=99999)
 
