@@ -6,6 +6,7 @@ nombre, id e indicadores de rol. El `id` se expone para que el agente
 pueda encadenar: buscar cliente por nombre → obtener id → consultar
 ventas filtrando por ese id.
 """
+
 from __future__ import annotations
 
 from app.modules.data_query.domain.semantic_model import (
@@ -16,11 +17,9 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
+from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
 
-_NAME = (
-    'COALESCE(NULLIF(t."nombreComercial", \'\'), t."razonSocial", '
-    'NULLIF(TRIM(CONCAT_WS(\' \', t."primerNombre", t."primerApellido")), \'\'))'
-)
+_NAME = tercero_display_name()
 
 
 TERCEROS = SemanticEntity(
@@ -49,9 +48,7 @@ TERCEROS = SemanticEntity(
     filters={
         "nombre": FilterDef("nombre", _NAME, (FilterOp.CONTAINS,)),
         "id": FilterDef("id", 't."idTercero"', (FilterOp.EQ,), value_type="number"),
-        "es_cliente": FilterDef(
-            "es_cliente", 't."cliente"', (FilterOp.EQ,), value_type="bool"
-        ),
+        "es_cliente": FilterDef("es_cliente", 't."cliente"', (FilterOp.EQ,), value_type="bool"),
         "es_proveedor": FilterDef(
             "es_proveedor", 't."proveedor"', (FilterOp.EQ,), value_type="bool"
         ),

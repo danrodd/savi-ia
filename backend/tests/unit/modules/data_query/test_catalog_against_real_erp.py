@@ -16,6 +16,7 @@ las del `.env` del desarrollador (la suite las pisa a propósito en
 
 Solo hace SELECT: no escribe nada.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -40,12 +41,21 @@ _HOST = "localhost"
 _PORT = 5432
 _USER = "postgres"
 _PASSWORD = "1234"
-_DATABASE = "farmacias_similares"
+# Un ERP por cliente. El catálogo es UNO para todos, así que tiene que
+# funcionar contra los tres: cuando corría solo contra farmacias_similares
+# se escaparon dos bugs que solo existían en los otros (nombres vacíos de
+# personas naturales y un `tipoDocumento` sin mapear).
+_DATABASES = ("farmacias_similares", "frami", "sur_andina")
+
+
+@pytest.fixture(params=_DATABASES)
+def erp_name(request: pytest.FixtureRequest) -> str:
+    return str(request.param)
 
 
 @pytest_asyncio.fixture
-async def erp_engine() -> AsyncIterator[AsyncEngine]:
-    url = f"postgresql+asyncpg://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{_DATABASE}"
+async def erp_engine(erp_name: str) -> AsyncIterator[AsyncEngine]:
+    url = f"postgresql+asyncpg://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{erp_name}"
     # `NullPool`: cada test de pytest-asyncio corre en su propio event loop y
     # una conexión pooleada de asyncpg no sobrevive el cambio — se cae con
     # "connection was closed in the middle of operation".
@@ -114,7 +124,9 @@ async def test_ventas_detalle_by_product_runs_with_its_joins(
 
 
 @pytest.mark.asyncio
-async def test_cartera_splits_receivables_from_payables(erp_engine: AsyncEngine) -> None:
+async def test_cartera_splits_receivables_from_payables(
+    erp_engine: AsyncEngine, erp_name: str
+) -> None:
     """El caso que motivó la entidad: "cartera vencida" daba números
     distintos según el proveedor de IA porque cada uno decidía por su
     cuenta si incluía las cuentas por pagar. Agrupada por `lado`, la
@@ -134,7 +146,9 @@ async def test_cartera_splits_receivables_from_payables(erp_engine: AsyncEngine)
     assert "Por pagar a proveedores" in lados
     # Las notas crédito NO se suman a lo por cobrar: tienen saldo positivo
     # pero reducen la deuda del cliente, así que van en su propio bucket.
-    assert "Notas crédito a clientes" in lados
+    # Solo farmacias_similares emite notas crédito con saldo vivo.
+    if erp_name == "farmacias_similares":
+        assert "Notas crédito a clientes" in lados
     assert all(float(r["saldo_vencido"]) >= 0 for r in rows)
 
 
@@ -193,3 +207,39 @@ async def test_terceros_with_a_boolean_filter_runs(erp_engine: AsyncEngine) -> N
 
     assert rows
     assert int(rows[0]["cantidad"]) > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("entidad", "dimension", "metrica"),
+    [
+        ("ventas", "cliente", "monto_total"),
+        ("cartera", "tercero", "saldo"),
+    ],
+)
+async def test_every_tercero_resolves_to_a_name(
+    erp_engine: AsyncEngine, entidad: str, dimension: str, metrica: str
+) -> None:
+    """Ningún tercero agrupado queda sin nombre.
+
+    El ERP guarda los campos vacíos como '' y no como NULL. Cuando el
+    nombre no saltaba un `razonSocial` vacío, las personas naturales
+    resolvían a '' y el GROUP BY las fundía en una sola fila: en frami esa
+    fila "sin nombre" era el cliente #1 con el 61% de la facturación.
+    """
+    query = SemanticQuery(
+        entidad=entidad,
+        modo=QueryMode.AGGREGATE,
+        metricas=[metrica],
+        dimensiones=[dimension],
+        filtros=(
+            [QueryFilter("lado", FilterOp.CONTAINS, "clientes")] if entidad == "cartera" else []
+        ),
+        limite=1000,
+    )
+
+    rows = await _run(erp_engine, query)
+
+    assert rows
+    sin_nombre = [r for r in rows if not str(r[dimension] or "").strip()]
+    assert not sin_nombre, f"terceros sin nombre: {sin_nombre[:3]}"

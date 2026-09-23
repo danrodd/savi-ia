@@ -10,10 +10,10 @@ de joins (que inflaría las sumas):
 - `ventas_detalle`: grano LÍNEA. Unidades y montos por producto/sucursal.
   El join 1:N a DetalleFactura es necesario y aquí es el grano correcto.
 
-Nombre del cliente: COALESCE(NULLIF(nombreComercial,''), razonSocial,
-primerNombre||' '||primerApellido) — gotcha de DB_MAP: nombreComercial
-puede ser ''.
+Nombre del cliente: ver `_names.tercero_display_name` — el ERP guarda los
+campos vacíos como '' y hay que saltarlos todos.
 """
+
 from __future__ import annotations
 
 from app.modules.data_query.domain.semantic_model import (
@@ -25,11 +25,9 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
+from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
 
-_CLIENTE_NAME = (
-    'COALESCE(NULLIF(t."nombreComercial", \'\'), t."razonSocial", '
-    'NULLIF(TRIM(CONCAT_WS(\' \', t."primerNombre", t."primerApellido")), \'\'))'
-)
+_CLIENTE_NAME = tercero_display_name()
 
 _DATE = (FilterOp.BETWEEN, FilterOp.GTE, FilterOp.LTE, FilterOp.EQ)
 
@@ -54,9 +52,7 @@ VENTAS = SemanticEntity(
     metrics={
         "monto_total": MetricDef("monto_total", 'SUM(f."total")', "Total facturado"),
         "num_facturas": MetricDef("num_facturas", "COUNT(*)", "Cantidad de facturas"),
-        "ticket_promedio": MetricDef(
-            "ticket_promedio", 'AVG(f."total")', "Ticket promedio"
-        ),
+        "ticket_promedio": MetricDef("ticket_promedio", 'AVG(f."total")', "Ticket promedio"),
         "iva_total": MetricDef("iva_total", 'SUM(f."valorImpuestoIva")', "IVA recaudado"),
         "descuento_total": MetricDef(
             "descuento_total", 'SUM(f."descuento")', "Descuentos otorgados"
@@ -67,9 +63,7 @@ VENTAS = SemanticEntity(
         "dia": DimensionDef("dia", "DATE_TRUNC('day', f.\"fecha\")", "Día"),
         "mes": DimensionDef("mes", "DATE_TRUNC('month', f.\"fecha\")", "Mes"),
         "anio": DimensionDef("anio", "DATE_TRUNC('year', f.\"fecha\")", "Año"),
-        "cliente": DimensionDef(
-            "cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)
-        ),
+        "cliente": DimensionDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
     },
     fields={
         "numero": FieldDef("numero", 'f."numero"', "Número"),
@@ -78,9 +72,7 @@ VENTAS = SemanticEntity(
         "subtotal": FieldDef("subtotal", 'f."subtotal"', "Subtotal"),
         "iva": FieldDef("iva", 'f."valorImpuestoIva"', "IVA"),
         "descuento": FieldDef("descuento", 'f."descuento"', "Descuento"),
-        "cliente": FieldDef(
-            "cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)
-        ),
+        "cliente": FieldDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
     },
     filters={
         "fecha": FilterDef("fecha", 'f."fecha"', _DATE, value_type="date"),
@@ -90,9 +82,7 @@ VENTAS = SemanticEntity(
             (FilterOp.EQ, FilterOp.IN),
             value_type="number",
         ),
-        "numero": FilterDef(
-            "numero", 'f."numero"', (FilterOp.EQ,), value_type="number"
-        ),
+        "numero": FilterDef("numero", 'f."numero"', (FilterOp.EQ,), value_type="number"),
     },
     record_key="numero",
 )
@@ -149,9 +139,7 @@ VENTAS_DETALLE = SemanticEntity(
             "sucursal", 'a."descripcion"', "Sucursal", requires=("detalle", "almacen")
         ),
         "mes": DimensionDef("mes", "DATE_TRUNC('month', f.\"fecha\")", "Mes"),
-        "cliente": DimensionDef(
-            "cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)
-        ),
+        "cliente": DimensionDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
     },
     fields={},  # entidad analítica: sin modo detalle/registro
     filters={
@@ -163,8 +151,6 @@ VENTAS_DETALLE = SemanticEntity(
             requires=("detalle",),
             value_type="number",
         ),
-        "cliente_id": FilterDef(
-            "cliente_id", 'f."idTercero"', (FilterOp.EQ,), value_type="number"
-        ),
+        "cliente_id": FilterDef("cliente_id", 'f."idTercero"', (FilterOp.EQ,), value_type="number"),
     },
 )

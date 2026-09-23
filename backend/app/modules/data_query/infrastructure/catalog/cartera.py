@@ -31,15 +31,19 @@ cruzando los saldos reales contra `General.Documento`:
 | 3     | Factura proveedor, acreedores, ajustes CxP, soporte    | Proveedor |
 | 7     | Comprobantes de pago a proveedores                     | Proveedor |
 | 9     | Notas de contabilidad, legalización de costos, NC compras | Proveedor |
+| 13    | Devolución en compras (visto en frami)                 | Proveedor |
 | 14    | Notas crédito de facturación (CEDIS)                   | Cliente   |
 | 15    | Factura proveedor otros acreedores, documento soporte 2 | Proveedor |
 
 OJO CON LAS NOTAS CRÉDITO (tipo 14): tienen `valorSaldo` positivo, pero
 conceptualmente REDUCEN lo que el cliente debe. Por eso no se suman a la
 cartera de clientes: quedan en su propia categoría, visibles en el
-desglose. Si el negocio define que deben restar, se cambia acá y en un
-solo lugar — que es precisamente la ventaja de modelarlo.
+desglose. Lo mismo vale para las devoluciones en compras (tipo 13), que
+reducen lo que se le debe al proveedor. Si el negocio define que deben
+restar, se cambia acá y en un solo lugar — que es precisamente la ventaja
+de modelarlo.
 """
+
 from __future__ import annotations
 
 from app.modules.data_query.domain.semantic_model import (
@@ -51,11 +55,9 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
+from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
 
-_TERCERO_NAME = (
-    'COALESCE(NULLIF(t."nombreComercial", \'\'), t."razonSocial", '
-    'NULLIF(TRIM(CONCAT_WS(\' \', t."primerNombre", t."primerApellido")), \'\'))'
-)
+_TERCERO_NAME = tercero_display_name()
 
 _DATE_OPS = (FilterOp.BETWEEN, FilterOp.GTE, FilterOp.LTE, FilterOp.EQ)
 
@@ -68,6 +70,7 @@ _TIPO_LABEL = """CASE ft."tipoDocumento"
         WHEN 3 THEN 'Por pagar a proveedores'
         WHEN 7 THEN 'Pagos a proveedores'
         WHEN 9 THEN 'Otros por pagar (contable)'
+        WHEN 13 THEN 'Devoluciones a proveedores'
         WHEN 15 THEN 'Otros por pagar (acreedores)'
         ELSE 'Sin clasificar'
     END"""
@@ -82,6 +85,7 @@ _TIPO_LABEL = """CASE ft."tipoDocumento"
 _LADO_LABEL = """CASE
         WHEN ft."tipoDocumento" = 2 THEN 'Por cobrar a clientes'
         WHEN ft."tipoDocumento" = 14 THEN 'Notas crédito a clientes'
+        WHEN ft."tipoDocumento" = 13 THEN 'Devoluciones a proveedores'
         WHEN ft."tipoDocumento" IN (3, 7, 9, 15) THEN 'Por pagar a proveedores'
         ELSE 'Sin clasificar'
     END"""
@@ -108,7 +112,8 @@ CARTERA = SemanticEntity(
         "El filtro 'lado' usa SIEMPRE el operador 'contiene', con una "
         "palabra suelta: 'clientes' o 'proveedores'. Sus valores son "
         "etiquetas largas ('Por cobrar a clientes', 'Notas crédito a "
-        "clientes', 'Por pagar a proveedores'), así que no las escribas "
+        "clientes', 'Por pagar a proveedores', 'Devoluciones a "
+        "proveedores'), así que no las escribas "
         "completas.\n"
         "Para las ventas facturadas usá 'ventas', que es otra cosa."
     ),
@@ -126,9 +131,7 @@ CARTERA = SemanticEntity(
             "Saldo vencido",
         ),
         "documentos": MetricDef("documentos", "COUNT(*)", "Cantidad de documentos"),
-        "valor_original": MetricDef(
-            "valor_original", 'SUM(ft."valorDocumento")', "Valor original"
-        ),
+        "valor_original": MetricDef("valor_original", 'SUM(ft."valorDocumento")', "Valor original"),
         "valor_pagado": MetricDef("valor_pagado", 'SUM(ft."valorPagado")', "Valor pagado"),
     },
     dimensions={
@@ -152,9 +155,7 @@ CARTERA = SemanticEntity(
         ),
         "saldo": FieldDef("saldo", 'ft."valorSaldo"', "Saldo"),
         "tipo": FieldDef("tipo", _TIPO_LABEL, "Tipo de documento"),
-        "tercero": FieldDef(
-            "tercero", _TERCERO_NAME, "Cliente o proveedor", requires=("tercero",)
-        ),
+        "tercero": FieldDef("tercero", _TERCERO_NAME, "Cliente o proveedor", requires=("tercero",)),
     },
     filters={
         "fecha_vencimiento": FilterDef(
@@ -188,14 +189,10 @@ CARTERA = SemanticEntity(
         "tercero_id": FilterDef(
             "tercero_id", 'ft."idTercero"', (FilterOp.EQ, FilterOp.IN), value_type="number"
         ),
-        "tercero": FilterDef(
-            "tercero", _TERCERO_NAME, (FilterOp.CONTAINS,), requires=("tercero",)
-        ),
+        "tercero": FilterDef("tercero", _TERCERO_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
         # `vencida=true` es el filtro que se quiere el 90% de las veces, y
         # ahorra que el modelo tenga que calcular la fecha de hoy.
-        "vencida": FilterDef(
-            "vencida", f"({_VENCIDA})", (FilterOp.EQ,), value_type="bool"
-        ),
+        "vencida": FilterDef("vencida", f"({_VENCIDA})", (FilterOp.EQ,), value_type="bool"),
     },
     # El compilador RECHAZA un agregado que no separe por alguna de estas.
     # La regla escrita en `description` no alcanzaba: medido con la misma
