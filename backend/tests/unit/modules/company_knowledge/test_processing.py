@@ -92,10 +92,32 @@ def test_markdown_chunks_keep_the_current_heading() -> None:
     text = "# Caja\n\nApertura del turno.\n\n# Devoluciones\n\nRequiere supervisor."
     chunks = StructuralChunker(3, 0).chunk(ExtractedText([text], "text/markdown"))
     assert [(c.heading, c.text) for c in chunks] == [
-        ("Caja", "Apertura del turno."),
-        ("Devoluciones", "Requiere supervisor."),
+        ("Caja", "# Caja\nApertura del turno."),
+        ("Devoluciones", "# Devoluciones\nRequiere supervisor."),
     ]
     assert chunks[1].embed_text.startswith("Devoluciones\n")
+
+
+def test_every_section_name_stays_in_a_chunk_that_groups_several() -> None:
+    """Precios de planes: sin el nombre de cada plan, los precios no sirven."""
+    text = "### PLAN R-A\n\n$257.000/mes\n\n### PLAN R-B\n\n$411.300/mes"
+    chunks = StructuralChunker(900, 0).chunk(ExtractedText([text], "text/markdown"))
+    assert len(chunks) == 1
+    assert "PLAN R-A\n$257.000/mes" in chunks[0].text
+    assert "PLAN R-B\n$411.300/mes" in chunks[0].text
+
+
+def test_headings_without_body_are_kept() -> None:
+    """Cláusulas o direcciones escritas como títulos, sin párrafo debajo."""
+    text = (
+        "## Contrato\n\n### Hasta 15 kilos de equipaje sin sobreprecio.\n"
+        "### Llegar media hora antes.\n\n## Sedes\n\nTerminal del Sur."
+    )
+    chunks = StructuralChunker(900, 0).chunk(ExtractedText([text], "text/markdown"))
+    joined = "\n".join(c.text for c in chunks)
+    assert "15 kilos de equipaje" in joined
+    assert "media hora antes" in joined
+    assert "## Sedes\nTerminal del Sur." in joined
 
 
 def test_pdf_chunks_keep_their_page_range() -> None:

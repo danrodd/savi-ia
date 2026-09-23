@@ -123,29 +123,51 @@ class StructuralChunker(Chunker):
         return blocks
 
     def _markdown_blocks(self, text: str) -> list[_Block]:
+        """Bloques por párrafo, con el título DENTRO del texto.
+
+        El título no puede quedar solo como metadato: un fragmento que
+        agrupa varias secciones ("PLAN R-A", "PLAN R-B") perdía los nombres
+        de todas menos la primera, y un título sin párrafo debajo (cláusulas
+        de un contrato, direcciones de sedes, habituales en páginas web) se
+        perdía entero. El título va pegado al primer párrafo de su sección,
+        o como bloque propio si la sección no tiene cuerpo.
+        """
         blocks: list[_Block] = []
         heading: str | None = None
+        pending_heading: str | None = None
         buffer: list[str] = []
 
         def flush_buffer() -> None:
-            if not buffer:
-                return
+            nonlocal pending_heading
             content = "\n".join(buffer).strip()
-            if content:
-                blocks.append(_Block(content, None, None, heading))
             buffer.clear()
+            if not content:
+                return
+            if pending_heading is not None:
+                content = f"{pending_heading}\n{content}"
+                pending_heading = None
+            blocks.append(_Block(content, None, None, heading))
+
+        def flush_heading() -> None:
+            nonlocal pending_heading
+            if pending_heading is not None:
+                blocks.append(_Block(pending_heading, None, None, heading))
+                pending_heading = None
 
         for line in text.split("\n"):
             match = _HEADING_RE.match(line)
             if match:
                 flush_buffer()
+                flush_heading()
                 heading = match.group(2).strip()
+                pending_heading = line.strip()
                 continue
             if not line.strip():
                 flush_buffer()
                 continue
             buffer.append(line)
         flush_buffer()
+        flush_heading()
         return blocks
 
     @staticmethod
