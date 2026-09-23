@@ -225,6 +225,7 @@ por instalación (uvicorn con un worker).
 | 2 | [Búsqueda y uso en el chat](02-fase-busqueda-y-chat.md) | Política de acceso, índice híbrido, `tipo = documentos`, citas, fuentes persistidas, descarga y prueba de búsqueda. | SAVI responde con documentos por API |
 | 3 | [Interfaz y verificación](03-fase-interfaz-y-verificacion.md) | Pantalla de administración, fuentes en el chat, E2E y verificación de rendimiento. | Todo desde la UI |
 | 4 | [Lectura de PDF con IA](04-fase-lectura-pdf-con-ia.md) | El proveedor configurado transcribe PDF escaneados, tablas e imágenes por página, con `pypdf` como respaldo, costo registrado y hoja de ruta al modo mixto. | Los escaneos y fichas técnicas dejan de quedar "Sin texto" |
+| 5 | [Importar desde la web](05-fase-importar-desde-web.md) | Una página o el sitio de la empresa, leído con código (navegador solo donde hace falta), extraído a Markdown y mantenido al día por el pipeline de documentos. | SAVI responde con el sitio web de la empresa, citando la página con su link |
 
 Orden obligatorio: 1 → 2 → 3. La Fase 4 es posterior a la v1.
 
@@ -354,6 +355,17 @@ Después de las baterías de [lectura](bateria-lectura-ia.md),
 controlado. Lo que falta no es lógica del módulo sino operación. Hecho:
 consentimiento por proveedor para la lectura con IA
 ([Fase 4, §7.1](04-fase-lectura-pdf-con-ia.md)).
+
+**Pendientes de prueba para cerrar la funcionalidad** (decididos con el
+equipo el 2026-09-23):
+
+1. **Probar con otro proveedor.** Todas las baterías corrieron con OpenAI
+   (`gpt-6-luna`). Falta repetir las de chat y de lectura con Claude y con
+   Gemini: los scripts sirven tal cual cambiando el proveedor activo.
+2. **Probar con PDFs reales de un cliente.** El corpus probado es
+   sintético o público. Hacen falta PDFs reales (escaneos de celular,
+   tablas, sellos, fichas técnicas propias) y ~20 preguntas que el cliente
+   sepa responder, para comparar.
 
 Útiles o necesarios, en orden sugerido:
 

@@ -502,6 +502,10 @@ Nuevos `DocumentStatusCode`: `ai_unreadable`. Los motivos por página
 
 ## 10. Hoja de ruta
 
+> Las "Fase 5" y "Fase 6" de esta tabla son **etapas de la lectura de
+> PDF**, no fases del módulo. La Fase 5 del módulo es
+> [importar desde la web](05-fase-importar-desde-web.md).
+
 | Fase | Qué decide la política | Qué ve el usuario | Entra cuando |
 |---|---|---|---|
 | **4 · Todo con IA** (esta) | Interruptor encendido y proveedor usable → todas las páginas a la IA. Si no, todas a `pypdf`. | Interruptor, estimado, "Leído con IA". | Ahora. |
