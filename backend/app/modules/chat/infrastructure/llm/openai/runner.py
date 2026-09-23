@@ -42,7 +42,7 @@ from app.modules.chat.infrastructure.llm.openai.mapping import (
     tool_definitions,
 )
 from app.modules.chat.infrastructure.llm.pricing import compute_cost_usd
-from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
+from app.modules.chat.infrastructure.llm.system_prompt import build_system_prompt, today_in
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
@@ -129,7 +129,7 @@ class OpenAIRunner(LLMRunner):
     ) -> AsyncIterator[Any]:
         result = client.responses.create(
             model=model,
-            instructions=SYSTEM_PROMPT,
+            instructions=build_system_prompt(today_in(self._settings.reporting_timezone)),
             input=input_items,
             tools=tools,
             stream=True,

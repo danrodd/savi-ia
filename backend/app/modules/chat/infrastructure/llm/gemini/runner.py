@@ -30,7 +30,7 @@ from app.modules.chat.infrastructure.llm.gemini.mapping import (
     function_response_part,
 )
 from app.modules.chat.infrastructure.llm.pricing import compute_cost_usd
-from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
+from app.modules.chat.infrastructure.llm.system_prompt import build_system_prompt, today_in
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
@@ -106,7 +106,7 @@ class GeminiRunner(LLMRunner):
             for tool in tools
         ]
         return types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
+            system_instruction=build_system_prompt(today_in(self._settings.reporting_timezone)),
             tools=[types.Tool(function_declarations=declarations)],
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             thinking_config=types.ThinkingConfig(include_thoughts=True) if thinking else None,

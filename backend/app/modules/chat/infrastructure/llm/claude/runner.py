@@ -45,7 +45,7 @@ from app.modules.chat.infrastructure.llm.claude.mcp_adapter import (
     build_mcp_server,
 )
 from app.modules.chat.infrastructure.llm.errors import user_facing_error
-from app.modules.chat.infrastructure.llm.system_prompt import SYSTEM_PROMPT
+from app.modules.chat.infrastructure.llm.system_prompt import build_system_prompt, today_in
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
@@ -89,7 +89,7 @@ def _build_options(
     )
     return ClaudeAgentOptions(
         model=provider.chat_model,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=build_system_prompt(today_in(settings.reporting_timezone)),
         mcp_servers={MCP_SERVER_NAME: build_mcp_server(tools)},
         # `tools=[]` apaga TODAS las herramientas integradas del CLI. NO es
         # redundante con `allowed_tools`: esa lista solo evita el prompt de

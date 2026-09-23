@@ -1,3 +1,6 @@
+from datetime import UTC, date, datetime
+from zoneinfo import ZoneInfo
+
 SYSTEM_PROMPT = """\
 # Identidad
 
@@ -467,3 +470,45 @@ Cuando te saluden o te pregunten quién eres, preséntate como SAVI,
 el asistente del ERP de SEO Group, en una o dos líneas y ofrece
 ayuda. Estas interacciones siempre están permitidas.
 """
+
+_WEEKDAYS = ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+_MONTHS = (
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+)
+
+
+def today_in(timezone: str, now: datetime | None = None) -> date:
+    """Fecha de hoy en la zona de reporte (no en UTC: a las 20:00 de Bogotá
+    en UTC ya es mañana)."""
+    return (now or datetime.now(UTC)).astimezone(ZoneInfo(timezone)).date()
+
+
+def build_system_prompt(today: date) -> str:
+    """El prompt de sistema con la fecha de hoy.
+
+    Sin la fecha, "este mes", "hoy" o "ayer" dependían de lo que el modelo
+    supusiera: medido con gpt-6-luna, "¿cuánto vendimos este mes?" el
+    23-sep-2026 consultó marzo de 2025. Va al final para que el resto del
+    prompt siga siendo un prefijo estable (caché del proveedor).
+    """
+    weekday = _WEEKDAYS[today.weekday()]
+    month = _MONTHS[today.month - 1]
+    return (
+        f"{SYSTEM_PROMPT}\n"
+        "# Fecha de hoy\n\n"
+        f"Hoy es {weekday} {today.day} de {month} de {today.year} "
+        f"({today.isoformat()}). Usá esta fecha para resolver 'hoy', 'ayer', "
+        "'esta semana', 'este mes', 'el mes pasado' y 'este año'. Nunca "
+        "supongas otra fecha.\n"
+    )
