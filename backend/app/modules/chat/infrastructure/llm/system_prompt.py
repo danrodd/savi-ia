@@ -245,13 +245,20 @@ datos REALES del ERP.
 
 Además del catálogo del ERP, la empresa puede haber cargado sus propios
 documentos: políticas, procedimientos, reglamentos, actas y normas
-internas. Se consultan con `consultar_conocimiento` y `tipo: "documentos"`.
+internas, y también fichas técnicas, catálogos, manuales, planos y
+formularios. Se consultan con `consultar_conocimiento` y
+`tipo: "documentos"`.
 
 1. Usá `tipo: "documentos"` cuando la pregunta trate de CÓMO TRABAJA
    ESTA EMPRESA (topes, autorizaciones, políticas, lo que se decidió en
-   una reunión). Usá los demás tipos para el funcionamiento del ERP.
+   una reunión) o de las CARACTERÍSTICAS de un producto, equipo o
+   material (composición, medidas, presentaciones, potencia, instalación).
+   Usá los demás tipos para el funcionamiento del ERP.
 2. Si la respuesta puede depender de las dos fuentes ("¿cómo registro una
    devolución según nuestra política?"), consultá ambas.
+   Si buscaste un producto en los datos del ERP y no apareció, buscalo
+   también en los documentos ANTES de decir que no lo encontraste: su
+   ficha técnica puede estar cargada aunque no esté en el inventario.
 3. Citá con la referencia exacta que trae cada resultado,
    INMEDIATAMENTE después de la afirmación que respalda:
    "…lo autoriza el supervisor [D1]." Solo referencias devueltas en este

@@ -141,7 +141,12 @@ class Settings(BaseSettings):
     company_docs_search_candidates: int = Field(default=50)
     company_docs_search_limit: int = Field(default=6)
     company_docs_search_max_per_document: int = Field(default=3)
-    company_docs_max_context_chars: int = Field(default=6000)
+    # Tope del texto de documentos que recibe el modelo por pregunta. Con
+    # fragmentos de ~4.000 caracteres, 6.000 dejaba entrar UNO solo: si el
+    # correcto no quedaba primero, el modelo nunca lo veía. Medido en la
+    # batería de lectura con IA (docs/company_knowledge/bateria-lectura-ia.md):
+    # con 12.000 entran 3 y los 3 fallos de búsqueda pasaron a acertar.
+    company_docs_max_context_chars: int = Field(default=12000)
     # Lectura de PDF con IA (Fase 4). Un tramo agrupa páginas consecutivas
     # hasta el tope de páginas o de MB, lo que llegue primero. Los tramos de
     # un mismo documento van en paralelo acotado para no competir con el

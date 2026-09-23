@@ -22,7 +22,7 @@
 - [x] Métricas de `pypdf` por página guardadas para decidir la Fase 5 (§11).
 - [x] Botón "Leer con IA" para documentos existentes.
 - [x] Límite de tamaño de archivo ajustado para escaneos de celular.
-- [ ] Tests (§12): unitarios e integración ✔ (backend 791, frontend 135); verificado en la interfaz real con `gpt-6-luna`. **Falta** el E2E de Playwright versionado (los actuales activan Claude y gastan su cuota).
+- [x] Tests (§12): unitarios e integración ✔ (backend 794, frontend 135) y **batería de punta a punta 22/22** en tres corridas seguidas ([`bateria-lectura-ia.md`](bateria-lectura-ia.md)). Pendiente: E2E de Playwright versionado (los actuales activan Claude).
 
 ---
 
