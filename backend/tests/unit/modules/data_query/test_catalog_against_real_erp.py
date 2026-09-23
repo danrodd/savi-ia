@@ -243,3 +243,34 @@ async def test_every_tercero_resolves_to_a_name(
     assert rows
     sin_nombre = [r for r in rows if not str(r[dimension] or "").strip()]
     assert not sin_nombre, f"terceros sin nombre: {sin_nombre[:3]}"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("palabra", "lado_esperado"),
+    [
+        ("clientes", "Por cobrar a clientes"),
+        ("proveedores", "Por pagar a proveedores"),
+    ],
+)
+async def test_cartera_lado_filter_matches_a_single_bucket(
+    erp_engine: AsyncEngine, palabra: str, lado_esperado: str
+) -> None:
+    """`lado contiene 'clientes'` trae SOLO lo por cobrar.
+
+    Filtraba contra la etiqueta, y "Notas crédito a clientes" también
+    contiene 'clientes': "cuánto nos deben los clientes" sumaba las notas
+    crédito a lo por cobrar ($2.291 M en vez de $2.194 M en
+    farmacias_similares).
+    """
+    query = SemanticQuery(
+        entidad="cartera",
+        modo=QueryMode.AGGREGATE,
+        metricas=["saldo"],
+        dimensiones=["lado"],
+        filtros=[QueryFilter("lado", FilterOp.CONTAINS, palabra)],
+    )
+
+    rows = await _run(erp_engine, query)
+
+    assert {str(r["lado"]) for r in rows} == {lado_esperado}

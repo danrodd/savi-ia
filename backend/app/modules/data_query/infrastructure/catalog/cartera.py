@@ -90,6 +90,17 @@ _LADO_LABEL = """CASE
         ELSE 'Sin clasificar'
     END"""
 
+# Clave del filtro `lado`. Mismos buckets que `_LADO_LABEL`, pero con
+# palabras que no se contienen entre sí: 'clientes' solo matchea lo por
+# cobrar.
+_LADO_KEY = """CASE
+        WHEN ft."tipoDocumento" = 2 THEN 'clientes'
+        WHEN ft."tipoDocumento" = 14 THEN 'notas'
+        WHEN ft."tipoDocumento" = 13 THEN 'devoluciones'
+        WHEN ft."tipoDocumento" IN (3, 7, 9, 15) THEN 'proveedores'
+        ELSE 'sin clasificar'
+    END"""
+
 _VENCIDA = 'ft."fechaVencimientoCuota" < NOW()'
 
 
@@ -110,11 +121,10 @@ CARTERA = SemanticEntity(
         "por 'lado' si el usuario pidió una sola punta. Si la pregunta no "
         "aclara cuál quiere, devolvé el desglose por 'lado' y que elija.\n"
         "El filtro 'lado' usa SIEMPRE el operador 'contiene', con una "
-        "palabra suelta: 'clientes' o 'proveedores'. Sus valores son "
-        "etiquetas largas ('Por cobrar a clientes', 'Notas crédito a "
-        "clientes', 'Por pagar a proveedores', 'Devoluciones a "
-        "proveedores'), así que no las escribas "
-        "completas.\n"
+        "de estas palabras: 'clientes' (lo que nos deben), 'proveedores' "
+        "(lo que debemos), 'notas' (notas crédito) o 'devoluciones'. 'clientes' NO "
+        "incluye las notas crédito: si el usuario las quiere, pedilas "
+        "aparte o agrupá por 'lado'.\n"
         "Para las ventas facturadas usá 'ventas', que es otra cosa."
     ),
     joins={
@@ -179,7 +189,13 @@ CARTERA = SemanticEntity(
         # proveedores" habiendo $9.120 millones. Un filtro que no matchea
         # tiene que fallar fuerte, no devolver vacío: sin '=' el compilador
         # rechaza con la lista de operadores válidos y el modelo corrige.
-        "lado": FilterDef("lado", f"({_LADO_LABEL})", (FilterOp.CONTAINS,)),
+        #
+        # Y se compara contra una CLAVE corta, no contra la etiqueta: la
+        # etiqueta "Notas crédito a clientes" contiene 'clientes', así que
+        # "cuánto nos deben los clientes" sumaba las notas crédito a lo por
+        # cobrar — medido en farmacias_similares: $2.291 M en vez de
+        # $2.194 M. Es el error que el bucket propio de las NC quería evitar.
+        "lado": FilterDef("lado", f"({_LADO_KEY})", (FilterOp.CONTAINS,)),
         "tipo_documento": FilterDef(
             "tipo_documento",
             'ft."tipoDocumento"',
