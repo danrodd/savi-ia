@@ -42,6 +42,9 @@ from app.modules.company_knowledge.infrastructure.persistence.models import (
     CompanyDocumentModel,
     CompanyDocumentPageModel,
     CompanyKnowledgeSettingsModel,
+    CompanyWebPageModel,
+    CompanyWebSourceDatabaseModel,
+    CompanyWebSourceModel,
 )
 from app.modules.conversations.infrastructure.persistence.models import (
     ConversationModel,
@@ -69,6 +72,9 @@ async def sessionmaker_(tmp_path: Path) -> AsyncIterator[async_sessionmaker[Asyn
                 CompanyDocumentPageModel.__table__,
                 CompanyDocumentAiReadModel.__table__,
                 CompanyKnowledgeSettingsModel.__table__,
+                CompanyWebSourceModel.__table__,
+                CompanyWebSourceDatabaseModel.__table__,
+                CompanyWebPageModel.__table__,
             ],
         )
     yield async_sessionmaker(bind=engine, expire_on_commit=False, autoflush=False)

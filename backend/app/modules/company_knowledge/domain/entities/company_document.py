@@ -9,6 +9,7 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatusCode,
     DocumentVisibility,
 )
+from app.modules.company_knowledge.domain.value_objects.web import DocumentSourceKind
 
 
 def _utc_now() -> datetime:
@@ -42,6 +43,10 @@ class CompanyDocument:
     database_ids: list[UUID] = field(default_factory=list[UUID])
     uploaded_by_login: str = ""
     uploaded_by_database_id: UUID | None = None
+    # Página de un sitio web (Fase 5): se cita con su URL y se administra
+    # desde su fuente, no desde la tabla de documentos.
+    source_kind: DocumentSourceKind = DocumentSourceKind.UPLOAD
+    source_url: str | None = None
     uploaded_by_user_id: int = 0
     processed_at: datetime | None = None
     deleted_at: datetime | None = None

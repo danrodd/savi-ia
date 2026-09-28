@@ -78,3 +78,23 @@ class AiReadingError(Exception):
         super().__init__(detail or code.value)
         self.code = code
         self.retryable = retryable
+
+
+# ── Importar desde la web (Fase 5) ───────────────────────────────────────
+
+
+class WebSourceNotFoundError(NotFoundError):
+    def __init__(self, source_id: str) -> None:
+        super().__init__(f"No existe la fuente web {source_id}.")
+
+
+class UnsafeUrlError(ValidationError):
+    """La URL (o una redirección) apunta a la red interna o no es http(s).
+
+    SAVI corre dentro de la red del cliente: leer `localhost` o una IP
+    privada expondría servicios internos (SSRF).
+    """
+
+
+class WebFetchError(DomainError):
+    """Error de red, de tiempo o de tamaño al leer una página."""

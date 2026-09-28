@@ -27,6 +27,8 @@ class DocumentAccessView:
     version: int = 1
     page_count: int | None = None
     updated_at: datetime | None = None
+    # Página de un sitio web: se cita con su link.
+    source_url: str | None = None
 
     @staticmethod
     def from_document(
@@ -44,4 +46,5 @@ class DocumentAccessView:
             version=document.version,
             page_count=document.page_count,
             updated_at=document.updated_at,
+            source_url=document.source_url,
         )

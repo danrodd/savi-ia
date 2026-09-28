@@ -25,6 +25,9 @@ from app.modules.company_knowledge.infrastructure.http import (
 from app.modules.company_knowledge.infrastructure.http import (
     router as company_documents_router,
 )
+from app.modules.company_knowledge.infrastructure.http import (
+    web_router as company_web_sources_router,
+)
 from app.modules.company_knowledge.infrastructure.provider import (
     start_company_knowledge,
     stop_company_knowledge,
@@ -76,6 +79,7 @@ _API_PREFIXES = (
     # listan los prefijos COMPLETOS del API. Poner solo "admin" hacía que
     # `/admin/consumo` y las demás pantallas devolvieran un 404 JSON.
     "admin/company-documents",
+    "admin/company-web-sources",
     "admin/erp-databases",
     "admin/llm-providers",
     "erp-databases",
@@ -224,6 +228,7 @@ def create_app() -> FastAPI:
     app.include_router(llm_providers_router)
     app.include_router(company_documents_router)
     app.include_router(company_documents_public_router)
+    app.include_router(company_web_sources_router)
 
     # Va último: la ruta catch-all tiene que perder contra cualquier ruta
     # del API, y FastAPI resuelve por orden de registro.

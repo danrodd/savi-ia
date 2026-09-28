@@ -6,6 +6,9 @@ from app.modules.company_knowledge.infrastructure.persistence.models.company_doc
     CompanyDocumentModel,
     CompanyDocumentPageModel,
     CompanyKnowledgeSettingsModel,
+    CompanyWebPageModel,
+    CompanyWebSourceDatabaseModel,
+    CompanyWebSourceModel,
 )
 
 __all__ = [
@@ -16,4 +19,7 @@ __all__ = [
     "CompanyDocumentModel",
     "CompanyDocumentPageModel",
     "CompanyKnowledgeSettingsModel",
+    "CompanyWebPageModel",
+    "CompanyWebSourceDatabaseModel",
+    "CompanyWebSourceModel",
 ]

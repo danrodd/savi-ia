@@ -30,6 +30,12 @@ from app.modules.company_knowledge.domain.interfaces.text_extractor import (
     MediaTypeSniffer,
     TextExtractor,
 )
+from app.modules.company_knowledge.domain.interfaces.web import (
+    ContentExtractor,
+    PageDiscoverer,
+    WebFetcher,
+    WebSourceRepository,
+)
 
 __all__ = [
     "AiReaderAvailability",
@@ -52,4 +58,8 @@ __all__ = [
     "SourceAvailability",
     "SourceAvailabilityResolver",
     "TextExtractor",
+    "ContentExtractor",
+    "PageDiscoverer",
+    "WebFetcher",
+    "WebSourceRepository",
 ]

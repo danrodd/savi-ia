@@ -131,6 +131,7 @@ async def test_sources_event_arrives_right_before_done_and_is_persisted() -> Non
             "version": 2,
             "title": "Manual de caja",
             "pages": "3-4",
+            "url": None,  # documento subido: sin link
         }
     ]
     assert runner.received is context

@@ -56,6 +56,9 @@ dependencies = [
     # quedarse abajo. Acotado a la línea 1.x: el salto a 2.x es mayor y
     # tocaría el SDK del agente, que es el corazón del chat.
     "mcp>=1.28.1,<2",
+    "trafilatura>=2.2",
+    "markdownify>=1.2",
+    "defusedxml>=0.7",
 ]
 
 [dependency-groups]

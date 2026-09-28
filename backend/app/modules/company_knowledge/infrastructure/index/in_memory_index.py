@@ -201,6 +201,7 @@ class InMemoryDocumentIndex(DocumentIndex):
                 version=doc.view.version,
                 page_count=doc.view.page_count,
                 updated_at=doc.view.updated_at,
+                source_url=doc.view.source_url,
             )
             for doc in snapshot.docs
             if can_read(doc.view, ctx)
@@ -267,6 +268,7 @@ class InMemoryDocumentIndex(DocumentIndex):
                     page_from=chunk.page_from,
                     page_to=chunk.page_to,
                     heading=chunk.heading,
+                    source_url=doc.view.source_url,
                     vector_score=vector_scores.get(row, 0.0),
                     bm25_score=bm25_scores.get(row, 0.0),
                     rrf_score=rrf,

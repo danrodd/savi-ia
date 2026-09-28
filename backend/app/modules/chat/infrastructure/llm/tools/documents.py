@@ -12,6 +12,7 @@ contener texto dirigido a un asistente.
 import re
 from collections.abc import Awaitable, Callable
 from typing import Any
+from urllib.parse import urlsplit
 
 from app.modules.company_knowledge.domain.interfaces import DocumentIndex
 from app.modules.company_knowledge.domain.services import (
@@ -82,6 +83,7 @@ def build_document_search(
                     ordinal=hit.ordinal,
                     page_from=hit.page_from,
                     page_to=hit.page_to,
+                    url=hit.source_url,
                 )
             )
             match: dict[str, Any] = {
@@ -95,6 +97,8 @@ def build_document_search(
                 match["paginas"] = pages
             if hit.heading:
                 match["seccion"] = hit.heading
+            if hit.source_url:
+                match["pagina_web"] = hit.source_url
             matches.append(match)
         result: dict[str, Any] = {"matches": matches, "nota": DOCUMENTS_NOTE}
         if _ERP_DATA.search(query):
@@ -112,13 +116,22 @@ def build_document_listing(
         if not documents:
             return {"documentos": [], "nota": EMPTY_LISTING_NOTE}
         items: list[dict[str, Any]] = []
+        # Las páginas de un sitio web van agrupadas: un sitio de 48 páginas
+        # es una entrada, no 48.
+        sites: dict[str, int] = {}
         for document in documents:
+            if document.source_url:
+                host = (urlsplit(document.source_url).hostname or "").removeprefix("www.")
+                sites[host] = sites.get(host, 0) + 1
+                continue
             item: dict[str, Any] = {"titulo": document.title}
             if document.page_count:
                 item["paginas"] = document.page_count
             if document.updated_at is not None:
                 item["actualizado"] = document.updated_at.date().isoformat()
             items.append(item)
+        for host, count in sorted(sites.items()):
+            items.append({"titulo": f"Sitio web {host}", "paginas_web": count})
         return {"documentos": items, "total": len(items), "nota": LISTING_NOTE}
 
     return listing

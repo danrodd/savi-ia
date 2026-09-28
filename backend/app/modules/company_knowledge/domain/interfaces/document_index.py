@@ -18,6 +18,7 @@ class ChunkHit:
     page_from: int | None = None
     page_to: int | None = None
     heading: str | None = None
+    source_url: str | None = None
     vector_score: float = 0.0
     bm25_score: float = 0.0
     rrf_score: float = 0.0
@@ -32,6 +33,7 @@ class IndexedDocument:
     version: int
     page_count: int | None = None
     updated_at: datetime | None = None
+    source_url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -67,6 +67,8 @@ class MessageSourceResponse(BaseModel):
     version: int
     title: str
     pages: str | None = None
+    # Página de un sitio web: link a la página original.
+    url: str | None = None
     available: bool | None = None
     unavailable_reason: str | None = None
 
@@ -125,6 +127,7 @@ class MessageResponse(BaseModel):
                     version=s.version,
                     title=s.title,
                     pages=s.pages,
+                    url=s.url,
                 )
                 for s in dto.sources
             ],

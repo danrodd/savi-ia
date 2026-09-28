@@ -25,6 +25,7 @@ from app.modules.company_knowledge.domain.interfaces import (
     ProcessingOutcome,
 )
 from app.modules.company_knowledge.domain.value_objects import (
+    DocumentSourceKind,
     DocumentStatus,
     DocumentStatusCode,
     DocumentVisibility,
@@ -80,6 +81,13 @@ def _to_reading_method(value: str | None) -> ReadingMethod | None:
 
 def _to_decimal(value: float | None) -> Decimal | None:
     return None if value is None else Decimal(str(round(value, 6)))
+
+
+def _to_source_kind(value: str | None) -> DocumentSourceKind:
+    try:
+        return DocumentSourceKind(value or DocumentSourceKind.UPLOAD.value)
+    except ValueError:
+        return DocumentSourceKind.UPLOAD
 
 
 def _to_visibility(value: str) -> DocumentVisibility:
@@ -177,9 +185,12 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
         query: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        source_kind: DocumentSourceKind | None = DocumentSourceKind.UPLOAD,
     ) -> list[CompanyDocument]:
         async with self._sessionmaker() as session:
             stmt = select(CompanyDocumentModel).where(CompanyDocumentModel.deleted_at.is_(None))
+            if source_kind is not None:
+                stmt = stmt.where(CompanyDocumentModel.source_kind == source_kind.value)
             if status is not None:
                 stmt = stmt.where(CompanyDocumentModel.status == status.value)
             if visibility is not None:
@@ -551,6 +562,8 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
             uploaded_by_login=model.uploaded_by_login,
             uploaded_by_database_id=model.uploaded_by_database_id,
             uploaded_by_user_id=model.uploaded_by_user_id,
+            source_kind=_to_source_kind(model.source_kind),
+            source_url=model.source_url,
             processed_at=model.processed_at,
             deleted_at=model.deleted_at,
             created_at=model.created_at,
@@ -582,6 +595,8 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
             uploaded_by_login=document.uploaded_by_login,
             uploaded_by_database_id=_required_database_id(document),
             uploaded_by_user_id=document.uploaded_by_user_id,
+            source_kind=document.source_kind.value,
+            source_url=document.source_url,
             processed_at=document.processed_at,
             deleted_at=document.deleted_at,
             created_at=document.created_at,
@@ -611,6 +626,8 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
         model.uploaded_by_login = document.uploaded_by_login
         model.uploaded_by_database_id = _required_database_id(document)
         model.uploaded_by_user_id = document.uploaded_by_user_id
+        model.source_kind = document.source_kind.value
+        model.source_url = document.source_url
         model.processed_at = document.processed_at
         model.deleted_at = document.deleted_at
         model.updated_at = _now()

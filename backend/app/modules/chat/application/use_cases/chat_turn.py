@@ -133,6 +133,7 @@ class _TurnAccumulator:
                 version=source.version,
                 title=source.title,
                 pages=source.pages,
+                url=source.url,
             )
             for source in document_context.citations.build_sources("".join(self.text_parts))
         ]

@@ -25,6 +25,7 @@ class CitedChunk:
     ordinal: int
     page_from: int | None
     page_to: int | None
+    url: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +38,7 @@ class CitedSource:
     version: int
     title: str
     pages: str | None
+    url: str | None = None
 
 
 class CitationRegistry:
@@ -86,6 +88,7 @@ class CitationRegistry:
                     version=first.version,
                     title=first.title,
                     pages=format_pages([(c.page_from, c.page_to) for _, c in entries]),
+                    url=first.url,
                 )
             )
         return sources

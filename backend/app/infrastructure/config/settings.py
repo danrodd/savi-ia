@@ -157,6 +157,21 @@ class Settings(BaseSettings):
     company_docs_ai_timeout_s: float = Field(default=120.0, gt=0)
     company_docs_ai_retry_attempts: int = Field(default=3, ge=1, le=6)
     company_docs_ai_retry_base_delay_s: float = Field(default=2.0, ge=0)
+    # Importar desde la web (Fase 5, docs/company_knowledge/05-fase-importar-
+    # desde-web.md). Solo descarga simple: la prueba con sitios de clientes
+    # no necesitó navegador. Las fuentes se rastrean de a una, con pausa
+    # entre pedidos al mismo sitio.
+    company_web_max_sources: int = Field(default=20, ge=1)
+    company_web_max_pages_per_source: int = Field(default=200, ge=1, le=2000)
+    company_web_max_depth: int = Field(default=3, ge=1, le=6)
+    company_web_max_page_mb: int = Field(default=5, ge=1, le=50)
+    company_web_fetch_timeout_s: float = Field(default=20.0, gt=0)
+    company_web_request_delay_s: float = Field(default=1.0, ge=0)
+    # Ventana del refresco automático, hora local del servidor ("HH:MM-HH:MM").
+    company_web_refresh_window: str = Field(default="01:00-05:00")
+    # Hosts internos que sí se pueden leer (intranet). Vacío = ninguno: la
+    # guarda contra SSRF rechaza toda IP privada o local.
+    company_web_allowed_private_hosts: list[str] = Field(default_factory=list[str])
 
     # ── Auth ─────────────────────────────────────────────────────────────
     # Secreto para firmar los JWT. Fuera de `development` el default hace

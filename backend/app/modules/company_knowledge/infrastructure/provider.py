@@ -18,14 +18,19 @@ from app.infrastructure.database import get_agent_sessionmaker
 from app.modules.chat.domain.interfaces import ActiveProviderResolver
 from app.modules.company_knowledge.application.use_cases import (
     AiReadingLimits,
+    CrawlWebSourceUseCase,
     ProcessNextCompanyDocumentUseCase,
     ReadPdfPagesUseCase,
 )
 from app.modules.company_knowledge.domain.interfaces import (
     AiReaderProvider,
+    ContentExtractor,
     DocumentPageRepository,
     DocumentRepository,
     KnowledgeSettingsRepository,
+    PageDiscoverer,
+    WebFetcher,
+    WebSourceRepository,
 )
 from app.modules.company_knowledge.infrastructure.ai_reading import (
     PROMPT_VERSION,
@@ -53,10 +58,21 @@ from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_page_re
     SqlAlchemyDocumentPageRepository,
     SqlAlchemyKnowledgeSettingsRepository,
 )
+from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_web_source_repository import (  # noqa: E501
+    SqlAlchemyWebSourceRepository,
+)
 from app.modules.company_knowledge.infrastructure.processing import (
     CompanyDocumentWorker,
     PipelineDocumentProcessor,
 )
+from app.modules.company_knowledge.infrastructure.web.content_extractor import (
+    HybridContentExtractor,
+)
+from app.modules.company_knowledge.infrastructure.web.discovery import (
+    SitemapAndLinksDiscoverer,
+)
+from app.modules.company_knowledge.infrastructure.web.safe_http import SafeHttpFetcher
+from app.modules.company_knowledge.infrastructure.web.worker import WebSourceWorker
 from app.modules.llm_providers.infrastructure.active_provider_resolver import (
     get_active_provider_resolver,
 )
@@ -78,10 +94,21 @@ class CompanyKnowledgeRuntime:
     pages: DocumentPageRepository | None = None
     knowledge_settings: KnowledgeSettingsRepository | None = None
     readers: AiReaderProvider | None = None
+    # Importar desde la web (Fase 5).
+    web_sources: WebSourceRepository | None = None
+    web_fetcher: WebFetcher | None = None
+    web_discoverer: PageDiscoverer | None = None
+    web_extractor: ContentExtractor | None = None
+    web_executor: ThreadPoolExecutor | None = None
+    web_worker: WebSourceWorker | None = None
 
     def notify_worker(self) -> None:
         if self.worker is not None:
             self.worker.notify()
+
+    def notify_web_worker(self) -> None:
+        if self.web_worker is not None:
+            self.web_worker.notify()
 
 
 _runtime: CompanyKnowledgeRuntime | None = None
@@ -170,7 +197,7 @@ def build_runtime(settings: Settings) -> CompanyKnowledgeRuntime:
             ),
             embedding_model=embedder.model_name,
         )
-    return CompanyKnowledgeRuntime(
+    runtime = CompanyKnowledgeRuntime(
         repository=repository,
         index=index,
         worker=worker,
@@ -181,6 +208,47 @@ def build_runtime(settings: Settings) -> CompanyKnowledgeRuntime:
         knowledge_settings=knowledge_settings,
         readers=readers,
     )
+    _build_web(runtime, settings)
+    return runtime
+
+
+def _build_web(runtime: CompanyKnowledgeRuntime, settings: Settings) -> None:
+    """Fuentes web: descarga simple con guarda SSRF, extracción y worker."""
+    fetcher = SafeHttpFetcher(
+        timeout_s=settings.company_web_fetch_timeout_s,
+        max_bytes=settings.company_web_max_page_mb * 1024 * 1024,
+        allowed_private_hosts=settings.company_web_allowed_private_hosts,
+    )
+    discoverer = SitemapAndLinksDiscoverer(
+        fetcher,
+        max_depth=settings.company_web_max_depth,
+        request_delay_s=settings.company_web_request_delay_s,
+    )
+    extractor = HybridContentExtractor()
+    sources = SqlAlchemyWebSourceRepository(get_agent_sessionmaker())
+    # Hilo propio para la extracción: no compite con los embeddings.
+    executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="company-web-extract")
+    runtime.web_sources = sources
+    runtime.web_fetcher = fetcher
+    runtime.web_discoverer = discoverer
+    runtime.web_extractor = extractor
+    runtime.web_executor = executor
+    if settings.company_docs_worker_enabled:
+        runtime.web_worker = WebSourceWorker(
+            repository=sources,
+            use_case=CrawlWebSourceUseCase(
+                sources=sources,
+                documents=runtime.repository,
+                fetcher=fetcher,
+                discoverer=discoverer,
+                extractor=extractor,
+                executor=executor,
+                request_delay_s=settings.company_web_request_delay_s,
+                notifier=runtime.notify_worker,
+                index=runtime.index,
+            ),
+            refresh_window=settings.company_web_refresh_window,
+        )
 
 
 async def start_company_knowledge(settings: Settings) -> CompanyKnowledgeRuntime | None:
@@ -194,10 +262,11 @@ async def start_company_knowledge(settings: Settings) -> CompanyKnowledgeRuntime
     try:
         if runtime.worker is not None:
             await runtime.worker.start()
+        if runtime.web_worker is not None:
+            await runtime.web_worker.start()
     except Exception:
         logger.exception("company_docs_start_failed")
-        runtime.ingest_executor.shutdown(wait=False, cancel_futures=True)
-        runtime.search_executor.shutdown(wait=False, cancel_futures=True)
+        _shutdown_executors(runtime)
         return None
     # La carga del índice no bloquea el arranque de la API: mientras corre,
     # la búsqueda devuelve vacío y el resto de SAVI funciona igual.
@@ -217,9 +286,17 @@ async def stop_company_knowledge() -> None:
             await runtime.load_task
     if runtime.worker is not None:
         await runtime.worker.stop()
+    if runtime.web_worker is not None:
+        await runtime.web_worker.stop()
+    _shutdown_executors(runtime)
+    _runtime = None
+
+
+def _shutdown_executors(runtime: CompanyKnowledgeRuntime) -> None:
     runtime.ingest_executor.shutdown(wait=False, cancel_futures=True)
     runtime.search_executor.shutdown(wait=False, cancel_futures=True)
-    _runtime = None
+    if runtime.web_executor is not None:
+        runtime.web_executor.shutdown(wait=False, cancel_futures=True)
 
 
 async def _load_index(runtime: CompanyKnowledgeRuntime) -> None:

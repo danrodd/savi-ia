@@ -8,7 +8,10 @@ from app.modules.company_knowledge.domain.exceptions.exceptions import (
     DocumentExtractionError,
     DuplicateCompanyDocumentError,
     EmbedderUnavailableError,
+    UnsafeUrlError,
     UnsupportedCompanyDocumentMediaTypeError,
+    WebFetchError,
+    WebSourceNotFoundError,
 )
 
 __all__ = [
@@ -21,5 +24,8 @@ __all__ = [
     "DocumentExtractionError",
     "DuplicateCompanyDocumentError",
     "EmbedderUnavailableError",
+    "UnsafeUrlError",
     "UnsupportedCompanyDocumentMediaTypeError",
+    "WebFetchError",
+    "WebSourceNotFoundError",
 ]

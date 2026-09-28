@@ -18,6 +18,8 @@ class MessageSource:
     version: int
     title: str
     pages: str | None = None
+    # Página de un sitio web: link a la página original.
+    url: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -27,6 +29,7 @@ class MessageSource:
             "version": self.version,
             "title": self.title,
             "pages": self.pages,
+            "url": self.url,
         }
 
     @staticmethod
@@ -44,4 +47,5 @@ class MessageSource:
             version=int(data.get("version", 1)),
             title=str(data.get("title", "")),
             pages=str(data["pages"]) if data.get("pages") is not None else None,
+            url=str(data["url"]) if data.get("url") else None,
         )

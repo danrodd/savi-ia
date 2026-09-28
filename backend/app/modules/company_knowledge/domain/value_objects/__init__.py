@@ -9,6 +9,14 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatusCode,
     DocumentVisibility,
 )
+from app.modules.company_knowledge.domain.value_objects.web import (
+    DocumentSourceKind,
+    RefreshFrequency,
+    WebPageStatus,
+    WebSourceMode,
+    WebSourceStatus,
+    WebSourceStatusCode,
+)
 
 __all__ = [
     "AiReadErrorCode",
@@ -18,4 +26,10 @@ __all__ = [
     "DocumentVisibility",
     "PageRoute",
     "ReadingMethod",
+    "DocumentSourceKind",
+    "RefreshFrequency",
+    "WebPageStatus",
+    "WebSourceMode",
+    "WebSourceStatus",
+    "WebSourceStatusCode",
 ]

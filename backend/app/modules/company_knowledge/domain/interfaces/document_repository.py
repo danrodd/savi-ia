@@ -15,6 +15,7 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatus,
     DocumentVisibility,
 )
+from app.modules.company_knowledge.domain.value_objects.web import DocumentSourceKind
 
 
 class DocumentRepository(ABC):
@@ -54,7 +55,9 @@ class DocumentRepository(ABC):
         query: str | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> list[CompanyDocument]: ...
+        source_kind: DocumentSourceKind | None = DocumentSourceKind.UPLOAD,
+    ) -> list[CompanyDocument]:
+        """Por defecto solo los subidos: las páginas web se ven en su fuente."""
 
     @abstractmethod
     async def count_by_status(self) -> dict[DocumentStatus, int]: ...

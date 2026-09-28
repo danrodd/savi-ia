@@ -4,6 +4,9 @@ from app.modules.company_knowledge.application.use_cases.ai_reading import (
     ReadCompanyDocumentWithAiUseCase,
     UpdateAiReadingSettingsUseCase,
 )
+from app.modules.company_knowledge.application.use_cases.crawl_web_source import (
+    CrawlWebSourceUseCase,
+)
 from app.modules.company_knowledge.application.use_cases.delete_document import (
     DeleteCompanyDocumentUseCase,
 )
@@ -38,6 +41,17 @@ from app.modules.company_knowledge.application.use_cases.update_document import 
 from app.modules.company_knowledge.application.use_cases.upload_document import (
     UploadCompanyDocumentUseCase,
 )
+from app.modules.company_knowledge.application.use_cases.web_sources import (
+    CreateWebSourceUseCase,
+    DeleteWebSourceUseCase,
+    GetWebSourceUseCase,
+    ListWebSourcesUseCase,
+    PreviewWebSourceUseCase,
+    RefreshWebSourceUseCase,
+    UpdateWebSourceUseCase,
+    WebSourceDetail,
+    WebSourcePreview,
+)
 
 __all__ = [
     "AiReadingLimits",
@@ -60,4 +74,14 @@ __all__ = [
     "ReprocessCompanyDocumentUseCase",
     "UpdateCompanyDocumentUseCase",
     "UploadCompanyDocumentUseCase",
+    "CrawlWebSourceUseCase",
+    "CreateWebSourceUseCase",
+    "DeleteWebSourceUseCase",
+    "GetWebSourceUseCase",
+    "ListWebSourcesUseCase",
+    "PreviewWebSourceUseCase",
+    "RefreshWebSourceUseCase",
+    "UpdateWebSourceUseCase",
+    "WebSourceDetail",
+    "WebSourcePreview",
 ]

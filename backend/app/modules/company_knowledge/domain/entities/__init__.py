@@ -20,6 +20,14 @@ from app.modules.company_knowledge.domain.entities.processing import (
     ExtractedText,
     PendingChunk,
 )
+from app.modules.company_knowledge.domain.entities.web_source import (
+    DiscoveredUrl,
+    Discovery,
+    ExtractedPage,
+    FetchResult,
+    WebPage,
+    WebSource,
+)
 
 __all__ = [
     "AiPageContent",
@@ -36,4 +44,10 @@ __all__ = [
     "DocumentChunk",
     "ExtractedText",
     "PendingChunk",
+    "DiscoveredUrl",
+    "Discovery",
+    "ExtractedPage",
+    "FetchResult",
+    "WebPage",
+    "WebSource",
 ]
