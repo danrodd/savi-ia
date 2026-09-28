@@ -359,9 +359,9 @@ consentimiento por proveedor para la lectura con IA
 **Pendientes de prueba para cerrar la funcionalidad** (decididos con el
 equipo el 2026-09-23):
 
-1. **Probar con otro proveedor.** Todas las baterías corrieron con OpenAI
-   (`gpt-6-luna`). Falta repetir las de chat y de lectura con Claude y con
-   Gemini: los scripts sirven tal cual cambiando el proveedor activo.
+1. **Probar con otro proveedor.** Hecho el 2026-09-28 (ver "Otros
+   proveedores" abajo): Gemini completo; Claude a medias, porque la cuenta de
+   Anthropic se quedó sin saldo durante la corrida.
 2. **Probar con PDFs reales de un cliente.** El corpus probado es
    sintético o público. Hacen falta PDFs reales (escaneos de celular,
    tablas, sellos, fichas técnicas propias) y ~20 preguntas que el cliente
@@ -420,3 +420,31 @@ respecto de la spec en [`05`](05-fase-importar-desde-web.md) §15.
 - **Pedidos condicionales en modo sitio:** hoy se descarga todo en cada
   refresco (ver §15 de la spec). Si un sitio grande lo hace pesado,
   guardar el texto previo a la limpieza de plantilla para poder usar `304`.
+
+### Otros proveedores (2026-09-28)
+
+Las tres baterías del conocimiento, sin cambios en los scripts, con cada
+proveedor como activo (chat y lectura de PDF con IA):
+
+| Batería | OpenAI `gpt-6-luna` | Gemini `gemini-flash-lite-latest` | Claude `claude-sonnet-5` |
+|---|---|---|---|
+| Lectura con IA | 22/22 | **22/22** | **22/22** |
+| Permisos y bases | 35/35 | **34/35** | 12/12 válidas (sin saldo después) |
+| Ciclo de vida | 29/29 | **28/29** | sin saldo |
+| Costo aproximado | ~US$0,10 | ~US$0,65 | ~US$2,20 hasta quedarse sin saldo |
+
+- **Gemini:** las 47 páginas del corpus se leyeron bien. La C07 era un falso
+  negativo del script (respondió "el documento no registra ningún modelo
+  900", correcto; el detector no reconocía "no registra" y se corrigió). La
+  S04 es real: ante una pregunta de inventario contestó con el proceso del
+  ERP en vez del documento de la empresa, la misma debilidad de fuente que
+  se vio con OpenAI en preguntas mixtas.
+- **Claude:** lectura 22/22 y las 12 preguntas de permisos que alcanzó a
+  hacer, todas bien. Falta repetir el resto con saldo.
+- **Defecto encontrado y corregido:** sin saldo, el CLI de Claude no lanza
+  una excepción; manda el error como texto ("Credit balance is too low") y
+  SAVI lo guardaba como la respuesta, en inglés. El runner ahora lee el tipo
+  de error del SDK y muestra un mensaje en español que dice qué hacer (sin
+  créditos, credencial vencida, límite de solicitudes). La lectura de PDF sin
+  saldo ya se comportaba bien: el documento queda "Sin texto" con el aviso
+  `ai_failed` y la cola sigue.

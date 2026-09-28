@@ -541,6 +541,8 @@ NOT_FOUND = [
     "no indica",
     "no especifica",
     "no figura",
+    "no registra",
+    "no lista",
     "no incluye",
     "no menciona",
     "no tengo informacion",

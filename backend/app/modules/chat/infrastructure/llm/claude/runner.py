@@ -57,6 +57,32 @@ CREDENTIAL_REMEDY = (
     "'Iniciar sesión en Claude' desde el menú Inicio y volvé a intentar."
 )
 
+# El CLI no lanza una excepción cuando Anthropic rechaza el pedido: manda un
+# `AssistantMessage` con el error como texto ("Credit balance is too low") y
+# `error` marcado. Sin esto, ese texto en inglés se guardaba como respuesta.
+_PROVIDER_ERRORS = {
+    "billing_error": (
+        "La cuenta de Anthropic (Claude) no tiene créditos. Un administrador debe "
+        "cargar saldo en la consola de Anthropic para que el asistente pueda responder."
+    ),
+    "authentication_failed": CREDENTIAL_REMEDY,
+    "rate_limit": (
+        "Claude está recibiendo demasiadas solicitudes en este momento. "
+        "Probá de nuevo en unos minutos."
+    ),
+}
+
+
+def provider_error_message(error: str | None, text: str) -> str | None:
+    """Mensaje para el usuario si el proveedor rechazó el turno, o `None`."""
+    if error is None:
+        return None
+    known = _PROVIDER_ERRORS.get(error)
+    if known is not None:
+        return known
+    detail = f" ({text.strip()})" if text.strip() else ""
+    return f"Claude no pudo responder{detail}. Probá de nuevo en unos minutos."
+
 
 def _log_cli_stderr(line: str) -> None:
     """Manda al log lo que el CLI escribe en stderr.
@@ -171,6 +197,14 @@ class ClaudeAgentRunner(LLMRunner):
         try:
             async for msg in _open_query_stream(prompt, options):
                 if isinstance(msg, AssistantMessage):
+                    failure = provider_error_message(
+                        msg.error,
+                        "".join(b.text for b in msg.content if isinstance(b, TextBlock)),
+                    )
+                    if failure is not None:
+                        log.error("claude_provider_error kind=%s", msg.error)
+                        yield ErrorEvent(message=failure)
+                        return
                     for block in msg.content:
                         if isinstance(block, TextBlock):
                             for event in truncator.feed(block.text):
