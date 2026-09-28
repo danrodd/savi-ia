@@ -4,6 +4,7 @@ import { ENV } from '@/lib/env'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { type ModuleCode, usePermisosStore } from '@/modules/permisos'
 import { isAdminRouteDenied } from './adminGuard'
+import { shouldShowLanding } from './landingRedirect'
 
 const ChatView = () => import('@/modules/chat/views/ChatView.vue')
 const LoginView = () => import('@/modules/auth/views/LoginView.vue')
@@ -140,6 +141,10 @@ const router = createRouter({
  */
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
+  if (shouldShowLanding(to.name, authStore.isAuthenticated, ENV.LANDING_ENABLED)) {
+    next({ name: 'landing' })
+    return
+  }
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({
       name: 'login',
