@@ -315,22 +315,26 @@ class CrawlWebSourceUseCase:
             return
 
         if item.pdf is not None:
-            content, media, digest = item.pdf, _PDF, _hash(item.pdf)
+            content, media = item.pdf, _PDF
+            text_digest = digest = _hash(item.pdf)
         else:
             markdown = item.markdown or ""
             if len(markdown.split()) < MIN_WORDS:
                 item.status, item.detail = WebPageStatus.SKIPPED, "Sin texto útil."
                 tally.skipped += 1
                 return
-            digest = _hash(markdown.encode())
             title = item.title or item.url
             content = f"# {title}\n\nFuente: {item.url}\n\n{markdown}".encode()
             media = _MARKDOWN
-        if digest in seen_hashes:
+            # Dos hashes: el del texto detecta páginas repetidas con otra URL;
+            # el del contenido completo (título incluido) decide la versión,
+            # para que un título nuevo o desambiguado llegue a las citas.
+            text_digest, digest = _hash(markdown.encode()), _hash(content)
+        if text_digest in seen_hashes:
             item.status, item.detail = WebPageStatus.SKIPPED, "Igual a otra página del sitio."
             tally.skipped += 1
             return
-        seen_hashes.add(digest)
+        seen_hashes.add(text_digest)
 
         document = (
             await self._documents.get_by_id(previous.document_id) if previous is not None else None

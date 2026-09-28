@@ -38,6 +38,8 @@ export interface MessageSource {
   title: string
   /** `"3-4, 9"` en PDF; `null` en texto plano. */
   pages: string | null
+  /** Página web de origen; `null` en documentos subidos. */
+  url?: string | null
   /** Solo en el historial: calculado para quien consulta. */
   available?: boolean | null
   unavailable_reason?: 'deleted' | 'processing' | 'no_access' | null

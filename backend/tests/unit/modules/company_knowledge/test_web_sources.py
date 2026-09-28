@@ -309,6 +309,26 @@ async def test_a_changed_page_gets_a_new_version_and_keeps_answering(env: Env) -
     assert page.document_id not in env.removed_from_index
 
 
+async def test_a_title_only_change_gets_a_new_version(env: Env) -> None:
+    # Aparece otra página con el mismo título: la existente pasa a
+    # "Contáctenos · contacto" con el texto intacto. Si solo decidiera el
+    # texto, la cita quedaría con el título viejo y ambiguo.
+    _standard_site(env.site)
+    env.site.set("contacto", 200, _page("Contáctenos", _long("Llamanos de lunes a sábado.")))
+    source = await _crawl(env)
+    page = next(p for p in await env.sources.list_pages(source.id) if p.url.endswith("contacto"))
+    assert page.title == "Contáctenos"
+    env.site.set("servicios", 200, _page("Contáctenos", _long("Cortamos madera a la medida.")))
+
+    await _crawl(env, _pending_again(source))
+
+    document = await env.documents.get_by_id(page.document_id)
+    assert document is not None
+    assert (document.version, document.title) == (2, "Contáctenos · contacto")
+    pages = {p.url: p for p in await env.sources.list_pages(source.id)}
+    assert pages[f"{ROOT}contacto"].title == "Contáctenos · contacto"
+
+
 async def test_a_page_that_disappears_twice_is_removed(env: Env) -> None:
     _standard_site(env.site)
     source = await _crawl(env)

@@ -5,12 +5,16 @@ import type { DocumentStatus } from '../types'
 import { STATUS_LABELS } from '../utils/companyDocuments'
 
 const props = defineProps<{
-  status: DocumentStatus
+  status?: DocumentStatus
+  /** Etiqueta ya resuelta, para estados que no son de documento (sitios web). */
+  label?: { label: string; tone: 'muted' | 'info' | 'ok' | 'warn' | 'danger' }
   /** Mensaje del backend para `no_text`/`failed`: explica qué hacer. */
   message?: string | null
 }>()
 
-const info = computed(() => STATUS_LABELS[props.status])
+const info = computed(
+  () => props.label ?? (props.status ? STATUS_LABELS[props.status] : STATUS_LABELS.pending),
+)
 </script>
 
 <template>

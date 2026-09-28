@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpClient, HttpRequestError } from '@/lib/HttpClient'
 import type { MessageSource } from '../../types'
-import { linkCitations, referenceNumbers } from '../../utils/citations'
+import { linkCitations, referenceNumbers, webSourceLink } from '../../utils/citations'
 import MessageSources from '../MessageSources.vue'
 
 vi.mock('@/lib/toast', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }))
@@ -117,5 +117,46 @@ describe('MessageSources', () => {
 
     expect(wrapper.find('button').exists()).toBe(false)
     expect(wrapper.text()).toContain('(no disponible)')
+  })
+})
+
+describe('fuentes web', () => {
+  const web = source({
+    title: 'Tarifas',
+    pages: null,
+    url: 'https://www.surandina.com.co/tarifas.html',
+  })
+
+  it('se abren con su link público, también en la vista compartida', () => {
+    const wrapper = mount(MessageSources, {
+      props: { sources: [web], conversationId: null, readOnly: true },
+    })
+    const link = wrapper.get('a.sources__link')
+    expect(link.attributes('href')).toBe('https://www.surandina.com.co/tarifas.html')
+    expect(link.attributes('target')).toBe('_blank')
+    expect(link.attributes('rel')).toContain('noopener')
+    expect(wrapper.text()).toContain('surandina.com.co')
+  })
+
+  it('una fuente web eliminada no se enlaza', () => {
+    const wrapper = mount(MessageSources, {
+      props: {
+        sources: [{ ...web, available: false, unavailable_reason: 'deleted' }],
+        conversationId: 'conv-1',
+        readOnly: false,
+      },
+    })
+    expect(wrapper.find('a').exists()).toBe(false)
+    expect(wrapper.text()).toContain('eliminado')
+  })
+
+  it('solo acepta links http(s)', () => {
+    expect(webSourceLink('javascript:alert(1)')).toBeNull()
+    expect(webSourceLink('no es url')).toBeNull()
+    expect(webSourceLink(null)).toBeNull()
+    expect(webSourceLink('http://empresa.com/a')).toEqual({
+      href: 'http://empresa.com/a',
+      host: 'empresa.com',
+    })
   })
 })

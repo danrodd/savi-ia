@@ -10,6 +10,8 @@ import CompanyDocumentTable from '../components/CompanyDocumentTable.vue'
 import CompanyDocumentUploadDialog from '../components/CompanyDocumentUploadDialog.vue'
 import CompanyKnowledgeSettingsDialog from '../components/CompanyKnowledgeSettingsDialog.vue'
 import DocumentSearchTestDialog from '../components/DocumentSearchTestDialog.vue'
+import WebSourceAddDialog from '../components/WebSourceAddDialog.vue'
+import WebSourcesPanel from '../components/WebSourcesPanel.vue'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 import { useErpDatabaseStore } from '../stores/erpDatabaseStore'
 import type { CompanyDocument } from '../types'
@@ -19,7 +21,15 @@ import { ACCEPT_ATTRIBUTE, checkFile, formatBytes } from '../utils/companyDocume
 const store = useCompanyDocumentStore()
 const databaseStore = useErpDatabaseStore()
 
+type KnowledgeTab = 'documents' | 'web'
+const TABS: { value: KnowledgeTab; label: string }[] = [
+  { value: 'documents', label: 'Documentos' },
+  { value: 'web', label: 'Sitios web' },
+]
+const tab = ref<KnowledgeTab>('documents')
+
 const uploadOpen = ref(false)
+const webAddOpen = ref(false)
 const searchOpen = ref(false)
 const settingsOpen = ref(false)
 const readingWithAi = ref<CompanyDocument | null>(null)
@@ -197,87 +207,113 @@ onUnmounted(() => store.stopPolling())
       <div>
         <h1 class="kview__title">Conocimiento de la empresa</h1>
         <p class="kview__subtitle">
-          Documentos propios de la empresa —políticas, procedimientos, actas— que SAVI usa para
-          responder, citando la fuente y respetando los permisos del ERP.
+          Documentos y sitios web de la empresa —políticas, procedimientos, precios publicados— que
+          SAVI usa para responder, citando la fuente y respetando los permisos del ERP.
         </p>
       </div>
-      <div class="kview__actions">
+      <div v-if="tab === 'documents'" class="kview__actions">
         <Button variant="ghost" @click="settingsOpen = true">Configuración</Button>
         <Button variant="secondary" :disabled="store.documents.length === 0" @click="searchOpen = true">
           Probar búsqueda
         </Button>
         <Button @click="uploadOpen = true">Subir documentos</Button>
       </div>
+      <div v-else class="kview__actions">
+        <Button @click="webAddOpen = true">Agregar sitio o página</Button>
+      </div>
     </header>
 
-    <div v-if="store.usage" class="kview__usage" aria-label="Uso">
-      <span>{{ store.usage.total }} documentos</span>
-      <span class="kview__dot">·</span>
-      <span>{{ store.usage.chunks.toLocaleString('es-CO') }} de {{ store.usage.chunk_limit.toLocaleString('es-CO') }} fragmentos</span>
-      <span
-        v-if="showUsageBar"
-        class="kview__bar"
-        role="progressbar"
-        :aria-valuenow="usagePercent"
-        aria-valuemin="0"
-        aria-valuemax="100"
+    <div class="kview__tabs" role="tablist" aria-label="Fuentes de conocimiento">
+      <button
+        v-for="t in TABS"
+        :key="t.value"
+        type="button"
+        role="tab"
+        class="kview__tab"
+        :class="{ 'kview__tab--active': tab === t.value }"
+        :aria-selected="tab === t.value"
+        @click="tab = t.value"
       >
-        <span class="kview__bar-fill" :style="{ width: `${usagePercent}%` }" />
-      </span>
-      <span class="kview__dot">·</span>
-      <span>{{ formatBytes(store.usage.bytes_stored) }}</span>
+        {{ t.label }}
+      </button>
     </div>
 
-    <p v-if="store.error" class="kview__error" role="alert">
-      {{ store.error }}
-      <button type="button" class="kview__retry" @click="store.load()">Reintentar</button>
-    </p>
-    <p v-else-if="store.loading && store.documents.length === 0" class="kview__hint">Cargando…</p>
-    <div v-else-if="store.documents.length === 0" class="kview__empty">
-      <p>Aún no hay documentos. Sube el primero para que SAVI pueda consultarlo.</p>
-      <!-- El botón acá y no solo arriba: quien llega a una pantalla vacía
-           busca la acción en la pantalla vacía.
-           Texto distinto al del encabezado a propósito: dos botones con el
-           mismo nombre accesible en la misma pantalla confunden a un lector
-           de pantalla (y rompieron un E2E por ambigüedad). -->
-      <Button @click="uploadOpen = true">Subir el primer documento</Button>
-    </div>
+    <WebSourcesPanel
+      v-if="tab === 'web'"
+      :database-names="databaseNames"
+      :databases="databases"
+      @add="webAddOpen = true"
+    />
+
     <template v-else>
-      <!-- Filtros solo cuando hay suficientes documentos para que sirvan. -->
-      <div v-if="store.documents.length > 5" class="kview__filters">
-        <input
-          v-model="search"
-          class="kview__search"
-          type="search"
-          placeholder="Buscar por nombre…"
-          aria-label="Buscar documentos por nombre"
-        />
-        <select v-model="statusFilter" class="kview__select" aria-label="Filtrar por estado">
-          <option value="todos">Todos los estados</option>
-          <option value="listo">Listos</option>
-          <option value="en_proceso">En proceso</option>
-          <option value="con_problema">Con problemas</option>
-        </select>
-        <span v-if="isFiltering" class="kview__count">
-          {{ visibleDocuments.length }} de {{ store.documents.length }}
+      <div v-if="store.usage" class="kview__usage" aria-label="Uso">
+        <span>{{ store.usage.total }} documentos</span>
+        <span class="kview__dot">·</span>
+        <span>{{ store.usage.chunks.toLocaleString('es-CO') }} de {{ store.usage.chunk_limit.toLocaleString('es-CO') }} fragmentos</span>
+        <span
+          v-if="showUsageBar"
+          class="kview__bar"
+          role="progressbar"
+          :aria-valuenow="usagePercent"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <span class="kview__bar-fill" :style="{ width: `${usagePercent}%` }" />
         </span>
+        <span class="kview__dot">·</span>
+        <span>{{ formatBytes(store.usage.bytes_stored) }}</span>
       </div>
 
-      <div v-if="visibleDocuments.length === 0" class="kview__empty">
-        <p>Ningún documento coincide con la búsqueda.</p>
+      <p v-if="store.error" class="kview__error" role="alert">
+        {{ store.error }}
+        <button type="button" class="kview__retry" @click="store.load()">Reintentar</button>
+      </p>
+      <p v-else-if="store.loading && store.documents.length === 0" class="kview__hint">Cargando…</p>
+      <div v-else-if="store.documents.length === 0" class="kview__empty">
+        <p>Aún no hay documentos. Sube el primero para que SAVI pueda consultarlo.</p>
+        <!-- El botón acá y no solo arriba: quien llega a una pantalla vacía
+             busca la acción en la pantalla vacía.
+             Texto distinto al del encabezado a propósito: dos botones con el
+             mismo nombre accesible en la misma pantalla confunden a un lector
+             de pantalla (y rompieron un E2E por ambigüedad). -->
+        <Button @click="uploadOpen = true">Subir el primer documento</Button>
       </div>
-      <CompanyDocumentTable
-        v-else
-        :documents="visibleDocuments"
-        :database-names="databaseNames"
-        :busy-id="busyId"
-        :ai-reading-available="aiReadingAvailable"
-        @edit="(document) => (editing = document)"
-        @replace="onReplace"
-        @reprocess="onReprocess"
-        @read-with-ai="(document) => (readingWithAi = document)"
-        @remove="(document) => (removing = document)"
-      />
+      <template v-else>
+        <!-- Filtros solo cuando hay suficientes documentos para que sirvan. -->
+        <div v-if="store.documents.length > 5" class="kview__filters">
+          <input
+            v-model="search"
+            class="kview__search"
+            type="search"
+            placeholder="Buscar por nombre…"
+            aria-label="Buscar documentos por nombre"
+          />
+          <select v-model="statusFilter" class="kview__select" aria-label="Filtrar por estado">
+            <option value="todos">Todos los estados</option>
+            <option value="listo">Listos</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="con_problema">Con problemas</option>
+          </select>
+          <span v-if="isFiltering" class="kview__count">
+            {{ visibleDocuments.length }} de {{ store.documents.length }}
+          </span>
+        </div>
+
+        <div v-if="visibleDocuments.length === 0" class="kview__empty">
+          <p>Ningún documento coincide con la búsqueda.</p>
+        </div>
+        <CompanyDocumentTable
+          v-else
+          :documents="visibleDocuments"
+          :database-names="databaseNames"
+          :busy-id="busyId"
+          :ai-reading-available="aiReadingAvailable"
+          @edit="(document) => (editing = document)"
+          @replace="onReplace"
+          @reprocess="onReprocess"
+          @read-with-ai="(document) => (readingWithAi = document)"
+          @remove="(document) => (removing = document)"
+        />
     </template>
 
     <input
@@ -288,8 +324,10 @@ onUnmounted(() => store.stopPolling())
       aria-label="Elegir archivo de reemplazo"
       @change="onReplaceFile"
     />
+    </template>
 
     <CompanyDocumentUploadDialog v-model:open="uploadOpen" :databases="databases" />
+    <WebSourceAddDialog v-model:open="webAddOpen" :databases="databases" />
     <CompanyDocumentEditDialog v-model:open="editOpen" :document="editing" :databases="databases" />
     <DocumentSearchTestDialog v-model:open="searchOpen" :databases="databases" />
     <CompanyKnowledgeSettingsDialog v-model:open="settingsOpen" />
@@ -325,6 +363,39 @@ onUnmounted(() => store.stopPolling())
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.kview__tabs {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: var(--space-4);
+  padding: 3px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.kview__tab {
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.kview__tab:hover {
+  color: var(--text);
+}
+
+.kview__tab--active {
+  background: var(--surface-elev);
+  color: var(--text);
+  box-shadow: var(--shadow-xs);
 }
 
 .kview__title {

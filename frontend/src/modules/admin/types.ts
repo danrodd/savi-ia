@@ -238,3 +238,78 @@ export interface SearchTestResult {
   }[]
   excluded_documents: { document_id: string; title: string; reason: ExclusionReason }[]
 }
+
+// ── Sitios web (Fase 5) ─────────────────────────────────────────────────────
+// Reflejan `/admin/company-web-sources`. Cada página importada es un
+// documento más del conocimiento, con su link en las citas.
+
+export type WebSourceMode = 'page' | 'site'
+export type RefreshFrequency = 'manual' | 'daily' | 'weekly'
+export type WebSourceStatus = 'pending' | 'crawling' | 'ready' | 'failed'
+export type WebPageStatus = 'imported' | 'unchanged' | 'skipped' | 'failed' | 'removed'
+
+export interface WebSource extends DocumentPermissions {
+  id: string
+  url: string
+  mode: WebSourceMode
+  title: string
+  refresh: RefreshFrequency
+  max_pages: number
+  excluded_sections: string[]
+  status: WebSourceStatus
+  status_code: string | null
+  status_message: string | null
+  page_count: number
+  skipped_count: number
+  last_crawl_started_at: string | null
+  last_crawl_finished_at: string | null
+  next_refresh_at: string | null
+  created_by_login: string
+  created_at: string
+}
+
+export interface WebPage {
+  document_id: string
+  url: string
+  title: string
+  status: WebPageStatus
+  status_detail: string | null
+  last_fetched_at: string | null
+  last_changed_at: string | null
+}
+
+export interface WebSourceDetail extends WebSource {
+  pages: WebPage[]
+}
+
+export interface WebSourcePreview {
+  url: string
+  title: string
+  sample: string
+  words: number
+  page_count: number
+  truncated: boolean
+  used_sitemap: boolean
+  /** Páginas por sección del sitemap, para excluir las que no aportan. */
+  sections: Record<string, number>
+  warnings: string[]
+}
+
+export interface PreviewWebSourceRequest {
+  url: string
+  mode: WebSourceMode
+  max_pages: number
+  excluded_sections: string[]
+}
+
+export interface CreateWebSourceRequest extends PreviewWebSourceRequest, DocumentPermissions {
+  title?: string
+  refresh: RefreshFrequency
+}
+
+export interface UpdateWebSourceRequest extends Partial<DocumentPermissions> {
+  title?: string
+  refresh?: RefreshFrequency
+  max_pages?: number
+  excluded_sections?: string[]
+}

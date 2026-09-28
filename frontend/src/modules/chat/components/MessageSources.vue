@@ -2,6 +2,9 @@
 /**
  * "Fuentes" debajo de una respuesta: los documentos de la empresa citados.
  *
+ * Una página web se abre con su link público: no pasa por el backend ni
+ * necesita token, y sirve también en la vista compartida.
+ *
  * Abrir el original pasa por `HttpClient` (con el token) y se muestra como
  * blob: un `<a href>` directo no llevaría la autenticación. El backend
  * responde 404 ante cualquier falta de permiso; en ese caso la fuente se
@@ -12,7 +15,7 @@ import { ref } from 'vue'
 import { HttpClient, HttpRequestError } from '@/lib/HttpClient'
 import { toast } from '@/lib/toast'
 import type { MessageSource } from '../types'
-import { toSuperscript } from '../utils/citations'
+import { toSuperscript, webSourceLink } from '../utils/citations'
 
 const props = defineProps<{
   sources: MessageSource[]
@@ -77,8 +80,18 @@ async function open(source: MessageSource): Promise<void> {
     <ol class="sources__list">
       <li v-for="(source, index) in sources" :key="source.document_id" class="sources__item">
         <span class="sources__number" aria-hidden="true">{{ toSuperscript(index + 1) }}</span>
+        <a
+          v-if="webSourceLink(source.url) && isAvailable(source)"
+          class="sources__link"
+          :href="webSourceLink(source.url)?.href"
+          target="_blank"
+          rel="noopener noreferrer"
+          :aria-label="`Abrir ${source.title} en ${webSourceLink(source.url)?.host}`"
+        >
+          {{ source.title }}
+        </a>
         <button
-          v-if="canOpen(source)"
+          v-else-if="canOpen(source)"
           type="button"
           class="sources__link"
           :disabled="opening === source.document_id"
@@ -89,6 +102,9 @@ async function open(source: MessageSource): Promise<void> {
         </button>
         <span v-else class="sources__name" :class="{ 'sources__name--off': !isAvailable(source) }">
           {{ source.title }}
+        </span>
+        <span v-if="webSourceLink(source.url)" class="sources__meta">
+          · {{ webSourceLink(source.url)?.host }}
         </span>
         <span v-if="source.pages" class="sources__meta">· p. {{ source.pages }}</span>
         <span v-if="!isAvailable(source)" class="sources__meta">({{ unavailableLabel(source) }})</span>

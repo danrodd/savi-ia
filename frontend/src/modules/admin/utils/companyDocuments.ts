@@ -56,7 +56,7 @@ export function defaultPermissions(): DocumentPermissions {
   return { visibility: 'all', modules: [], all_databases: true, database_ids: [] }
 }
 
-export function permissionsOf(document: CompanyDocument): DocumentPermissions {
+export function permissionsOf(document: DocumentPermissions): DocumentPermissions {
   return {
     visibility: document.visibility,
     modules: [...document.modules],

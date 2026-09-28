@@ -59,3 +59,20 @@ export function linkCitations(markdown: string, sources: MessageSource[] | undef
     .map((segment, index) => (index % 2 === 1 ? segment : replaceInProse(segment, numbers)))
     .join('')
 }
+
+/**
+ * Link de una fuente web, solo si es http(s): el texto de una página ajena
+ * nunca debe convertirse en un `javascript:` clickeable.
+ */
+export function webSourceLink(
+  url: string | null | undefined,
+): { href: string; host: string } | null {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+    return { href: parsed.href, host: parsed.host.replace(/^www\./, '') }
+  } catch {
+    return null
+  }
+}
