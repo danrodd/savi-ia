@@ -1,1 +1,555 @@
-[]
+[
+  {
+    "term": "DIAN",
+    "definition": "Dirección de Impuestos y Aduanas Nacionales: la autoridad tributaria y aduanera de Colombia. Recauda impuestos, controla la facturación electrónica y administra el RUT.",
+    "aliases": []
+  },
+  {
+    "term": "NIT",
+    "definition": "Número de Identificación Tributaria: identifica ante la DIAN a empresas y personas que declaran impuestos. Incluye un dígito de verificación (DV) al final.",
+    "aliases": [
+      "número de identificación tributaria"
+    ]
+  },
+  {
+    "term": "DV",
+    "definition": "Dígito de verificación: el último número del NIT, calculado a partir de los demás para detectar errores de digitación.",
+    "aliases": [
+      "dígito de verificación"
+    ]
+  },
+  {
+    "term": "RUT",
+    "definition": "Registro Único Tributario: el registro ante la DIAN de quienes tienen obligaciones tributarias. Indica el NIT, la actividad económica y las responsabilidades (IVA, retención, etc.).",
+    "aliases": [
+      "registro único tributario"
+    ]
+  },
+  {
+    "term": "IVA",
+    "definition": "Impuesto al Valor Agregado: impuesto sobre la venta de bienes y la prestación de servicios. Hay bienes gravados, exentos y excluidos, con tratamientos distintos.",
+    "aliases": [
+      "impuesto al valor agregado"
+    ]
+  },
+  {
+    "term": "Exento",
+    "definition": "Bien o servicio gravado con IVA a tarifa 0 %: no se cobra IVA en la venta, pero quien lo vende puede descontar el IVA que pagó en sus compras.",
+    "aliases": [
+      "exentos",
+      "bien exento"
+    ]
+  },
+  {
+    "term": "Excluido",
+    "definition": "Bien o servicio que no causa IVA: no se cobra en la venta y el IVA pagado en las compras no se puede descontar, se vuelve costo.",
+    "aliases": [
+      "excluidos",
+      "bien excluido"
+    ]
+  },
+  {
+    "term": "Retención en la fuente",
+    "definition": "Mecanismo por el cual quien paga descuenta anticipadamente una parte del impuesto de renta de quien recibe el pago y lo consigna a la DIAN.",
+    "aliases": [
+      "retefuente",
+      "retención",
+      "rete fuente"
+    ]
+  },
+  {
+    "term": "ReteIVA",
+    "definition": "Retención de IVA: parte del IVA de una factura que el comprador retiene y consigna directamente a la DIAN en lugar de pagársela al vendedor.",
+    "aliases": [
+      "retención de IVA",
+      "rete IVA"
+    ]
+  },
+  {
+    "term": "ReteICA",
+    "definition": "Retención del impuesto de industria y comercio: anticipo del ICA que el comprador descuenta del pago y consigna al municipio.",
+    "aliases": [
+      "retención de ICA",
+      "rete ICA"
+    ]
+  },
+  {
+    "term": "ICA",
+    "definition": "Impuesto de Industria y Comercio: impuesto municipal sobre los ingresos de actividades industriales, comerciales y de servicios.",
+    "aliases": [
+      "industria y comercio"
+    ]
+  },
+  {
+    "term": "Impuesto al consumo",
+    "definition": "Impuesto que se cobra en lugar del IVA en ciertos servicios y bienes, como restaurantes, bares y algunos vehículos. En el ERP puede aparecer como ipoconsumo.",
+    "aliases": [
+      "impoconsumo",
+      "ipoconsumo"
+    ]
+  },
+  {
+    "term": "UVT",
+    "definition": "Unidad de Valor Tributario: unidad de medida que usa la DIAN para expresar topes, sanciones y bases de retención. Su valor en pesos cambia cada año.",
+    "aliases": [
+      "unidad de valor tributario"
+    ]
+  },
+  {
+    "term": "Factura electrónica",
+    "definition": "Factura de venta que se genera, valida y entrega en formato electrónico según las reglas de la DIAN. Tiene un código único (CUFE) y validez legal como título valor.",
+    "aliases": [
+      "facturación electrónica",
+      "FE"
+    ]
+  },
+  {
+    "term": "CUFE",
+    "definition": "Código Único de Factura Electrónica: identificador que asigna la validación de la DIAN a cada factura electrónica.",
+    "aliases": [
+      "código único de factura electrónica"
+    ]
+  },
+  {
+    "term": "CUDE",
+    "definition": "Código Único de Documento Electrónico: como el CUFE, pero para notas crédito, notas débito y otros documentos electrónicos distintos de la factura.",
+    "aliases": []
+  },
+  {
+    "term": "Nota crédito",
+    "definition": "Documento que disminuye el valor de una factura ya emitida, por devoluciones, descuentos o errores. Reduce lo que el cliente debe.",
+    "aliases": [
+      "notas crédito",
+      "NC"
+    ]
+  },
+  {
+    "term": "Nota débito",
+    "definition": "Documento que aumenta el valor de una factura ya emitida, por ejemplo por intereses o cobros adicionales.",
+    "aliases": [
+      "notas débito",
+      "ND"
+    ]
+  },
+  {
+    "term": "Documento soporte",
+    "definition": "Documento electrónico que respalda compras a personas o proveedores que no están obligados a facturar, para que el costo sea deducible.",
+    "aliases": [
+      "documento soporte electrónico",
+      "DS"
+    ]
+  },
+  {
+    "term": "RADIAN",
+    "definition": "Registro de facturas electrónicas de venta como título valor de la DIAN: permite negociar y endosar facturas electrónicas.",
+    "aliases": []
+  },
+  {
+    "term": "Resolución de facturación",
+    "definition": "Autorización de la DIAN que habilita un rango de numeración y un prefijo para expedir facturas.",
+    "aliases": [
+      "resolución DIAN",
+      "numeración de facturación"
+    ]
+  },
+  {
+    "term": "Régimen simple",
+    "definition": "Régimen Simple de Tributación (RST): modelo de tributación que unifica varios impuestos en un pago para pequeñas empresas y personas.",
+    "aliases": [
+      "RST",
+      "régimen simple de tributación"
+    ]
+  },
+  {
+    "term": "Responsable de IVA",
+    "definition": "Persona o empresa obligada a cobrar IVA en sus ventas y declararlo. Lo indica el RUT.",
+    "aliases": [
+      "responsable del IVA"
+    ]
+  },
+  {
+    "term": "Gran contribuyente",
+    "definition": "Calificación que da la DIAN a contribuyentes de gran tamaño; tienen reglas especiales, por ejemplo como agentes de retención.",
+    "aliases": [
+      "grandes contribuyentes"
+    ]
+  },
+  {
+    "term": "Autorretenedor",
+    "definition": "Contribuyente autorizado para practicarse a sí mismo la retención en la fuente, en lugar de que se la practique el cliente.",
+    "aliases": [
+      "autorretención"
+    ]
+  },
+  {
+    "term": "Exógena",
+    "definition": "Información exógena: reporte anual a la DIAN con los pagos, ingresos y retenciones hechos a terceros.",
+    "aliases": [
+      "información exógena",
+      "medios magnéticos"
+    ]
+  },
+  {
+    "term": "PUC",
+    "definition": "Plan Único de Cuentas: catálogo de cuentas contables que organiza los registros por clases (activo, pasivo, patrimonio, ingresos, gastos, costos).",
+    "aliases": [
+      "plan único de cuentas",
+      "plan de cuentas"
+    ]
+  },
+  {
+    "term": "NIIF",
+    "definition": "Normas Internacionales de Información Financiera, adoptadas en Colombia para la preparación de los estados financieros.",
+    "aliases": [
+      "IFRS",
+      "normas internacionales de información financiera"
+    ]
+  },
+  {
+    "term": "Centro de costo",
+    "definition": "Unidad de la empresa (sucursal, área, proyecto) a la que se asignan ingresos y gastos para analizarlos por separado.",
+    "aliases": [
+      "centros de costo",
+      "CC"
+    ]
+  },
+  {
+    "term": "CxC",
+    "definition": "Cuentas por cobrar: lo que los clientes le deben a la empresa por ventas a crédito. En el ERP es el módulo de Cuentas por Cobrar.",
+    "aliases": [
+      "cuentas por cobrar",
+      "cuenta por cobrar"
+    ]
+  },
+  {
+    "term": "CxP",
+    "definition": "Cuentas por pagar: lo que la empresa le debe a sus proveedores y acreedores. En el ERP es el módulo de Cuentas por Pagar.",
+    "aliases": [
+      "cuentas por pagar",
+      "cuenta por pagar"
+    ]
+  },
+  {
+    "term": "Cartera",
+    "definition": "Conjunto de saldos pendientes de cobro a clientes. La cartera vencida es la que ya pasó su fecha de vencimiento.",
+    "aliases": [
+      "cartera vencida"
+    ]
+  },
+  {
+    "term": "Comprobante de egreso",
+    "definition": "Documento que soporta un pago realizado por la empresa, por ejemplo a un proveedor.",
+    "aliases": [
+      "egreso",
+      "comprobante de pago"
+    ]
+  },
+  {
+    "term": "Recibo de caja",
+    "definition": "Documento que soporta un dinero recibido por la empresa, por ejemplo el pago de un cliente.",
+    "aliases": [
+      "recibo",
+      "RC"
+    ]
+  },
+  {
+    "term": "Conciliación bancaria",
+    "definition": "Comparación entre los movimientos del banco y los registros contables para identificar y explicar diferencias.",
+    "aliases": [
+      "conciliación"
+    ]
+  },
+  {
+    "term": "Balance general",
+    "definition": "Estado financiero que muestra lo que la empresa tiene (activos), lo que debe (pasivos) y su patrimonio en una fecha.",
+    "aliases": [
+      "estado de situación financiera",
+      "balance"
+    ]
+  },
+  {
+    "term": "Estado de resultados",
+    "definition": "Estado financiero que muestra los ingresos, costos y gastos de un período y la utilidad o pérdida resultante.",
+    "aliases": [
+      "PyG",
+      "P&G",
+      "pérdidas y ganancias"
+    ]
+  },
+  {
+    "term": "Costo promedio",
+    "definition": "Método de valoración del inventario que calcula el costo de cada unidad como el promedio ponderado de lo comprado.",
+    "aliases": [
+      "costo promedio ponderado"
+    ]
+  },
+  {
+    "term": "Activo fijo",
+    "definition": "Bien que la empresa usa para operar durante varios años (vehículos, maquinaria, equipos) y que se deprecia.",
+    "aliases": [
+      "activos fijos",
+      "propiedad planta y equipo"
+    ]
+  },
+  {
+    "term": "Depreciación",
+    "definition": "Reconocimiento contable del desgaste de un activo fijo a lo largo de su vida útil.",
+    "aliases": []
+  },
+  {
+    "term": "PILA",
+    "definition": "Planilla Integrada de Liquidación de Aportes: formulario para pagar en un solo trámite los aportes a salud, pensión, riesgos laborales y parafiscales.",
+    "aliases": [
+      "planilla integrada de liquidación de aportes",
+      "planilla"
+    ]
+  },
+  {
+    "term": "EPS",
+    "definition": "Entidad Promotora de Salud: administra la afiliación y los servicios de salud de los trabajadores y sus familias.",
+    "aliases": [
+      "entidad promotora de salud"
+    ]
+  },
+  {
+    "term": "AFP",
+    "definition": "Administradora de Fondos de Pensiones: gestiona los aportes para pensión en el régimen de ahorro individual.",
+    "aliases": [
+      "fondo de pensiones"
+    ]
+  },
+  {
+    "term": "ARL",
+    "definition": "Administradora de Riesgos Laborales: cubre accidentes de trabajo y enfermedades laborales. La paga el empleador.",
+    "aliases": [
+      "administradora de riesgos laborales",
+      "riesgos laborales"
+    ]
+  },
+  {
+    "term": "Caja de compensación",
+    "definition": "Entidad que recibe un aporte parafiscal del empleador y ofrece a los trabajadores subsidio familiar, recreación, educación y vivienda.",
+    "aliases": [
+      "caja de compensación familiar",
+      "CCF"
+    ]
+  },
+  {
+    "term": "Parafiscales",
+    "definition": "Aportes obligatorios del empleador a la caja de compensación, el SENA y el ICBF, calculados sobre la nómina.",
+    "aliases": [
+      "aportes parafiscales"
+    ]
+  },
+  {
+    "term": "Cesantías",
+    "definition": "Prestación social equivalente a un mes de salario por año trabajado, que el empleador consigna en un fondo de cesantías.",
+    "aliases": [
+      "cesantía"
+    ]
+  },
+  {
+    "term": "Intereses de cesantías",
+    "definition": "Interés anual sobre el saldo de las cesantías que el empleador paga directamente al trabajador.",
+    "aliases": []
+  },
+  {
+    "term": "Prima de servicios",
+    "definition": "Prestación social equivalente a un mes de salario por año, pagada en dos cuotas en el año.",
+    "aliases": [
+      "prima"
+    ]
+  },
+  {
+    "term": "SMMLV",
+    "definition": "Salario Mínimo Mensual Legal Vigente: el salario mínimo que fija el Gobierno cada año. Sirve de base para muchos cálculos laborales y tributarios.",
+    "aliases": [
+      "salario mínimo",
+      "SMLMV"
+    ]
+  },
+  {
+    "term": "Auxilio de transporte",
+    "definition": "Pago que el empleador hace a los trabajadores que ganan hasta cierto número de salarios mínimos para cubrir el transporte.",
+    "aliases": [
+      "subsidio de transporte"
+    ]
+  },
+  {
+    "term": "Nómina electrónica",
+    "definition": "Documento soporte de pago de nómina que el empleador transmite a la DIAN en formato electrónico.",
+    "aliases": []
+  },
+  {
+    "term": "SKU",
+    "definition": "Código que identifica de forma única un producto y su presentación dentro del inventario.",
+    "aliases": [
+      "referencia",
+      "código de producto"
+    ]
+  },
+  {
+    "term": "EAN",
+    "definition": "Código de barras estándar internacional para identificar productos en el punto de venta.",
+    "aliases": [
+      "código de barras"
+    ]
+  },
+  {
+    "term": "Stock mínimo",
+    "definition": "Cantidad por debajo de la cual un producto debe reabastecerse. En el ERP se configura por producto y almacén.",
+    "aliases": [
+      "mínimo",
+      "existencia mínima"
+    ]
+  },
+  {
+    "term": "Toma física",
+    "definition": "Conteo físico del inventario para compararlo con lo registrado en el sistema y ajustar las diferencias.",
+    "aliases": [
+      "inventario físico",
+      "conteo físico"
+    ]
+  },
+  {
+    "term": "Kardex",
+    "definition": "Registro de las entradas, salidas y saldo de cada producto a lo largo del tiempo.",
+    "aliases": []
+  },
+  {
+    "term": "OC",
+    "definition": "Orden de compra: documento con el que la empresa solicita productos a un proveedor, con cantidades y precios acordados.",
+    "aliases": [
+      "orden de compra",
+      "órdenes de compra"
+    ]
+  },
+  {
+    "term": "Remisión",
+    "definition": "Documento que acompaña la entrega de mercancía, antes o en lugar de la factura.",
+    "aliases": []
+  },
+  {
+    "term": "CEDIS",
+    "definition": "Centro de distribución: bodega principal desde la que se abastecen las sucursales.",
+    "aliases": [
+      "centro de distribución"
+    ]
+  },
+  {
+    "term": "Lote",
+    "definition": "Grupo de unidades de un producto fabricadas juntas, con la misma fecha de vencimiento. Permite rastrear y controlar vencimientos.",
+    "aliases": [
+      "lotes"
+    ]
+  },
+  {
+    "term": "INVIMA",
+    "definition": "Instituto Nacional de Vigilancia de Medicamentos y Alimentos: autoriza y vigila medicamentos, alimentos, cosméticos y dispositivos médicos en Colombia.",
+    "aliases": []
+  },
+  {
+    "term": "Registro sanitario",
+    "definition": "Autorización del INVIMA para fabricar, importar o vender un producto. Todo medicamento debe tener uno vigente.",
+    "aliases": [
+      "registro INVIMA"
+    ]
+  },
+  {
+    "term": "CUM",
+    "definition": "Código Único de Medicamentos: identificador que asigna el INVIMA a cada medicamento y presentación comercial.",
+    "aliases": [
+      "código único de medicamentos"
+    ]
+  },
+  {
+    "term": "Venta libre",
+    "definition": "Medicamento que se puede vender sin fórmula médica.",
+    "aliases": [
+      "OTC"
+    ]
+  },
+  {
+    "term": "Fórmula médica",
+    "definition": "Prescripción de un profesional de la salud que autoriza la venta de un medicamento que no es de venta libre.",
+    "aliases": [
+      "receta",
+      "prescripción"
+    ]
+  },
+  {
+    "term": "Medicamento de control especial",
+    "definition": "Medicamento con venta restringida y vigilada por su riesgo de abuso, que exige fórmula especial y registro.",
+    "aliases": [
+      "control especial",
+      "medicamento controlado"
+    ]
+  },
+  {
+    "term": "RIPS",
+    "definition": "Registro Individual de Prestación de Servicios de Salud: datos que los prestadores reportan sobre cada atención.",
+    "aliases": []
+  },
+  {
+    "term": "IPS",
+    "definition": "Institución Prestadora de Servicios de Salud: clínica, hospital o centro que atiende pacientes.",
+    "aliases": []
+  },
+  {
+    "term": "SOAT",
+    "definition": "Seguro Obligatorio de Accidentes de Tránsito: cubre la atención de las víctimas de accidentes de tránsito. Todo vehículo debe tenerlo vigente.",
+    "aliases": []
+  },
+  {
+    "term": "RTM",
+    "definition": "Revisión técnico-mecánica y de emisiones contaminantes: inspección obligatoria periódica del estado del vehículo.",
+    "aliases": [
+      "técnico mecánica",
+      "tecnomecánica",
+      "revisión técnico-mecánica"
+    ]
+  },
+  {
+    "term": "Orden de trabajo",
+    "definition": "Documento del taller que registra el vehículo, los trabajos a realizar, los repuestos y la mano de obra.",
+    "aliases": [
+      "OT",
+      "orden de servicio"
+    ]
+  },
+  {
+    "term": "Microcrédito",
+    "definition": "Crédito de bajo monto dirigido a microempresarios y personas con acceso limitado a la banca tradicional.",
+    "aliases": []
+  },
+  {
+    "term": "Tasa de usura",
+    "definition": "Tasa máxima de interés que se puede cobrar legalmente, certificada periódicamente por la Superintendencia Financiera.",
+    "aliases": [
+      "usura"
+    ]
+  },
+  {
+    "term": "Mora",
+    "definition": "Retraso en el pago de una obligación después de su fecha de vencimiento. Genera intereses de mora.",
+    "aliases": [
+      "intereses de mora",
+      "días de mora"
+    ]
+  },
+  {
+    "term": "Centrales de riesgo",
+    "definition": "Bases de datos (como Datacrédito o TransUnion) que registran el comportamiento de pago de las personas y empresas.",
+    "aliases": [
+      "Datacrédito",
+      "reporte en centrales"
+    ]
+  },
+  {
+    "term": "Amortización",
+    "definition": "Pago gradual de una deuda en cuotas que incluyen capital e intereses. La tabla de amortización muestra cada cuota.",
+    "aliases": [
+      "tabla de amortización"
+    ]
+  }
+]

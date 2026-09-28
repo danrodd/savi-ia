@@ -136,7 +136,7 @@ def test_contains_wraps_the_value_with_wildcards() -> None:
 
     compilada = compile_query(query, ENTIDAD)
 
-    assert "ILIKE" in compilada.sql.upper()
+    assert " LIKE " in compilada.sql.upper()
     assert "%acme%" in compilada.params.values()
 
 
@@ -484,7 +484,7 @@ def test_contains_matches_every_word_ignoring_articles() -> None:
     compilada = compile_query(query, ENTIDAD)
 
     assert set(compilada.params.values()) == {"%aceite%", "%motor%"}
-    assert compilada.sql.count("ILIKE") == 2
+    assert compilada.sql.count(" LIKE ") == 2
     assert " AND " in compilada.sql
 
 
@@ -503,3 +503,13 @@ def test_contains_with_only_stopwords_keeps_the_raw_value() -> None:
     compilada = compile_query(query, ENTIDAD)
 
     assert list(compilada.params.values()) == ["%de%"]
+
+
+def test_contains_ignores_accents_on_both_sides() -> None:
+    """El ERP guarda "ACETAMINOFEN" y el usuario escribe "acetaminofén"."""
+    query = _agregado(filtros=[QueryFilter("cliente", FilterOp.CONTAINS, "Acetaminofén")])
+
+    compilada = compile_query(query, ENTIDAD)
+
+    assert "%acetaminofen%" in compilada.params.values()
+    assert "TRANSLATE(LOWER(" in compilada.sql

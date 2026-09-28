@@ -5,21 +5,23 @@ formatear a texto legible. Captura errores de dominio y los devuelve como
 texto accionable (el LLM lo usa para corregir o explicar al usuario);
 nunca propaga stack traces ni detalle de la BD.
 """
+
 from __future__ import annotations
 
 import logging
+from collections.abc import Collection, Sequence
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from app.modules.data_query.application.query_compiler import compile_query
+from app.modules.data_query.application.query_compiler import compile_query, search_terms
 from app.modules.data_query.application.query_parser import parse_semantic_query
 from app.modules.data_query.domain.exceptions import (
     SemanticQueryError,
     UnknownEntityError,
 )
 from app.modules.data_query.domain.query_result import QueryResult
-from app.modules.data_query.domain.semantic_query import QueryMode
+from app.modules.data_query.domain.semantic_query import FilterOp, QueryFilter, QueryMode
 from app.modules.data_query.infrastructure.catalog import entity_names, get_entity
 from app.modules.data_query.infrastructure.erp_query_executor import execute_compiled
 
@@ -27,7 +29,10 @@ log = logging.getLogger(__name__)
 
 
 async def run_semantic_query(
-    raw: dict[str, Any], *, erp_database_id: UUID | None = None
+    raw: dict[str, Any],
+    *,
+    erp_database_id: UUID | None = None,
+    modules: Collection[str] | None = None,
 ) -> str:
     """Devuelve texto markdown listo para que el LLM lo presente, o un
     mensaje de error accionable (también texto)."""
@@ -36,6 +41,13 @@ async def run_semantic_query(
         entity = get_entity(query.entidad)
         if entity is None:
             raise UnknownEntityError(query.entidad, entity_names())
+        if not entity.allowed_for(modules):
+            # Defensa en profundidad: la descripción de la tool ya la oculta.
+            return (
+                f"El usuario no tiene acceso a '{entity.name}' en el ERP (requiere el "
+                f"módulo {' o '.join(entity.required_modules)}). Decile que no tiene "
+                "permiso para consultar esa información; no la estimes por otro camino."
+            )
         compiled = compile_query(query, entity)
     except SemanticQueryError as e:
         return f"No pude armar la consulta: {e}"
@@ -51,7 +63,41 @@ async def run_semantic_query(
             "Intentá reformular la pregunta o pedí menos detalle."
         )
 
+    if _is_empty(result):
+        hint = _narrower_search_hint(query.filtros)
+        if hint:
+            return hint
     return _format_result(result, compiled.select_labels)
+
+
+def _is_empty(result: QueryResult) -> bool:
+    """Sin filas, o un agregado sin coincidencias: `SUM` sobre nada da una
+    fila con todo en NULL, y el modelo la leía como "no se puede saber"."""
+    return not result.rows or all(value is None for row in result.rows for value in row.values())
+
+
+def _narrower_search_hint(filters: Sequence[QueryFilter]) -> str | None:
+    """Una búsqueda por nombre con muchas palabras exige TODAS: "acetaminofen
+    500 mg 10 tabletas" no encuentra "ACETAMINOFEN 500MG 10TAB". Medido: el
+    modelo, en vez de reintentar, le preguntaba al usuario cómo se llamaba el
+    producto. La indicación va en el resultado porque es donde el modelo
+    decide qué hacer después; en la descripción de la tool no alcanzó."""
+    for flt in filters:
+        if flt.op != FilterOp.CONTAINS:
+            continue
+        terms = search_terms(str(flt.valor))
+        if len(terms) >= 3:
+            # El nombre y el primer número ("acetaminofen 500", "tornillo 6"):
+            # la presentación y las unidades son lo que más cambia de escritura.
+            number = next((t for t in terms[1:] if any(c.isdigit() for c in t)), None)
+            keywords = f"{terms[0]} {number}" if number else terms[0]
+            return (
+                f"No hubo coincidencias con TODAS estas palabras en '{flt.campo}': "
+                f"{', '.join(terms)}. El nombre en el ERP suele estar abreviado "
+                f"(ej. '10TAB', '500MG'). Reintentá la consulta con 1 o 2 palabras "
+                f"clave, por ejemplo '{keywords}', antes de responder que no existe."
+            )
+    return None
 
 
 def _fmt_value(v: Any) -> str:
@@ -79,9 +125,7 @@ def _format_result(result: QueryResult, labels: dict[str, str]) -> str:
     ):
         # Formato clave-valor para un registro único.
         row = result.rows[0]
-        lines = [
-            f"- **{labels.get(c, c)}**: {_fmt_value(row[c])}" for c in result.columns
-        ]
+        lines = [f"- **{labels.get(c, c)}**: {_fmt_value(row[c])}" for c in result.columns]
         return "\n".join(lines)
 
     # Tabla markdown para agregados y detalle.

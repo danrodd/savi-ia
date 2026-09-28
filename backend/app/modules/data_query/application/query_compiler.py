@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -255,10 +256,11 @@ def _compile_filter(
             return _whole_day_scalar(col, flt.op, valor, pc)
         return f"{col} {_SCALAR_OPS[flt.op]} {pc.add(valor)}"
     if flt.op == FilterOp.CONTAINS:
-        terms = _search_terms(str(valor))
+        terms = search_terms(str(valor))
+        folded = _fold_sql(col)
         if len(terms) == 1:
-            return f"{col} ILIKE {pc.add(f'%{terms[0]}%')}"
-        return "(" + " AND ".join(f"{col} ILIKE {pc.add(f'%{t}%')}" for t in terms) + ")"
+            return f"{folded} LIKE {pc.add(f'%{terms[0]}%')}"
+        return "(" + " AND ".join(f"{folded} LIKE {pc.add(f'%{t}%')}" for t in terms) + ")"
     if flt.op == FilterOp.BETWEEN:
         if not isinstance(valor, (list, tuple)):
             raise InvalidQueryError(f"El filtro '{flt.campo}' con 'entre' requiere [inicio, fin].")
@@ -300,7 +302,24 @@ def _stem(word: str) -> str:
     return word
 
 
-def _search_terms(value: str) -> list[str]:
+# Sin tildes de los dos lados. El ERP guarda "ACETAMINOFEN" y el usuario
+# escribe "acetaminofén" (o al revés): `ILIKE` distingue la tilde y la
+# búsqueda no encontraba nada. `unaccent` no sirve: es una extensión que no
+# se puede instalar en la base de solo lectura del cliente.
+_ACCENTED = "áéíóúüñàèìòù"
+_PLAIN = "aeiouunaeiou"
+
+
+def _fold_sql(column: str) -> str:
+    return f"TRANSLATE(LOWER({column}), '{_ACCENTED}', '{_PLAIN}')"
+
+
+def _fold(text: str) -> str:
+    decomposed = unicodedata.normalize("NFD", text.lower())
+    return "".join(c for c in decomposed if unicodedata.category(c) != "Mn")
+
+
+def search_terms(value: str) -> list[str]:
     """`contiene` busca PALABRAS, no la frase literal.
 
     Con la frase literal, "tornillos" no matcheaba "TORNILLO MAD" y
@@ -309,9 +328,9 @@ def _search_terms(value: str) -> list[str]:
     en plural. Cada palabra (sin artículos, sin plural) tiene que aparecer,
     en cualquier orden.
     """
-    words = [w for w in value.lower().split() if w not in _STOPWORDS]
+    words = [w for w in _fold(value).split() if w not in _STOPWORDS]
     terms = [_stem(w) for w in words]
-    return terms or [value]
+    return terms or [_fold(value)]
 
 
 def _is_whole_day(value: Any) -> bool:

@@ -288,7 +288,12 @@ Inventario.Producto (idProducto)
 ```
 
 > **Observación**: el stock en `SaldoInventario` es acumulativo por período
-> (año/mes). Para stock actual se usa el registro con el período más reciente.
+> (año/mes), pero el ERP **solo escribe el mes en que hubo movimiento**. El
+> stock actual es el **último registro de cada par producto-almacén**, no el
+> último mes de la tabla: en sur_andina el 88 % de los pares tiene su último
+> saldo en un mes anterior (medido 2026-09-28). Ver la entidad `inventario`
+> (`app/modules/data_query/infrastructure/catalog/inventario.py`).
+> `Producto.tipo = 1` son servicios y no se cuentan como stock.
 > Los top 10 por stock incluyen productos de tipo "servicio" y publicidad
 > con cantidades muy altas (ej. paquetes de documentos electrónicos con
 > 2,475,000 unidades) — probablemente servicios facturados como unidades,

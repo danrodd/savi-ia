@@ -463,3 +463,113 @@ async def test_product_search_by_words_matches_how_users_ask(
 
     assert esperado
     assert float(rows[0]["unidades"]) == pytest.approx(float(esperado))
+
+
+# ── Inventario y compras: el número de SAVI contra SQL escrito a mano ───
+
+
+@pytest.mark.asyncio
+async def test_inventario_is_the_latest_balance_of_each_product_and_warehouse(
+    erp_engine: AsyncEngine,
+) -> None:
+    """El ERP solo escribe el mes con movimiento: tomar "el último mes" deja
+    afuera la mayoría del stock en frami y sur_andina."""
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(entidad="inventario", modo=QueryMode.AGGREGATE, metricas=["unidades"]),
+    )
+    async with erp_engine.connect() as conn:
+        esperado = (
+            await conn.execute(
+                text(
+                    """
+                    SELECT SUM(u."cantidadActual") FROM (
+                      SELECT DISTINCT ON (si."idProducto", si."idAlmacen") si."idProducto",
+                             si."cantidadActual"
+                      FROM "Inventario"."SaldoInventario" si
+                      ORDER BY si."idProducto", si."idAlmacen", si.anio DESC, si.mes DESC
+                    ) u JOIN "Inventario"."Producto" p ON p."idProducto" = u."idProducto"
+                    WHERE p.tipo = 0
+                    """
+                )
+            )
+        ).scalar_one()
+
+    assert float(rows[0]["unidades"] or 0) == pytest.approx(float(esperado or 0))
+
+
+@pytest.mark.asyncio
+async def test_inventario_leaves_services_out(erp_engine: AsyncEngine) -> None:
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="inventario",
+            modo=QueryMode.AGGREGATE,
+            metricas=["unidades"],
+            dimensiones=["producto"],
+            limite=100,
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        servicios = {
+            row[0]
+            for row in await conn.execute(
+                text('SELECT descripcion FROM "Inventario"."Producto" WHERE tipo = 1')
+            )
+        }
+
+    assert not {row["producto"] for row in rows} & servicios
+
+
+@pytest.mark.asyncio
+async def test_compras_total_matches_the_non_voided_invoices(erp_engine: AsyncEngine) -> None:
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.AGGREGATE,
+            metricas=["monto_total"],
+            filtros=[QueryFilter("fecha", FilterOp.BETWEEN, ["2025-01-01", "2025-12-31"])],
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        esperado = (
+            await conn.execute(
+                text(
+                    """
+                    SELECT SUM(total) FROM "CuentaPagar"."FacturaCompra"
+                    WHERE NOT anulada AND fecha >= '2025-01-01' AND fecha < '2026-01-01'
+                    """
+                )
+            )
+        ).scalar_one()
+
+    assert float(rows[0]["monto_total"] or 0) == pytest.approx(float(esperado or 0))
+
+
+@pytest.mark.asyncio
+async def test_compras_by_product_does_not_inflate_the_lines(erp_engine: AsyncEngine) -> None:
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras_detalle",
+            modo=QueryMode.AGGREGATE,
+            metricas=["unidades"],
+            filtros=[QueryFilter("fecha", FilterOp.BETWEEN, ["2025-01-01", "2025-12-31"])],
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        esperado = (
+            await conn.execute(
+                text(
+                    """
+                    SELECT SUM(df.cantidad) FROM "CuentaPagar"."DetalleFacturaCompra" df
+                    JOIN "CuentaPagar"."FacturaCompra" fc
+                      ON fc."idFacturaCompra" = df."idFacturaCompra"
+                    WHERE NOT fc.anulada AND fc.fecha >= '2025-01-01' AND fc.fecha < '2026-01-01'
+                    """
+                )
+            )
+        ).scalar_one()
+
+    assert float(rows[0]["unidades"] or 0) == pytest.approx(float(esperado or 0))

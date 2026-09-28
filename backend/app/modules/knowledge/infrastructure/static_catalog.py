@@ -17,6 +17,7 @@ viajan en el repo y los cambios se aplican por deploy.
 from __future__ import annotations
 
 import json
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,13 @@ class KnowledgeLoadError(Exception):
     """Error fatal: un archivo del catálogo no valida o falta info clave."""
 
 
+def _term_key(term: str) -> str:
+    """Minúsculas y sin tildes ni puntos: "retención", "Retencion" y "R.U.T."
+    tienen que encontrar la misma entrada."""
+    decomposed = unicodedata.normalize("NFD", term.strip().lower())
+    return "".join(c for c in decomposed if unicodedata.category(c) != "Mn").replace(".", "")
+
+
 class StaticKnowledgeCatalog(KnowledgeCatalog):
     def __init__(
         self,
@@ -56,9 +64,9 @@ class StaticKnowledgeCatalog(KnowledgeCatalog):
         self._faqs: list[FaqEntry] = list(faqs)
         self._glossary_by_key: dict[str, GlossaryEntry] = {}
         for g in glossary:
-            self._glossary_by_key[g.term.lower()] = g
+            self._glossary_by_key[_term_key(g.term)] = g
             for alias in g.aliases:
-                self._glossary_by_key[alias.lower()] = g
+                self._glossary_by_key[_term_key(alias)] = g
 
     # ─── Helpers de autorización ──────────────────────────────────────
 
@@ -170,7 +178,7 @@ class StaticKnowledgeCatalog(KnowledgeCatalog):
         return [h[0] for h in hits[:limit]]
 
     def translate_term(self, term: str) -> GlossaryEntry | None:
-        return self._glossary_by_key.get(term.lower().strip())
+        return self._glossary_by_key.get(_term_key(term))
 
     def list_modules(
         self,
@@ -207,9 +215,7 @@ def _parse_model[T: BaseModel](model: type[T], data: Any, path: Path) -> T:
         ) from e
 
 
-def _load_dir[T: BaseModel](
-    root: Path, model: type[T], *, optional: bool = False
-) -> list[T]:
+def _load_dir[T: BaseModel](root: Path, model: type[T], *, optional: bool = False) -> list[T]:
     if not root.exists():
         if optional:
             return []
@@ -253,9 +259,7 @@ def load_static_catalog(root: Path) -> StaticKnowledgeCatalog:
         for dossier in sorted(p for p in modules_dir.iterdir() if p.is_dir()):
             overview_path = dossier / "overview.json"
             if overview_path.exists():
-                modules.append(
-                    _parse_model(ModuleEntry, _read_json(overview_path), overview_path)
-                )
+                modules.append(_parse_model(ModuleEntry, _read_json(overview_path), overview_path))
             forms.extend(_load_dir(dossier / "forms", FormEntry, optional=True))
             workflows.extend(_load_dir(dossier / "workflows", WorkflowEntry, optional=True))
             faqs.extend(_load_dir(dossier / "faqs", FaqEntry, optional=True))

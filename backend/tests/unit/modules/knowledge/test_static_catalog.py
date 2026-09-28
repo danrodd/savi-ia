@@ -8,6 +8,7 @@ Cubre:
 - Glosario sin filtro.
 - Errores claros con archivos inválidos.
 """
+
 from __future__ import annotations
 
 import json
@@ -146,17 +147,23 @@ def test_glosario_es_transversal(tmp_path: Path) -> None:
 def test_archivo_invalido_falla_loud(tmp_path: Path) -> None:
     # FormEntry sin description (campo requerido).
     contabilidad = tmp_path / "modules" / "contabilidad"
-    _write(contabilidad / "overview.json", {
-        "code": "CONTABILIDAD",
-        "label": "Contabilidad",
-        "purpose": "x",
-    })
-    _write(contabilidad / "forms" / "broken.json", {
-        "name": "frmRoto",
-        "module": "CONTABILIDAD",
-        "type": "CONSULTA",
-        # description faltante → ValidationError
-    })
+    _write(
+        contabilidad / "overview.json",
+        {
+            "code": "CONTABILIDAD",
+            "label": "Contabilidad",
+            "purpose": "x",
+        },
+    )
+    _write(
+        contabilidad / "forms" / "broken.json",
+        {
+            "name": "frmRoto",
+            "module": "CONTABILIDAD",
+            "type": "CONSULTA",
+            # description faltante → ValidationError
+        },
+    )
 
     with pytest.raises(KnowledgeLoadError):
         load_static_catalog(tmp_path)
@@ -167,14 +174,15 @@ def test_workflow_filtrado_por_interseccion_de_modulos(tmp_path: Path) -> None:
     cat = load_static_catalog(tmp_path)
 
     # Usuario con CUENTACOBRAR no tiene CONTABILIDAD → no ve el workflow.
-    assert cat.get_workflow(
-        "wf_cierre", allowed_modules=frozenset({ModuleCode.CUENTACOBRAR})
-    ) is None
+    assert (
+        cat.get_workflow("wf_cierre", allowed_modules=frozenset({ModuleCode.CUENTACOBRAR})) is None
+    )
 
     # Usuario con CONTABILIDAD sí lo ve.
-    assert cat.get_workflow(
-        "wf_cierre", allowed_modules=frozenset({ModuleCode.CONTABILIDAD})
-    ) is not None
+    assert (
+        cat.get_workflow("wf_cierre", allowed_modules=frozenset({ModuleCode.CONTABILIDAD}))
+        is not None
+    )
 
 
 def test_catalogo_real_generado_por_bootstrap_carga() -> None:
@@ -208,3 +216,35 @@ def test_catalogo_real_generado_por_bootstrap_carga() -> None:
 
     # El top hit debería ser frmConciliacionBancaria.
     assert hits[0].form.name == "frmConciliacionBancaria"
+
+
+# ── Glosario real ────────────────────────────────────────────────────────
+
+
+def test_el_glosario_real_carga_y_resuelve_las_siglas_del_dominio() -> None:
+    catalog = load_static_catalog(_REAL_DATA_ROOT)
+
+    for sigla in ("DIAN", "NIT", "PUC", "PILA", "INVIMA", "SOAT", "UVT", "CUFE"):
+        assert catalog.translate_term(sigla) is not None, sigla
+
+
+def test_el_glosario_ignora_tildes_mayusculas_y_puntos() -> None:
+    catalog = load_static_catalog(_REAL_DATA_ROOT)
+
+    entry = catalog.translate_term("retencion en la fuente")
+    assert entry is not None and entry.term == "Retención en la fuente"
+    assert catalog.translate_term("R.U.T.") == catalog.translate_term("rut")
+    assert catalog.translate_term("Retefuente") == entry
+
+
+def test_ningun_alias_apunta_a_dos_terminos() -> None:
+    """Si dos entradas comparten un alias, la última pisa a la primera en
+    silencio y el usuario recibe la definición equivocada."""
+    raw = json.loads((_REAL_DATA_ROOT / "shared" / "glossary.json").read_text(encoding="utf-8"))
+    from app.modules.knowledge.infrastructure.static_catalog import _term_key
+
+    owners: dict[str, str] = {}
+    for item in raw:
+        for key in [item["term"], *item["aliases"]]:
+            normalized = _term_key(key)
+            assert owners.setdefault(normalized, item["term"]) == item["term"], key

@@ -6,8 +6,10 @@ nosotros** — el LLM nunca las provee, solo elige nombres. Esto es lo que
 hace imposible la inyección: el LLM no puede nombrar nada que el modelo no
 declare.
 """
+
 from __future__ import annotations
 
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -25,7 +27,7 @@ class MetricDef:
     """Una métrica agregable. `sql` es una expresión de agregación."""
 
     name: str
-    sql: str          # ej. 'SUM(f."total")'
+    sql: str  # ej. 'SUM(f."total")'
     label: str
     requires: tuple[str, ...] = ()  # joins necesarios (por nombre)
 
@@ -35,7 +37,7 @@ class DimensionDef:
     """Una dimensión para agrupar. `sql` es una expresión escalar."""
 
     name: str
-    sql: str          # ej. 'DATE_TRUNC(\'month\', f."fecha")'
+    sql: str  # ej. 'DATE_TRUNC(\'month\', f."fecha")'
     label: str
     requires: tuple[str, ...] = ()
 
@@ -45,7 +47,7 @@ class FieldDef:
     """Un campo seleccionable en modo detalle/registro."""
 
     name: str
-    sql: str          # ej. 'f."numero"'
+    sql: str  # ej. 'f."numero"'
     label: str
     requires: tuple[str, ...] = ()
 
@@ -55,7 +57,7 @@ class FilterDef:
     """Un filtro permitido. `sql_column` es la columna sobre la que aplica."""
 
     name: str
-    sql_column: str   # ej. 'f."idTercero"'
+    sql_column: str  # ej. 'f."idTercero"'
     allowed_ops: tuple[FilterOp, ...]
     requires: tuple[str, ...] = ()
     value_type: FilterValueType = "text"
@@ -92,7 +94,7 @@ def _no_joins() -> dict[str, JoinDef]:
 @dataclass(frozen=True, slots=True)
 class SemanticEntity:
     name: str
-    base_table: str                       # ej. '"CuentaCobrar"."Factura" f'
+    base_table: str  # ej. '"CuentaCobrar"."Factura" f'
     metrics: dict[str, MetricDef] = field(default_factory=_no_metrics)
     dimensions: dict[str, DimensionDef] = field(default_factory=_no_dimensions)
     fields: dict[str, FieldDef] = field(default_factory=_no_fields)
@@ -115,4 +117,16 @@ class SemanticEntity:
     # pedírselo al modelo solo funciona si el modelo hace caso: medido,
     # Gemini y OpenAI respetaban la regla escrita y Claude la ignoraba.
     require_dimensions: tuple[str, ...] = ()
+    # Módulos del ERP que habilitan la entidad (alcanza con uno). Vacío = la
+    # ve cualquier usuario. Así un cajero sin Cuentas por Pagar no puede
+    # preguntar cuánto se le compró a cada proveedor: el ERP tampoco se lo
+    # muestra. Son los valores de `ModuleCode` como texto, para no atar el
+    # dominio de consultas al módulo de autenticación.
+    required_modules: tuple[str, ...] = ()
     description: str = ""
+
+    def allowed_for(self, modules: Collection[str] | None) -> bool:
+        """`modules=None` es un administrador: ve todo."""
+        if modules is None or not self.required_modules:
+            return True
+        return any(module in modules for module in self.required_modules)

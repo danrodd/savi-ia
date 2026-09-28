@@ -208,7 +208,9 @@ def build_savi_tools(
         return await info_empresa_impl(args, erp_database_id=erp_database_id)
 
     async def consultar_datos(args: dict[str, Any]) -> dict[str, Any]:
-        return await consultar_datos_impl(args, erp_database_id=erp_database_id)
+        return await consultar_datos_impl(
+            args, erp_database_id=erp_database_id, modules=allowed_modules
+        )
 
     consultar_conocimiento = build_consultar_conocimiento_impl(
         get_catalog(),
@@ -219,7 +221,12 @@ def build_savi_tools(
 
     tools = [
         _spec("info_empresa", _INFO_EMPRESA_DESCRIPTION, INFO_EMPRESA_SCHEMA, info_empresa),
-        _spec("consultar_datos", build_description(), CONSULTAR_DATOS_SCHEMA, consultar_datos),
+        _spec(
+            "consultar_datos",
+            build_description(allowed_modules),
+            CONSULTAR_DATOS_SCHEMA,
+            consultar_datos,
+        ),
         _spec(
             "consultar_conocimiento",
             _CONSULTAR_CONOCIMIENTO_DESCRIPTION,

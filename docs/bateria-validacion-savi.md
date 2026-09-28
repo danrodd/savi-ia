@@ -17,23 +17,29 @@ Preguntar por "este mes", "los últimos 30 días" o "este año" devuelve vacío
 **y no es un bug**: no hay datos fuera de esa ventana. Todas las preguntas de
 datos de este documento apuntan a fechas dentro del rango.
 
-### 2. La capa semántica solo modela tres entidades
+### 2. Entidades de la capa semántica (actualizado 2026-09-28)
 
-| Entidad | Grano | Cubre |
-|---|---|---|
-| `ventas` | Factura | Totales facturados, cantidad de facturas, ticket promedio, IVA, descuentos. Agrupable por día/mes/año/cliente |
-| `ventas_detalle` | Línea | Unidades, monto y costo por producto, sucursal, mes o cliente |
-| `terceros` | Tercero | Directorio de clientes y proveedores: búsqueda por nombre y conteos |
+| Entidad | Grano | Cubre | Requiere módulo |
+|---|---|---|---|
+| `ventas` | Factura | Totales facturados, cantidad de facturas, ticket promedio, IVA, descuentos. Agrupable por día/mes/año/cliente | — |
+| `ventas_detalle` | Línea | Unidades, monto y costo por producto, sucursal, mes o cliente | — |
+| `terceros` | Tercero | Directorio de clientes y proveedores: búsqueda por nombre y conteos | — |
+| `cartera` | Documento | Lo que deben los clientes y lo que se debe a proveedores, vencida o no | — |
+| `inventario` | Producto × almacén | Existencias actuales, bajo mínimo, valor del inventario | INVENTARIO |
+| `compras` | Factura de compra | Total comprado por proveedor o período | CUENTAPAGAR |
+| `compras_detalle` | Línea de compra | Unidades y costo de compra por producto o bodega | CUENTAPAGAR |
 
-Cartera, compras, stock y contabilidad **no están modelados**: esas preguntas
-caen en `consultar_libre` (SQL crudo, disponible solo para administradores).
-Es el camino lento — 10 a 30 segundos es normal.
+Contabilidad (balance, estado de resultados) **no está modelada**: cae en
+`consultar_libre` (SQL crudo, solo para administradores), 10 a 30 segundos.
+Un usuario sin el módulo que pide una entidad no la ve en la herramienta y
+recibe una negativa.
 
-### 3. El glosario del catálogo está vacío
+### 3. Glosario (actualizado 2026-09-28)
 
-`app/modules/knowledge/data/shared/glossary.json` es `[]`. Las preguntas por
-siglas del dominio (DIAN, PILA, PUC, NIT) no van a resolver. Es un hueco del
-catálogo de conocimiento, no una falla del modelo.
+`app/modules/knowledge/data/shared/glossary.json` tiene 77 términos fiscales,
+contables, laborales, de inventario y de cada vertical (DIAN, NIT, UVT, CUFE,
+PUC, PILA, INVIMA, SOAT, RTM…). La búsqueda ignora tildes, mayúsculas y
+puntos. Conviene que alguien de SEO revise las definiciones.
 
 ---
 

@@ -8,8 +8,10 @@ La descripción de la tool se genera desde el catálogo semántico para que
 el LLM sepa exactamente qué entidades y campos puede pedir, sin
 desincronizarse del modelo.
 """
+
 from __future__ import annotations
 
+from collections.abc import Collection
 from typing import Any, cast
 from uuid import UUID
 
@@ -17,8 +19,12 @@ from app.modules.data_query.application.run_semantic_query import run_semantic_q
 from app.modules.data_query.infrastructure.catalog import list_entities
 
 
-def build_description() -> str:
-    """Genera la descripción de la tool desde el catálogo vigente."""
+def build_description(modules: Collection[str] | None = None) -> str:
+    """Genera la descripción de la tool desde el catálogo vigente.
+
+    Solo lista las entidades que el usuario puede consultar: si el modelo ni
+    las ve, no promete datos que después le serían negados.
+    """
     lines: list[str] = [
         "Consulta datos del ERP del cliente. NO escribís SQL: armás un "
         "objeto de consulta y el sistema lo traduce de forma segura.",
@@ -52,7 +58,7 @@ def build_description() -> str:
         "=== Entidades disponibles ===",
     ]
 
-    for ent in list_entities():
+    for ent in list_entities(modules):
         lines.append(f"\n## {ent.name}")
         if ent.description:
             lines.append(ent.description)
@@ -73,7 +79,10 @@ def build_description() -> str:
 
 
 async def consultar_datos_impl(
-    args: dict[str, Any], *, erp_database_id: UUID | None = None
+    args: dict[str, Any],
+    *,
+    erp_database_id: UUID | None = None,
+    modules: Collection[str] | None = None,
 ) -> dict[str, Any]:
     consulta = args.get("consulta")
     if not isinstance(consulta, dict):
@@ -90,6 +99,6 @@ async def consultar_datos_impl(
             "isError": True,
         }
     text = await run_semantic_query(
-        cast(dict[str, Any], consulta), erp_database_id=erp_database_id
+        cast(dict[str, Any], consulta), erp_database_id=erp_database_id, modules=modules
     )
     return {"content": [{"type": "text", "text": text}]}
