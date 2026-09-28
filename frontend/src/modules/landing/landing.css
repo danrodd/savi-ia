@@ -3,8 +3,13 @@
  * el modo oscuro y la marca salen solos.
  */
 
+/* Contenedor con scroll propio: la app bloquea el scroll de la página
+   (`html, body { overflow: hidden }` en tokens.css) porque el chat maneja el
+   suyo. Sin esto, la landing mostraba solo la portada. */
 .lp {
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
+  scroll-behavior: smooth;
   background: var(--surface);
   color: var(--text);
   font-family: var(--font-sans);

@@ -10,7 +10,7 @@ declare.
 from __future__ import annotations
 
 from collections.abc import Collection
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Literal
 
 from app.modules.data_query.domain.semantic_query import FilterOp
@@ -71,6 +71,20 @@ class JoinDef:
     sql: str
 
 
+@dataclass(frozen=True, slots=True)
+class RowScope:
+    """Filas de una entidad que habilitan ciertos módulos del ERP.
+
+    `cartera` mezcla lo que deben los clientes (Cuentas por Cobrar) con lo que
+    se debe a proveedores (Cuentas por Pagar): ocultar la entidad entera es
+    demasiado y dejarla abierta muestra deudas con proveedores a un cajero.
+    """
+
+    sql: str  # condición constante, sin parámetros
+    modules: tuple[str, ...]  # alcanza con uno
+    label: str  # para decirle al modelo qué parte ve
+
+
 def _no_metrics() -> dict[str, MetricDef]:
     return {}
 
@@ -123,10 +137,32 @@ class SemanticEntity:
     # muestra. Son los valores de `ModuleCode` como texto, para no atar el
     # dominio de consultas al módulo de autenticación.
     required_modules: tuple[str, ...] = ()
+    # Filas visibles según los módulos (ver `RowScope`). Lo que no cae en
+    # ningún alcance lo ve solo un administrador.
+    row_scopes: tuple[RowScope, ...] = ()
     description: str = ""
 
     def allowed_for(self, modules: Collection[str] | None) -> bool:
         """`modules=None` es un administrador: ve todo."""
-        if modules is None or not self.required_modules:
+        if modules is None:
             return True
-        return any(module in modules for module in self.required_modules)
+        if self.required_modules and not any(m in modules for m in self.required_modules):
+            return False
+        return not self.row_scopes or bool(self.visible_scopes(modules))
+
+    def visible_scopes(self, modules: Collection[str] | None) -> tuple[RowScope, ...]:
+        if modules is None:
+            return self.row_scopes
+        return tuple(s for s in self.row_scopes if any(m in modules for m in s.modules))
+
+    def scoped_for(self, modules: Collection[str] | None) -> SemanticEntity:
+        """La entidad con las filas que `modules` puede ver, como filtro fijo.
+
+        Se aplica antes de compilar: el compilador no sabe de permisos y el
+        modelo no puede quitar un filtro que no escribió.
+        """
+        if modules is None or not self.row_scopes:
+            return self
+        scopes = self.visible_scopes(modules)
+        clause = "(" + " OR ".join(s.sql for s in scopes) + ")" if scopes else "FALSE"
+        return replace(self, base_filters=(*self.base_filters, clause))

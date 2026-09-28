@@ -24,7 +24,7 @@ datos de este documento apuntan a fechas dentro del rango.
 | `ventas` | Factura | Totales facturados, cantidad de facturas, ticket promedio, IVA, descuentos. Agrupable por día/mes/año/cliente | — |
 | `ventas_detalle` | Línea | Unidades, monto y costo por producto, sucursal, mes o cliente | — |
 | `terceros` | Tercero | Directorio de clientes y proveedores: búsqueda por nombre y conteos | — |
-| `cartera` | Documento | Lo que deben los clientes y lo que se debe a proveedores, vencida o no | — |
+| `cartera` | Documento | Lo que deben los clientes y lo que se debe a proveedores, vencida o no | Por lado: clientes con CUENTACOBRAR o VENTA; proveedores con CUENTAPAGAR |
 | `inventario` | Producto × almacén | Existencias actuales, bajo mínimo, valor del inventario | INVENTARIO |
 | `compras` | Factura de compra | Total comprado por proveedor o período | CUENTAPAGAR |
 | `compras_detalle` | Línea de compra | Unidades y costo de compra por producto o bodega | CUENTAPAGAR |

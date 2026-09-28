@@ -62,6 +62,15 @@ def build_description(modules: Collection[str] | None = None) -> str:
         lines.append(f"\n## {ent.name}")
         if ent.description:
             lines.append(ent.description)
+        visible = ent.visible_scopes(modules)
+        if modules is not None and ent.row_scopes and len(visible) < len(ent.row_scopes):
+            # Sin esto el modelo pedía "el lado proveedores", recibía vacío y
+            # contestaba que no había deudas, cuando lo que no hay es permiso.
+            labels = " y ".join(s.label for s in visible)
+            lines.append(
+                f"PERMISOS: este usuario solo puede ver {labels}. Si pregunta por "
+                "el resto, decile que no tiene acceso a esa información en el ERP."
+            )
         if ent.metrics:
             metricas = ", ".join(f"{m.name} ({m.label})" for m in ent.metrics.values())
             lines.append(f"- métricas: {metricas}")

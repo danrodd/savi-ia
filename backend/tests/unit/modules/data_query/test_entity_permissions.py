@@ -28,8 +28,8 @@ def test_purchases_need_accounts_payable() -> None:
 
 
 def test_entities_without_requirements_stay_open() -> None:
-    """Ventas, terceros y cartera no cambian: las ve cualquier usuario."""
-    assert {"ventas", "ventas_detalle", "terceros", "cartera"} <= _names(frozenset())
+    """Ventas y terceros no cambian: las ve cualquier usuario."""
+    assert {"ventas", "ventas_detalle", "terceros"} <= _names(frozenset())
 
 
 def test_the_tool_description_hides_what_the_user_cannot_query() -> None:
@@ -77,3 +77,54 @@ def test_a_short_search_without_results_is_just_empty() -> None:
     from app.modules.data_query.domain.semantic_query import FilterOp, QueryFilter
 
     assert _narrower_search_hint([QueryFilter("producto", FilterOp.CONTAINS, "tornillo")]) is None
+
+
+# ── Cartera separada por lado ────────────────────────────────────────────
+
+
+def _cartera():
+    entity = get_entity("cartera")
+    assert entity is not None
+    return entity
+
+
+def test_receivables_only_add_the_client_side_as_a_fixed_filter() -> None:
+    scoped = _cartera().scoped_for(frozenset({"CUENTACOBRAR"}))
+
+    assert 'ft."tipoDocumento" IN (2, 14)' in scoped.base_filters[-1]
+    assert "(3, 7, 9, 13, 15)" not in scoped.base_filters[-1]
+
+
+def test_payables_only_add_the_supplier_side() -> None:
+    scoped = _cartera().scoped_for(frozenset({"CUENTAPAGAR"}))
+
+    assert "(3, 7, 9, 13, 15)" in scoped.base_filters[-1]
+    assert "(2, 14)" not in scoped.base_filters[-1]
+
+
+def test_both_modules_see_both_sides_and_an_admin_sees_everything() -> None:
+    both = _cartera().scoped_for(frozenset({"CUENTACOBRAR", "CUENTAPAGAR"}))
+
+    assert " OR " in both.base_filters[-1]
+    assert _cartera().scoped_for(None) is _cartera()
+
+
+def test_without_either_module_cartera_is_hidden() -> None:
+    assert "cartera" not in _names(frozenset({"INVENTARIO"}))
+    assert "cartera" in _names(frozenset({"VENTA"}))
+
+
+def test_the_description_says_which_side_the_user_can_see() -> None:
+    description = build_description(frozenset({"VENTA"}))
+
+    assert "solo puede ver lo que deben los clientes" in description
+
+
+@pytest.mark.asyncio
+async def test_asking_for_cartera_without_its_modules_names_them() -> None:
+    answer = await run_semantic_query(
+        {"entidad": "cartera", "modo": "agregado", "metricas": ["saldo"]},
+        modules=frozenset({"INVENTARIO"}),
+    )
+
+    assert "CUENTACOBRAR" in answer and "CUENTAPAGAR" in answer

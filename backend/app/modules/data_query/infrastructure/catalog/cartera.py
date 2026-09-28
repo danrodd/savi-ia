@@ -52,6 +52,7 @@ from app.modules.data_query.domain.semantic_model import (
     FilterDef,
     JoinDef,
     MetricDef,
+    RowScope,
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
@@ -110,6 +111,21 @@ CARTERA = SemanticEntity(
     # Cartera = deuda VIVA. Un documento saldado no es cartera, igual que
     # una factura anulada no es una venta.
     base_filters=('ft."valorSaldo" > 0',),
+    # Cada punta con el módulo que la muestra en el ERP. Un cajero con Ventas
+    # ve lo que deben los clientes; las deudas con proveedores, solo quien
+    # tiene Cuentas por Pagar. Los tipos sin clasificar, solo un administrador.
+    row_scopes=(
+        RowScope(
+            'ft."tipoDocumento" IN (2, 14)',
+            ("CUENTACOBRAR", "VENTA"),
+            "lo que deben los clientes (y sus notas crédito)",
+        ),
+        RowScope(
+            'ft."tipoDocumento" IN (3, 7, 9, 13, 15)',
+            ("CUENTAPAGAR",),
+            "lo que se debe a proveedores",
+        ),
+    ),
     description=(
         "Saldos pendientes de cobro y de pago. Úsala para 'cartera "
         "vencida', 'cuánto nos deben los clientes', 'cuánto le debemos a "

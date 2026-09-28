@@ -573,3 +573,25 @@ async def test_compras_by_product_does_not_inflate_the_lines(erp_engine: AsyncEn
         ).scalar_one()
 
     assert float(rows[0]["unidades"] or 0) == pytest.approx(float(esperado or 0))
+
+
+@pytest.mark.asyncio
+async def test_cartera_scoped_to_receivables_only_returns_the_client_side(
+    erp_engine: AsyncEngine,
+) -> None:
+    """Un usuario con Ventas ve la punta de clientes y nada de proveedores."""
+    entity = get_entity("cartera")
+    assert entity is not None
+    scoped = entity.scoped_for(frozenset({"VENTA"}))
+    query = SemanticQuery(
+        entidad="cartera", modo=QueryMode.AGGREGATE, metricas=["saldo"], dimensiones=["lado"]
+    )
+    compiled = compile_query(query, scoped)
+    async with erp_engine.connect() as conn:
+        rows = [
+            dict(r) for r in (await conn.execute(text(compiled.sql), compiled.params)).mappings()
+        ]
+
+    lados = {row["lado"] for row in rows}
+    assert lados <= {"Por cobrar a clientes", "Notas crédito a clientes"}
+    assert "Por pagar a proveedores" not in lados

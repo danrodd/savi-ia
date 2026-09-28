@@ -41,11 +41,15 @@ async def run_semantic_query(
         entity = get_entity(query.entidad)
         if entity is None:
             raise UnknownEntityError(query.entidad, entity_names())
+        entity = entity.scoped_for(modules)
         if not entity.allowed_for(modules):
             # Defensa en profundidad: la descripción de la tool ya la oculta.
+            needed = entity.required_modules or tuple(
+                dict.fromkeys(m for scope in entity.row_scopes for m in scope.modules)
+            )
             return (
                 f"El usuario no tiene acceso a '{entity.name}' en el ERP (requiere el "
-                f"módulo {' o '.join(entity.required_modules)}). Decile que no tiene "
+                f"módulo {' o '.join(needed)}). Decile que no tiene "
                 "permiso para consultar esa información; no la estimes por otro camino."
             )
         compiled = compile_query(query, entity)
