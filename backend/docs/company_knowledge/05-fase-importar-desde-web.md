@@ -1,7 +1,10 @@
 # Fase 5 — Importar conocimiento desde la web
 
 > Parte de: [PRD — Conocimiento de la empresa](00-prd.md)
-> Estado: **especificación, spike hecho** ([`spike-web.md`](spike-web.md)).
+> Estado: **implementada con descarga simple (2026-09-28)**. Batería de punta
+> a punta **44/44** ([`bateria-web.md`](bateria-web.md)). Lo que cambió
+> respecto de esta especificación está en §15. Spike:
+> [`spike-web.md`](spike-web.md).
 > **Orden acordado (2026-09-23):** primero una prueba con sitios reales de
 > clientes usando solo descarga simple y el pipeline actual (subir el
 > Markdown extraído y preguntar); si da buenos resultados, se implementa
@@ -27,18 +30,18 @@
 
 ## Resultado esperado
 
-- [x] Spike (§12): detección ✔ en 11 de 11 páginas; extracción híbrida; consumo medido; licencias ✔. Falta decidir la instalación del navegador.
-- [ ] Alta de una **página** o de un **sitio completo**, con los mismos permisos que un documento (todos, administradores, por módulo, por base).
-- [ ] Vista previa antes de importar: páginas encontradas, modo de lectura detectado y texto de muestra.
-- [ ] Descubrimiento de páginas por sitemap y, si no hay, siguiendo links del mismo dominio, con topes.
-- [ ] Lectura en cascada: descarga simple; navegador solo en los sitios que lo necesitan (§4).
-- [ ] Extracción del contenido principal a Markdown, sin menú, pie ni banners.
-- [ ] Cada página entra al pipeline actual como documento: fragmentos, índice, permisos, citas.
-- [ ] Cita con el título de la página **y su link**.
-- [ ] Refresco manual y automático; solo reprocesa lo que cambió; da de baja páginas que desaparecen.
-- [ ] Protección contra SSRF, `robots.txt`, topes de tamaño, tiempo y páginas.
-- [ ] Consumo acotado en equipos modestos (§7); el navegador es opcional.
-- [ ] Tests (§13) y batería de punta a punta con un sitio de prueba local.
+- [x] Spike (§12): detección ✔ en 11 de 11 páginas; extracción híbrida; consumo medido; licencias ✔.
+- [x] Alta de una **página** o de un **sitio completo**, con los mismos permisos que un documento (todos, administradores, por módulo, por base).
+- [x] Vista previa antes de importar: páginas encontradas, secciones del sitemap, avisos y texto de muestra.
+- [x] Descubrimiento de páginas por sitemap y, si no hay, siguiendo links del mismo dominio, con topes.
+- [ ] Lectura en cascada con navegador: **diferida** (§15). Solo descarga simple; el indicio de contenido por JavaScript queda como aviso.
+- [x] Extracción del contenido principal a Markdown, sin menú, pie ni banners; el pie se guarda una vez en la información general.
+- [x] Cada página entra al pipeline actual como documento: fragmentos, índice, permisos, citas.
+- [x] Cita con el título de la página **y su link**.
+- [x] Refresco manual y automático; solo reprocesa lo que cambió; da de baja páginas que desaparecen.
+- [x] Protección contra SSRF, `robots.txt`, topes de tamaño, tiempo y páginas.
+- [x] Consumo acotado en equipos modestos (§7): una fuente a la vez, un hilo de extracción, sin navegador.
+- [x] Tests (§13) y batería de punta a punta con un sitio de prueba local.
 
 ---
 
@@ -542,8 +545,8 @@ El resultado se documenta en `spike-web.md`, como los spikes anteriores.
   rastreo, documentos listos, búsqueda y citas con URL.
 - Borrar la fuente retira todo del índice en el acto.
 
-**Batería de punta a punta** (`scripts/bateria_web.py`, como las
-anteriores): sitio de prueba local con datos inventados (precios, horarios,
+**Batería de punta a punta** (`scripts/bateria_web_ciclo_vida.py`,
+resultado en [`bateria-web.md`](bateria-web.md)): sitio de prueba local con datos inventados (precios, horarios,
 sedes), incluido un pricing cargado por JS; preguntas naturales; cambio de
 un precio y refresco; página borrada; intento de SSRF; permisos por módulo
 y por base; usuarios no administradores.
@@ -556,3 +559,55 @@ y por base; usuarios no administradores.
 | 5.1 · Texto en imágenes | Banners e infografías leídos con la IA del proveedor, con el mismo consentimiento por proveedor que los PDF. Según demanda. |
 | 5.2 · Sitios con login | Credenciales por fuente o cookies. Solo si un cliente lo pide; implica guardar secretos. |
 | Aparte · Redes sociales | APIs oficiales con permiso del dueño de la cuenta (Meta primero). |
+
+## 15. Notas de implementación
+
+Lo que cambió respecto de lo especificado arriba, y por qué.
+
+**Alcance**
+- **Sin navegador.** La prueba con sitios de clientes resolvió 22/24 con
+  descarga simple y ninguno lo necesitó. §4.3 y la etiqueta "Con
+  navegador" (§8.1, §8.3) no se implementaron; el indicio de contenido
+  por JavaScript aparece como aviso en la vista previa y en la página.
+- **Sin fecha de actualización en la respuesta** (§5.5). SAVI dice
+  "según el sitio web de la empresa", pero la búsqueda no le pasa la fecha
+  de la página. Pendiente si los clientes lo piden.
+
+**Refresco (§4.6)**
+- **En modo sitio no se usan pedidos condicionales.** La plantilla se
+  calcula comparando todas las páginas; si algunas volvían `304` quedaban
+  fuera de la comparación, el texto limpio de las demás cambiaba y se
+  creaban versiones falsas. En modo sitio se descarga todo y el hash
+  decide. El modo página sí usa `If-None-Match` / `If-Modified-Since`.
+- **Dos hashes por página.** El del texto detecta páginas repetidas con
+  otra URL; el del contenido completo (título incluido) decide la versión.
+  Con uno solo, un título nuevo o desambiguado nunca llegaba a las citas.
+- **La primera vez que una página falta queda como error**, con el motivo;
+  a la segunda se da de baja. Un 5xx o un error de red no cuenta y conserva
+  lo último bueno.
+- **Las páginas omitidas no se guardan**: la tabla de páginas va atada a un
+  documento. La fuente muestra cuántas se omitieron y por qué.
+
+**Extracción (§4.4)**
+- **El pie de la página se conserva.** El extractor descarta
+  `<header>`/`<footer>`, pero guarda el texto del pie (sin su menú) y el
+  rastreo lo suma a la comparación de plantilla: queda una vez en
+  "Información general del sitio", con un mínimo propio de 6 palabras (un
+  pie con dirección y teléfono ronda las 15). Su cita lleva a la portada:
+  el fragmento `#informacion-general` no existe en el sitio real.
+- **Títulos repetidos se desambiguan** con la ruta ("Contáctenos ·
+  contrato1"): en sitios reales varias páginas comparten título.
+
+**Descarga**
+- **Doble descompresión de gzip.** Al leer la respuesta por partes para
+  cortarla en el tope de tamaño, `httpx` ya la descomprime; hay que quitar
+  `content-encoding` antes de armar la respuesta final. Sin eso fallaban
+  casi todos los sitios reales. Solo lo mostró la prueba en vivo.
+
+**Frontend (§8)**
+- La vista previa no se repite al excluir secciones: el número de páginas
+  se recalcula en el cliente como aproximado ("unas N").
+- Cambiar el máximo de páginas o las secciones de una fuente pide una
+  lectura nueva al guardar; los permisos aplican en la siguiente pregunta.
+- Las fuentes web del chat se abren con su link público, también en una
+  conversación compartida; solo se enlazan URLs `http(s)`.

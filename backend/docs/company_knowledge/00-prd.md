@@ -1,6 +1,6 @@
 # PRD — Conocimiento de la empresa (documentos propios)
 
-> Estado: **Fases 1, 2 y 3 implementadas**; spike hecho con set sintético, pendiente repetirlo con documentos reales.
+> Estado: **Fases 1 a 5 implementadas** (la 5, importar desde la web, con descarga simple desde el 2026-09-28); spike hecho con set sintético, pendiente repetirlo con documentos reales.
 > Ver "Estado de implementación" al final.
 > Fecha: 2026-09-14.
 > Specs por fase:
@@ -225,7 +225,7 @@ por instalación (uvicorn con un worker).
 | 2 | [Búsqueda y uso en el chat](02-fase-busqueda-y-chat.md) | Política de acceso, índice híbrido, `tipo = documentos`, citas, fuentes persistidas, descarga y prueba de búsqueda. | SAVI responde con documentos por API |
 | 3 | [Interfaz y verificación](03-fase-interfaz-y-verificacion.md) | Pantalla de administración, fuentes en el chat, E2E y verificación de rendimiento. | Todo desde la UI |
 | 4 | [Lectura de PDF con IA](04-fase-lectura-pdf-con-ia.md) | El proveedor configurado transcribe PDF escaneados, tablas e imágenes por página, con `pypdf` como respaldo, costo registrado y hoja de ruta al modo mixto. | Los escaneos y fichas técnicas dejan de quedar "Sin texto" |
-| 5 | [Importar desde la web](05-fase-importar-desde-web.md) | Una página o el sitio de la empresa, leído con código (navegador solo donde hace falta), extraído a Markdown y mantenido al día por el pipeline de documentos. | SAVI responde con el sitio web de la empresa, citando la página con su link |
+| 5 | [Importar desde la web](05-fase-importar-desde-web.md) | Una página o el sitio de la empresa, leído con descarga simple (el navegador quedó diferido), extraído a Markdown y mantenido al día por el pipeline de documentos. | SAVI responde con el sitio web de la empresa, citando la página con su link |
 
 Orden obligatorio: 1 → 2 → 3. La Fase 4 es posterior a la v1.
 
@@ -391,4 +391,32 @@ equipo el 2026-09-23):
 - **Otros proveedores (Claude, Gemini) en las baterías de chat**, más
   volumen y el PDF de 165 páginas.
 - **Siguiente funcionalidad:** importar conocimiento desde links y la
-  página web de la empresa (analizado, sin empezar).
+  página web de la empresa. Hecho el 2026-09-28 (ver abajo).
+
+### Fase 5: importar desde la web (2026-09-28)
+
+Implementada con **descarga simple**: página o sitio completo, sitemap o
+links, extracción híbrida, refresco con versiones por hash, ventana
+nocturna, pantalla "Sitios web" y citas con link. Detalle y cambios
+respecto de la spec en [`05`](05-fase-importar-desde-web.md) §15.
+
+| Verificación | Resultado |
+|---|---|
+| Sitios reales de clientes | [`prueba-sitios-clientes.md`](prueba-sitios-clientes.md): 22/24 con descarga simple. Sur Andina en vivo: 17 páginas en 79 s, respuestas citadas con link |
+| Batería de punta a punta | [`bateria-web.md`](bateria-web.md): **44/44** (SSRF, permisos, cambio de precio, página borrada, baja). Encontró 3 defectos, corregidos |
+| Suite | 308 tests del módulo; frontend 151; Ruff y Pyright strict en verde |
+
+**Pendiente de la Fase 5:**
+
+- **Navegador opcional** para sitios cuyo contenido solo aparece con
+  JavaScript (280–610 MB de RAM mientras renderiza). Solo si los datos de
+  clientes lo justifican; hoy queda como aviso.
+- **Redes sociales**, por las APIs oficiales con permiso del dueño de la
+  cuenta. Después.
+- **Empaquetado:** verificar que PyInstaller incluya los archivos de datos
+  de `trafilatura`, `justext` y `courlan` y leer un sitio desde el `.exe`.
+- **Fecha de actualización** de la página en la respuesta ("según el sitio
+  web, actualizado el…"): especificada, no implementada.
+- **Pedidos condicionales en modo sitio:** hoy se descarga todo en cada
+  refresco (ver §15 de la spec). Si un sitio grande lo hace pesado,
+  guardar el texto previo a la limpieza de plantilla para poder usar `304`.
