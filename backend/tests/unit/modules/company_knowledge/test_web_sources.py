@@ -32,6 +32,7 @@ from app.modules.company_knowledge.domain.value_objects import (
     DocumentStatus,
     DocumentVisibility,
     RefreshFrequency,
+    WebPageStatus,
     WebSourceMode,
     WebSourceStatus,
     WebSourceStatusCode,
@@ -248,6 +249,35 @@ async def test_a_site_crawl_imports_pages_as_web_documents(env: Env) -> None:
     assert env.notified == [1]
 
 
+async def test_a_semantic_footer_goes_to_the_general_page(env: Env) -> None:
+    # WordPress, Next, Nuxt y Astro usan `<footer>`: el extractor lo saca
+    # del contenido, pero la dirección y el teléfono no se pueden perder.
+    def semantic(title: str, body: str) -> str:
+        return (
+            f"<html><body><header><nav>Inicio Planes</nav></header>"
+            f"<main><h1>{title}</h1><p>{body}</p></main>"
+            # Corto, como los reales: menos palabras que una página de contenido.
+            "<footer><p>El Tornillo S.A.S. · Calle 10 # 20-30 · Tel. 311 531 0210</p></footer>"
+            "</body></html>"
+        )
+
+    _standard_site(env.site)
+    env.site.set("", 200, semantic("Inicio", _long("Somos una ferretería con 3 sedes.")))
+    env.site.set("planes", 200, semantic("Planes", _long("El plan Pro cuesta $20 al mes.")))
+    env.site.set("servicios", 200, semantic("Servicios", _long("Cortamos madera a la medida.")))
+    env.site.set("contacto", 200, semantic("Contacto", _long("Llamanos de lunes a sábado.")))
+
+    source = await _crawl(env)
+
+    pages = {p.url: p for p in await env.sources.list_pages(source.id)}
+    general = f"{ROOT}#informacion-general"
+    assert general in pages
+    general_blob = (await env.documents.get_blob(pages[general].document_id) or b"").decode()
+    assert "311 531 0210" in general_blob
+    planes = (await env.documents.get_blob(pages[f"{ROOT}planes"].document_id) or b"").decode()
+    assert "311 531 0210" not in planes and "$20 al mes" in planes
+
+
 async def test_web_pages_do_not_show_up_among_uploaded_documents(env: Env) -> None:
     _standard_site(env.site)
     await _crawl(env)
@@ -337,6 +367,10 @@ async def test_a_page_that_disappears_twice_is_removed(env: Env) -> None:
 
     source = await _crawl(env, _pending_again(source))
     assert page.document_id not in env.removed_from_index  # una vez no alcanza
+    first = next(p for p in await env.sources.list_pages(source.id) if p.url.endswith("contacto"))
+    # Visible como problema en la pantalla, no como "sin cambios".
+    assert first.status == WebPageStatus.FAILED
+    assert "ya no existe" in (first.status_detail or "")
     source = await _crawl(env, _pending_again(source))
 
     assert page.document_id in env.removed_from_index

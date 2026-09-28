@@ -56,6 +56,10 @@ from app.modules.company_knowledge.domain.value_objects import (
 logger = logging.getLogger(__name__)
 
 MIN_WORDS = 25
+# Un pie con la razón social, la dirección y el teléfono ronda las 15
+# palabras y es de lo más consultado: la información general no se mide con
+# el mínimo de una página de contenido.
+GENERAL_MIN_WORDS = 6
 MISSING_LIMIT = 2
 GENERAL_FRAGMENT = "#informacion-general"
 GENERAL_TITLE = "Información general del sitio"
@@ -70,6 +74,7 @@ class _Fetched:
     detail: str | None = None
     title: str = ""
     markdown: str | None = None
+    footer: str = ""
     pdf: bytes | None = None
     etag: str | None = None
     last_modified: str | None = None
@@ -243,7 +248,7 @@ class CrawlWebSourceUseCase:
             page = await loop.run_in_executor(
                 self._executor, self._extractor.extract, result.text, result.url
             )
-            item.title, item.markdown = page.title, page.markdown
+            item.title, item.markdown, item.footer = page.title, page.markdown, page.footer
             item.status = WebPageStatus.IMPORTED
             if page.looks_like_filler:
                 item.status, item.detail = WebPageStatus.SKIPPED, "Texto de relleno (lorem ipsum)."
@@ -264,8 +269,13 @@ class CrawlWebSourceUseCase:
         tally.js_pages = sum(1 for item in fetched if item.detail and "JavaScript" in item.detail)
         if source.mode != WebSourceMode.SITE:
             return
+        # El pie entra en la comparación: como se repite en todas las páginas,
+        # sale del contenido de cada una y queda una vez en la información
+        # general. Sin esto, en sitios con `<footer>` la dirección y el
+        # teléfono se perdían (la plantilla por repetición solo lo rescataba
+        # en temas armados con `div`).
         pages = {
-            item.url: item.markdown
+            item.url: f"{item.markdown}\n\n{item.footer}" if item.footer else item.markdown
             for item in fetched
             if item.status == WebPageStatus.IMPORTED and item.markdown is not None
         }
@@ -277,7 +287,7 @@ class CrawlWebSourceUseCase:
             if item.url in cleaned:
                 item.markdown = cleaned[item.url]
         _disambiguate_titles(fetched)
-        if len(general.split()) >= MIN_WORDS:
+        if len(general.split()) >= GENERAL_MIN_WORDS:
             fetched.append(
                 _Fetched(
                     url=f"{source.url.split('#')[0]}{GENERAL_FRAGMENT}",
@@ -319,7 +329,8 @@ class CrawlWebSourceUseCase:
             text_digest = digest = _hash(item.pdf)
         else:
             markdown = item.markdown or ""
-            if len(markdown.split()) < MIN_WORDS:
+            minimum = GENERAL_MIN_WORDS if item.url.endswith(GENERAL_FRAGMENT) else MIN_WORDS
+            if len(markdown.split()) < minimum:
                 item.status, item.detail = WebPageStatus.SKIPPED, "Sin texto útil."
                 tally.skipped += 1
                 return
@@ -445,7 +456,14 @@ class CrawlWebSourceUseCase:
                 await remove_page(self._sources, self._documents, self._index, page)
                 tally.removed += 1
             else:
-                page.status_detail = "No se encontró en el último rastreo."
+                # Visible como problema: si vuelve en la próxima lectura, se
+                # recupera sola; si no, se da de baja.
+                page.status = WebPageStatus.FAILED
+                page.status_detail = (
+                    "La página respondió que ya no existe"
+                    if url in gone
+                    else "La página ya no aparece en el sitio"
+                ) + "; si sigue así en la próxima lectura, se da de baja."
                 await self._sources.save_page(page)
 
     # ── Cierre ───────────────────────────────────────────────────────────

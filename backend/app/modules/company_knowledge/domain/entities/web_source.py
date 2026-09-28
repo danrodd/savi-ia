@@ -111,6 +111,10 @@ class ExtractedPage:
     # Indicios de contenido que solo aparece con navegador (aviso, no bloqueo).
     js_hints: tuple[str, ...] = ()
     looks_like_filler: bool = False  # lorem ipsum
+    # Pie de la página (`<footer>`), aparte del contenido: suele traer la
+    # dirección, el teléfono y los horarios. El rastreo lo guarda una vez
+    # en la página de información general.
+    footer: str = ""
 
 
 @dataclass(frozen=True, slots=True)

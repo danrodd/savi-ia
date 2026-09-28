@@ -80,6 +80,33 @@ def _structural(html: str) -> str:
     return _BLANK_LINES.sub("\n\n", markdown).strip()
 
 
+_FOOTERS = f"//footer[not({_INSIDE})]|//*[@role='contentinfo']"
+_FOOTER_NOISE = ".//script|.//style|.//noscript|.//form|.//iframe|.//svg|.//nav"
+
+
+def _footer(html: str) -> str:
+    """Texto del pie de la página, que `_structural` descarta con la plantilla."""
+    lxml: Any = cast(Any, lxml_html)
+    parse: Any = lxml.fromstring
+    to_string: Any = lxml.tostring
+    try:
+        tree: Any = parse(html)
+    except (ValueError, TypeError):
+        return ""
+    parts: list[str] = []
+    element: Any
+    for element in tree.xpath(_FOOTERS):
+        noise: Any
+        for noise in element.xpath(_FOOTER_NOISE):
+            noise.drop_tree()
+        to_markdown: Any = markdownify
+        fragment = str(to_string(element, encoding="unicode"))
+        text = str(to_markdown(fragment, heading_style="ATX", strip=["a", "img"])).strip()
+        if text:
+            parts.append(text)
+    return _BLANK_LINES.sub("\n\n", "\n\n".join(parts)).strip()
+
+
 def _trafilatura(html: str, url: str) -> str:
     extracted = trafilatura.extract(  # pyright: ignore[reportUnknownMemberType]
         html, url=url, output_format="markdown", include_tables=True
@@ -211,6 +238,7 @@ class HybridContentExtractor(ContentExtractor):
             words=count_words(markdown),
             js_hints=js_hints(html, markdown),
             looks_like_filler=bool(_FILLER.search(markdown)),
+            footer=normalize(_footer(html)),
         )
 
     def remove_boilerplate(

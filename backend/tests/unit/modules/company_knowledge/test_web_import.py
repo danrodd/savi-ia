@@ -248,6 +248,22 @@ def test_pricing_cards_and_article_headers_survive_page_chrome_is_dropped() -> N
     assert "Inicio | Planes" not in page.markdown
     assert "derechos reservados" not in page.markdown
     assert "cookies" not in page.markdown
+    # El pie no va al contenido, pero se conserva aparte (sin su menú).
+    assert "derechos reservados" in page.footer
+
+
+def test_the_footer_keeps_contact_data_without_its_menu() -> None:
+    html = """
+    <html><body><main><h1>Inicio</h1><p>Bienvenidos.</p></main>
+    <footer><nav>Blog | Trabaja con nosotros</nav>
+      <p>Calle 10 # 20-30, Medellín</p><p>Teléfono 604 555 0101</p></footer>
+    </body></html>
+    """
+    page = extractor.extract(html, "https://sitio.test/")
+
+    assert "604 555 0101" in page.footer and "Medellín" in page.footer
+    assert "Trabaja con nosotros" not in page.footer
+    assert "604 555 0101" not in page.markdown
 
 
 def test_schema_org_product_becomes_text_with_the_currency_name() -> None:
