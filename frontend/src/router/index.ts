@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import { ENV } from '@/lib/env'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { type ModuleCode, usePermisosStore } from '@/modules/permisos'
 import { isAdminRouteDenied } from './adminGuard'
@@ -14,6 +15,7 @@ const AdminUsageView = () => import('@/modules/admin/views/AdminUsageView.vue')
 const LlmProvidersView = () => import('@/modules/admin/views/LlmProvidersView.vue')
 const CompanyKnowledgeView = () => import('@/modules/admin/views/CompanyKnowledgeView.vue')
 const NotFoundView = () => import('@/components/NotFoundView.vue')
+const LandingView = () => import('@/modules/landing/views/LandingView.vue')
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -28,6 +30,18 @@ declare module 'vue-router' {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // Landing pública: solo existe donde se compiló con VITE_LANDING_ENABLED.
+    // En el servidor de un cliente la ruta ni se registra (cae en 404).
+    ...(ENV.LANDING_ENABLED
+      ? [
+          {
+            path: '/inicio',
+            name: 'landing',
+            component: LandingView,
+            meta: { requiresAuth: false },
+          },
+        ]
+      : []),
     {
       path: '/login',
       name: 'login',

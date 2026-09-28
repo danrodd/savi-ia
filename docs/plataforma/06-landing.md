@@ -1,9 +1,10 @@
 # Landing de SAVI
 
 > Parte de: [PRD — Plataforma SAVI](00-prd.md).
-> Estado: **acordada, sin empezar** (2026-09-28). Va después de las pruebas
-> del conocimiento con Claude y Gemini y antes de responder las preguntas
-> abiertas del PRD.
+> Estado: **implementada** (2026-09-28) en `frontend/src/modules/landing/`,
+> ruta `/inicio`. Se activa con `VITE_LANDING_ENABLED=true`; "Solicitar
+> demo" necesita `VITE_LANDING_CONTACT_EMAIL` (sin él, el formulario avisa y
+> no envía).
 > Skills a leer antes de codear: `vue-best-practices`,
 > `vue-router-best-practices`, `enterprise-frontend-architecture`.
 
@@ -42,9 +43,17 @@ clientes, créditos). Hoy no hay ninguna cara pública del producto.
    adelante, SAVI Cloud).
 8. **Pie**: SEO Group, contacto.
 
-## Pendiente de definir al implementarla
+## Implementación
 
-- Dónde llegan las solicitudes de demo.
-- Capturas del producto a usar (las de la pantalla de Conocimiento y del chat
-  ya existen como referencia).
+- La portada muestra un chat de ejemplo armado en HTML con datos inventados,
+  no una captura: las capturas reales traen nombres y cifras de clientes.
+- "Solicitar demo" valida los campos y abre el correo con todo completo
+  (`mailto:`). Cuando exista SAVI Cloud, pasa a un endpoint.
+- Solo promete lo validado: nada de preguntas de inventario (no está
+  modelado en la capa semántica), y SAVI Cloud y los créditos van como
+  "Próximamente".
+
+## Pendiente
+
+- Correo de destino de las solicitudes de demo.
 - Dominio: depende de P3 del PRD.
