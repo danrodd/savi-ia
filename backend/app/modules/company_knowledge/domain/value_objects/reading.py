@@ -34,6 +34,10 @@ class AiReadErrorCode(StrEnum):
     UNAVAILABLE = "ai_unavailable"
     INVALID_JSON = "ai_invalid_json"
     RATE_LIMITED = "ai_rate_limited"
+    # La cuenta del proveedor no tiene saldo; reintentar no lo arregla.
+    NO_CREDITS = "ai_no_credits"
+    # Gemini: la cuota diaria del modelo se agotó; vuelve al día siguiente.
+    DAILY_QUOTA = "ai_daily_quota"
     TIMEOUT = "ai_timeout"
     PAGE_TOO_LARGE = "page_too_large"
     MISSING_PAGE = "ai_missing_page"

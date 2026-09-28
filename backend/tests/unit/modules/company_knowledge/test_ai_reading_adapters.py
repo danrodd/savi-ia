@@ -8,14 +8,19 @@ tokens.
 from __future__ import annotations
 
 import json
-from typing import Any
+from collections.abc import AsyncIterator
+from typing import Any, cast
 
 import pytest
+from claude_agent_sdk import AssistantMessage, TextBlock
 
 from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
 from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver, ModelPrice
 from app.modules.company_knowledge.domain.exceptions import AiReadingError
 from app.modules.company_knowledge.domain.value_objects import AiReadErrorCode
+from app.modules.company_knowledge.infrastructure.ai_reading import (
+    claude_reader as claude_reader_module,
+)
 from app.modules.company_knowledge.infrastructure.ai_reading.claude_reader import ClaudePdfReader
 from app.modules.company_knowledge.infrastructure.ai_reading.errors import to_reading_error
 from app.modules.company_knowledge.infrastructure.ai_reading.gemini_reader import GeminiPdfReader
@@ -115,16 +120,47 @@ class _HttpError(Exception):
 
 
 class _GeminiError(Exception):
-    def __init__(self, code: int) -> None:
-        super().__init__("error")
+    def __init__(self, code: int, message: str = "error", quota_id: str | None = None) -> None:
+        super().__init__(message)
         self.code = code
+        self.message = message
+        # Misma forma que el 429 real capturado el 2026-09-28.
+        self.details = (
+            {"error": {"details": [{"violations": [{"quotaId": quota_id}]}]}} if quota_id else None
+        )
+
+
+_GEMINI_BILLING_HINT = (
+    "You exceeded your current quota, please check your plan and billing details."
+)
 
 
 @pytest.mark.parametrize(
     ("error", "code", "retryable"),
     [
         (_HttpError(429), AiReadErrorCode.RATE_LIMITED, True),
-        (_HttpError(429, {"code": "insufficient_quota"}), AiReadErrorCode.UNAVAILABLE, False),
+        (_HttpError(429, {"code": "insufficient_quota"}), AiReadErrorCode.NO_CREDITS, False),
+        (
+            _HttpError(429, {"error": {"type": "insufficient_quota"}}),
+            AiReadErrorCode.NO_CREDITS,
+            False,
+        ),
+        # Gemini: "billing" aparece también en el límite por minuto; no es saldo.
+        (
+            _GeminiError(429, _GEMINI_BILLING_HINT, "GenerateRequestsPerMinutePerProjectPerModel"),
+            AiReadErrorCode.RATE_LIMITED,
+            True,
+        ),
+        (
+            _GeminiError(429, _GEMINI_BILLING_HINT, "GenerateRequestsPerDayPerProjectPerModel"),
+            AiReadErrorCode.DAILY_QUOTA,
+            False,
+        ),
+        (
+            _GeminiError(429, "Your prepayment credits are depleted."),
+            AiReadErrorCode.NO_CREDITS,
+            False,
+        ),
         (_HttpError(401), AiReadErrorCode.UNAVAILABLE, False),
         (_HttpError(413), AiReadErrorCode.PAGE_TOO_LARGE, False),
         (_HttpError(500), AiReadErrorCode.PROVIDER_ERROR, True),
@@ -326,3 +362,32 @@ async def test_no_active_provider_means_no_reader() -> None:
         False,
         "No hay un proveedor de IA activo.",
     )
+
+
+@pytest.mark.parametrize(
+    ("rejection", "code", "retryable"),
+    [
+        ("billing_error", AiReadErrorCode.NO_CREDITS, False),
+        ("authentication_failed", AiReadErrorCode.UNAVAILABLE, False),
+        ("rate_limit", AiReadErrorCode.RATE_LIMITED, True),
+    ],
+)
+async def test_claude_rejections_are_not_retried_as_generic_errors(
+    monkeypatch: pytest.MonkeyPatch, rejection: str, code: AiReadErrorCode, retryable: bool
+) -> None:
+    """El CLI de Claude no lanza excepción sin saldo: lo marca en el mensaje."""
+
+    async def fake_query(**_kwargs: object) -> AsyncIterator[object]:
+        yield AssistantMessage(
+            content=[TextBlock(text="Credit balance is too low")],
+            model="docs",
+            error=cast(Any, rejection),
+        )
+
+    monkeypatch.setattr(claude_reader_module, "query", fake_query)
+    reader = ClaudePdfReader(model="docs", credential_kind="api_key", credential="k")
+
+    with pytest.raises(AiReadingError) as raised:
+        await reader.read(b"%PDF-1.4", 1, 1)
+
+    assert (raised.value.code, raised.value.retryable) == (code, retryable)

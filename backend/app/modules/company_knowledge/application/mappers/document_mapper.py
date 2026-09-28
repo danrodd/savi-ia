@@ -22,6 +22,14 @@ _FAILED_MESSAGES: dict[DocumentStatusCode, str] = {
         "No se pudo leer con IA: el proveedor activo no respondió. Revisá su configuración "
         "y el modelo de lectura, y después usá «Leer con IA»."
     ),
+    DocumentStatusCode.AI_NO_CREDITS: (
+        "No se pudo leer con IA: la cuenta del proveedor activo no tiene saldo. Cargá "
+        "créditos en su consola y después usá «Leer con IA»."
+    ),
+    DocumentStatusCode.AI_DAILY_QUOTA: (
+        "No se pudo leer con IA: se agotó la cuota diaria del proveedor. Se renueva "
+        "mañana; después usá «Leer con IA»."
+    ),
     DocumentStatusCode.INDEX_LIMIT_REACHED: (
         "La instalación alcanzó el límite de fragmentos. Eliminá documentos para liberar espacio."
     ),
@@ -73,6 +81,8 @@ class CompanyDocumentMapper:
             if code is not None and code in (
                 DocumentStatusCode.AI_UNREADABLE,
                 DocumentStatusCode.AI_FAILED,
+                DocumentStatusCode.AI_NO_CREDITS,
+                DocumentStatusCode.AI_DAILY_QUOTA,
             ):
                 return _FAILED_MESSAGES[code]
             return "El PDF parece escaneado; no tiene texto seleccionable. Podés leerlo con IA."

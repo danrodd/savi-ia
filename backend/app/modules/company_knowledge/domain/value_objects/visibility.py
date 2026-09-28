@@ -33,4 +33,8 @@ class DocumentStatusCode(StrEnum):
     # La IA no respondió (modelo inexistente, clave, saldo, tiempo) y sin
     # ella el PDF no tiene texto.
     AI_FAILED = "ai_failed"
+    # Como `ai_failed`, pero la causa es la cuenta del proveedor: sin saldo o
+    # con la cuota diaria agotada. El aviso dice qué hacer.
+    AI_NO_CREDITS = "ai_no_credits"
+    AI_DAILY_QUOTA = "ai_daily_quota"
     INTERNAL_ERROR = "internal_error"

@@ -445,3 +445,106 @@ def test_message_provider_and_model_map_to_orm() -> None:
     assert isinstance(model, MessageModel)
     assert model.provider == "gemini"
     assert model.model == "gemini-test"
+
+
+# ── Cuota y saldo: el mismo 429 pide cosas distintas ─────────────────────
+
+
+class _QuotaError(Exception):
+    """Misma forma que el 429 real de Gemini capturado el 2026-09-28."""
+
+    def __init__(self, message: str, quota_id: str | None = None) -> None:
+        super().__init__(message)
+        self.code = 429
+        self.message = message
+        self.details = (
+            {"error": {"details": [{"violations": [{"quotaId": quota_id}]}]}} if quota_id else None
+        )
+
+
+def _quota_runner(models: _ScriptedModels, fallback: str = "") -> GeminiRunner:
+    return GeminiRunner(
+        Settings(
+            gemini_retry_attempts=2,
+            gemini_retry_base_delay_s=0,
+            gemini_fallback_models=fallback,
+        ),
+        _provider(),
+        client=SimpleNamespace(aio=SimpleNamespace(models=models)),
+    )
+
+
+@pytest.mark.asyncio
+async def test_without_credits_it_stops_at_once_and_says_what_to_do(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools", lambda **_: []
+    )
+    models = _ScriptedModels(
+        [("gemini-test", _QuotaError("429 Your prepayment credits are depleted."))]
+    )
+
+    events = [event async for event in _quota_runner(models, "fallback").stream_turn("hola")]
+
+    # Sin reintentos ni cambio de modelo: ninguno carga saldo.
+    assert models.calls == ["gemini-test"]
+    error = next(event for event in events if isinstance(event, ErrorEvent))
+    assert "no tiene créditos" in error.message
+
+
+@pytest.mark.asyncio
+async def test_an_exhausted_daily_quota_moves_to_the_next_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools", lambda **_: []
+    )
+    daily = _QuotaError(
+        "You exceeded your current quota, please check your plan and billing details.",
+        "GenerateRequestsPerDayPerProjectPerModel",
+    )
+    models = _ScriptedModels(
+        [("gemini-test", daily), ("fallback", _chunk(types.Part.from_text(text="ok")))]
+    )
+
+    events = [event async for event in _quota_runner(models, "fallback").stream_turn("hola")]
+
+    assert models.calls == ["gemini-test", "fallback"]
+    assert any(isinstance(event, DoneEvent) for event in events)
+
+
+@pytest.mark.asyncio
+async def test_without_more_models_the_daily_quota_is_explained(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools", lambda **_: []
+    )
+    daily = _QuotaError("quota", "GenerateRequestsPerDayPerProjectPerModel-FreeTier")
+    models = _ScriptedModels([("gemini-test", daily)])
+
+    events = [event async for event in _quota_runner(models).stream_turn("hola")]
+
+    error = next(event for event in events if isinstance(event, ErrorEvent))
+    assert "cuota diaria" in error.message
+
+
+@pytest.mark.asyncio
+async def test_the_per_minute_limit_is_still_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    """El mensaje real dice "billing" aunque sea el límite por minuto."""
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.gemini.runner.build_savi_tools", lambda **_: []
+    )
+    per_minute = _QuotaError(
+        "You exceeded your current quota, please check your plan and billing details.",
+        "GenerateRequestsPerMinutePerProjectPerModel",
+    )
+    models = _ScriptedModels(
+        [("gemini-test", per_minute), ("gemini-test", _chunk(types.Part.from_text(text="ok")))]
+    )
+
+    events = [event async for event in _quota_runner(models).stream_turn("hola")]
+
+    assert models.calls == ["gemini-test", "gemini-test"]
+    assert any(isinstance(event, DoneEvent) for event in events)

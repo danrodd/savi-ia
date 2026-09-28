@@ -11,7 +11,7 @@ import base64
 from collections.abc import AsyncIterator
 from typing import Any
 
-from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
+from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, query
 
 from app.infrastructure.claude_cli import ISOLATED_CLI_OPTIONS, resolve_cli_path
 from app.infrastructure.claude_env import build_claude_env
@@ -87,13 +87,18 @@ class ClaudePdfReader(PdfPageReader):
         )
         prompt = _prompt_stream(segment, user_message(first_page, last_page, retry=attempt > 0))
         result: ResultMessage | None = None
+        rejection: str | None = None
         try:
             async for message in query(prompt=prompt, options=options):
+                if isinstance(message, AssistantMessage) and message.error is not None:
+                    rejection = message.error
                 if isinstance(message, ResultMessage):
                     result = message
         except Exception as exc:  # noqa: BLE001
             raise to_reading_error(exc) from exc
 
+        if rejection is not None:
+            raise _rejection_error(rejection)
         if result is None or result.is_error:
             raise AiReadingError(AiReadErrorCode.PROVIDER_ERROR, retryable=True)
         raw: Any = (
@@ -122,6 +127,18 @@ async def _prompt_stream(segment: bytes, text: str) -> AsyncIterator[dict[str, A
         "parent_tool_use_id": None,
         "session_id": "company-document",
     }
+
+
+def _rejection_error(kind: str) -> AiReadingError:
+    """El CLI no lanza excepción cuando Anthropic rechaza el pedido: lo marca en
+    `AssistantMessage.error`. Sin saldo, reintentar solo demora el aviso."""
+    if kind == "billing_error":
+        return AiReadingError(AiReadErrorCode.NO_CREDITS, retryable=False)
+    if kind == "authentication_failed":
+        return AiReadingError(AiReadErrorCode.UNAVAILABLE, retryable=False)
+    if kind == "rate_limit":
+        return AiReadingError(AiReadErrorCode.RATE_LIMITED, retryable=True)
+    return AiReadingError(AiReadErrorCode.PROVIDER_ERROR, retryable=True)
 
 
 def _usage(result: ResultMessage) -> AiReadUsage:

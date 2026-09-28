@@ -16,7 +16,7 @@ Nunca loguea contenido: solo ids, páginas y códigos.
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from concurrent.futures import Executor
 from dataclasses import dataclass
 
@@ -71,6 +71,9 @@ class PdfReadingOutcome:
     ai_cost_usd: float | None
     # Páginas que se mandaron a la IA y cayeron al respaldo de `pypdf`.
     ai_failed_page_count: int = 0
+    # Motivo de las páginas que fallaron, si es de saldo o de cuota: cambia
+    # el aviso del documento ("cargá saldo" en vez de "revisá la configuración").
+    ai_failure: AiReadErrorCode | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -160,6 +163,7 @@ class ReadPdfPagesUseCase:
             reading_method=_reading_method(ai_page_count, analysis.page_count),
             ai_page_count=ai_page_count,
             ai_failed_page_count=sum(1 for page in read.values() if page.ai_error is not None),
+            ai_failure=_account_failure(page.ai_error for page in read.values()),
             ai_cost_usd=(
                 await self._pages.ai_cost(document.id, document.version) if used_ai else None
             ),
@@ -372,6 +376,16 @@ def _final_text(page: ReadPage, source: PageMetrics) -> str:
     if page.method == PageRoute.AI and not page.text.strip() and source.text.strip():
         return source.text
     return page.text
+
+
+def _account_failure(errors: Iterable[AiReadErrorCode | None]) -> AiReadErrorCode | None:
+    """Falta de saldo antes que cuota diaria: es lo que un administrador
+    tiene que resolver primero."""
+    found = set(errors)
+    for code in (AiReadErrorCode.NO_CREDITS, AiReadErrorCode.DAILY_QUOTA):
+        if code in found:
+            return code
+    return None
 
 
 def _reading_method(ai_pages: int, total: int) -> ReadingMethod:

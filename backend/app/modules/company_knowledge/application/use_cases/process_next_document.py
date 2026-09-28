@@ -16,6 +16,7 @@ from app.modules.company_knowledge.domain.interfaces import (
     DocumentRepository,
     ProcessingOutcome,
 )
+from app.modules.company_knowledge.domain.value_objects import AiReadErrorCode
 from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatus,
     DocumentStatusCode,
@@ -25,6 +26,18 @@ from app.modules.company_knowledge.infrastructure.progress import (
 )
 
 logger = logging.getLogger(__name__)
+
+_ACCOUNT_FAILURES = {
+    AiReadErrorCode.NO_CREDITS: DocumentStatusCode.AI_NO_CREDITS,
+    AiReadErrorCode.DAILY_QUOTA: DocumentStatusCode.AI_DAILY_QUOTA,
+}
+
+
+def _failure_code(failure: AiReadErrorCode | None) -> DocumentStatusCode:
+    """Sin saldo o sin cuota, el aviso dice eso; si no, el genérico."""
+    if failure is None:
+        return DocumentStatusCode.AI_FAILED
+    return _ACCOUNT_FAILURES.get(failure, DocumentStatusCode.AI_FAILED)
 
 
 class ProcessNextCompanyDocumentUseCase:
@@ -126,7 +139,7 @@ class ProcessNextCompanyDocumentUseCase:
         elif outcome.status == DocumentStatus.NO_TEXT and reading.ai_failed_page_count > 0:
             # Sin este código el aviso sería "parece escaneado, leelo con IA",
             # y volver a intentarlo fallaría igual hasta corregir el proveedor.
-            outcome = replace(outcome, status_code=DocumentStatusCode.AI_FAILED)
+            outcome = replace(outcome, status_code=_failure_code(reading.ai_failure))
         return replace(
             outcome,
             reading_method=reading.reading_method,

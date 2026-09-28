@@ -585,6 +585,32 @@ async def test_a_failing_provider_on_a_scan_says_so_instead_of_suggesting_ai(
     assert message is not None and "proveedor" in message
 
 
+@pytest.mark.parametrize(
+    ("error_code", "status_code", "hint"),
+    [
+        (AiReadErrorCode.NO_CREDITS, DocumentStatusCode.AI_NO_CREDITS, "saldo"),
+        (AiReadErrorCode.DAILY_QUOTA, DocumentStatusCode.AI_DAILY_QUOTA, "cuota diaria"),
+    ],
+)
+async def test_an_account_problem_says_what_to_fix(
+    setup: Setup,
+    error_code: AiReadErrorCode,
+    status_code: DocumentStatusCode,
+    hint: str,
+) -> None:
+    """Sin saldo, "revisá la configuración" manda a buscar en el lugar equivocado."""
+    document = await setup.document(make_scanned_pdf(1))
+    reader = FakeReader(fail_times=99, error=AiReadingError(error_code, retryable=False))
+
+    await _worker(setup, reader).execute()
+
+    saved = await setup.documents.get_by_id(document.id)
+    assert saved is not None
+    assert (saved.status, saved.status_code) == (DocumentStatus.NO_TEXT, status_code)
+    message = CompanyDocumentMapper.status_message(saved)
+    assert message is not None and hint in message
+
+
 async def test_a_short_ai_page_is_not_treated_as_a_scan(setup: Setup) -> None:
     """El umbral de "parece escaneado" no aplica a lo que leyó la IA."""
     document = await setup.document(make_scanned_pdf(3))

@@ -5,14 +5,13 @@ proveedor, que puede traer fragmentos del pedido.
 """
 
 import asyncio
-from typing import Any, cast
 
 from app.modules.company_knowledge.domain.exceptions import AiReadingError
 from app.modules.company_knowledge.domain.value_objects import AiReadErrorCode
+from app.shared.provider_quota import QuotaFailure, classify_quota_error
 
 _AUTH_STATUS = (401, 403)
 _TOO_LARGE_STATUS = (413,)
-_QUOTA_CODES = ("credit_balance_exhausted", "insufficient_quota")
 
 
 def status_of(error: BaseException) -> int | None:
@@ -24,25 +23,19 @@ def status_of(error: BaseException) -> int | None:
     return None
 
 
-def _quota_exhausted(error: BaseException) -> bool:
-    body: Any = getattr(error, "body", None)
-    if isinstance(body, dict):
-        data = cast("dict[str, Any]", body)
-        if data.get("code") in _QUOTA_CODES or data.get("type") == "insufficient_quota":
-            return True
-    return getattr(error, "code", None) in _QUOTA_CODES
-
-
 def to_reading_error(error: BaseException) -> AiReadingError:
     if isinstance(error, AiReadingError):
         return error
     if isinstance(error, TimeoutError | asyncio.TimeoutError) or "Timeout" in type(error).__name__:
         return AiReadingError(AiReadErrorCode.TIMEOUT, retryable=True)
     status = status_of(error)
-    if status == 429:
-        if _quota_exhausted(error):
-            # Saldo agotado: reintentar no lo arregla.
-            return AiReadingError(AiReadErrorCode.UNAVAILABLE, retryable=False)
+    quota = classify_quota_error(error)
+    if quota == QuotaFailure.NO_CREDITS:
+        # Saldo agotado: reintentar no lo arregla.
+        return AiReadingError(AiReadErrorCode.NO_CREDITS, retryable=False)
+    if quota == QuotaFailure.DAILY_QUOTA:
+        return AiReadingError(AiReadErrorCode.DAILY_QUOTA, retryable=False)
+    if quota == QuotaFailure.RATE_LIMIT:
         return AiReadingError(AiReadErrorCode.RATE_LIMITED, retryable=True)
     if status in _AUTH_STATUS:
         return AiReadingError(AiReadErrorCode.UNAVAILABLE, retryable=False)

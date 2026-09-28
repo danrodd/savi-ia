@@ -35,6 +35,7 @@ from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.conversations.domain.value_objects import TokenUsage
+from app.shared.provider_quota import QuotaFailure, classify_quota_error
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,15 @@ _SECURITY_MESSAGE = "No pude generar una respuesta para esa consulta."
 _CREDENTIAL_REMEDY = (
     "La API key de Gemini no es válida o no tiene permisos. Revisá la configuración "
     "del proveedor y volvé a intentar."
+)
+_NO_CREDITS_MESSAGE = (
+    "La cuenta de Gemini no tiene créditos. Un administrador debe cargar saldo en "
+    "Google AI Studio para que el asistente pueda responder."
+)
+_DAILY_QUOTA_MESSAGE = (
+    "Se agotó la cuota diaria de Gemini para los modelos configurados. Se renueva "
+    "mañana; para seguir hoy, un administrador puede subir el plan en Google AI "
+    "Studio o activar otro proveedor."
 )
 
 
@@ -202,6 +212,23 @@ class GeminiRunner(LLMRunner):
                             credential_remedy=_CREDENTIAL_REMEDY,
                         )
                     )
+                    return
+                quota = classify_quota_error(error)
+                if quota == QuotaFailure.NO_CREDITS:
+                    # Reintentar no carga saldo: se corta con el camino de salida.
+                    log.error("gemini_no_credits model=%s", selected_model)
+                    yield ErrorEvent(message=_NO_CREDITS_MESSAGE)
+                    return
+                if quota == QuotaFailure.DAILY_QUOTA and not first_token:
+                    # La cuota diaria es por modelo: el siguiente puede tener.
+                    model_index += 1
+                    if model_index < len(models):
+                        selected_model = models[model_index]
+                        retry_attempt = 0
+                        log.warning("gemini_daily_quota_next_model model=%s", selected_model)
+                        continue
+                    log.error("gemini_daily_quota model=%s", selected_model)
+                    yield ErrorEvent(message=_DAILY_QUOTA_MESSAGE)
                     return
                 if code in _RETRYABLE_STATUS and not first_token:
                     retry_attempt += 1
