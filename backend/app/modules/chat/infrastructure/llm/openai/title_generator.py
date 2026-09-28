@@ -3,6 +3,7 @@
 Una sola llamada, sin tools y sin streaming. Ante cualquier error devuelve
 `None` (contrato del puerto): el título provisional queda como está.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -15,6 +16,7 @@ from openai import AsyncOpenAI
 from app.infrastructure.config import Settings
 from app.modules.chat.domain.interfaces import ActiveProvider, TitleGenerator
 from app.modules.chat.infrastructure.llm.title_prompt import (
+    TITLE_MAX_OUTPUT_TOKENS,
     TITLE_SYSTEM_PROMPT,
     build_title_prompt,
     clean_title,
@@ -44,18 +46,20 @@ class OpenAITitleGenerator(TitleGenerator):
         self._client = client
 
     async def generate(self, user_msg: str, assistant_msg: str = "") -> str | None:
-        client = cast(
-            _Client, self._client or AsyncOpenAI(api_key=self._provider.credential)
-        )
+        client = cast(_Client, self._client or AsyncOpenAI(api_key=self._provider.credential))
         try:
             result = client.responses.create(
                 model=self._provider.title_model,
                 instructions=TITLE_SYSTEM_PROMPT,
                 input=build_title_prompt(user_msg, assistant_msg),
-                max_output_tokens=32,
+                max_output_tokens=TITLE_MAX_OUTPUT_TOKENS,
                 store=False,
             )
             response = await result if inspect.isawaitable(result) else result
+            if getattr(response, "status", None) == "incomplete":
+                # Un pedazo de título es peor que el provisional: no se guarda.
+                log.warning("openai_title_incomplete model=%s", self._provider.title_model)
+                return None
             return clean_title(_output_text(response))
         except Exception:  # noqa: BLE001
             log.exception("openai_title_generation_failed")

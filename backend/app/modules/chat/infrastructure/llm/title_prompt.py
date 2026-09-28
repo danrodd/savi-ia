@@ -14,6 +14,12 @@ TITLE_SYSTEM_PROMPT = (
 )
 
 _MAX_TITLE_LEN = 80
+
+# Presupuesto de salida del auto-título. Con 32, los modelos que razonan antes
+# de responder (gpt-6-luna) gastaban hasta 32 tokens pensando y el título
+# salía cortado ("Definición de", "C") o vacío, y quedaba "Nueva conversación".
+# Medido: el razonamiento ronda 25-50 tokens y el título, 10-15.
+TITLE_MAX_OUTPUT_TOKENS = 256
 _ASSISTANT_PREVIEW_CHARS = 600
 
 

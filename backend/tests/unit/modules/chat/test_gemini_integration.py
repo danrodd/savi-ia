@@ -548,3 +548,19 @@ async def test_the_per_minute_limit_is_still_retried(monkeypatch: pytest.MonkeyP
 
     assert models.calls == ["gemini-test", "gemini-test"]
     assert any(isinstance(event, DoneEvent) for event in events)
+
+
+@pytest.mark.asyncio
+async def test_a_gemini_title_cut_by_max_tokens_is_not_saved() -> None:
+    class _CutModels:
+        async def generate_content(self, **_: object):
+            return SimpleNamespace(
+                text="Consulta de",
+                candidates=[SimpleNamespace(finish_reason=SimpleNamespace(name="MAX_TOKENS"))],
+            )
+
+    generator = GeminiTitleGenerator(
+        Settings(), _provider(), client=SimpleNamespace(aio=SimpleNamespace(models=_CutModels()))
+    )
+
+    assert await generator.generate("¿facturas de marzo?") is None

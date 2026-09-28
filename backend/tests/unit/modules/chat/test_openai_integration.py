@@ -138,9 +138,7 @@ async def test_runner_executes_tool_and_resends_output_items(
     assert calls == ["7"]
     use = next(e for e in events if isinstance(e, ToolUseEvent))
     assert use.name == "lookup" and use.id == "call_1" and use.input == {"n": 7}
-    assert isinstance(
-        next(e for e in events if isinstance(e, ToolResultEvent)), ToolResultEvent
-    )
+    assert isinstance(next(e for e in events if isinstance(e, ToolResultEvent)), ToolResultEvent)
     # El segundo request recibe el item de la llamada y su output.
     second_input = client.responses.calls[1]["input"]
     assert isinstance(second_input, list)
@@ -342,6 +340,25 @@ async def test_title_generator_cleans_output() -> None:
     generator = OpenAITitleGenerator(Settings(), _provider(), client=client)
 
     assert await generator.generate("¿facturas?") == "Consulta de facturas"
+
+
+@pytest.mark.asyncio
+async def test_a_title_cut_by_the_token_budget_is_not_saved() -> None:
+    """gpt-6-luna razona antes de responder: con poco presupuesto devolvía
+    "Definición de" con status incomplete y SAVI lo guardaba como título."""
+    seen: dict[str, object] = {}
+
+    class _CutResponses:
+        async def create(self, **kwargs: object):
+            seen.update(kwargs)
+            return SimpleNamespace(output_text="Definición de", status="incomplete")
+
+    client = SimpleNamespace(responses=_CutResponses())
+    generator = OpenAITitleGenerator(Settings(), _provider(), client=client)
+
+    assert await generator.generate("¿Qué es la UVT?") is None
+    # Espacio para razonar y para el título (medido: ~25-50 + 10-15 tokens).
+    assert int(str(seen["max_output_tokens"])) >= 200
 
 
 @pytest.mark.asyncio
