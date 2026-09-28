@@ -2,12 +2,18 @@
 
 > Estado: **propuesta**, pendiente de aprobación antes de implementar.
 > Fecha: 2026-09-14.
+> **Orden acordado (2026-09-28):** primero se cierra lo que está en curso
+> (versión `v1.2.0` publicada, pruebas del conocimiento con Claude y
+> Gemini) y la [landing](06-landing.md); las preguntas abiertas (§11) y la
+> decisión de modelo (§15) se responden al final, antes de empezar la
+> Fase 1.
 > Specs por fase:
 > [Fase 1 — SAVI Servidor](01-fase-savi-servidor.md) ·
 > [Fase 2 — Vinculación y sincronización](02-fase-vinculacion-y-sincronizacion.md) ·
 > [Fase 3 — Consola SAVI Cloud](03-fase-consola-cloud.md) ·
 > [Fase 4 — Pestaña SAVI en el ERP](04-fase-pestana-erp.md) ·
-> [Fase 5 — IA gestionada por SEO (créditos)](05-fase-creditos-gestionados.md)
+> [Fase 5 — IA gestionada por SEO (créditos)](05-fase-creditos-gestionados.md) ·
+> [Landing](06-landing.md)
 
 Este PRD lleva SAVI a producción en empresas: cada empresa instala **un
 SAVI Servidor** en su red, lo administra desde un solo lugar y sus
@@ -300,3 +306,28 @@ flowchart LR
 | **Seudónimo de usuario** | HMAC del par (base, idUsuario) con una clave que nunca sale de la instancia. |
 | **Gateway** | Proxy de IA de Cloud para el modo gestionado. |
 | **Crédito** | Unidad de consumo prepago del modo gestionado. |
+
+## 15. Decisión de fondo pendiente: híbrido o SaaS puro
+
+Planteada el 2026-09-28, al pedir que la plataforma "funcione como un SaaS".
+Este PRD propone un modelo **híbrido**: SAVI corre en la red de cada empresa
+y SAVI Cloud solo recibe métricas y administra créditos. Un SaaS puro
+correría SAVI en la nube de SEO, conectado por internet a la base del ERP de
+cada cliente.
+
+| | Híbrido (este PRD) | SaaS puro |
+|---|---|---|
+| Dónde corre SAVI | En el servidor del cliente | En la nube de SEO |
+| Datos del ERP | Nunca salen de la empresa | Viajan a la nube de SEO |
+| Instalación | La hace sistemas del cliente | Ninguna: registrarse y entrar |
+| Cobro | Licencia o créditos de IA vía Cloud | Suscripción mensual |
+| Riesgo principal | Soporte de instalaciones | Exponer los ERP a internet y la responsabilidad legal de custodiar sus datos |
+
+Lo que da la experiencia "de SaaS" en el modelo híbrido es SAVI Cloud:
+registro del cliente, consola central, métricas y créditos gestionados.
+
+**Urgencia de las preguntas abiertas** cuando se retome: P3 (alojamiento y
+dominio de Cloud, que también usa la landing) y P5 (qué es un crédito y su
+precio, que define los planes de la landing) primero; P8 (legal) antes de
+recibir telemetría de clientes reales; el resto son técnicas y se deciden en
+cada fase.
