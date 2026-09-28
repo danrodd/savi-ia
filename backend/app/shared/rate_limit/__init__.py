@@ -1,4 +1,5 @@
 from app.shared.rate_limit.guards import (
+    effective_upload_limit,
     enforce_chat_limits,
     enforce_login_limits,
     enforce_refresh_limits,
@@ -22,6 +23,7 @@ __all__ = [
     "enforce_chat_limits",
     "enforce_login_limits",
     "enforce_refresh_limits",
+    "effective_upload_limit",
     "enforce_upload_limits",
     "get_rate_limiter",
     "record_login_failure",

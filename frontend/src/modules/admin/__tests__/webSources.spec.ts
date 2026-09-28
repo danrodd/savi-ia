@@ -34,10 +34,22 @@ describe('isValidUrlInput', () => {
 })
 
 describe('sectionLabel', () => {
-  it('vuelve legibles los nombres de los sitemaps', () => {
-    expect(sectionLabel('wp-sitemap-posts-page-1.xml')).toBe('posts page 1')
-    expect(sectionLabel('product-sitemap.xml')).toBe('product')
-    expect(sectionLabel('sitemap.xml')).toBe('sitemap.xml')
+  it('traduce las secciones de WordPress', () => {
+    expect(sectionLabel('wp-sitemap-posts-page-1.xml')).toBe('Páginas')
+    expect(sectionLabel('wp-sitemap-posts-post-2.xml')).toBe('Entradas del blog (2)')
+    expect(sectionLabel('wp-sitemap-taxonomies-product_cat-1.xml')).toBe('Categorías de productos')
+    expect(sectionLabel('wp-sitemap-users-1.xml')).toBe('Autores')
+  })
+
+  it('traduce las secciones de Yoast', () => {
+    expect(sectionLabel('product-sitemap.xml')).toBe('Productos')
+    expect(sectionLabel('post_tag-sitemap.xml')).toBe('Etiquetas del blog')
+    expect(sectionLabel('sitemap.xml')).toBe('Mapa del sitio')
+  })
+
+  it('deja legible lo desconocido', () => {
+    expect(sectionLabel('recetas-sitemap.xml.gz')).toBe('Recetas')
+    expect(sectionLabel('wp-sitemap-posts-sedes_locales-1.xml')).toBe('Sedes locales')
     expect(sectionLabel('links')).toBe('Enlaces del sitio')
   })
 })

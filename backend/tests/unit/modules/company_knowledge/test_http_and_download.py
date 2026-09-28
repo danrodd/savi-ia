@@ -30,11 +30,17 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
     DocumentStatus,
     DocumentVisibility,
 )
+from app.modules.company_knowledge.infrastructure.http.dependencies import (
+    get_knowledge_settings_repository,
+)
 from app.modules.company_knowledge.infrastructure.http.repository_dependency import (
     get_document_repository,
 )
 from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_document_repository import (  # noqa: E501
     SqlAlchemyDocumentRepository,
+)
+from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_page_repository import (  # noqa: E501
+    SqlAlchemyKnowledgeSettingsRepository,
 )
 from app.modules.conversations.domain.entities import Conversation, Message, MessageRole
 from app.modules.conversations.domain.interfaces import ConversationRepository
@@ -70,6 +76,8 @@ def client(
     repo = SqlAlchemyDocumentRepository(sessionmaker_)
     app.dependency_overrides[require_company_admin] = lambda: ADMIN
     app.dependency_overrides[get_document_repository] = lambda: repo
+    knowledge_settings = SqlAlchemyKnowledgeSettingsRepository(sessionmaker_)
+    app.dependency_overrides[get_knowledge_settings_repository] = lambda: knowledge_settings
     app.dependency_overrides[get_erp_database_repository] = lambda: _ErpRepo({BASE})
     yield TestClient(app)  # sin `with`: no corre el lifespan
     get_settings.cache_clear()

@@ -1,3 +1,5 @@
+import type { Component } from 'vue'
+
 /**
  * Tipos del módulo de administración. Reflejan 1:1 las responses del
  * backend (`/admin/erp-databases` y `/erp-databases/available`).
@@ -208,6 +210,17 @@ export interface UpdateCompanyDocumentRequest extends Partial<DocumentPermission
   title?: string
 }
 
+/** Cupo de cargas por usuario y por hora (subir, reemplazar, leer sitios). */
+export interface UploadLimit {
+  /** `null`: se usa el valor por defecto del servidor. */
+  upload_limit_per_hour: number | null
+  default: number
+  maximum: number
+  effective: number
+  updated_by_login: string | null
+  updated_at: string | null
+}
+
 export interface CompanyDocumentUsage {
   total: number
   by_status: Record<DocumentStatus, number>
@@ -312,4 +325,15 @@ export interface UpdateWebSourceRequest extends Partial<DocumentPermissions> {
   refresh?: RefreshFrequency
   max_pages?: number
   excluded_sections?: string[]
+}
+
+/** Acción del menú de tres puntos de una fila. */
+export interface RowAction<Id extends string = string> {
+  id: Id
+  label: string
+  icon: Component
+  danger?: boolean
+  disabled?: boolean
+  /** Separador antes de esta acción. */
+  divider?: boolean
 }

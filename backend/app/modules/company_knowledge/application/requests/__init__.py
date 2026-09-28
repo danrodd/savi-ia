@@ -2,6 +2,7 @@ from app.modules.company_knowledge.application.requests.document_requests import
     SearchTestRequest,
     UpdateAiReadingSettingsRequest,
     UpdateCompanyDocumentRequest,
+    UpdateUploadLimitRequest,
 )
 from app.modules.company_knowledge.application.requests.web_requests import (
     CreateWebSourceRequest,
@@ -12,6 +13,7 @@ from app.modules.company_knowledge.application.requests.web_requests import (
 __all__ = [
     "SearchTestRequest",
     "UpdateAiReadingSettingsRequest",
+    "UpdateUploadLimitRequest",
     "UpdateCompanyDocumentRequest",
     "CreateWebSourceRequest",
     "PreviewWebSourceRequest",

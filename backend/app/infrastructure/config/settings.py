@@ -222,6 +222,9 @@ class Settings(BaseSettings):
     rate_limit_chat_per_minute: int = Field(default=20)
     rate_limit_chat_per_hour: int = Field(default=200)
     rate_limit_upload_per_hour: int = Field(default=30)
+    # Techo del cupo que un administrador puede fijar desde la pantalla de
+    # Conocimiento: sube el valor sin editar el `.env`, pero no sin límite.
+    rate_limit_upload_per_hour_max: int = Field(default=1000)
     # Techo general por IP, para todo lo demás (incluye `/health`).
     rate_limit_global_per_minute: int = Field(default=300)
     # Solo se confía en `X-Forwarded-For` si hay un proxy declarado. Confiarlo

@@ -14,6 +14,9 @@ from app.infrastructure.config import get_settings
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http.admin import require_company_admin
 from app.modules.company_knowledge.infrastructure.http import web_routes
+from app.modules.company_knowledge.infrastructure.http.dependencies import (
+    get_knowledge_settings_repository,
+)
 from app.modules.company_knowledge.infrastructure.http.repository_dependency import (
     get_document_repository,
 )
@@ -23,6 +26,9 @@ from app.modules.company_knowledge.infrastructure.http.web_dependencies import (
 )
 from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_document_repository import (  # noqa: E501
     SqlAlchemyDocumentRepository,
+)
+from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_page_repository import (  # noqa: E501
+    SqlAlchemyKnowledgeSettingsRepository,
 )
 from app.modules.company_knowledge.infrastructure.persistence.sqlalchemy_web_source_repository import (  # noqa: E501
     SqlAlchemyWebSourceRepository,
@@ -69,6 +75,8 @@ def _client(
     app.dependency_overrides[require_company_admin] = lambda: ADMIN
     app.dependency_overrides[get_web_source_repository] = lambda: sources
     app.dependency_overrides[get_document_repository] = lambda: documents
+    knowledge_settings = SqlAlchemyKnowledgeSettingsRepository(sessionmaker_)
+    app.dependency_overrides[get_knowledge_settings_repository] = lambda: knowledge_settings
     app.dependency_overrides[get_web_fetcher] = lambda: site
     app.dependency_overrides[get_erp_database_repository] = lambda: _ErpRepo()
 

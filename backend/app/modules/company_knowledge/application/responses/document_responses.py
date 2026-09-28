@@ -11,6 +11,7 @@ from app.modules.company_knowledge.application.use_cases.ai_reading import AiRea
 from app.modules.company_knowledge.application.use_cases.document_access import (
     SearchTestResult,
 )
+from app.modules.company_knowledge.application.use_cases.upload_limit import UploadLimit
 from app.modules.company_knowledge.domain.services import format_pages
 from app.modules.company_knowledge.infrastructure.progress import (
     get_progress_registry,
@@ -231,4 +232,26 @@ class AiReadingSettingsResponse(BaseModel):
             consent_by_login=status.consent_by_login,
             consent_at=status.consent_at,
             updated_at=status.updated_at,
+        )
+
+
+class UploadLimitResponse(BaseModel):
+    """Cupo de subidas por usuario y por hora."""
+
+    upload_limit_per_hour: int | None  # `None`: el por defecto del servidor
+    default: int
+    maximum: int
+    effective: int
+    updated_by_login: str | None
+    updated_at: datetime | None
+
+    @classmethod
+    def from_limit(cls, limit: UploadLimit) -> "UploadLimitResponse":
+        return cls(
+            upload_limit_per_hour=limit.configured,
+            default=limit.default,
+            maximum=limit.maximum,
+            effective=limit.effective,
+            updated_by_login=limit.updated_by_login,
+            updated_at=limit.updated_at,
         )

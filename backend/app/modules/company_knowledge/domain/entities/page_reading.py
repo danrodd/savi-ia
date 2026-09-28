@@ -120,6 +120,9 @@ class KnowledgeSettings:
     consent_provider: str | None = None
     consent_by_login: str | None = None
     consent_at: datetime | None = None
+    # Subidas, reemplazos y lecturas de sitios por usuario y por hora.
+    # `None`: el valor por defecto del servidor.
+    upload_limit_per_hour: int | None = None
 
     def allows_sending_to(self, provider: str | None) -> bool:
         return (

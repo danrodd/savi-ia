@@ -6,6 +6,7 @@ import type {
   DocumentPermissions,
   SearchTestResult,
   UpdateCompanyDocumentRequest,
+  UploadLimit,
 } from '../types'
 
 class CompanyDocumentService {
@@ -60,6 +61,15 @@ class CompanyDocumentService {
       ai_reading_enabled: enabled,
       accept_provider: acceptProvider ?? null,
     })
+  }
+
+  uploadLimit(): Promise<UploadLimit> {
+    return this.http.get<UploadLimit>('/upload-limit')
+  }
+
+  /** `null` vuelve al valor por defecto del servidor. */
+  updateUploadLimit(perHour: number | null): Promise<UploadLimit> {
+    return this.http.put<UploadLimit>('/upload-limit', { upload_limit_per_hour: perHour })
   }
 
   remove(id: string): Promise<void> {

@@ -199,6 +199,7 @@ class SqlAlchemyKnowledgeSettingsRepository(KnowledgeSettingsRepository):
             consent_provider=row.ai_reading_consent_provider,
             consent_by_login=row.ai_reading_consent_by_login,
             consent_at=row.ai_reading_consent_at,
+            upload_limit_per_hour=row.upload_limit_per_hour,
         )
 
     async def save(self, settings: KnowledgeSettings) -> KnowledgeSettings:
@@ -213,5 +214,6 @@ class SqlAlchemyKnowledgeSettingsRepository(KnowledgeSettingsRepository):
             row.ai_reading_consent_provider = settings.consent_provider
             row.ai_reading_consent_by_login = settings.consent_by_login
             row.ai_reading_consent_at = settings.consent_at
+            row.upload_limit_per_hour = settings.upload_limit_per_hour
             await session.commit()
         return await self.get()

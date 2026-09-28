@@ -27,3 +27,9 @@ class UpdateAiReadingSettingsRequest(BaseModel):
     ai_reading_enabled: bool
     # Proveedor cuyo aviso de privacidad aceptó el administrador al activar.
     accept_provider: str | None = Field(default=None, min_length=1, max_length=32)
+
+
+class UpdateUploadLimitRequest(BaseModel):
+    # `None` vuelve al valor por defecto del servidor. El techo lo valida el
+    # caso de uso: depende de la configuración del servidor.
+    upload_limit_per_hour: int | None = Field(default=None, ge=1)

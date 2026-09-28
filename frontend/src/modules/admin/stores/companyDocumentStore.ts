@@ -16,6 +16,7 @@ import type {
   CompanyDocumentUsage,
   DocumentPermissions,
   UpdateCompanyDocumentRequest,
+  UploadLimit,
 } from '../types'
 import { isInProgress, normalizePermissions } from '../utils/companyDocuments'
 
@@ -28,6 +29,7 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
   const error = ref<string | null>(null)
   /** `null` hasta cargarla; si falla, la subida sigue funcionando sin estimado. */
   const aiReading = ref<AiReadingSettings | null>(null)
+  const uploadLimit = ref<UploadLimit | null>(null)
   let pollTimer: ReturnType<typeof setTimeout> | null = null
   let polling = false
 
@@ -146,6 +148,20 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
     return queued
   }
 
+  async function loadUploadLimit(): Promise<void> {
+    try {
+      uploadLimit.value = await companyDocumentService.uploadLimit()
+    } catch {
+      uploadLimit.value = null
+    }
+  }
+
+  async function setUploadLimit(perHour: number | null): Promise<UploadLimit> {
+    const saved = await companyDocumentService.updateUploadLimit(perHour)
+    uploadLimit.value = saved
+    return saved
+  }
+
   async function remove(id: string): Promise<void> {
     await companyDocumentService.remove(id)
     documents.value = documents.value.filter((d) => d.id !== id)
@@ -157,6 +173,7 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
     loading,
     error,
     aiReading,
+    uploadLimit,
     hasInProgress,
     load,
     refresh,
@@ -169,6 +186,8 @@ export const useCompanyDocumentStore = defineStore('companyDocuments', () => {
     readWithAi,
     loadAiReading,
     setAiReading,
+    loadUploadLimit,
+    setUploadLimit,
     remove,
   }
 })

@@ -41,6 +41,10 @@ from app.modules.company_knowledge.application.use_cases.update_document import 
 from app.modules.company_knowledge.application.use_cases.upload_document import (
     UploadCompanyDocumentUseCase,
 )
+from app.modules.company_knowledge.application.use_cases.upload_limit import (
+    UploadLimit,
+    UploadLimitUseCase,
+)
 from app.modules.company_knowledge.application.use_cases.web_sources import (
     CreateWebSourceUseCase,
     DeleteWebSourceUseCase,
@@ -61,6 +65,8 @@ __all__ = [
     "ReadCompanyDocumentWithAiUseCase",
     "ReadPdfPagesUseCase",
     "UpdateAiReadingSettingsUseCase",
+    "UploadLimit",
+    "UploadLimitUseCase",
     "DeleteCompanyDocumentUseCase",
     "DownloadCompanyDocumentUseCase",
     "RepositorySourceAvailabilityResolver",

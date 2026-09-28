@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { WebSource } from '../types'
+import { FilePen, List, RefreshCw, Trash2 } from 'lucide-vue-next'
+
+import type { RowAction, WebSource } from '../types'
 import { visibilityLabel } from '../utils/companyDocuments'
 import {
   hostOf,
@@ -9,6 +11,7 @@ import {
   WEB_STATUS_LABELS,
 } from '../utils/webSources'
 import CompanyDocumentStatusBadge from './CompanyDocumentStatusBadge.vue'
+import RowActionsMenu from './RowActionsMenu.vue'
 
 const props = defineProps<{
   sources: WebSource[]
@@ -28,6 +31,29 @@ const dateFormatter = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', ti
 function scopeLabel(source: WebSource): string {
   if (source.all_databases) return 'Todas las bases'
   return source.database_ids.map((id) => props.databaseNames[id] ?? 'Base eliminada').join(', ')
+}
+
+type SourceAction = 'detail' | 'edit' | 'refresh' | 'remove'
+
+function actionsFor(source: WebSource): RowAction<SourceAction>[] {
+  return [
+    { id: 'detail', label: 'Ver páginas', icon: List },
+    { id: 'edit', label: 'Editar', icon: FilePen },
+    {
+      id: 'refresh',
+      label: 'Leer ahora',
+      icon: RefreshCw,
+      disabled: isWebInProgress(source.status),
+    },
+    { id: 'remove', label: 'Eliminar', icon: Trash2, danger: true, divider: true },
+  ]
+}
+
+function onAction(id: SourceAction, source: WebSource): void {
+  if (id === 'detail') emit('detail', source)
+  else if (id === 'edit') emit('edit', source)
+  else if (id === 'refresh') emit('refresh', source)
+  else emit('remove', source)
 }
 
 function lastRead(source: WebSource): string {
@@ -61,39 +87,22 @@ function lastRead(source: WebSource): string {
           :message="source.status_message"
         />
         <div class="wlist__sub">{{ lastRead(source) }}</div>
-        <div v-if="source.status_message" class="wlist__sub wlist__sub--danger">
+        <div
+          v-if="source.status_message"
+          class="wlist__sub"
+          :class="{ 'wlist__sub--danger': source.status === 'failed' }"
+        >
           {{ source.status_message }}
         </div>
       </div>
 
       <div class="wlist__actions">
-        <button type="button" class="wlist__action" @click="emit('detail', source)">
-          Ver páginas
-        </button>
-        <button
-          type="button"
-          class="wlist__action"
+        <RowActionsMenu
+          :actions="actionsFor(source)"
+          :label="`Acciones de ${source.title}`"
           :disabled="busyId === source.id"
-          @click="emit('edit', source)"
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          class="wlist__action"
-          :disabled="busyId === source.id || isWebInProgress(source.status)"
-          @click="emit('refresh', source)"
-        >
-          Leer ahora
-        </button>
-        <button
-          type="button"
-          class="wlist__action wlist__action--danger"
-          :disabled="busyId === source.id"
-          @click="emit('remove', source)"
-        >
-          Eliminar
-        </button>
+          @select="(id) => onAction(id, source)"
+        />
       </div>
     </li>
   </ul>
@@ -166,33 +175,6 @@ function lastRead(source: WebSource): string {
   gap: var(--space-1);
 }
 
-.wlist__action {
-  padding: var(--space-1) var(--space-2);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--r-sm);
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.wlist__action:hover:not(:disabled) {
-  background: var(--surface-subtle);
-  color: var(--text);
-}
-
-.wlist__action--danger:hover:not(:disabled) {
-  color: var(--text-danger, #b91c1c);
-}
-
-.wlist__action:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
 @media (max-width: 720px) {
   .wlist__item {
     grid-template-columns: 1fr;
@@ -200,12 +182,8 @@ function lastRead(source: WebSource): string {
   }
 
   .wlist__actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
-  .wlist__action {
-    border-color: var(--border);
-    padding: var(--space-1) var(--space-3);
-  }
 }
 </style>

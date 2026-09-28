@@ -222,6 +222,8 @@ class CompanyKnowledgeSettingsModel(Base):
     ai_reading_consent_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
     ai_reading_consent_by_login: Mapped[str | None] = mapped_column(String(50), nullable=True)
     ai_reading_consent_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
+    # Cupo de subidas por usuario y por hora; NULL = el del servidor.
+    upload_limit_per_hour: Mapped[int | None] = mapped_column(Integer, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         UtcDateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )

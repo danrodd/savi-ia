@@ -3,6 +3,7 @@ from app.modules.company_knowledge.application.responses.document_responses impo
     CompanyDocumentResponse,
     CompanyDocumentUsageResponse,
     SearchTestResponse,
+    UploadLimitResponse,
 )
 from app.modules.company_knowledge.application.responses.web_responses import (
     WebPageResponse,
@@ -13,6 +14,7 @@ from app.modules.company_knowledge.application.responses.web_responses import (
 
 __all__ = [
     "AiReadingSettingsResponse",
+    "UploadLimitResponse",
     "CompanyDocumentResponse",
     "CompanyDocumentUsageResponse",
     "SearchTestResponse",

@@ -295,6 +295,12 @@ async function onSubmit(): Promise<void> {
   gap: var(--space-3);
 }
 
+/* Casillas y radios con el color de la marca, como en los permisos. */
+.wadd input[type='checkbox'],
+.wadd input[type='radio'] {
+  accent-color: var(--brand);
+}
+
 .wadd__fieldset {
   display: grid;
   gap: var(--space-2);

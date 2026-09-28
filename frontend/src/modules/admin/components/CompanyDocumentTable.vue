@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import type { CompanyDocument } from '../types'
+import { FilePen, FileUp, RotateCw, Sparkles, Trash2 } from 'lucide-vue-next'
+
+import type { CompanyDocument, RowAction } from '../types'
 import { canReadWithAi, progressLabel, READING_LABELS, readingDetail } from '../utils/aiReading'
 import { formatBytes, isInProgress, visibilityLabel } from '../utils/companyDocuments'
 import CompanyDocumentStatusBadge from './CompanyDocumentStatusBadge.vue'
+import RowActionsMenu from './RowActionsMenu.vue'
 
 const props = defineProps<{
   documents: CompanyDocument[]
@@ -37,6 +40,40 @@ function progressOf(
   // documentos ya terminados.
   if (done == null || total == null || total <= 0) return null
   return { done, total, percent: Math.min(100, Math.round((done * 100) / total)) }
+}
+
+type DocumentAction = 'edit' | 'replace' | 'reprocess' | 'readWithAi' | 'remove'
+
+function actionsFor(document: CompanyDocument): RowAction<DocumentAction>[] {
+  const actions: RowAction<DocumentAction>[] = []
+  const withAi = props.aiReadingAvailable && canReadWithAi(document)
+  // En "Sin texto", leer con IA es justo lo que lo resuelve: va primero.
+  if (withAi && document.status === 'no_text') {
+    actions.push({ id: 'readWithAi', label: 'Leer con IA', icon: Sparkles })
+  }
+  actions.push({ id: 'edit', label: 'Editar', icon: FilePen })
+  actions.push({ id: 'replace', label: 'Reemplazar archivo', icon: FileUp })
+  if (document.status === 'failed' || document.status === 'no_text') {
+    actions.push({
+      id: 'reprocess',
+      label: 'Reprocesar',
+      icon: RotateCw,
+      disabled: isInProgress(document.status),
+    })
+  }
+  if (withAi && document.status !== 'no_text') {
+    actions.push({ id: 'readWithAi', label: 'Leer con IA', icon: Sparkles })
+  }
+  actions.push({ id: 'remove', label: 'Eliminar', icon: Trash2, danger: true, divider: true })
+  return actions
+}
+
+function onAction(id: DocumentAction, document: CompanyDocument): void {
+  if (id === 'edit') emit('edit', document)
+  else if (id === 'replace') emit('replace', document)
+  else if (id === 'reprocess') emit('reprocess', document)
+  else if (id === 'readWithAi') emit('readWithAi', document)
+  else emit('remove', document)
 }
 
 function detail(document: CompanyDocument): string {
@@ -103,50 +140,12 @@ function detail(document: CompanyDocument): string {
           </td>
           <td>
             <div class="dbtable__actions">
-              <button
-                type="button"
-                class="dbtable__action"
+              <RowActionsMenu
+                :actions="actionsFor(document)"
+                :label="`Acciones de ${document.title}`"
                 :disabled="busyId === document.id"
-                @click="emit('edit', document)"
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                class="dbtable__action"
-                :disabled="busyId === document.id"
-                @click="emit('replace', document)"
-              >
-                Reemplazar
-              </button>
-              <button
-                v-if="document.status === 'failed' || document.status === 'no_text'"
-                type="button"
-                class="dbtable__action"
-                :disabled="busyId === document.id || isInProgress(document.status)"
-                @click="emit('reprocess', document)"
-              >
-                Reprocesar
-              </button>
-              <!-- Destacado en "Sin texto": es justo el caso que la IA resuelve. -->
-              <button
-                v-if="aiReadingAvailable && canReadWithAi(document)"
-                type="button"
-                class="dbtable__action"
-                :class="{ 'dbtable__action--primary': document.status === 'no_text' }"
-                :disabled="busyId === document.id"
-                @click="emit('readWithAi', document)"
-              >
-                Leer con IA
-              </button>
-              <button
-                type="button"
-                class="dbtable__action dbtable__action--danger"
-                :disabled="busyId === document.id"
-                @click="emit('remove', document)"
-              >
-                Eliminar
-              </button>
+                @select="(id) => onAction(id, document)"
+              />
             </div>
           </td>
         </tr>
@@ -247,38 +246,6 @@ function detail(document: CompanyDocument): string {
   gap: var(--space-1);
 }
 
-.dbtable__action {
-  padding: var(--space-1) var(--space-2);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--r-sm);
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.dbtable__action:hover:not(:disabled) {
-  background: var(--surface-subtle);
-  color: var(--text);
-}
-
-.dbtable__action--primary {
-  border-color: var(--brand-ring, var(--border));
-  color: var(--brand, var(--text));
-}
-
-.dbtable__action--danger:hover:not(:disabled) {
-  color: var(--text-danger, #b91c1c);
-}
-
-.dbtable__action:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
 .dbtable__sr {
   position: absolute;
   width: 1px;
@@ -342,13 +309,8 @@ function detail(document: CompanyDocument): string {
   }
 
   .dbtable__actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
     width: 100%;
-  }
-
-  .dbtable__action {
-    border-color: var(--border);
-    padding: var(--space-1) var(--space-3);
   }
 
   .dbtable__progress {

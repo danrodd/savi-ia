@@ -63,19 +63,38 @@ export function isValidUrlInput(raw: string): boolean {
   }
 }
 
+const SECTION_NAMES: Record<string, string> = {
+  page: 'Páginas',
+  post: 'Entradas del blog',
+  product: 'Productos',
+  category: 'Categorías del blog',
+  post_tag: 'Etiquetas del blog',
+  product_cat: 'Categorías de productos',
+  product_tag: 'Etiquetas de productos',
+  author: 'Autores',
+  users: 'Autores',
+  cartflows_step: 'Pasos de compra',
+  sitemap: 'Mapa del sitio',
+}
+
 /**
- * Nombre legible de una sección del sitemap: "wp-sitemap-posts-page-1.xml"
- * pasa a "posts page 1" y "product-sitemap.xml" a "product".
+ * Nombre legible de una sección del sitemap. Cubre WordPress
+ * ("wp-sitemap-posts-page-1.xml" → "Páginas") y Yoast
+ * ("product_cat-sitemap.xml" → "Categorías de productos"); lo desconocido
+ * queda con el nombre del archivo limpio.
  */
 export function sectionLabel(section: string): string {
   if (section === 'links') return 'Enlaces del sitio'
-  const name = section
-    .replace(/\.xml(\.gz)?$/i, '')
-    .replace(/^wp-sitemap-?/i, '')
-    .replace(/[-_]?sitemap[-_]?/gi, ' ')
-    .replace(/[-_]+/g, ' ')
-    .trim()
-  return name || section
+  let name = section.replace(/\.xml(\.gz)?$/i, '').toLowerCase()
+  name = name.replace(/^wp-sitemap-?/, '').replace(/-?sitemap$/, '') || 'sitemap'
+  const part = name.match(/-(\d+)$/)
+  name = name.replace(/-(\d+)$/, '').replace(/^(posts|taxonomies)-/, '')
+  const base = SECTION_NAMES[name] ?? capitalize(name.replace(/[-_]+/g, ' ').trim() || section)
+  return part && Number(part[1]) > 1 ? `${base} (${part[1]})` : base
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 /**

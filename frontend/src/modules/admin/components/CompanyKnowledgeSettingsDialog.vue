@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * Configuración de Conocimiento: el interruptor de la lectura de PDF con IA.
+ * Configuración de Conocimiento: el interruptor de la lectura de PDF con IA
+ * y el cupo de cargas por hora.
  *
  * Es la única decisión que toma el administrador. No hay una casilla por
  * archivo: con la lectura activa, cada PDF que se suba se lee con IA y el
@@ -18,6 +19,7 @@ import Dialog from '@/components/ui/Dialog.vue'
 import { toast } from '@/lib/toast'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 import { approxUsd, needsConsent } from '../utils/aiReading'
+import UploadLimitSection from './UploadLimitSection.vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -191,6 +193,8 @@ async function acceptAndEnable(): Promise<void> {
         Aplica a lo que se suba desde ahora. Los documentos que ya están cargados se pueden leer con
         IA desde la tabla, con "Leer con IA".
       </p>
+
+      <UploadLimitSection />
     </div>
 
     <template #footer>

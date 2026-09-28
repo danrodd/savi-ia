@@ -133,11 +133,21 @@ def enforce_chat_limits(settings: Settings, user: AuthenticatedUser) -> None:
     _enforce(f"{key}:h", RateLimitPolicy(settings.rate_limit_chat_per_hour, _HOUR))
 
 
-def enforce_upload_limits(settings: Settings, user: AuthenticatedUser) -> None:
-    """Subir y reemplazar encolan procesamiento: comparten cupo."""
+def effective_upload_limit(settings: Settings, configured: int | None) -> int:
+    """Cupo por hora vigente: el que fijó un administrador, dentro del techo
+    del servidor; sin valor fijado, el por defecto del `.env`."""
+    if configured is None:
+        return settings.rate_limit_upload_per_hour
+    return max(1, min(configured, settings.rate_limit_upload_per_hour_max))
+
+
+def enforce_upload_limits(
+    settings: Settings, user: AuthenticatedUser, configured: int | None = None
+) -> None:
+    """Subir, reemplazar y leer sitios encolan procesamiento: comparten cupo."""
     if not settings.rate_limit_enabled:
         return
     _enforce(
         f"{_user_key('upload', user)}:h",
-        RateLimitPolicy(settings.rate_limit_upload_per_hour, _HOUR),
+        RateLimitPolicy(effective_upload_limit(settings, configured), _HOUR),
     )

@@ -23,7 +23,10 @@ from app.modules.company_knowledge.application.responses import (
 )
 from app.modules.company_knowledge.domain.entities.web_source import WebSource
 from app.modules.company_knowledge.domain.exceptions import WebSourceNotFoundError
-from app.modules.company_knowledge.infrastructure.http.dependencies import SettingsDep
+from app.modules.company_knowledge.infrastructure.http.dependencies import (
+    ConfiguredUploadLimitDep,
+    SettingsDep,
+)
 from app.modules.company_knowledge.infrastructure.http.web_dependencies import (
     CreateWebSourceUseCaseDep,
     DeleteWebSourceUseCaseDep,
@@ -67,9 +70,10 @@ async def create_web_source(
     use_case: CreateWebSourceUseCaseDep,
     settings: SettingsDep,
     admin: SaviAdminDep,
+    upload_limit: ConfiguredUploadLimitDep,
 ) -> WebSourceResponse:
     # Cada alta encola un rastreo: cuenta para el mismo cupo que las subidas.
-    enforce_upload_limits(settings, admin)
+    enforce_upload_limits(settings, admin, upload_limit)
     assert admin.erp_database_id is not None  # noqa: S101 — el token no decodifica sin base
     source = await use_case.execute(
         url=request.url,
@@ -139,8 +143,9 @@ async def refresh_web_source(
     use_case: RefreshWebSourceUseCaseDep,
     settings: SettingsDep,
     admin: SaviAdminDep,
+    upload_limit: ConfiguredUploadLimitDep,
 ) -> WebSourceResponse:
-    enforce_upload_limits(settings, admin)
+    enforce_upload_limits(settings, admin, upload_limit)
     return WebSourceResponse.from_entity(await use_case.execute(source_id))
 
 

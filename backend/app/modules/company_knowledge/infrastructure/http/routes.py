@@ -17,12 +17,14 @@ from app.modules.company_knowledge.application.requests import (
     SearchTestRequest,
     UpdateAiReadingSettingsRequest,
     UpdateCompanyDocumentRequest,
+    UpdateUploadLimitRequest,
 )
 from app.modules.company_knowledge.application.responses import (
     AiReadingSettingsResponse,
     CompanyDocumentResponse,
     CompanyDocumentUsageResponse,
     SearchTestResponse,
+    UploadLimitResponse,
 )
 from app.modules.company_knowledge.domain.entities.company_document import (
     CompanyDocument,
@@ -37,6 +39,7 @@ from app.modules.company_knowledge.domain.value_objects.visibility import (
 )
 from app.modules.company_knowledge.infrastructure.http.dependencies import (
     AiReadingSettingsUseCaseDep,
+    ConfiguredUploadLimitDep,
     DeleteUseCaseDep,
     GetUseCaseDep,
     ListUseCaseDep,
@@ -47,6 +50,7 @@ from app.modules.company_knowledge.infrastructure.http.dependencies import (
     SettingsDep,
     UpdateAiReadingSettingsUseCaseDep,
     UpdateUseCaseDep,
+    UploadLimitUseCaseDep,
     UploadUseCaseDep,
     UsageUseCaseDep,
 )
@@ -114,6 +118,7 @@ async def upload_document(
     use_case: UploadUseCaseDep,
     settings: SettingsDep,
     admin: SaviAdminDep,
+    upload_limit: ConfiguredUploadLimitDep,
     file: UploadFile = File(...),
     visibility: DocumentVisibility = Form(...),
     title: str | None = Form(default=None, max_length=200),
@@ -124,7 +129,7 @@ async def upload_document(
     # Antes de leer el cuerpo: cada subida encola procesamiento (embeddings),
     # que es el trabajo caro. Con el usuario ya inyectado, sin resolver la
     # autenticación de nuevo.
-    enforce_upload_limits(settings, admin)
+    enforce_upload_limits(settings, admin, upload_limit)
     limit_mb = settings.company_docs_max_file_mb
     _reject_oversized_body(request, limit_mb)
     content = await _read_limited(file, limit_mb)
@@ -200,6 +205,23 @@ async def update_ai_reading_settings(
     return AiReadingSettingsResponse.from_status(reading)
 
 
+@router.get("/upload-limit", response_model=UploadLimitResponse)
+async def get_upload_limit(
+    use_case: UploadLimitUseCaseDep, _admin: SaviAdminDep
+) -> UploadLimitResponse:
+    """Cupo de subidas por usuario y por hora: el fijado, el por defecto y el techo."""
+    return UploadLimitResponse.from_limit(await use_case.get())
+
+
+@router.put("/upload-limit", response_model=UploadLimitResponse)
+async def update_upload_limit(
+    request: UpdateUploadLimitRequest, use_case: UploadLimitUseCaseDep, admin: SaviAdminDep
+) -> UploadLimitResponse:
+    """Fija el cupo (dentro del techo del servidor) o vuelve al por defecto con `null`."""
+    limit = await use_case.update(request.upload_limit_per_hour, updated_by_login=admin.login)
+    return UploadLimitResponse.from_limit(limit)
+
+
 @router.post("/search-test", response_model=SearchTestResponse)
 async def search_test(
     request: SearchTestRequest, use_case: SearchTestUseCaseDep, admin: SaviAdminDep
@@ -252,10 +274,11 @@ async def replace_document(
     use_case: ReplaceUseCaseDep,
     settings: SettingsDep,
     admin: SaviAdminDep,
+    upload_limit: ConfiguredUploadLimitDep,
     file: UploadFile = File(...),
 ) -> CompanyDocumentResponse:
     # Reemplazar también encola procesamiento: cuenta para el mismo cupo.
-    enforce_upload_limits(settings, admin)
+    enforce_upload_limits(settings, admin, upload_limit)
     limit_mb = settings.company_docs_max_file_mb
     _reject_oversized_body(request, limit_mb)
     content = await _read_limited(file, limit_mb)

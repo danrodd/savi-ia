@@ -20,6 +20,7 @@ from app.modules.company_knowledge.application.use_cases import (
     UpdateAiReadingSettingsUseCase,
     UpdateCompanyDocumentUseCase,
     UploadCompanyDocumentUseCase,
+    UploadLimitUseCase,
 )
 from app.modules.company_knowledge.domain.interfaces import (
     AiReaderAvailability,
@@ -177,6 +178,23 @@ def get_update_ai_reading_settings_use_case(
     return UpdateAiReadingSettingsUseCase(knowledge_settings, readers, pages)
 
 
+def get_upload_limit_use_case(
+    knowledge_settings: KnowledgeSettingsRepositoryDep, settings: SettingsDep
+) -> UploadLimitUseCase:
+    return UploadLimitUseCase(
+        knowledge_settings,
+        default=settings.rate_limit_upload_per_hour,
+        maximum=settings.rate_limit_upload_per_hour_max,
+    )
+
+
+async def get_configured_upload_limit(
+    knowledge_settings: KnowledgeSettingsRepositoryDep,
+) -> int | None:
+    """Cupo fijado desde la pantalla, o `None` para usar el del servidor."""
+    return (await knowledge_settings.get()).upload_limit_per_hour
+
+
 def get_delete_use_case(
     repository: DocumentRepositoryDep, index: DocumentIndexDep
 ) -> DeleteCompanyDocumentUseCase:
@@ -216,6 +234,8 @@ ReadWithAiUseCaseDep = Annotated[
 AiReadingSettingsUseCaseDep = Annotated[
     GetAiReadingSettingsUseCase, Depends(get_ai_reading_settings_use_case)
 ]
+UploadLimitUseCaseDep = Annotated[UploadLimitUseCase, Depends(get_upload_limit_use_case)]
+ConfiguredUploadLimitDep = Annotated[int | None, Depends(get_configured_upload_limit)]
 UpdateAiReadingSettingsUseCaseDep = Annotated[
     UpdateAiReadingSettingsUseCase, Depends(get_update_ai_reading_settings_use_case)
 ]
