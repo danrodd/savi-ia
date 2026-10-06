@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Collection, Sequence
+from dataclasses import replace
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -21,7 +22,13 @@ from app.modules.data_query.domain.exceptions import (
     UnknownEntityError,
 )
 from app.modules.data_query.domain.query_result import QueryResult
-from app.modules.data_query.domain.semantic_query import FilterOp, QueryFilter, QueryMode
+from app.modules.data_query.domain.semantic_model import SemanticEntity
+from app.modules.data_query.domain.semantic_query import (
+    FilterOp,
+    QueryFilter,
+    QueryMode,
+    SemanticQuery,
+)
 from app.modules.data_query.infrastructure.catalog import entity_names, get_entity
 from app.modules.data_query.infrastructure.erp_query_executor import execute_compiled
 
@@ -71,7 +78,66 @@ async def run_semantic_query(
         hint = _narrower_search_hint(query.filtros)
         if hint:
             return hint
-    return _format_result(result, compiled.select_labels)
+        return _format_result(result, compiled.select_labels)
+    note = await _mixed_matches_note(query, entity, erp_database_id)
+    return _format_result(result, compiled.select_labels) + note
+
+
+# Cuántos valores distintos se nombran en el aviso de coincidencias mezcladas.
+_MIXED_MATCHES_SHOWN = 10
+
+
+async def _mixed_matches_note(
+    query: SemanticQuery, entity: SemanticEntity, erp_database_id: UUID | None
+) -> str:
+    """Avisa cuando un total sin desglose suma varias cosas que el usuario
+    nombró como una sola.
+
+    "contiene" exige todas las palabras, no la frase: "tornillo MAD 6 2"
+    coincide con 6 * 2", 6 * 1 1/2" y ZINCADO 6 * 1/2. Medido con
+    Gemini: respondió 27.115 unidades "del tornillo MAD 6 * 2" sumando cinco
+    productos, cuando ese producto tiene 18.183. Se verifica acá con una
+    segunda consulta, con el mismo filtro, agrupada por el campo buscado.
+
+    Agrupar por otra cosa no alcanza: por sucursal, "TORNILLO MAD 6 * 2\""
+    dio 28.883 en Bodega, que son el 6 * 2" y el 6 * 1 1/2" juntos.
+    """
+    if query.modo != QueryMode.AGGREGATE:
+        return ""
+    flt = next(
+        (
+            f
+            for f in query.filtros
+            if f.op == FilterOp.CONTAINS
+            and f.campo in entity.dimensions
+            and f.campo not in query.dimensiones
+        ),
+        None,
+    )
+    if flt is None:
+        return ""
+    probe = replace(query, dimensiones=[flt.campo], orden=None, limite=_MIXED_MATCHES_SHOWN + 1)
+    try:
+        compiled = compile_query(probe, entity)
+        result = await execute_compiled(
+            compiled, probe.entidad, probe.modo, erp_database_id=erp_database_id
+        )
+    except Exception:
+        # El aviso es una ayuda: si falla, la respuesta principal sigue sirviendo.
+        log.exception("mixed_matches_probe_failed entity=%s", query.entidad)
+        return ""
+    names = [_fmt_value(row.get(flt.campo)) for row in result.rows]
+    if len(names) <= 1:
+        return ""
+    shown = ", ".join(names[:_MIXED_MATCHES_SHOWN])
+    more = " y otros" if len(names) > _MIXED_MATCHES_SHOWN else ""
+    return (
+        f"\n\n_(Ojo: la búsqueda '{flt.valor}' en '{flt.campo}' coincidió con "
+        f"varios valores distintos ({shown}{more}) y este total los SUMA a todos. "
+        "Si el usuario preguntó por uno en particular, NO presentes este total "
+        f"como suyo: repetí la consulta con '{flt.campo}' en 'dimensiones' y "
+        "respondé solo el que corresponde, o mostrale las opciones.)_"
+    )
 
 
 def _is_empty(result: QueryResult) -> bool:

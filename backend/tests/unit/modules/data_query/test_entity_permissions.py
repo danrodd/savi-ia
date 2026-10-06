@@ -128,3 +128,121 @@ async def test_asking_for_cartera_without_its_modules_names_them() -> None:
     )
 
     assert "CUENTACOBRAR" in answer and "CUENTAPAGAR" in answer
+
+
+# ── Total que suma varias coincidencias de una búsqueda ──────────────────
+
+
+def _fake_executor(rows_by_grouping: dict[bool, list[dict[str, object]]]):
+    """Devuelve filas distintas para la consulta principal (sin GROUP BY) y
+    para la verificación agrupada por el campo buscado."""
+    from app.modules.data_query.domain.query_result import QueryResult
+
+    async def execute(compiled, entidad, modo, *, erp_database_id=None):  # noqa: ANN001, ANN202, ARG001
+        rows = rows_by_grouping["GROUP BY" in compiled.sql]
+        return QueryResult(
+            entidad=entidad,
+            modo=modo,
+            columns=list(rows[0]) if rows else [],
+            rows=rows,
+            row_count=len(rows),
+        )
+
+    return execute
+
+
+_TORNILLO_QUERY = {
+    "entidad": "inventario",
+    "modo": "agregado",
+    "metricas": ["unidades"],
+    "filtros": [{"campo": "producto", "op": "contiene", "valor": "tornillo MAD 6 2"}],
+}
+
+
+async def test_a_total_over_several_matching_products_warns_and_names_them(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import app.modules.data_query.application.run_semantic_query as module
+
+    monkeypatch.setattr(
+        module,
+        "execute_compiled",
+        _fake_executor(
+            {
+                False: [{"unidades": 27115}],
+                True: [
+                    {"producto": 'TORNILLO MAD 6 * 2"', "unidades": 18183},
+                    {"producto": 'TORNILLO MAD 6 * 1 1/2"', "unidades": 10700},
+                ],
+            }
+        ),
+    )
+
+    answer = await run_semantic_query(_TORNILLO_QUERY)
+
+    assert "27115" in answer
+    assert "SUMA" in answer and 'TORNILLO MAD 6 * 2"' in answer
+    assert "'producto' en 'dimensiones'" in answer
+
+
+async def test_a_total_over_a_single_matching_product_has_no_warning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import app.modules.data_query.application.run_semantic_query as module
+
+    monkeypatch.setattr(
+        module,
+        "execute_compiled",
+        _fake_executor(
+            {
+                False: [{"unidades": 18183}],
+                True: [{"producto": 'TORNILLO MAD 6 * 2"', "unidades": 18183}],
+            }
+        ),
+    )
+
+    answer = await run_semantic_query(_TORNILLO_QUERY)
+
+    assert "18183" in answer and "SUMA" not in answer
+
+
+async def test_a_total_grouped_by_branch_still_warns_about_mixed_products(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import app.modules.data_query.application.run_semantic_query as module
+
+    def is_probe(sql: str) -> bool:
+        return 'AS "producto"' in sql
+
+    async def execute(compiled, entidad, modo, *, erp_database_id=None):  # noqa: ANN001, ANN202, ARG001
+        from app.modules.data_query.domain.query_result import QueryResult
+
+        rows: list[dict[str, object]] = (
+            [{"producto": 'TORNILLO MAD 6 * 2"'}, {"producto": 'TORNILLO MAD 6 * 1 1/2"'}]
+            if is_probe(compiled.sql)
+            else [{"sucursal": "BODEGA", "unidades": 28883}]
+        )
+        return QueryResult(entidad, modo, list(rows[0]), rows, row_count=len(rows))
+
+    monkeypatch.setattr(module, "execute_compiled", execute)
+
+    answer = await run_semantic_query({**_TORNILLO_QUERY, "dimensiones": ["sucursal"]})
+
+    assert "SUMA" in answer and 'TORNILLO MAD 6 * 1 1/2"' in answer
+
+
+async def test_a_grouped_total_is_not_verified_again(monkeypatch: pytest.MonkeyPatch) -> None:
+    import app.modules.data_query.application.run_semantic_query as module
+
+    calls: list[str] = []
+    rows = [{"producto": "A", "unidades": 1}, {"producto": "B", "unidades": 2}]
+
+    async def execute(compiled, entidad, modo, *, erp_database_id=None):  # noqa: ANN001, ANN202, ARG001
+        calls.append(compiled.sql)
+        return await _fake_executor({True: rows, False: rows})(compiled, entidad, modo)
+
+    monkeypatch.setattr(module, "execute_compiled", execute)
+
+    answer = await run_semantic_query({**_TORNILLO_QUERY, "dimensiones": ["producto"]})
+
+    assert len(calls) == 1 and "SUMA" not in answer
