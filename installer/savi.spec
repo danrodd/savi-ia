@@ -173,6 +173,16 @@ for package in ("fastembed", "onnxruntime", "tokenizers"):
     hiddenimports += package_hidden
 hiddenimports += ["pypdf", "multipart", "python_multipart"]
 
+# Importar desde la web (Fase 5): trafilatura lee su `settings.cfg`, justext
+# sus listas de palabras por idioma y courlan/htmldate sus datos, todo como
+# archivos en runtime. Sin esto la importacion web funciona en desarrollo y
+# falla solo en el `.exe` del cliente.
+for package in ("trafilatura", "justext", "courlan", "htmldate", "markdownify", "defusedxml"):
+    package_datas, package_binaries, package_hidden = collect_all(package)
+    datas += package_datas
+    binaries += package_binaries
+    hiddenimports += package_hidden
+
 analysis = Analysis(  # noqa: F821
     [str(BACKEND / "app" / "launcher.py")],
     pathex=[str(BACKEND)],
