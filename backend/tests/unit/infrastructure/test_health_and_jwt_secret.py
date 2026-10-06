@@ -95,3 +95,30 @@ def test_real_secret_accepted_in_production() -> None:
     settings = _settings(app_env="production", jwt_secret="un-secreto-generado-de-verdad")
 
     assert settings.uses_insecure_jwt_secret is False
+
+
+def _sqlite_production() -> Settings:
+    return Settings(  # pyright: ignore[reportCallIssue]
+        erp_db_host="x",
+        erp_db_user="x",
+        erp_db_password="x",
+        erp_db_name="x",
+        agent_db_engine="sqlite",
+        app_env="production",
+        jwt_secret="un-secreto-generado-de-verdad",
+    )
+
+
+def test_sqlite_rejected_in_production_server() -> None:
+    with pytest.raises(ValidationError, match="no soporta varios usuarios"):
+        _sqlite_production()
+
+
+def test_sqlite_allowed_in_desktop_exe(monkeypatch: pytest.MonkeyPatch) -> None:
+    """El instalador escribe `APP_ENV=production` con SQLite por defecto: el
+    `.exe` tiene que arrancar igual."""
+    monkeypatch.setattr("sys.frozen", True, raising=False)
+
+    settings = _sqlite_production()
+
+    assert settings.agent_db_engine == "sqlite"

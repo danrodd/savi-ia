@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.paths import data_dir
+from app.paths import data_dir, is_frozen
 
 # Valor de fábrica del secreto de firma. Sirve para que `uv run dev` arranque
 # sin configurar nada; fuera de `development` se rechaza.
@@ -283,8 +283,13 @@ class Settings(BaseSettings):
 
         Para la app de escritorio (un usuario, una máquina) está bien y sigue
         siendo el default. Para un despliegue servidor, no.
+
+        El `.exe` de escritorio queda afuera: el instalador escribe
+        `APP_ENV=production` y SQLite es su opción por defecto, así que
+        rechazarlo ahí dejaba sin arrancar toda instalación con archivo local
+        (y las actualizaciones, que conservan el `.env` del cliente).
         """
-        if self.app_env != "development" and self.agent_db_engine == "sqlite":
+        if self.app_env != "development" and self.agent_db_engine == "sqlite" and not is_frozen():
             raise ValueError(
                 "AGENT_DB_ENGINE='sqlite' no soporta varios usuarios simultáneos: "
                 "un turno de chat retiene la transacción mientras el modelo responde. "
