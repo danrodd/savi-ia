@@ -441,6 +441,12 @@ proveedor como activo (chat y lectura de PDF con IA):
   se vio con OpenAI en preguntas mixtas.
 - **Claude:** lectura 22/22 y las 12 preguntas de permisos que alcanzó a
   hacer, todas bien. Falta repetir el resto con saldo.
+  El 2026-09-28 se repitió con la sesión local de Claude Code (suscripción,
+  sin API): las primeras 9 preguntas bien y desde la décima la suscripción
+  cortó por límite de uso ("Claude está recibiendo demasiadas solicitudes",
+  ya en español gracias al arreglo del runner). Una suscripción no aguanta
+  ~100 preguntas seguidas: para validar Claude completo hace falta API con
+  saldo o correr las baterías en tandas espaciadas.
 - **Defecto encontrado y corregido:** sin saldo, el CLI de Claude no lanza
   una excepción; manda el error como texto ("Credit balance is too low") y
   SAVI lo guardaba como la respuesta, en inglés. El runner ahora lee el tipo

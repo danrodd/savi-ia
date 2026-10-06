@@ -39,6 +39,9 @@ class KnowledgeLoadError(Exception):
     """Error fatal: un archivo del catálogo no valida o falta info clave."""
 
 
+_ARTICLES = frozenset({"el", "la", "los", "las", "un", "una"})
+
+
 def _term_key(term: str) -> str:
     """Minúsculas y sin tildes ni puntos: "retención", "Retencion" y "R.U.T."
     tienen que encontrar la misma entrada."""
@@ -178,7 +181,15 @@ class StaticKnowledgeCatalog(KnowledgeCatalog):
         return [h[0] for h in hits[:limit]]
 
     def translate_term(self, term: str) -> GlossaryEntry | None:
-        return self._glossary_by_key.get(_term_key(term))
+        key = _term_key(term)
+        found = self._glossary_by_key.get(key)
+        if found is None:
+            # "la tasa de usura" → "tasa de usura": el modelo a veces pasa el
+            # término con el artículo de la pregunta.
+            first, _, rest = key.partition(" ")
+            if first in _ARTICLES and rest:
+                found = self._glossary_by_key.get(rest)
+        return found
 
     def list_modules(
         self,

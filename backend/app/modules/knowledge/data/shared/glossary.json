@@ -59,7 +59,7 @@
   },
   {
     "term": "ReteIVA",
-    "definition": "Retención de IVA: parte del IVA de una factura que el comprador retiene y consigna directamente a la DIAN en lugar de pagársela al vendedor.",
+    "definition": "Retención de IVA: parte del IVA de una factura que el comprador retiene y consigna directamente a la DIAN en lugar de pagársela al vendedor. La tarifa general es el 15 % del IVA facturado; la practican solo los agentes de retención de IVA que define la ley (entidades del Estado, grandes contribuyentes, entre otros).",
     "aliases": [
       "retención de IVA",
       "rete IVA"
@@ -82,10 +82,33 @@
   },
   {
     "term": "Impuesto al consumo",
-    "definition": "Impuesto que se cobra en lugar del IVA en ciertos servicios y bienes, como restaurantes, bares y algunos vehículos. En el ERP puede aparecer como ipoconsumo.",
+    "definition": "Impuesto nacional al consumo: se cobra al consumidor final en la telefonía móvil, internet y datos móviles, en la venta de algunos bienes como ciertos vehículos, y en el servicio de restaurantes, cafeterías y bares. En el ERP puede aparecer como ipoconsumo.",
     "aliases": [
       "impoconsumo",
-      "ipoconsumo"
+      "ipoconsumo",
+      "impuesto nacional al consumo",
+      "INC"
+    ]
+  },
+  {
+    "term": "Impuestos saludables",
+    "definition": "Impuestos de la Ley 2277 de 2022 a los productores e importadores de bebidas azucaradas (IBUA) y de comestibles ultraprocesados (ICUI), para desestimular su consumo. En el ERP aparecen en facturas de venta y de compra.",
+    "aliases": [
+      "impuesto saludable"
+    ]
+  },
+  {
+    "term": "ICUI",
+    "definition": "Impuesto a los productos comestibles ultraprocesados industrialmente con alto contenido de azúcares, sodio o grasas. La tarifa es del 20 % desde 2025.",
+    "aliases": [
+      "impuesto a los ultraprocesados"
+    ]
+  },
+  {
+    "term": "IBUA",
+    "definition": "Impuesto a las bebidas ultraprocesadas azucaradas: se cobra por cada 100 ml según los gramos de azúcar añadido.",
+    "aliases": [
+      "impuesto a las bebidas azucaradas"
     ]
   },
   {
@@ -97,7 +120,7 @@
   },
   {
     "term": "Factura electrónica",
-    "definition": "Factura de venta que se genera, valida y entrega en formato electrónico según las reglas de la DIAN. Tiene un código único (CUFE) y validez legal como título valor.",
+    "definition": "Factura de venta que se genera, valida y entrega en formato electrónico según las reglas de la DIAN, identificada con un código único (CUFE). Una factura a crédito funciona como título valor cuando el comprador la acepta, de forma expresa o tácita en los tres días siguientes; para negociarla se registra en el RADIAN.",
     "aliases": [
       "facturación electrónica",
       "FE"
@@ -141,7 +164,7 @@
   },
   {
     "term": "RADIAN",
-    "definition": "Registro de facturas electrónicas de venta como título valor de la DIAN: permite negociar y endosar facturas electrónicas.",
+    "definition": "Registro de la factura electrónica de venta como título valor, administrado por la DIAN: permite que las facturas a crédito aceptadas por el comprador circulen, se endosen y se negocien. Las facturas de contado no se registran.",
     "aliases": []
   },
   {
@@ -313,7 +336,7 @@
   },
   {
     "term": "AFP",
-    "definition": "Administradora de Fondos de Pensiones: gestiona los aportes para pensión en el régimen de ahorro individual.",
+    "definition": "Administradora de Fondos de Pensiones: gestiona los aportes para pensión en el régimen de ahorro individual. Con la reforma pensional (Ley 2381 de 2024), que rige desde el 1 de abril de 2027, los aportes hasta 2,3 salarios mínimos van a Colpensiones y el excedente a las AFP.",
     "aliases": [
       "fondo de pensiones"
     ]
@@ -336,7 +359,7 @@
   },
   {
     "term": "Parafiscales",
-    "definition": "Aportes obligatorios del empleador a la caja de compensación, el SENA y el ICBF, calculados sobre la nómina.",
+    "definition": "Aportes del empleador calculados sobre la nómina: caja de compensación (4 %), SENA (2 %) e ICBF (3 %). Las empresas que declaran renta están exoneradas de SENA, ICBF y de la salud a cargo del empleador por los trabajadores que ganan menos de 10 salarios mínimos; la caja de compensación se paga siempre.",
     "aliases": [
       "aportes parafiscales"
     ]
@@ -350,12 +373,12 @@
   },
   {
     "term": "Intereses de cesantías",
-    "definition": "Interés anual sobre el saldo de las cesantías que el empleador paga directamente al trabajador.",
+    "definition": "Interés del 12 % anual sobre el saldo de las cesantías, que el empleador paga directamente al trabajador a más tardar el 31 de enero. Desde 2026 se puede acordar por escrito pagarlo mensualmente, al 1 %.",
     "aliases": []
   },
   {
     "term": "Prima de servicios",
-    "definition": "Prestación social equivalente a un mes de salario por año, pagada en dos cuotas en el año.",
+    "definition": "Prestación social equivalente a 30 días de salario por año trabajado, pagada en dos cuotas: a más tardar el 30 de junio y el 20 de diciembre.",
     "aliases": [
       "prima"
     ]
@@ -370,7 +393,7 @@
   },
   {
     "term": "Auxilio de transporte",
-    "definition": "Pago que el empleador hace a los trabajadores que ganan hasta cierto número de salarios mínimos para cubrir el transporte.",
+    "definition": "Pago que el empleador hace a los trabajadores que ganan hasta dos salarios mínimos para cubrir el transporte. Su valor lo fija el Gobierno cada año y se suma a la base de las cesantías y la prima.",
     "aliases": [
       "subsidio de transporte"
     ]
@@ -382,9 +405,8 @@
   },
   {
     "term": "SKU",
-    "definition": "Código que identifica de forma única un producto y su presentación dentro del inventario.",
+    "definition": "Código que identifica de forma única un producto y su presentación dentro del inventario. En el ERP corresponde al código del producto.",
     "aliases": [
-      "referencia",
       "código de producto"
     ]
   },
@@ -437,6 +459,13 @@
     ]
   },
   {
+    "term": "Cotización",
+    "definition": "Documento con los precios y condiciones que la empresa ofrece a un cliente antes de la venta. Si el cliente acepta, se convierte en pedido o factura.",
+    "aliases": [
+      "cotizaciones"
+    ]
+  },
+  {
     "term": "Lote",
     "definition": "Grupo de unidades de un producto fabricadas juntas, con la misma fecha de vencimiento. Permite rastrear y controlar vencimientos.",
     "aliases": [
@@ -453,6 +482,13 @@
     "definition": "Autorización del INVIMA para fabricar, importar o vender un producto. Todo medicamento debe tener uno vigente.",
     "aliases": [
       "registro INVIMA"
+    ]
+  },
+  {
+    "term": "Forma farmacéutica",
+    "definition": "Presentación física de un medicamento: tableta, cápsula, jarabe, inyectable o crema, entre otras.",
+    "aliases": [
+      "presentación farmacéutica"
     ]
   },
   {
@@ -479,7 +515,7 @@
   },
   {
     "term": "Medicamento de control especial",
-    "definition": "Medicamento con venta restringida y vigilada por su riesgo de abuso, que exige fórmula especial y registro.",
+    "definition": "Medicamento con sustancias sometidas a fiscalización por su riesgo de abuso. Lo vigila el Fondo Nacional de Estupefacientes; se vende solo con fórmula en recetario oficial y quien lo dispensa debe llevar registro.",
     "aliases": [
       "control especial",
       "medicamento controlado"
@@ -519,12 +555,12 @@
   },
   {
     "term": "Microcrédito",
-    "definition": "Crédito de bajo monto dirigido a microempresarios y personas con acceso limitado a la banca tradicional.",
+    "definition": "Crédito para microempresas, con un monto máximo de 25 salarios mínimos por deudor (Ley 590 de 2001). En el ERP se administra en el módulo de Cartera financiera.",
     "aliases": []
   },
   {
     "term": "Tasa de usura",
-    "definition": "Tasa máxima de interés que se puede cobrar legalmente, certificada periódicamente por la Superintendencia Financiera.",
+    "definition": "Tasa máxima de interés que se puede cobrar legalmente: 1,5 veces el interés bancario corriente que certifica la Superintendencia Financiera para cada modalidad de crédito. Cobrar por encima es delito.",
     "aliases": [
       "usura"
     ]
@@ -543,6 +579,25 @@
     "aliases": [
       "Datacrédito",
       "reporte en centrales"
+    ]
+  },
+  {
+    "term": "Cartera financiera",
+    "definition": "Módulo del ERP que administra los créditos que otorga la empresa (por ejemplo microcréditos o créditos a asociados): solicitudes, cupos, cuotas, pagos y prórrogas.",
+    "aliases": []
+  },
+  {
+    "term": "Deudor solidario",
+    "definition": "Persona que se obliga a pagar un crédito junto con el deudor principal: si este no paga, se le puede cobrar la deuda completa.",
+    "aliases": [
+      "codeudor"
+    ]
+  },
+  {
+    "term": "Prórroga",
+    "definition": "Aplazamiento acordado de la fecha de pago de una o varias cuotas de un crédito.",
+    "aliases": [
+      "prórroga de cuota"
     ]
   },
   {

@@ -235,6 +235,8 @@ def test_el_glosario_ignora_tildes_mayusculas_y_puntos() -> None:
     assert entry is not None and entry.term == "Retención en la fuente"
     assert catalog.translate_term("R.U.T.") == catalog.translate_term("rut")
     assert catalog.translate_term("Retefuente") == entry
+    assert catalog.translate_term("la tasa de usura") == catalog.translate_term("tasa de usura")
+    assert catalog.translate_term("la") is None
 
 
 def test_ningun_alias_apunta_a_dos_terminos() -> None:
