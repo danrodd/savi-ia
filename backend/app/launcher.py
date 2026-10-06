@@ -685,7 +685,7 @@ def _collect_report() -> Report:
     """Corre todos los chequeos y devuelve el resultado como datos."""
     import asyncio
 
-    from sqlalchemy import text
+    from sqlalchemy import inspect, text
     from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
     from app.infrastructure.config import get_settings
@@ -697,6 +697,7 @@ def _collect_report() -> Report:
     from app.modules.llm_providers.infrastructure.http.dependencies import (
         build_llm_provider_repository,
     )
+    from app.modules.llm_providers.infrastructure.persistence import LlmProviderConfigModel
     from app.modules.llm_providers.infrastructure.probes import GeminiProbe, OpenAIProbe
 
     report = Report(
@@ -739,9 +740,7 @@ def _collect_report() -> Report:
         # cliente todavía no existe en este punto. Con el `.env` vacío ya
         # no es un error — las bases se pueden registrar después desde la
         # sección de administración.
-        probes: list[tuple[str, AsyncEngine]] = [
-            ("la base de datos de SAVI", get_agent_engine())
-        ]
+        probes: list[tuple[str, AsyncEngine]] = [("la base de datos de SAVI", get_agent_engine())]
         erp_engine: AsyncEngine | None = None
         if has_seed_config(settings):
             erp_engine = create_async_engine(
@@ -768,6 +767,30 @@ def _collect_report() -> Report:
                 )
         if erp_engine is not None:
             await erp_engine.dispose()
+
+        # El instalador corre este diagnóstico ANTES del primer arranque, que
+        # es el que crea las tablas: en una instalación nueva la base de SAVI
+        # está vacía y consultar el proveedor activo explotaba con
+        # "no existe la relación llm_provider_configs". Sin conexión tampoco
+        # se consulta: ese problema ya quedó reportado arriba.
+        if not checks[0].ok:
+            return checks
+        provider_table = LlmProviderConfigModel.__tablename__
+        async with get_agent_engine().connect() as connection:
+            has_tables = await connection.run_sync(
+                lambda sync_connection: inspect(sync_connection).has_table(provider_table)
+            )
+        if not has_tables:
+            checks.append(
+                CheckResult(
+                    label="Proveedor de IA",
+                    ok=True,
+                    detail="Instalación nueva: las tablas de SAVI se crean al primer "
+                    "arranque. El proveedor de IA se configura después en "
+                    "Administración → Proveedores de IA.",
+                )
+            )
+            return checks
 
         provider_repository = build_llm_provider_repository(settings)
         active_provider = await provider_repository.get_active()
@@ -797,8 +820,7 @@ def _collect_report() -> Report:
                         f"modelo: {active_provider.chat_model}. {credential_detail}"
                     ),
                     remedy=(
-                        "Configura nuevamente la credencial en Administración → "
-                        "Proveedores de IA."
+                        "Configura nuevamente la credencial en Administración → Proveedores de IA."
                         if not descriptor_ok
                         else ""
                     ),
