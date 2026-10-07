@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAutoScroll } from '../composables/useAutoScroll'
-import type { MessageVersion, UIMessage } from '../types'
+import type { MessageVersion, UIAttachment, UIMessage } from '../types'
 import AssistantMessage from './AssistantMessage.vue'
 import ScrollToBottomButton from './ScrollToBottomButton.vue'
 import UserMessage from './UserMessage.vue'
@@ -21,7 +21,7 @@ const props = withDefaults(
   { readOnly: false },
 )
 const emit = defineEmits<{
-  edit: [text: string]
+  edit: [text: string, attachments: UIAttachment[]]
   regenerate: []
 }>()
 
@@ -64,7 +64,8 @@ defineExpose({ container })
             :message-id="m.id"
             :can-edit="!readOnly && i === lastUserIndex && !streaming"
             :versions="versionsFor(m.id)"
-            @edit="(text) => emit('edit', text)"
+            :attachments="m.attachments ?? []"
+            @edit="(text, attachments) => emit('edit', text, attachments)"
           />
           <AssistantMessage
             v-else

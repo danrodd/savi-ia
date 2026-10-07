@@ -15,7 +15,7 @@ import Sidebar from '../components/Sidebar.vue'
 import WelcomeScreen from '../components/WelcomeScreen.vue'
 import { buildConversationMarkdown, buildConversationUrl, tryWebShare } from '../lib/exportContent'
 import { useChatStore } from '../stores/chatStore'
-import type { Conversation } from '../types'
+import type { Conversation, UIAttachment } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -177,11 +177,11 @@ function handleNewChat(): void {
   if (isMobile.value) sidebarOpen.value = false
 }
 
-function handleSend(text: string): void {
+function handleSend(text: string, attachments: UIAttachment[] = []): void {
   // Sin `await`: la URL la mueve el watcher de abajo en cuanto existe la
   // conversación. Esperar al final del turno para navegar dejaba al usuario en
   // `/` durante toda la respuesta — y un F5 ahí perdía la conversación entera.
-  void store.sendMessage(text)
+  void store.sendMessage(text, attachments)
 }
 
 watch(activeConversationId, (id) => {
@@ -190,8 +190,8 @@ watch(activeConversationId, (id) => {
   }
 })
 
-function handleEdit(text: string): void {
-  store.editLastUserMessage(text)
+function handleEdit(text: string, attachments: UIAttachment[] = []): void {
+  store.editLastUserMessage(text, attachments)
 }
 
 function handleRegenerate(): void {
@@ -356,9 +356,15 @@ const showConversationShare = computed<boolean>(
         :streaming="streaming"
         :disabled="activeDatabaseUnavailable || store.llmProviderUnavailable"
         :restore-text="store.rejectedText"
+        :restore-attachments="store.rejectedAttachments"
         @send="handleSend"
         @stop="() => void store.stopStream()"
-        @restored="store.rejectedText = null"
+        @restored="
+          () => {
+            store.rejectedText = null
+            store.rejectedAttachments = null
+          }
+        "
       />
     </main>
 

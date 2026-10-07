@@ -45,6 +45,28 @@ export interface MessageSource {
   unavailable_reason?: 'deleted' | 'processing' | 'no_access' | null
 }
 
+/** Imagen adjunta tal como la devuelve el backend (solo mensajes del usuario). */
+export interface ChatAttachment {
+  id: string
+  mime: string
+  filename: string
+  size_bytes: number
+  width: number
+  height: number
+}
+
+/**
+ * Imagen adjunta lista para mostrar o reenviar. `previewUrl` es un object URL
+ * local (la miniatura de la subida); si es `null`, los bytes se piden al
+ * backend por `id`.
+ */
+export interface UIAttachment {
+  id: string
+  filename: string
+  mime: string
+  previewUrl: string | null
+}
+
 export interface StoredMessage {
   id: string
   conversation_id: string
@@ -58,6 +80,7 @@ export interface StoredMessage {
   superseded_at: string | null
   superseded_by_id: string | null
   sources?: MessageSource[]
+  attachments?: ChatAttachment[]
 }
 
 export interface ConversationDetail {
@@ -66,8 +89,8 @@ export interface ConversationDetail {
 }
 
 export type SendChatBody =
-  | { conversation_id: string; action?: 'send'; message: string }
-  | { conversation_id: string; action: 'edit_last'; message: string }
+  | { conversation_id: string; action?: 'send'; message?: string; attachment_ids?: string[] }
+  | { conversation_id: string; action: 'edit_last'; message?: string; attachment_ids?: string[] }
   | { conversation_id: string; action: 'regenerate' }
 
 export type ChatEvent =
@@ -117,6 +140,8 @@ export interface UIMessage {
   interrupted?: boolean
   error?: string
   sources?: MessageSource[]
+  /** Imágenes adjuntas (solo mensajes del usuario). */
+  attachments?: UIAttachment[]
 }
 
 export interface MessageVersion {
@@ -125,4 +150,5 @@ export interface MessageVersion {
   created_at: string
   toolCalls: ToolCall[]
   interrupted: boolean
+  attachments: UIAttachment[]
 }

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useTemplateRef } from 'vue'
-import type { MessageVersion } from '../types'
+import type { MessageVersion, UIAttachment } from '../types'
+import AttachmentChip from './AttachmentChip.vue'
+import MessageAttachments from './MessageAttachments.vue'
 import VersionNavigator from './VersionNavigator.vue'
 
 const props = defineProps<{
@@ -8,11 +10,14 @@ const props = defineProps<{
   messageId: string | null
   canEdit: boolean
   versions: MessageVersion[] | null
+  attachments?: UIAttachment[]
 }>()
-const emit = defineEmits<{ edit: [text: string] }>()
+const emit = defineEmits<{ edit: [text: string, attachments: UIAttachment[]] }>()
 
 const editing = ref(false)
 const draft = ref(props.text)
+/** Imágenes que se conservan al editar (solo se pueden quitar, no agregar). */
+const keptAttachments = ref<UIAttachment[]>([])
 const textareaRef = useTemplateRef<HTMLTextAreaElement>('textarea')
 const versionIdx = ref<number | null>(null)
 const copied = ref(false)
@@ -33,6 +38,18 @@ const displayText = computed(() => {
   if (versionIdx.value === null) return props.text
   return props.versions?.[versionIdx.value]?.text ?? props.text
 })
+const displayAttachments = computed<UIAttachment[]>(() => {
+  if (versionIdx.value === null) return props.attachments ?? []
+  return props.versions?.[versionIdx.value]?.attachments ?? props.attachments ?? []
+})
+const attachmentsChanged = computed(
+  () => keptAttachments.value.length !== (props.attachments?.length ?? 0),
+)
+const canSubmitEdit = computed(() => {
+  const next = draft.value.trim()
+  if (!next && keptAttachments.value.length === 0) return false
+  return next !== props.text || attachmentsChanged.value
+})
 const isViewingHistorical = computed(
   () =>
     versionIdx.value !== null &&
@@ -49,6 +66,7 @@ function autosize(): void {
 
 async function startEdit(): Promise<void> {
   draft.value = props.text
+  keptAttachments.value = [...(props.attachments ?? [])]
   editing.value = true
   await nextTick()
   autosize()
@@ -59,16 +77,23 @@ async function startEdit(): Promise<void> {
 function cancel(): void {
   editing.value = false
   draft.value = props.text
+  keptAttachments.value = []
+}
+
+function removeKept(id: string): void {
+  keptAttachments.value = keptAttachments.value.filter((a) => a.id !== id)
 }
 
 function submit(): void {
   const next = draft.value.trim()
-  if (!next || next === props.text) {
+  if (!canSubmitEdit.value) {
     cancel()
     return
   }
+  const kept = keptAttachments.value
   editing.value = false
-  emit('edit', next)
+  keptAttachments.value = []
+  emit('edit', next, kept)
 }
 
 function onKeydown(e: KeyboardEvent): void {
@@ -97,6 +122,17 @@ function next(): void {
   <div class="user-message" :class="{ 'user-message--editing': editing }">
     <div class="user-message__col">
       <div v-if="editing" class="bubble bubble--editing">
+        <ul v-if="keptAttachments.length > 0" class="bubble__attachments" aria-label="Imágenes adjuntas">
+          <AttachmentChip
+            v-for="a in keptAttachments"
+            :key="a.id"
+            :filename="a.filename"
+            :attachment-id="a.id"
+            :preview-url="a.previewUrl"
+            status="done"
+            @remove="removeKept(a.id)"
+          />
+        </ul>
         <textarea
           ref="textarea"
           v-model="draft"
@@ -113,7 +149,7 @@ function next(): void {
           <button
             type="button"
             class="bubble__btn bubble__btn--primary"
-            :disabled="!draft.trim() || draft.trim() === text"
+            :disabled="!canSubmitEdit"
             @click="submit"
           >
             Enviar
@@ -121,7 +157,12 @@ function next(): void {
         </div>
       </div>
       <div v-else class="bubble" :class="{ 'bubble--historical': isViewingHistorical }">
-        {{ displayText }}
+        <MessageAttachments
+          v-if="displayAttachments.length > 0"
+          class="bubble__images"
+          :attachments="displayAttachments"
+        />
+        <div v-if="displayText" class="bubble__text">{{ displayText }}</div>
       </div>
 
       <div v-if="!editing" class="user-message__meta">
@@ -199,9 +240,29 @@ function next(): void {
   color: var(--text);
   font-size: 14.5px;
   line-height: 1.5;
-  white-space: pre-wrap;
   word-wrap: break-word;
   transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.bubble__text {
+  white-space: pre-wrap;
+}
+
+.bubble__images {
+  min-width: min(240px, 100%);
+}
+
+.bubble__images + .bubble__text {
+  margin-top: var(--space-3);
+}
+
+.bubble__attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
 }
 
 .bubble--historical {

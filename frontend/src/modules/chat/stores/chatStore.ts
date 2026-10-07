@@ -2,9 +2,11 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { HttpRequestError } from '@/lib/HttpClient'
 import { type AvailableErpDatabase, erpDatabaseService } from '@/modules/admin'
+import { peekAttachmentUrl, seedAttachmentUrl } from '../lib/attachmentBlobCache'
 import { agentService } from '../services/agentService'
 import { conversationService } from '../services/conversationService'
 import type {
+  ChatAttachment,
   ChatEvent,
   Conversation,
   MessageVersion,
@@ -12,6 +14,7 @@ import type {
   StoredMessage,
   ToolCall,
   ToolInvocation,
+  UIAttachment,
   UIMessage,
 } from '../types'
 
@@ -21,10 +24,27 @@ function mapStoredToolCall(t: ToolInvocation): ToolCall {
   return { id: t.id, name: t.name, status }
 }
 
+function mapStoredAttachments(list: ChatAttachment[] | undefined): UIAttachment[] {
+  return (list ?? []).map((a) => ({
+    id: a.id,
+    filename: a.filename,
+    mime: a.mime,
+    previewUrl: null,
+  }))
+}
+
 function storedToUI(m: StoredMessage): UIMessage {
   const role = m.role as 'user' | 'assistant'
   if (role === 'user') {
-    return { tempId: m.id, id: m.id, role, text: m.content, toolCalls: [], done: true }
+    return {
+      tempId: m.id,
+      id: m.id,
+      role,
+      text: m.content,
+      toolCalls: [],
+      done: true,
+      attachments: mapStoredAttachments(m.attachments),
+    }
   }
   return {
     tempId: m.id,
@@ -45,7 +65,7 @@ function makeTempId(): string {
   return `pl-${Date.now().toString(36)}-${placeholderSeq}`
 }
 
-function placeholderUser(text: string): UIMessage {
+function placeholderUser(text: string, attachments: UIAttachment[] = []): UIMessage {
   return {
     tempId: makeTempId(),
     id: null,
@@ -53,7 +73,39 @@ function placeholderUser(text: string): UIMessage {
     text,
     toolCalls: [],
     done: true,
+    attachments,
   }
+}
+
+/**
+ * Cuerpo de un envío/edición. `message` y `attachment_ids` solo viajan si
+ * tienen contenido: un mensaje solo con imágenes es válido en el backend.
+ */
+function messagePayload(
+  text: string,
+  attachments: UIAttachment[],
+): { message?: string; attachment_ids?: string[] } {
+  return {
+    ...(text ? { message: text } : {}),
+    ...(attachments.length > 0 ? { attachment_ids: attachments.map((a) => a.id) } : {}),
+  }
+}
+
+/**
+ * Los adjuntos del placeholder pasan a ser los del servidor. Si los ids
+ * cambiaron (editar copia las imágenes conservadas), la miniatura ya cargada
+ * se reutiliza para no parpadear ni volver a descargarla.
+ */
+function adoptServerAttachments(local: UIMessage, remote: UIMessage): void {
+  const fresh = remote.attachments ?? []
+  const previous = local.attachments ?? []
+  fresh.forEach((a, i) => {
+    const old = previous[i]
+    if (!old || old.id === a.id) return
+    const url = old.previewUrl ?? peekAttachmentUrl(old.id)
+    if (url) seedAttachmentUrl(a.id, url)
+  })
+  local.attachments = fresh
 }
 
 function placeholderAssistant(): UIMessage {
@@ -80,6 +132,7 @@ function storedToVersion(m: StoredMessage): MessageVersion {
     created_at: m.created_at,
     toolCalls: m.tool_invocations.map(mapStoredToolCall),
     interrupted: m.finish_reason === 'interrupted',
+    attachments: mapStoredAttachments(m.attachments),
   }
 }
 
@@ -202,6 +255,8 @@ export const useChatStore = defineStore('chat', () => {
   const llmProviderUnavailable = ref(false)
   /** Texto que el usuario había escrito y el backend rechazó por límite. */
   const rejectedText = ref<string | null>(null)
+  /** Imágenes del turno rechazado (ya subidas): vuelven al composer. */
+  const rejectedAttachments = ref<UIAttachment[] | null>(null)
 
   // Bases del ERP a las que el usuario tiene acceso. La de una conversación
   // se fija al crearla y no cambia; la selección solo aplica a la próxima.
@@ -372,7 +427,10 @@ export const useChatStore = defineStore('chat', () => {
               messages.value = fresh
               return
             }
-            if (local.id === null) local.id = remote.id
+            if (local.id === null) {
+              local.id = remote.id
+              if (remote.role === 'user') adoptServerAttachments(local, remote)
+            }
           }
           return
         }
@@ -559,6 +617,8 @@ export const useChatStore = defineStore('chat', () => {
         // aplicarlo.
         const pendiente = messages.value.find((m) => m.id === null && m.role === 'user')
         rejectedText.value = pendiente?.text ?? null
+        rejectedAttachments.value =
+          pendiente?.attachments && pendiente.attachments.length > 0 ? pendiente.attachments : null
         messages.value = messages.value.filter((m) => m.id !== null)
         error.value = busyMessage(err)
       } else {
@@ -574,9 +634,21 @@ export const useChatStore = defineStore('chat', () => {
     void hydrateActiveMessages()
   }
 
-  async function sendMessage(text: string): Promise<void> {
+  /**
+   * Las miniaturas locales de la subida pasan al mensaje: se siembran en la
+   * caché para que el hilo no las vuelva a pedir al servidor.
+   */
+  function adoptLocalPreviews(attachments: UIAttachment[]): void {
+    for (const a of attachments) {
+      if (a.previewUrl) seedAttachmentUrl(a.id, a.previewUrl)
+    }
+  }
+
+  async function sendMessage(text: string, attachments: UIAttachment[] = []): Promise<void> {
     const trimmed = text.trim()
-    if (!trimmed || streaming.value || llmProviderUnavailable.value) return
+    if ((!trimmed && attachments.length === 0) || streaming.value || llmProviderUnavailable.value) {
+      return
+    }
 
     let convId = activeConversationId.value
     if (!convId) {
@@ -592,19 +664,24 @@ export const useChatStore = defineStore('chat', () => {
     }
     const targetConvId = convId
 
-    messages.value.push(placeholderUser(trimmed), placeholderAssistant())
+    adoptLocalPreviews(attachments)
+    messages.value.push(placeholderUser(trimmed, attachments), placeholderAssistant())
 
     await runChatTurn(targetConvId, {
       conversation_id: targetConvId,
       action: 'send',
-      message: trimmed,
+      ...messagePayload(trimmed, attachments),
     })
   }
 
-  async function editLastUserMessage(text: string): Promise<void> {
+  /** `attachments`: las imágenes que el mensaje editado debe conservar. */
+  async function editLastUserMessage(
+    text: string,
+    attachments: UIAttachment[] = [],
+  ): Promise<void> {
     const trimmed = text.trim()
     const convId = activeConversationId.value
-    if (!trimmed || !convId || streaming.value) return
+    if ((!trimmed && attachments.length === 0) || !convId || streaming.value) return
     const lastIdx = lastUserIndex.value
     if (lastIdx === -1) return
 
@@ -614,14 +691,14 @@ export const useChatStore = defineStore('chat', () => {
     messages.value.splice(
       lastIdx,
       messages.value.length - lastIdx,
-      placeholderUser(trimmed),
+      placeholderUser(trimmed, attachments),
       placeholderAssistant(),
     )
 
     await runChatTurn(convId, {
       conversation_id: convId,
       action: 'edit_last',
-      message: trimmed,
+      ...messagePayload(trimmed, attachments),
     })
   }
 
@@ -679,6 +756,7 @@ export const useChatStore = defineStore('chat', () => {
     error,
     llmProviderUnavailable,
     rejectedText,
+    rejectedAttachments,
     lastUserIndex,
     lastAssistantIndex,
     canRegenerate,

@@ -69,6 +69,9 @@ export const useAuthStore = defineStore('auth', () => {
     writeString(STORAGE_KEYS.ACCESS_TOKEN, null)
     writeString(STORAGE_KEYS.REFRESH_TOKEN, null)
     writeString(STORAGE_KEYS.AUTH_USER, null)
+    // Las imágenes del chat quedan en memoria como URLs locales: se
+    // descartan al salir para que no las vea quien entre después.
+    void import('@/modules/chat/lib/attachmentBlobCache').then((m) => m.clearAttachmentCache())
   }
 
   async function login(payload: LoginPayload): Promise<void> {
