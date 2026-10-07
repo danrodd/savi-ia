@@ -57,6 +57,49 @@ def erp_database_from_settings(settings: Settings) -> ErpDatabase:
         statement_timeout_ms=settings.erp_db_statement_timeout_ms,
         is_default=True,
         is_active=True,
+        seed_revision=settings.erp_seed_revision.strip() or None,
+    )
+
+
+async def _resync_default_database(
+    repository: ErpDatabaseRepository,
+    settings: Settings,
+) -> None:
+    """Aplica un `.env` reconfigurado a la base default ya sembrada.
+
+    "Volver a configurar" del instalador escribe un `ERP_SEED_REVISION`
+    nuevo. Si difiere del guardado en la fila, el administrador pidió
+    cambiar el ERP desde el instalador y se actualiza la conexión. Con la
+    misma revisión (o sin revisión, como en un `.env` anterior) no se toca
+    nada: hacerlo en cada arranque pisaría lo que el administrador editó
+    desde la aplicación.
+
+    Solo se actualizan los campos de conexión; el nombre y el código los
+    puede haber cambiado el administrador (el código además es el sufijo
+    del login de los usuarios).
+    """
+    revision = settings.erp_seed_revision.strip()
+    if not revision or not has_seed_config(settings):
+        return
+
+    default = await repository.get_default()
+    if default is None or default.seed_revision == revision:
+        return
+
+    seed = erp_database_from_settings(settings)
+    default.host = seed.host
+    default.port = seed.port
+    default.database = seed.database
+    default.username = seed.username
+    default.password = seed.password
+    default.seed_revision = revision
+    await repository.save(default)
+    logger.info(
+        "Base default '%s' actualizada desde el .env (revisión %s): host=%s, base=%s.",
+        default.name,
+        revision,
+        default.host,
+        default.database,
     )
 
 
@@ -65,6 +108,7 @@ async def seed_default_database(
     settings: Settings,
 ) -> None:
     if await repository.count() > 0:
+        await _resync_default_database(repository, settings)
         return
 
     if not has_seed_config(settings):

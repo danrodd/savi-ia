@@ -43,6 +43,9 @@ class ErpDatabase:
     # aplicación arranca igual. Ver `FernetCredentialCipher`.
     credentials_unreadable: bool = False
     last_connection_ok_at: datetime | None = None
+    # Revisión del `.env` (`ERP_SEED_REVISION`) con la que se sembró o
+    # actualizó esta base. Solo la usa el seed de arranque.
+    seed_revision: str | None = None
     created_at: datetime = field(default_factory=_utc_now)
     updated_at: datetime = field(default_factory=_utc_now)
 

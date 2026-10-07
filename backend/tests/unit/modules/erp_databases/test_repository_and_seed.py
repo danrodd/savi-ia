@@ -268,3 +268,95 @@ async def test_seed_without_erp_config_does_nothing(
     await seed_default_database(repo, _settings(erp_db_host="", erp_db_name=""))
 
     assert await repo.count() == 0
+
+
+# ── Revisión del seed (reconfigurar desde el instalador) ─────────────
+
+
+async def test_fresh_seed_stores_the_revision(
+    sessionmaker_: async_sessionmaker[AsyncSession],
+) -> None:
+    repo = _repo(sessionmaker_)
+    await seed_default_database(repo, _settings(erp_seed_revision="20260101000000"))
+
+    default = await repo.get_default()
+    assert default is not None
+    assert default.seed_revision == "20260101000000"
+
+
+async def test_same_revision_preserves_admin_edits(
+    sessionmaker_: async_sessionmaker[AsyncSession],
+) -> None:
+    repo = _repo(sessionmaker_)
+    settings = _settings(erp_seed_revision="r1")
+    await seed_default_database(repo, settings)
+    edited = await repo.get_default()
+    assert edited is not None
+    edited.host = "editado-por-admin"
+    await repo.save(edited)
+
+    await seed_default_database(repo, settings)
+
+    default = await repo.get_default()
+    assert default is not None
+    assert default.host == "editado-por-admin"
+
+
+async def test_new_revision_updates_connection_and_reencrypts_password(
+    sessionmaker_: async_sessionmaker[AsyncSession],
+) -> None:
+    repo = _repo(sessionmaker_)
+    await seed_default_database(repo, _settings(erp_seed_revision="r1"))
+    before = await repo.get_default()
+    assert before is not None
+    async with sessionmaker_() as session:
+        old_cipher = (await session.execute(ErpDatabaseModel.__table__.select())).first()
+    assert old_cipher is not None
+
+    await seed_default_database(
+        repo,
+        _settings(
+            erp_seed_revision="r2",
+            erp_db_host="otro-host",
+            erp_db_port=6543,
+            erp_db_name="otra_base",
+            erp_db_user="otro_user",
+            erp_db_password="nueva-clave",
+        ),
+    )
+
+    after = await repo.get_default()
+    assert after is not None
+    assert after.id == before.id
+    assert (after.host, after.port, after.database, after.username) == (
+        "otro-host",
+        6543,
+        "otra_base",
+        "otro_user",
+    )
+    assert after.password == "nueva-clave"
+    assert after.seed_revision == "r2"
+    assert after.name == before.name and after.code == before.code
+    assert await repo.count() == 1
+    async with sessionmaker_() as session:
+        new_cipher = (await session.execute(ErpDatabaseModel.__table__.select())).first()
+    assert new_cipher is not None
+    assert (
+        new_cipher._mapping["password_encrypted"] != old_cipher._mapping["password_encrypted"]
+    )
+
+
+async def test_empty_revision_leaves_the_seeded_database_untouched(
+    sessionmaker_: async_sessionmaker[AsyncSession],
+) -> None:
+    repo = _repo(sessionmaker_)
+    await seed_default_database(repo, _settings(erp_seed_revision="r1"))
+
+    await seed_default_database(
+        repo, _settings(erp_seed_revision="", erp_db_host="otro-host")
+    )
+
+    default = await repo.get_default()
+    assert default is not None
+    assert default.host == "localhost"
+    assert default.seed_revision == "r1"

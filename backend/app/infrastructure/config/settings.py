@@ -2,14 +2,19 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from cryptography.fernet import Fernet
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 from app.paths import data_dir, is_frozen
 
 # Valor de fábrica del secreto de firma. Sirve para que `uv run dev` arranque
 # sin configurar nada; fuera de `development` se rechaza.
 INSECURE_JWT_SECRET = "change-me-in-prod"
+# Marcador que el instalador escribe cuando no pudo generar un secreto. Es
+# peor que el valor de fábrica: nadie lo reconoce como tal a simple vista.
+INSTALLER_PLACEHOLDER = "CAMBIAR-ESTE-VALOR"
 
 
 class Settings(BaseSettings):
@@ -70,6 +75,12 @@ class Settings(BaseSettings):
     # Clave anterior durante una rotación: se descifra con ambas y se
     # cifra con la nueva. Vacía fuera de una rotación.
     erp_credentials_key_old: str = Field(default="")
+    # Revisión de la configuración del ERP que escribió el instalador (una
+    # marca de tiempo nueva en cada instalación o "Volver a configurar").
+    # Cuando difiere de la de la base default, el arranque la actualiza con
+    # `ERP_DB_*`; vacía = nunca se toca una base ya sembrada. Ver
+    # `modules/erp_databases/infrastructure/seed.py`.
+    erp_seed_revision: str = Field(default="")
     # Tope de engines del ERP vivos a la vez (evicción LRU del registry).
     erp_max_open_engines: int = Field(default=10)
 
@@ -323,6 +334,42 @@ class Settings(BaseSettings):
                 '`python -c "import secrets; print(secrets.token_urlsafe(48))"`) '
                 "y guardalo en el .env antes de usar SAVI."
             )
+        if self.app_env != "development" and self.jwt_secret.strip() == INSTALLER_PLACEHOLDER:
+            raise ValueError(
+                "JWT_SECRET sigue con el marcador 'CAMBIAR-ESTE-VALOR': el instalador "
+                "no pudo generar la clave. Volvé a ejecutar el instalador y elegí "
+                '"Volver a configurar", o generá una con '
+                '`python -c "import secrets; print(secrets.token_urlsafe(48))"` '
+                "y guardala en el .env."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _require_valid_credentials_keys(self) -> "Settings":
+        """Una clave Fernet inválida mata el arranque dentro del lifespan.
+
+        En la app de escritorio eso se veía como "SAVI no abre" sin ningún
+        mensaje; validarla acá la hace aparecer en `--check-config`, bajo
+        "Archivo de configuración". Vacía se tolera a propósito: los tests y
+        las herramientas que no cifran nada construyen `Settings` sin ella, y
+        el lifespan ya exige una clave antes de tocar credenciales.
+        """
+        for name in ("erp_credentials_key", "erp_credentials_key_old"):
+            key = getattr(self, name).strip()
+            if not key:
+                continue
+            try:
+                Fernet(key.encode())
+            except (ValueError, TypeError):
+                label = name.upper()
+                raise ValueError(
+                    f"{label} no es una clave de cifrado válida (se esperan 44 "
+                    "caracteres en base64 url-safe). Si la generó el instalador, "
+                    'volvé a ejecutarlo y elegí "Volver a configurar" para '
+                    "regenerarla; o creá una con "
+                    '`python -c "from cryptography.fernet import Fernet; '
+                    'print(Fernet.generate_key().decode())"`.'
+                ) from None
         return self
 
     @property
@@ -350,10 +397,18 @@ class Settings(BaseSettings):
             # `as_posix()` porque SQLAlchemy interpreta la ruta como parte
             # de una URL: las barras invertidas de Windows se escapan mal.
             return f"sqlite+aiosqlite:///{self.resolved_agent_db_path.as_posix()}"
-        return (
-            f"postgresql+asyncpg://{self.agent_db_user}:{self.agent_db_password}"
-            f"@{self.agent_db_host}:{self.agent_db_port}/{self.agent_db_name}"
-        )
+        # `URL.create` y no un f-string: una contraseña o un usuario con
+        # `@ : / % # ?` (perfectamente válidos en Postgres) rompían el parseo
+        # de la URL y el error de conexión no decía por qué. `render_as_string`
+        # los escapa; `hide_password=False` porque el motor necesita la real.
+        return URL.create(
+            "postgresql+asyncpg",
+            username=self.agent_db_user,
+            password=self.agent_db_password,
+            host=self.agent_db_host,
+            port=self.agent_db_port,
+            database=self.agent_db_name,
+        ).render_as_string(hide_password=False)
 
     @property
     def cors_origins_list(self) -> list[str]:

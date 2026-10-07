@@ -49,7 +49,10 @@ if config.config_file_name is not None and config.attributes.get("configure_logg
     fileConfig(config.config_file_name)
 
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.agent_db_url)
+# `%%`: `set_main_option` pasa por la interpolación de ConfigParser, que lee
+# un `%` suelto de la contraseña (ej. `100%`, `p%40`) como una referencia y
+# falla con "invalid interpolation syntax".
+config.set_main_option("sqlalchemy.url", settings.agent_db_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

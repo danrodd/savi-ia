@@ -149,6 +149,7 @@ class SqlAlchemyErpDatabaseRepository(ErpDatabaseRepository):
             deleted_at=row.deleted_at,
             credentials_unreadable=unreadable,
             last_connection_ok_at=row.last_connection_ok_at,
+            seed_revision=row.seed_revision,
             created_at=row.created_at,
             updated_at=row.updated_at,
         )
@@ -169,6 +170,7 @@ class SqlAlchemyErpDatabaseRepository(ErpDatabaseRepository):
             deleted_at=entity.deleted_at,
             credentials_unreadable=entity.credentials_unreadable,
             last_connection_ok_at=entity.last_connection_ok_at,
+            seed_revision=entity.seed_revision,
         )
 
     def _apply(self, row: ErpDatabaseModel, entity: ErpDatabase) -> None:
@@ -183,6 +185,7 @@ class SqlAlchemyErpDatabaseRepository(ErpDatabaseRepository):
         row.is_active = entity.is_active
         row.deleted_at = entity.deleted_at
         row.last_connection_ok_at = entity.last_connection_ok_at
+        row.seed_revision = entity.seed_revision
         # Contraseña vacía = conservar la que ya está. Es lo que permite
         # que el formulario de edición la deje en blanco cuando no se
         # quiere cambiar, sin tener que devolverla al cliente para que la

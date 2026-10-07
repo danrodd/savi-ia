@@ -93,6 +93,9 @@ class ManageErpDatabasesUseCase:
         candidate.id = existing.id
         candidate.is_default = existing.is_default
         candidate.is_active = existing.is_active
+        # Sin esto una edición manual borraría la revisión y el próximo
+        # arranque la pisaría con lo que diga el `.env`.
+        candidate.seed_revision = existing.seed_revision
 
         await self._ensure_connects(candidate)
         await self._repository.save(candidate)

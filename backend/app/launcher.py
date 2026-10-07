@@ -278,8 +278,21 @@ def _configure_logging() -> None:
 
 
 def _port_is_free(host: str, port: int) -> bool:
+    """`True` si SAVI puede escuchar en `host:port`.
+
+    Se prueba con `bind()` y no con `connect_ex()`: un puerto dentro de un
+    rango excluido de Windows (Hyper-V, WSL, Docker) no tiene a nadie
+    escuchando, así que conectar falla y parecía libre, pero `bind()` da
+    WinError 10013 y uvicorn moría sin que el usuario viera nada. Sin
+    `SO_REUSEADDR` a propósito: en Windows permitiría "bindear" encima de
+    otra aplicación y volvería a dar un falso libre.
+    """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        return probe.connect_ex((host, port)) != 0
+        try:
+            probe.bind((host, port))
+        except OSError:
+            return False
+        return True
 
 
 def _savi_already_running(url: str) -> bool:
@@ -371,6 +384,24 @@ def _claude_auth_status(settings: Settings) -> str:
 _OAUTH_TOKEN_KEY = "CLAUDE_CODE_OAUTH_TOKEN"
 
 
+def quote_env_value(value: str) -> str:
+    """Escribe `value` como valor entre comillas simples de un `.env`.
+
+    Es la misma regla que aplica `EnvQuote` en `installer/savi.iss`: sin
+    comillas, python-dotenv corta en ` #`, interpola `${VAR}`, recorta los
+    espacios de los bordes y descarta valores con comillas sueltas.
+
+    Dentro de comillas simples solo `\\` y `\\'` tienen escape. Lo que no se
+    puede escapar es la interpolación (dotenv la aplica también ahí), así que
+    `${` se parte con una variable inexistente cuyo valor por defecto es `$`:
+    `${SAVI_NO_DEFINIDA:-$}{`. El resultado se lee igual que el original y
+    no se vuelve a interpolar.
+    """
+    escaped = value.replace("\\", "\\\\").replace("'", "\\'")
+    escaped = escaped.replace("${", "${SAVI_NO_DEFINIDA:-$}{")
+    return f"'{escaped}'"
+
+
 def replace_env_line(lines: list[str], key: str, value: str) -> list[str]:
     """Devuelve `lines` con `key=value`, respetando el resto del archivo.
 
@@ -415,8 +446,12 @@ def _write_oauth_token(token: str) -> bool:
         return False
 
     try:
+        # Mismo formato que escribe el instalador (valores entre comillas
+        # simples), para que el token se lea igual sin importar quién lo
+        # escribió.
         env_path.write_text(
-            "".join(replace_env_line(lines, _OAUTH_TOKEN_KEY, token)), encoding="utf-8"
+            "".join(replace_env_line(lines, _OAUTH_TOKEN_KEY, quote_env_value(token))),
+            encoding="utf-8",
         )
     except OSError as error:
         # El .env vive en Program Files: sin privilegios no se puede
@@ -998,8 +1033,13 @@ def _collect_report() -> Report:
     return report
 
 
-def _check_config() -> int:
+def _check_config(*, pause: bool = True) -> int:
     """Valida el `.env` y la conectividad de las dos bases.
+
+    Con `pause=False` (`--no-pause`) nunca se abre una consola ni se espera
+    una tecla: el instalador lo corre oculto y esperando a que termine, así
+    que un `input()` sin nadie que lo vea lo dejaba colgado para siempre.
+    El reporte igual queda en el log y en `diagnostico.html`.
 
     Lo corre el instalador al terminar y queda como acceso directo
     "Diagnosticar SAVI": es lo primero que se le pide a un usuario que
@@ -1023,7 +1063,11 @@ def _check_config() -> int:
     except (OSError, webbrowser.Error):
         opened = False
 
-    if not opened:
+    if not opened and not pause:
+        logging.getLogger(__name__).info(
+            "No se pudo abrir el navegador; el reporte está en %s", destination
+        )
+    elif not opened:
         _ensure_console()
         _force_utf8_console()
         print(report.as_text())
@@ -1074,7 +1118,7 @@ def main() -> None:
     logger = logging.getLogger(__name__)
 
     if "--check-config" in sys.argv:
-        raise SystemExit(_check_config())
+        raise SystemExit(_check_config(pause="--no-pause" not in sys.argv))
 
     # Antes de tocar la configuración ni la base: iniciar sesión es lo que
     # se hace cuando SAVI todavía no arranca, así que no puede depender de
@@ -1205,7 +1249,31 @@ def main() -> None:
         )
     )
     tray.start(url, server)
-    server.run()
+
+    # En el build sin consola un fallo del lifespan (clave de cifrado
+    # inválida, base inaccesible, catálogo corrupto) solo quedaba en el log:
+    # el usuario veía una aplicación que no abre. Uvicorn lo informa de dos
+    # maneras —`sys.exit()` si no puede abrir el puerto, o volviendo normal
+    # con `started=False` si falla el arranque de la aplicación—, y las dos
+    # se detectan por el mismo síntoma: el servidor nunca llegó a iniciar.
+    failure: BaseException | None = None
+    try:
+        server.run()
+    except (Exception, SystemExit) as error:
+        failure = error
+        if not isinstance(error, SystemExit):
+            logger.exception("El servidor terminó con un error.")
+
+    if not server.started:
+        logger.error("El servidor no llegó a iniciar; el motivo está en las líneas anteriores.")
+        _show_fatal_error(
+            "SAVI no pudo iniciar el servidor.\n"
+            "Lo más común: una clave del archivo .env inválida, una base de datos "
+            "que no responde, o el puerto bloqueado por Windows."
+        )
+        raise SystemExit(1)
+    if failure is not None:
+        raise failure
 
 
 if __name__ == "__main__":

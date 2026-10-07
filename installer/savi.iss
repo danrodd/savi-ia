@@ -100,6 +100,14 @@ Source: "env.template"; DestDir: "{app}"; Flags: ignoreversion
 ; configuración, antes de instalar nada. No se copia a {app}.
 Source: "build\dbcheck\savi-dbcheck.exe"; Flags: dontcopy
 
+[InstallDelete]
+; Inno ejecuta [InstallDelete] ANTES de copiar [Files]. Sin esto, una
+; actualización deja encima de la versión nueva las librerías de la anterior
+; que ya no existen (PyInstaller las empaqueta en _internal), y una DLL
+; vieja puede ganarle a la nueva y romper el arranque de formas difíciles de
+; ver. Solo _internal: el .env (y el .env.anterior) viven en {app}, no ahí.
+Type: filesandordirs; Name: "{app}\_internal"
+
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"
 ; Inicio de sesión con la cuenta de Claude del cliente. Queda como acceso
@@ -123,6 +131,10 @@ Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environmen
 ; Sin `nowait`: el inicio de sesión tiene que terminar antes de que
 ; arranque SAVI, o la primera pregunta al agente falla por falta de
 ; credencial y parece que la instalación quedó rota.
+; Las entradas `postinstall` corren como el usuario que lanzó el instalador
+; (no como el administrador que elevó) salvo que lleven `runascurrentuser`,
+; que acá no llevan a propósito: la sesión de Claude tiene que guardarse en
+; el perfil de quien va a usar SAVI.
 Filename: "{app}\{#AppExe}"; Parameters: "--login"; \
     Description: "Iniciar sesión con la cuenta de Claude (abre el navegador)"; \
     Flags: postinstall skipifsilent; Check: NeedsClaudeLogin
@@ -330,8 +342,20 @@ end;
   necesita que el instalador le pida nada: el subproceso se autentica
   solo. }
 function ClaudeLoggedIn(): Boolean;
+var
+  ResultCode: Integer;
 begin
-  Result := FileExists(GetEnv('USERPROFILE') + '\.claude\.credentials.json');
+  { Se consulta como el usuario que lanzó el instalador y no desde este
+    proceso: si TI elevó con OTRA cuenta de administrador, GetEnv('USERPROFILE')
+    apunta al perfil de ese administrador. El asistente decía "Sesión ya
+    iniciada", saltaba el token, y el usuario final —que no tiene ningún
+    ~/.claude— quedaba sin credencial. Es la misma comprobación de archivo de
+    antes, delegada a cmd con ExecAsOriginalUser; el código de salida es la
+    respuesta. Si no se puede ejecutar, se asume que NO hay sesión: lo
+    peor que pasa es pedir un token que no hacía falta. }
+  Result := ExecAsOriginalUser(ExpandConstant('{cmd}'),
+    '/c if exist "%USERPROFILE%\.claude\.credentials.json" (exit 0) else (exit 1)',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
 
 { `Check` de la entrada de PATH: sin esto, reinstalar duplica la ruta. }
@@ -574,7 +598,150 @@ begin
   Result := True;
 end;
 
-{ Valor de una clave del .env (vacío si no está). }
+{ >>> utilidades-env: este bloque se extrae tal cual para probarlo; no usar
+  nada de afuera (ni constantes de Inno ni variables globales). }
+
+const
+  Base64UrlAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+{ CSPRNG de Windows (RtlGenRandom). Se usa directo en vez de PowerShell: en
+  equipos con PowerShell bloqueado (GPO, AppLocker, modo de lenguaje
+  restringido) el generador devolvía vacío, el instalador escribía
+  'CAMBIAR-ESTE-VALOR' y SAVI no arrancaba sin decir nada. }
+function RtlGenRandom(RandomBuffer: AnsiString; RandomBufferLength: Cardinal): Boolean;
+  external 'SystemFunction036@advapi32.dll stdcall';
+
+{ Base64 URL-safe CON relleno '='. Es el formato de una clave Fernet: 32
+  bytes dan exactamente 44 caracteres. }
+function Base64UrlEncode(const Raw: AnsiString): String;
+var
+  I, N, B0, B1, B2, Triple: Integer;
+begin
+  Result := '';
+  N := Length(Raw);
+  I := 1;
+  while I <= N do
+  begin
+    B0 := Ord(Raw[I]);
+    if I + 1 <= N then B1 := Ord(Raw[I + 1]) else B1 := 0;
+    if I + 2 <= N then B2 := Ord(Raw[I + 2]) else B2 := 0;
+    Triple := (B0 * 65536) + (B1 * 256) + B2;
+    Result := Result + Copy(Base64UrlAlphabet, ((Triple div 262144) mod 64) + 1, 1);
+    Result := Result + Copy(Base64UrlAlphabet, ((Triple div 4096) mod 64) + 1, 1);
+    if I + 1 <= N then
+      Result := Result + Copy(Base64UrlAlphabet, ((Triple div 64) mod 64) + 1, 1)
+    else
+      Result := Result + '=';
+    if I + 2 <= N then
+      Result := Result + Copy(Base64UrlAlphabet, (Triple mod 64) + 1, 1)
+    else
+      Result := Result + '=';
+    I := I + 3;
+  end;
+end;
+
+{ `ByteCount` bytes aleatorios del sistema, en base64 URL-safe. Vacío si la
+  API falla o devuelve ceros (no debería, pero un secreto nulo es peor que
+  ninguno: el llamador cae al camino de PowerShell). }
+function RandomBase64Url(ByteCount: Integer): String;
+var
+  Raw: AnsiString;
+  I: Integer;
+  AllZero: Boolean;
+begin
+  Result := '';
+  try
+    SetLength(Raw, ByteCount);
+    if not RtlGenRandom(Raw, ByteCount) then
+      Exit;
+    AllZero := True;
+    for I := 1 to ByteCount do
+      if Ord(Raw[I]) <> 0 then
+        AllZero := False;
+    if AllZero then
+      Exit;
+    Result := Base64UrlEncode(Raw);
+  except
+    Result := '';
+  end;
+end;
+
+{ Una clave Fernet válida: 44 caracteres del alfabeto URL-safe terminando
+  en '='. Es la misma regla que valida Settings en el backend. }
+function IsValidFernetKey(const Key: String): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  if (Length(Key) <> 44) or (Copy(Key, 44, 1) <> '=') then
+    Exit;
+  for I := 1 to 43 do
+    if Pos(Copy(Key, I, 1), Base64UrlAlphabet) = 0 then
+      Exit;
+  Result := True;
+end;
+
+// Valor para el .env entre comillas simples.
+//
+// Sin comillas python-dotenv (que es lo que lee pydantic-settings) corta el
+// valor en ' #', interpola dolar-llave-NOMBRE-llave, recorta los espacios de
+// los bordes y descarta valores con comillas sueltas: una contrasena con
+// cualquiera de esas cosas llegaba al ERP distinta de la que se probo en el
+// asistente.
+//
+// Dentro de comillas simples solo existen dos escapes: la barra
+// invertida doble (\\ vale \) y la comilla precedida de barra (\' vale '). La
+// interpolacion, en cambio, dotenv la aplica TAMBIEN entre comillas simples
+// y no tiene escape, asi que cada dolar-llave se parte con una variable
+// inexistente cuyo valor por defecto es un dolar (SAVI_NO_DEFINIDA con
+// default dolar): se lee igual que el original y no se vuelve a interpolar.
+// El orden importa: primero las barras, despues las comillas. Es la misma
+// regla que quote_env_value en backend/app/launcher.py.
+function EnvQuote(const Value: String): String;
+begin
+  Result := Value;
+  StringChangeEx(Result, '\', '\\', True);
+  StringChangeEx(Result, '''', '\''', True);
+  StringChangeEx(Result, '${', '${SAVI_NO_DEFINIDA:-$}{', True);
+  Result := '''' + Result + '''';
+end;
+
+{ Inversa de EnvQuote para leer un valor del .env de una instalación
+  anterior (solo se usa con la clave de cifrado, que no lleva `${`).
+  Un valor sin comillas —un .env viejo o editado a mano— se devuelve tal cual. }
+function EnvUnquote(const Raw: String): String;
+var
+  I, N: Integer;
+  Current, Following: String;
+begin
+  Result := Raw;
+  N := Length(Raw);
+  if (N < 2) or (Copy(Raw, 1, 1) <> '''') then
+    Exit;
+  Result := '';
+  I := 2;
+  while I <= N do
+  begin
+    Current := Copy(Raw, I, 1);
+    Following := Copy(Raw, I + 1, 1);
+    if (Current = '\') and ((Following = '\') or (Following = '''')) then
+    begin
+      Result := Result + Following;
+      I := I + 2;
+    end
+    else if Current = '''' then
+      Exit
+    else
+    begin
+      Result := Result + Current;
+      I := I + 1;
+    end;
+  end;
+end;
+
+{ <<< utilidades-env }
+
+{ Valor de una clave del .env (vacío si no está), sin las comillas. }
 function ReadEnvValue(const Path, Key: String): String;
 var
   Lines: TArrayOfString;
@@ -586,7 +753,7 @@ begin
   for I := 0 to GetArrayLength(Lines) - 1 do
     if Pos(Key + '=', Lines[I]) = 1 then
     begin
-      Result := Trim(Copy(Lines[I], Length(Key) + 2, MaxInt));
+      Result := EnvUnquote(Trim(Copy(Lines[I], Length(Key) + 2, MaxInt)));
       Exit;
     end;
 end;
@@ -594,14 +761,18 @@ end;
 { La clave de cifrado de la instalación anterior, si la hay y es real.
   Al reconfigurar se reutiliza: con una nueva, las credenciales que ya
   guarda la base de SAVI (bases del ERP, proveedores de IA) dejaban de
-  poder leerse. }
+  poder leerse.
+
+  "Real" es una clave Fernet válida: el marcador 'CAMBIAR-ESTE-VALOR' o
+  una clave rota no sirven para descifrar nada, así que reutilizarlas solo
+  perpetuaría el arranque fallido. }
 function ExistingCredentialsKey(): String;
 begin
   Result := '';
   if not IsConfigured() then
     Exit;
   Result := ReadEnvValue(AddBackslash(WizardDirValue) + '.env', 'ERP_CREDENTIALS_KEY');
-  if Result = 'CAMBIAR-ESTE-VALOR' then
+  if not IsValidFernetKey(Result) then
     Result := '';
 end;
 
@@ -1071,15 +1242,20 @@ end;
 { ── Generación del .env ─────────────────────────────────────────────── }
 
 { El JWT_SECRET firma las sesiones, así que no puede salir del generador
-  pseudoaleatorio de Inno. Se delega en el RNG criptográfico de .NET y se
-  lee por archivo temporal, porque Exec no captura la salida estándar. }
+  pseudoaleatorio de Inno. Primero se usa el CSPRNG de Windows directo
+  (RandomBase64Url, sin depender de PowerShell); solo si eso falla se
+  delega en el RNG criptográfico de .NET, que se lee por archivo temporal
+  porque Exec no captura la salida estándar. }
 function GenerateJwtSecret(): String;
 var
   ScriptPath, OutputPath: String;
   Script, Output: TArrayOfString;
   ResultCode: Integer;
 begin
-  Result := '';
+  Result := RandomBase64Url(48);
+  if Result <> '' then
+    Exit;
+
   OutputPath := ExpandConstant('{tmp}\jwt.txt');
   ScriptPath := ExpandConstant('{tmp}\jwt.ps1');
 
@@ -1117,6 +1293,12 @@ var
   Script, Output: TArrayOfString;
   ResultCode: Integer;
 begin
+  { Mismo orden que el JWT: API de Windows primero, PowerShell de respaldo.
+    Con 32 bytes RandomBase64Url da justo 44 caracteres con '=' final. }
+  Result := RandomBase64Url(32);
+  if IsValidFernetKey(Result) then
+    Exit;
+
   Result := '';
   OutputPath := ExpandConstant('{tmp}\fernet.txt');
   ScriptPath := ExpandConstant('{tmp}\fernet.ps1');
@@ -1150,6 +1332,15 @@ var
 begin
   for I := 0 to GetArrayLength(Lines) - 1 do
     StringChangeEx(Lines[I], Token, Value, True);
+end;
+
+{ Igual que ReplaceToken pero para valores que escribe el usuario o que
+  genera el instalador: los deja entre comillas simples con EnvQuote, para
+  que el .env se lea de vuelta EXACTAMENTE igual (ver EnvQuote). Los
+  marcadores de la plantilla van sin comillas, no las lleva el template. }
+procedure ReplaceEnvToken(var Lines: TArrayOfString; const Token, Value: String);
+begin
+  ReplaceToken(Lines, Token, EnvQuote(Value));
 end;
 
 procedure WriteEnvFile();
@@ -1188,41 +1379,49 @@ begin
 
   UseSqlite := AgentKindPage.SelectedValueIndex = 0;
 
-  ReplaceToken(Lines, '{{APP_PORT}}', Trim(ClaudePage.Values[2]));
+  ReplaceEnvToken(Lines, '{{APP_PORT}}', Trim(ClaudePage.Values[2]));
 
   if UseSqlite then
   begin
-    ReplaceToken(Lines, '{{AGENT_DB_ENGINE}}', 'sqlite');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_ENGINE}}', 'sqlite');
     { Vacío a propósito: la ruta se resuelve en runtime contra el
       %LOCALAPPDATA% de quien usa la aplicación, que no tiene por qué ser
       la cuenta con la que se instaló. }
-    ReplaceToken(Lines, '{{AGENT_DB_PATH}}',     '');
-    ReplaceToken(Lines, '{{AGENT_DB_HOST}}',     '');
-    ReplaceToken(Lines, '{{AGENT_DB_PORT}}',     '5432');
-    ReplaceToken(Lines, '{{AGENT_DB_USER}}',     '');
-    ReplaceToken(Lines, '{{AGENT_DB_PASSWORD}}', '');
-    ReplaceToken(Lines, '{{AGENT_DB_NAME}}',     '');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_PATH}}',     '');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_HOST}}',     '');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_PORT}}',     '5432');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_USER}}',     '');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_PASSWORD}}', '');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_NAME}}',     '');
   end
   else
   begin
-    ReplaceToken(Lines, '{{AGENT_DB_ENGINE}}',   'postgresql');
-    ReplaceToken(Lines, '{{AGENT_DB_PATH}}',     '');
-    ReplaceToken(Lines, '{{AGENT_DB_HOST}}',     Trim(AgentPgPage.Values[0]));
-    ReplaceToken(Lines, '{{AGENT_DB_PORT}}',     Trim(AgentPgPage.Values[1]));
-    ReplaceToken(Lines, '{{AGENT_DB_NAME}}',     Trim(AgentPgPage.Values[2]));
-    ReplaceToken(Lines, '{{AGENT_DB_USER}}',     Trim(AgentPgPage.Values[3]));
-    ReplaceToken(Lines, '{{AGENT_DB_PASSWORD}}', AgentPgPage.Values[4]);
+    ReplaceEnvToken(Lines, '{{AGENT_DB_ENGINE}}',   'postgresql');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_PATH}}',     '');
+    ReplaceEnvToken(Lines, '{{AGENT_DB_HOST}}',     Trim(AgentPgPage.Values[0]));
+    ReplaceEnvToken(Lines, '{{AGENT_DB_PORT}}',     Trim(AgentPgPage.Values[1]));
+    ReplaceEnvToken(Lines, '{{AGENT_DB_NAME}}',     Trim(AgentPgPage.Values[2]));
+    ReplaceEnvToken(Lines, '{{AGENT_DB_USER}}',     Trim(AgentPgPage.Values[3]));
+    ReplaceEnvToken(Lines, '{{AGENT_DB_PASSWORD}}', AgentPgPage.Values[4]);
   end;
 
-  ReplaceToken(Lines, '{{ERP_DB_HOST}}',     Trim(ErpPage.Values[0]));
-  ReplaceToken(Lines, '{{ERP_DB_PORT}}',     Trim(ErpPage.Values[1]));
-  ReplaceToken(Lines, '{{ERP_DB_NAME}}',     Trim(ErpPage.Values[2]));
-  ReplaceToken(Lines, '{{ERP_DB_USER}}',     Trim(ErpPage.Values[3]));
-  ReplaceToken(Lines, '{{ERP_DB_PASSWORD}}', ErpPage.Values[4]);
+  ReplaceEnvToken(Lines, '{{ERP_DB_HOST}}',     Trim(ErpPage.Values[0]));
+  ReplaceEnvToken(Lines, '{{ERP_DB_PORT}}',     Trim(ErpPage.Values[1]));
+  ReplaceEnvToken(Lines, '{{ERP_DB_NAME}}',     Trim(ErpPage.Values[2]));
+  ReplaceEnvToken(Lines, '{{ERP_DB_USER}}',     Trim(ErpPage.Values[3]));
+  ReplaceEnvToken(Lines, '{{ERP_DB_PASSWORD}}', ErpPage.Values[4]);
 
-  ReplaceToken(Lines, '{{CLAUDE_CODE_OAUTH_TOKEN}}', Trim(ClaudePage.Values[0]));
-  ReplaceToken(Lines, '{{ANTHROPIC_API_KEY}}',        Trim(ClaudePage.Values[1]));
-  ReplaceToken(Lines, '{{GIT_BASH_PATH}}',            GitBashPath());
+  { Marca de tiempo nueva en cada instalación o reconfiguración. SAVI la
+    compara con la guardada en la base default: si cambió, actualiza esa
+    base con los ERP_DB_* de arriba; si no, no pisa lo que el administrador
+    editó desde la aplicación. Una actualización que conserva el .env no
+    llega hasta acá, así que la revisión tampoco cambia. }
+  ReplaceEnvToken(Lines, '{{ERP_SEED_REVISION}}',
+    GetDateTimeString('yyyymmddhhnnss', #0, #0));
+
+  ReplaceEnvToken(Lines, '{{CLAUDE_CODE_OAUTH_TOKEN}}', Trim(ClaudePage.Values[0]));
+  ReplaceEnvToken(Lines, '{{ANTHROPIC_API_KEY}}',        Trim(ClaudePage.Values[1]));
+  ReplaceEnvToken(Lines, '{{GIT_BASH_PATH}}',            GitBashPath());
 
   Secret := GenerateJwtSecret();
   if Secret = '' then
@@ -1232,7 +1431,7 @@ begin
            mbError, MB_OK);
     Secret := 'CAMBIAR-ESTE-VALOR';
   end;
-  ReplaceToken(Lines, '{{JWT_SECRET}}', Secret);
+  ReplaceEnvToken(Lines, '{{JWT_SECRET}}', Secret);
 
   if PreviousKey <> '' then
     FernetKey := PreviousKey
@@ -1247,7 +1446,7 @@ begin
            mbError, MB_OK);
     FernetKey := 'CAMBIAR-ESTE-VALOR';
   end;
-  ReplaceToken(Lines, '{{ERP_CREDENTIALS_KEY}}', FernetKey);
+  ReplaceEnvToken(Lines, '{{ERP_CREDENTIALS_KEY}}', FernetKey);
 
   { Vacío a propósito: un administrador del ERP ya queda habilitado para
     la sección de administración por su propio flag. Este campo es el
@@ -1255,7 +1454,7 @@ begin
     valor es un `codigo` de Seguridad.Usuario — no el usuario de conexión
     a Postgres que se cargó en el asistente. Se completa a mano en el
     .env cuando hace falta. }
-  ReplaceToken(Lines, '{{SAVI_ADMIN_LOGINS}}', '');
+  ReplaceEnvToken(Lines, '{{SAVI_ADMIN_LOGINS}}', '');
 
   { Sin BOM: pydantic-settings lee el .env como UTF-8 y un BOM le
     convertiria la primera clave en "﻿APP_NAME". }
@@ -1277,7 +1476,14 @@ var
   ResultCode: Integer;
 begin
   WizardForm.StatusLabel.Caption := 'Verificando la configuración...';
-  if not Exec(ExpandConstant('{app}\{#AppExe}'), '--check-config', '', SW_HIDE,
+  { Como el usuario que lanzó el instalador (ExecAsOriginalUser) y no como
+    el administrador que elevó: el diagnóstico mira ~/.claude y el perfil de
+    quien ejecuta, y si TI elevó con otra cuenta revisaba el perfil de ese
+    administrador mientras el usuario final no tenía nada. --no-pause porque
+    corre oculto y esperando: sin él, un equipo sin navegador dejaba el
+    instalador colgado en un "Enter para cerrar" que nadie veía. }
+  if not ExecAsOriginalUser(ExpandConstant('{app}\{#AppExe}'),
+              '--check-config --no-pause', '', SW_HIDE,
               ewWaitUntilTerminated, ResultCode) then
   begin
     MsgBox('No se pudo ejecutar la verificación de la configuración.' + #13#10 +

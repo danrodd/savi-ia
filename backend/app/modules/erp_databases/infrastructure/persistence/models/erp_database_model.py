@@ -52,6 +52,9 @@ class ErpDatabaseModel(Base):
     last_connection_ok_at: Mapped[datetime | None] = mapped_column(
         UtcDateTime, nullable=True
     )
+    # `ERP_SEED_REVISION` del `.env` con la que se sembró/actualizó esta
+    # fila por última vez (solo la default). Ver `erp_databases/.../seed.py`.
+    seed_revision: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         UtcDateTime, server_default=func.now(), nullable=False
     )

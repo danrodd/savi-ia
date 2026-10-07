@@ -115,7 +115,7 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     finally:
         engine.dispose()
-        assert version == "a5c9e3b7d1f4"
+        assert version == "b6d2f8a4c1e7"
 
 
 def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
@@ -243,7 +243,7 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert row.erp_database_id == queried_database_id
     # ...y la identidad se backfillea desde la base consultada.
     assert row.owner_erp_database_id == queried_database_id
-    assert version == "a5c9e3b7d1f4"
+    assert version == "b6d2f8a4c1e7"
 
 
 _CHAT_ATTACHMENT_COLUMNS = {
