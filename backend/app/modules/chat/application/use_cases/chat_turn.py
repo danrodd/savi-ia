@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator, Coroutine
+from collections.abc import AsyncIterator, Coroutine, Sequence
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -30,6 +30,7 @@ from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
+    ImageInput,
     SourcesEvent,
     SupersededEvent,
     TextDeltaEvent,
@@ -40,6 +41,7 @@ from app.modules.chat.domain.entities import (
 from app.modules.chat.domain.exceptions import (
     NoAssistantToRegenerateError,
     NothingToEditError,
+    TooManyChatImagesError,
 )
 from app.modules.chat.domain.interfaces import (
     AssistantMessageWriter,
@@ -47,8 +49,11 @@ from app.modules.chat.domain.interfaces import (
     LLMRunner,
 )
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
-from app.modules.conversations.domain.entities import Message, MessageRole
-from app.modules.conversations.domain.exceptions import ConversationNotFoundError
+from app.modules.conversations.domain.entities import ChatAttachment, Message, MessageRole
+from app.modules.conversations.domain.exceptions import (
+    ChatAttachmentUnavailableError,
+    ConversationNotFoundError,
+)
 from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.domain.value_objects import (
     ConversationOwner,
@@ -65,6 +70,9 @@ _HISTORY_TURNS = 20
 _HISTORY_CHAR_LIMIT = 1500
 _NEW_QUERY_MARKER = "=== Nueva consulta del usuario (responde esta) ==="
 _TRUNCATION_MARKER = "Respuesta truncada por límite de tamaño"
+# Texto que se le da al modelo (y al auto-título) cuando el mensaje es solo imágenes.
+_IMAGE_ONLY_PROMPT = "(El usuario envió solo imagen(es), sin texto.)"
+_IMAGE_ONLY_TITLE = "Imagen adjunta"
 
 _BG_TASKS: set[asyncio.Task[Any]] = set()
 
@@ -88,9 +96,38 @@ def _format_history_block(messages: list[Message]) -> str:
             body = body[:_HISTORY_CHAR_LIMIT] + " …"
         if m.role == MessageRole.ASSISTANT and m.finish_reason == MessageFinishReason.INTERRUPTED:
             body += "\n\n[respuesta interrumpida por el usuario]"
+        if m.attachments:
+            markers = "\n".join(f"[imagen adjunta: {a.filename}]" for a in m.attachments)
+            body = f"{body}\n{markers}" if body else markers
         lines.append(f"{who}: {body}")
     lines.append(_NEW_QUERY_MARKER)
     return "\n\n".join(lines) + "\n\n"
+
+
+def select_history_attachments(messages: list[Message], limit: int) -> list[ChatAttachment]:
+    """Imágenes de mensajes anteriores que se reenvían al modelo.
+
+    Solo mensajes del usuario activos (no reemplazados) dentro de la misma
+    ventana del historial de texto, las más recientes primero, hasta `limit`.
+    """
+    selected: list[ChatAttachment] = []
+    if limit <= 0:
+        return selected
+    for message in reversed(messages[-_HISTORY_TURNS:]):
+        if message.role != MessageRole.USER or not message.is_active:
+            continue
+        for attachment in message.attachments:
+            if len(selected) >= limit:
+                return selected
+            selected.append(attachment)
+    return selected
+
+
+def _title_text(user_text: str, attachments: Sequence[ChatAttachment]) -> str:
+    """Texto para el auto-título: nunca vacío, aunque el mensaje sea solo imágenes."""
+    if user_text.strip() or not attachments:
+        return user_text
+    return _IMAGE_ONLY_TITLE
 
 
 class _TurnAccumulator:
@@ -210,6 +247,7 @@ class ChatTurnUseCase:
         action: ChatAction,
         *,
         expected_owner: ConversationOwner | None = None,
+        attachment_ids: Sequence[UUID] = (),
     ) -> UUID | None:
         """Chequea precondiciones antes de devolver el StreamingResponse.
 
@@ -237,14 +275,17 @@ class ChatTurnUseCase:
                 raise NothingToEditError
             last = active[-1]
             if last.role == MessageRole.USER:
-                return conversation.erp_database_id
-            if (
+                replaced_user = last
+            elif (
                 last.role == MessageRole.ASSISTANT
                 and len(active) >= 2
                 and (active[-2].role == MessageRole.USER)
             ):
-                return conversation.erp_database_id
-            raise NothingToEditError
+                replaced_user = active[-2]
+            else:
+                raise NothingToEditError
+            await self._validate_attachments(attachment_ids, expected_owner, replaced_user)
+            return conversation.erp_database_id
         elif action == ChatAction.REGENERATE:
             active = await self._repository.list_messages(conversation_id)
             if (
@@ -254,8 +295,42 @@ class ChatTurnUseCase:
                 or active[-2].role != MessageRole.USER
             ):
                 raise NoAssistantToRegenerateError
+            # Reusa las imágenes del último mensaje: `attachment_ids` no aplica.
+        else:
+            await self._validate_attachments(attachment_ids, expected_owner, None)
 
         return conversation.erp_database_id
+
+    async def _validate_attachments(
+        self,
+        attachment_ids: Sequence[UUID],
+        owner: ConversationOwner | None,
+        replaced_user: Message | None,
+    ) -> None:
+        """Cada imagen existe, es del usuario y está libre (o, al editar,
+        pertenece al mensaje que se reemplaza)."""
+        if not attachment_ids:
+            return
+        limit = self._settings.chat_images_per_message
+        if len(attachment_ids) > limit:
+            raise TooManyChatImagesError(limit)
+        found = {a.id: a for a in await self._repository.get_attachments(attachment_ids)}
+        for attachment_id in attachment_ids:
+            attachment = found.get(attachment_id)
+            # Inexistente y ajena dan el mismo mensaje: no confirma ids de otros.
+            if attachment is None or (
+                owner is not None
+                and not owner.owns(attachment.user_id, attachment.owner_erp_database_id)
+            ):
+                raise ChatAttachmentUnavailableError(
+                    "Alguna de las imágenes adjuntas no existe o no está disponible."
+                )
+            if attachment.message_id is not None and (
+                replaced_user is None or attachment.message_id != replaced_user.id
+            ):
+                raise ChatAttachmentUnavailableError(
+                    "Alguna de las imágenes adjuntas ya se usó en otro mensaje."
+                )
 
     async def execute(
         self,
@@ -266,6 +341,7 @@ class ChatTurnUseCase:
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
         document_context: TurnDocumentContext | None = None,
+        attachment_ids: Sequence[UUID] = (),
     ) -> AsyncIterator[ChatEvent]:
         # `validate` ya corrió desde el endpoint; aún así re-leemos la
         # conversación para conocer `title_locked` y el título.
@@ -275,11 +351,14 @@ class ChatTurnUseCase:
 
         is_renamable = not conversation.title_locked and conversation.has_default_title
 
+        # Con solo imágenes el mensaje llega vacío (lo valida `ChatRequest`).
+        text = message or ""
+
         if action == ChatAction.SEND:
-            assert message is not None  # noqa: S101 — validated by ChatRequest
             async for event in self._execute_send(
                 conversation_id,
-                message,
+                text,
+                attachment_ids=attachment_ids,
                 is_renamable=is_renamable,
                 allowed_modules=allowed_modules,
                 erp_database_id=erp_database_id,
@@ -287,10 +366,10 @@ class ChatTurnUseCase:
             ):
                 yield event
         elif action == ChatAction.EDIT_LAST:
-            assert message is not None  # noqa: S101
             async for event in self._execute_edit_last(
                 conversation_id,
-                message,
+                text,
+                attachment_ids=attachment_ids,
                 is_renamable=is_renamable,
                 allowed_modules=allowed_modules,
                 erp_database_id=erp_database_id,
@@ -312,6 +391,7 @@ class ChatTurnUseCase:
         conversation_id: UUID,
         user_text: str,
         *,
+        attachment_ids: Sequence[UUID] = (),
         is_renamable: bool,
         allowed_modules: frozenset[ModuleCode] | None,
         erp_database_id: UUID | None = None,
@@ -326,14 +406,23 @@ class ChatTurnUseCase:
             role=MessageRole.USER,
             content=user_text,
         )
-        await self._repository.add_message(user_message)
-        prompt = _format_history_block(history) + user_text.strip()
+        if attachment_ids:
+            # Mensaje e imágenes en la misma transacción.
+            user_message = await self._repository.add_user_message_with_attachments(
+                user_message, link_attachment_ids=attachment_ids
+            )
+        else:
+            await self._repository.add_message(user_message)
+        prompt, images = await self._build_turn_input(history, user_text, user_message.attachments)
 
         async for event in self._stream_assistant_turn(
             conversation_id=conversation_id,
             prompt=prompt,
+            images=images,
             supersedes_id=None,
-            user_text_for_title=user_text if is_renamable else None,
+            user_text_for_title=(
+                _title_text(user_text, user_message.attachments) if is_renamable else None
+            ),
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
             document_context=document_context,
@@ -346,6 +435,7 @@ class ChatTurnUseCase:
         conversation_id: UUID,
         new_user_text: str,
         *,
+        attachment_ids: Sequence[UUID] = (),
         is_renamable: bool,
         allowed_modules: frozenset[ModuleCode] | None,
         erp_database_id: UUID | None = None,
@@ -375,7 +465,17 @@ class ChatTurnUseCase:
             role=MessageRole.USER,
             content=new_user_text,
         )
-        await self._repository.add_message(new_user)
+        if attachment_ids:
+            # Las imágenes del mensaje que se reemplaza se COPIAN: la versión
+            # anterior conserva las suyas. Las recién subidas se enlazan.
+            replaced_ids = {a.id for a in old_user.attachments}
+            new_user = await self._repository.add_user_message_with_attachments(
+                new_user,
+                link_attachment_ids=[i for i in attachment_ids if i not in replaced_ids],
+                copy_attachment_ids=[i for i in attachment_ids if i in replaced_ids],
+            )
+        else:
+            await self._repository.add_message(new_user)
 
         # 2) Marcar el user viejo como superseded apuntando al nuevo.
         await self._repository.supersede_messages([old_user.id], superseded_by_id=new_user.id)
@@ -393,13 +493,18 @@ class ChatTurnUseCase:
         # 5) Reconstruir historial activo y armar el prompt.
         new_active = await self._repository.list_messages(conversation_id)
         history_pre = new_active[:-1]  # sin el nuevo user
-        prompt = _format_history_block(history_pre) + new_user_text.strip()
+        prompt, images = await self._build_turn_input(
+            history_pre, new_user_text, new_user.attachments
+        )
 
         async for event in self._stream_assistant_turn(
             conversation_id=conversation_id,
             prompt=prompt,
+            images=images,
             supersedes_id=old_assistant.id if old_assistant else None,
-            user_text_for_title=new_user_text if is_renamable else None,
+            user_text_for_title=(
+                _title_text(new_user_text, new_user.attachments) if is_renamable else None
+            ),
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
             document_context=document_context,
@@ -431,11 +536,14 @@ class ChatTurnUseCase:
 
         # Prompt reusa el último user (no se inserta uno nuevo).
         history_pre = active[:-2]  # todo lo de antes del par user/asst
-        prompt = _format_history_block(history_pre) + last_user.content.strip()
+        prompt, images = await self._build_turn_input(
+            history_pre, last_user.content, last_user.attachments
+        )
 
         async for event in self._stream_assistant_turn(
             conversation_id=conversation_id,
             prompt=prompt,
+            images=images,
             supersedes_id=old_assistant.id,
             user_text_for_title=None,  # regenerate nunca regenera el título
             allowed_modules=allowed_modules,
@@ -444,12 +552,52 @@ class ChatTurnUseCase:
         ):
             yield event
 
-    # ── helper común ──────────────────────────────────────────────────────
+    # ── helpers comunes ───────────────────────────────────────────────────
+    async def _build_turn_input(
+        self,
+        history_pre: list[Message],
+        user_text: str,
+        current_attachments: Sequence[ChatAttachment],
+    ) -> tuple[str, list[ImageInput]]:
+        """Prompt de texto + imágenes que viajan al modelo.
+
+        Imágenes: todas las del turno actual y, además, hasta
+        `chat_history_images_max` de mensajes anteriores (las más recientes
+        primero). Los bytes se leen solo de las que realmente se envían.
+        """
+        text = user_text.strip()
+        if not text and current_attachments:
+            text = _IMAGE_ONLY_PROMPT
+        prompt = _format_history_block(history_pre) + text
+
+        previous = select_history_attachments(history_pre, self._settings.chat_history_images_max)
+        wanted = [*previous, *current_attachments]
+        if not wanted:
+            return prompt, []
+        contents = await self._repository.get_attachment_contents([a.id for a in wanted])
+        current_ids = {a.id for a in current_attachments}
+        images: list[ImageInput] = []
+        for attachment in wanted:
+            data = contents.get(attachment.id)
+            if data is None:
+                log.warning("chat_attachment_bytes_missing attachment_id=%s", attachment.id)
+                continue
+            images.append(
+                ImageInput(
+                    mime=attachment.mime,
+                    data=data,
+                    filename=attachment.filename,
+                    from_current_turn=attachment.id in current_ids,
+                )
+            )
+        return prompt, images
+
     async def _stream_assistant_turn(
         self,
         *,
         conversation_id: UUID,
         prompt: str,
+        images: Sequence[ImageInput] = (),
         supersedes_id: UUID | None,
         user_text_for_title: str | None,
         allowed_modules: frozenset[ModuleCode] | None,
@@ -471,6 +619,7 @@ class ChatTurnUseCase:
                 allowed_modules=allowed_modules,
                 erp_database_id=erp_database_id,
                 document_context=document_context,
+                images=images,
             ):
                 separator = accumulator.separator_before(event)
                 if separator is not None:

@@ -19,6 +19,8 @@ from app.modules.company_knowledge.infrastructure.persistence.models import (  #
     CompanyKnowledgeSettingsModel,
 )
 from app.modules.conversations.infrastructure.persistence.models import (  # noqa: F401
+    ChatAttachmentBlobModel,
+    ChatAttachmentModel,
     ConversationModel,
     MessageModel,
 )

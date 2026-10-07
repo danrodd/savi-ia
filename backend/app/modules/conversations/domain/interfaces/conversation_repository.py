@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from uuid import UUID
 
-from app.modules.conversations.domain.entities import Conversation, Message
+from app.modules.conversations.domain.entities import ChatAttachment, Conversation, Message
 
 
 class ConversationRepository(ABC):
@@ -59,6 +60,35 @@ class ConversationRepository(ABC):
 
     @abstractmethod
     async def add_message(self, message: Message) -> Message: ...
+
+    @abstractmethod
+    async def add_user_message_with_attachments(
+        self,
+        message: Message,
+        *,
+        link_attachment_ids: Sequence[UUID] = (),
+        copy_attachment_ids: Sequence[UUID] = (),
+    ) -> Message:
+        """Inserta el mensaje del usuario y le asocia sus imágenes en una
+        sola transacción.
+
+        - `link_attachment_ids`: adjuntos sin mensaje (recién subidos); se
+          enlazan tal cual. Si alguno ya no está libre, levanta
+          `ChatAttachmentUnavailableError` y no queda nada escrito.
+        - `copy_attachment_ids`: adjuntos de OTRO mensaje (el que se está
+          reemplazando al editar); se duplican (fila + bytes) para que la
+          versión anterior conserve los suyos.
+
+        Devuelve el mensaje con `attachments` ya cargados (en ese orden)."""
+
+    @abstractmethod
+    async def get_attachments(self, attachment_ids: Sequence[UUID]) -> list[ChatAttachment]:
+        """Metadata de los adjuntos que existan (los ausentes se omiten)."""
+
+    @abstractmethod
+    async def get_attachment_contents(self, attachment_ids: Sequence[UUID]) -> dict[UUID, bytes]:
+        """Bytes de esos adjuntos. Solo para las imágenes que realmente se
+        envían al modelo: listar mensajes nunca los carga."""
 
     @abstractmethod
     async def list_messages(

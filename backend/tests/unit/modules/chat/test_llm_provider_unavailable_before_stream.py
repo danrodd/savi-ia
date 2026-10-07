@@ -35,6 +35,7 @@ class _StubChatTurnUseCase:
         action: ChatAction,
         *,
         expected_owner: object | None = None,
+        attachment_ids: object = (),
     ) -> UUID:
         return _DATABASE_ID
 

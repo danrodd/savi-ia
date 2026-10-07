@@ -1,6 +1,13 @@
 from typing import Any
 
-from app.modules.conversations.domain.entities import Conversation, Message, MessageRole
+from sqlalchemy import inspect
+
+from app.modules.conversations.domain.entities import (
+    ChatAttachment,
+    Conversation,
+    Message,
+    MessageRole,
+)
 from app.modules.conversations.domain.value_objects import (
     MessageFinishReason,
     MessageSource,
@@ -8,6 +15,7 @@ from app.modules.conversations.domain.value_objects import (
     ToolInvocation,
 )
 from app.modules.conversations.infrastructure.persistence.models import (
+    ChatAttachmentModel,
     ConversationModel,
     MessageModel,
 )
@@ -41,6 +49,39 @@ class ConversationOrmMapper:
         )
 
     @staticmethod
+    def attachment_to_entity(model: ChatAttachmentModel) -> ChatAttachment:
+        return ChatAttachment(
+            id=model.id,
+            user_id=model.user_id,
+            owner_erp_database_id=model.owner_erp_database_id,
+            message_id=model.message_id,
+            mime=model.mime,
+            filename=model.filename,
+            size_bytes=model.size_bytes,
+            width=model.width,
+            height=model.height,
+            created_at=model.created_at,
+        )
+
+    @staticmethod
+    def attachment_to_model(entity: ChatAttachment) -> ChatAttachmentModel:
+        return ChatAttachmentModel(
+            id=entity.id,
+            user_id=entity.user_id,
+            owner_erp_database_id=entity.owner_erp_database_id,
+            message_id=entity.message_id,
+            mime=entity.mime,
+            filename=entity.filename,
+            size_bytes=entity.size_bytes,
+            width=entity.width,
+            height=entity.height,
+            # Fecha explícita (microsegundos) y no la del servidor: SQLite
+            # trunca a segundos y el orden de las imágenes de un mensaje
+            # se define por este valor.
+            created_at=entity.created_at,
+        )
+
+    @staticmethod
     def message_to_entity(model: MessageModel) -> Message:
         raw_tools = model.tool_invocations or []
         tools = [ToolInvocation.from_dict(t) for t in raw_tools]
@@ -60,6 +101,14 @@ class ConversationOrmMapper:
             provider=model.provider,
             model=model.model,
             sources=[MessageSource.from_dict(s) for s in (model.sources or [])],
+            # Si la relación no está cargada (p. ej. recién insertado) se
+            # devuelve vacío en vez de disparar una carga perezosa, que en
+            # async revienta.
+            attachments=(
+                []
+                if "attachments" in inspect(model).unloaded
+                else [ConversationOrmMapper.attachment_to_entity(a) for a in model.attachments]
+            ),
             superseded_at=model.superseded_at,
             superseded_by_id=model.superseded_by_id,
             created_at=model.created_at,

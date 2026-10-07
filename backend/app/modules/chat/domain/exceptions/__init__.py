@@ -3,6 +3,7 @@ from app.modules.chat.domain.exceptions.exceptions import (
     LlmProviderUnavailableError,
     NoAssistantToRegenerateError,
     NothingToEditError,
+    TooManyChatImagesError,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "LlmProviderUnavailableError",
     "NoAssistantToRegenerateError",
     "NothingToEditError",
+    "TooManyChatImagesError",
 ]

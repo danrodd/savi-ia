@@ -8,8 +8,10 @@ para serializar como SSE.
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator, Sequence
+from typing import Any
 from uuid import UUID
 
 from claude_agent_sdk import (
@@ -33,6 +35,7 @@ from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
+    ImageInput,
     ThinkingDeltaEvent,
     ToolResultEvent,
     ToolUseEvent,
@@ -145,17 +148,55 @@ def _build_options(
     )
 
 
-async def _open_query_stream(prompt: str, options: ClaudeAgentOptions) -> AsyncIterator[Message]:
+def _image_content_blocks(prompt: str, images: Sequence[ImageInput]) -> list[dict[str, Any]]:
+    """Bloques de contenido del mensaje: el texto y, por cada imagen, una
+    etiqueta que dice de cuál mensaje es seguida de la imagen en base64."""
+    blocks: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+    for image in images:
+        blocks.append({"type": "text", "text": image.label})
+        blocks.append(
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": image.mime,
+                    "data": base64.b64encode(image.data).decode("ascii"),
+                },
+            }
+        )
+    return blocks
+
+
+async def _image_prompt(prompt: str, images: Sequence[ImageInput]) -> AsyncIterator[dict[str, Any]]:
+    """Entrada en modo streaming del SDK: un único mensaje de usuario con
+    contenido estructurado. El modo string del SDK no admite imágenes."""
+    yield {
+        "type": "user",
+        "message": {"role": "user", "content": _image_content_blocks(prompt, images)},
+        "parent_tool_use_id": None,
+        "session_id": "",
+    }
+
+
+def _query_input(prompt: str, images: Sequence[ImageInput]) -> str | AsyncIterable[dict[str, Any]]:
+    # Sin imágenes, el camino de siempre (string): cero cambio de comportamiento.
+    return _image_prompt(prompt, images) if images else prompt
+
+
+async def _open_query_stream(
+    prompt: str, options: ClaudeAgentOptions, images: Sequence[ImageInput] = ()
+) -> AsyncIterator[Message]:
     """Wrap `query()` with a single retry on initialize-timeout errors.
 
     El CLI empaquetado tarda en arrancar bajo carga; el SDK lanza
     `Control request timeout: initialize`. Un retry corto lo resuelve
-    en la mayoría de casos.
+    en la mayoría de casos. El generador de entrada con imágenes se arma de
+    nuevo en cada intento: uno ya consumido no se puede reutilizar.
     """
     last_exc: Exception | None = None
     for attempt in range(2):
         try:
-            async for msg in query(prompt=prompt, options=options):
+            async for msg in query(prompt=_query_input(prompt, images), options=options):
                 yield msg
             return
         except Exception as e:  # noqa: BLE001
@@ -182,6 +223,7 @@ class ClaudeAgentRunner(LLMRunner):
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
         document_context: TurnDocumentContext | None = None,
+        images: Sequence[ImageInput] = (),
     ) -> AsyncIterator[ChatEvent]:
         options = _build_options(
             self._settings,
@@ -195,7 +237,7 @@ class ClaudeAgentRunner(LLMRunner):
         done_yielded = False
 
         try:
-            async for msg in _open_query_stream(prompt, options):
+            async for msg in _open_query_stream(prompt, options, images):
                 if isinstance(msg, AssistantMessage):
                     failure = provider_error_message(
                         msg.error,

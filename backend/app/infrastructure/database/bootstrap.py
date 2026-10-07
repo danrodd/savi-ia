@@ -32,6 +32,8 @@ from app.modules.company_knowledge.infrastructure.persistence.models import (
     CompanyKnowledgeSettingsModel,
 )
 from app.modules.conversations.infrastructure.persistence.models import (
+    ChatAttachmentBlobModel,
+    ChatAttachmentModel,
     ConversationModel,
     MessageModel,
 )
@@ -55,6 +57,8 @@ _REGISTERED_MODELS = (
     RefreshTokenModel,
     ConversationModel,
     MessageModel,
+    ChatAttachmentModel,
+    ChatAttachmentBlobModel,
     AuditQueryModel,
     LlmProviderConfigModel,
     CompanyDocumentModel,

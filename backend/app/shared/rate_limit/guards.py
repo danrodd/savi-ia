@@ -133,6 +133,17 @@ def enforce_chat_limits(settings: Settings, user: AuthenticatedUser) -> None:
     _enforce(f"{key}:h", RateLimitPolicy(settings.rate_limit_chat_per_hour, _HOUR))
 
 
+def enforce_chat_attachment_limits(settings: Settings, user: AuthenticatedUser) -> None:
+    """Subida de imágenes al chat: cupo por hora, propio y separado del de
+    los documentos de la empresa."""
+    if not settings.rate_limit_enabled:
+        return
+    _enforce(
+        f"{_user_key('chat-adjuntos', user)}:h",
+        RateLimitPolicy(settings.rate_limit_chat_attachments_per_hour, _HOUR),
+    )
+
+
 def effective_upload_limit(settings: Settings, configured: int | None) -> int:
     """Cupo por hora vigente: el que fijó un administrador, dentro del techo
     del servidor; sin valor fijado, el por defecto del `.env`."""

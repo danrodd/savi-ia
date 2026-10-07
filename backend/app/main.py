@@ -32,6 +32,7 @@ from app.modules.company_knowledge.infrastructure.provider import (
     start_company_knowledge,
     stop_company_knowledge,
 )
+from app.modules.conversations.infrastructure.http import attachments_router
 from app.modules.conversations.infrastructure.http import router as conversations_router
 from app.modules.erp_databases.infrastructure import (
     ErpConnectionProvider,
@@ -222,6 +223,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(conversations_router)
     app.include_router(chat_router)
+    app.include_router(attachments_router)
     app.include_router(usage_router)
     app.include_router(erp_databases_router)
     app.include_router(erp_databases_public_router)

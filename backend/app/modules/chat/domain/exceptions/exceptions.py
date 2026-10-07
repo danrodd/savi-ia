@@ -33,3 +33,9 @@ class NoAssistantToRegenerateError(ValidationError):
             "No hay una respuesta del asistente que se pueda regenerar; "
             "envía primero un mensaje"
         )
+
+
+class TooManyChatImagesError(ValidationError):
+    def __init__(self, limit: int) -> None:
+        super().__init__(f"Un mensaje admite hasta {limit} imágenes adjuntas.")
+        self.limit = limit

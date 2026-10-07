@@ -1,13 +1,17 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.conversations.domain.entities import Conversation, Message
+from app.modules.conversations.domain.entities import ChatAttachment, Conversation, Message
+from app.modules.conversations.domain.exceptions import ChatAttachmentUnavailableError
 from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.infrastructure.persistence.mappers import ConversationOrmMapper
 from app.modules.conversations.infrastructure.persistence.models import (
+    ChatAttachmentBlobModel,
+    ChatAttachmentModel,
     ConversationModel,
     MessageModel,
 )
@@ -108,6 +112,107 @@ class SqlAlchemyConversationRepository(ConversationRepository):
         await self._session.flush()
         await self._session.refresh(model)
         return ConversationOrmMapper.message_to_entity(model)
+
+    async def add_user_message_with_attachments(
+        self,
+        message: Message,
+        *,
+        link_attachment_ids: Sequence[UUID] = (),
+        copy_attachment_ids: Sequence[UUID] = (),
+    ) -> Message:
+        model = ConversationOrmMapper.message_to_model(message)
+        self._session.add(model)
+        await self._session.flush()
+
+        if link_attachment_ids:
+            # `message_id IS NULL` hace que dos mensajes no puedan quedarse
+            # con la misma imagen: el que llega segundo no encuentra la fila.
+            result = await self._session.execute(
+                update(ChatAttachmentModel)
+                .where(
+                    ChatAttachmentModel.id.in_(link_attachment_ids),
+                    ChatAttachmentModel.message_id.is_(None),
+                )
+                .values(message_id=message.id)
+                .returning(ChatAttachmentModel.id)
+            )
+            if len(result.scalars().all()) != len(set(link_attachment_ids)):
+                raise ChatAttachmentUnavailableError(
+                    "Alguna de las imágenes adjuntas ya no está disponible."
+                )
+
+        if copy_attachment_ids:
+            await self._copy_attachments(copy_attachment_ids, to_message_id=message.id)
+
+        await self._session.refresh(model)
+        entity = ConversationOrmMapper.message_to_entity(model)
+        entity.attachments = await self._message_attachments(message.id)
+        return entity
+
+    async def _copy_attachments(
+        self, attachment_ids: Sequence[UUID], *, to_message_id: UUID
+    ) -> None:
+        rows = await self._session.execute(
+            select(ChatAttachmentModel, ChatAttachmentBlobModel.content)
+            .join(
+                ChatAttachmentBlobModel,
+                ChatAttachmentBlobModel.attachment_id == ChatAttachmentModel.id,
+            )
+            .where(ChatAttachmentModel.id.in_(attachment_ids))
+            .order_by(ChatAttachmentModel.created_at.asc())
+        )
+        found = rows.all()
+        if len(found) != len(set(attachment_ids)):
+            raise ChatAttachmentUnavailableError(
+                "Alguna de las imágenes adjuntas ya no está disponible."
+            )
+        for source, content in found:
+            copy_id = uuid4()
+            self._session.add(
+                ChatAttachmentModel(
+                    id=copy_id,
+                    user_id=source.user_id,
+                    owner_erp_database_id=source.owner_erp_database_id,
+                    message_id=to_message_id,
+                    mime=source.mime,
+                    filename=source.filename,
+                    size_bytes=source.size_bytes,
+                    width=source.width,
+                    height=source.height,
+                    # Conserva el orden relativo de las imágenes originales.
+                    created_at=source.created_at,
+                )
+            )
+            # La fila del adjunto tiene que existir antes que su blob (FK).
+            await self._session.flush()
+            self._session.add(ChatAttachmentBlobModel(attachment_id=copy_id, content=content))
+        await self._session.flush()
+
+    async def _message_attachments(self, message_id: UUID) -> list[ChatAttachment]:
+        result = await self._session.execute(
+            select(ChatAttachmentModel)
+            .where(ChatAttachmentModel.message_id == message_id)
+            .order_by(ChatAttachmentModel.created_at.asc())
+        )
+        return [ConversationOrmMapper.attachment_to_entity(m) for m in result.scalars().all()]
+
+    async def get_attachments(self, attachment_ids: Sequence[UUID]) -> list[ChatAttachment]:
+        if not attachment_ids:
+            return []
+        result = await self._session.execute(
+            select(ChatAttachmentModel).where(ChatAttachmentModel.id.in_(attachment_ids))
+        )
+        return [ConversationOrmMapper.attachment_to_entity(m) for m in result.scalars().all()]
+
+    async def get_attachment_contents(self, attachment_ids: Sequence[UUID]) -> dict[UUID, bytes]:
+        if not attachment_ids:
+            return {}
+        result = await self._session.execute(
+            select(ChatAttachmentBlobModel.attachment_id, ChatAttachmentBlobModel.content).where(
+                ChatAttachmentBlobModel.attachment_id.in_(attachment_ids)
+            )
+        )
+        return dict(result.tuples().all())
 
     async def list_messages(
         self,

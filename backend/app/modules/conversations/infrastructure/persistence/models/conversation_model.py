@@ -17,6 +17,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database.base import Base
 from app.infrastructure.database.types import JsonType, UtcDateTime, UuidType
+from app.modules.conversations.infrastructure.persistence.models.chat_attachment_model import (
+    ChatAttachmentModel,
+)
 
 
 class ConversationModel(Base):
@@ -135,6 +138,14 @@ class MessageModel(Base):
     )
 
     conversation: Mapped[ConversationModel] = relationship(back_populates="messages")
+    # Solo metadata (los bytes están en otra tabla). De solo lectura: el
+    # enlace mensaje-adjunto lo escribe el repositorio con UPDATE explícito.
+    attachments: Mapped[list[ChatAttachmentModel]] = relationship(
+        ChatAttachmentModel,
+        lazy="selectin",
+        viewonly=True,
+        order_by="ChatAttachmentModel.created_at",
+    )
 
     __table_args__ = (
         # Optimizado para "hilo activo de la conversación" (la query default).

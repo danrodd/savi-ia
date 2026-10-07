@@ -93,7 +93,9 @@ async def test_the_runner_does_not_stream_the_rejection_as_the_answer(
         error="billing_error",
     )
 
-    async def fake_stream(_prompt: str, _options: object) -> AsyncIterator[object]:
+    async def fake_stream(
+        _prompt: str, _options: object, _images: object = ()
+    ) -> AsyncIterator[object]:
         yield rejected
 
     monkeypatch.setattr(claude_runner, "_build_options", lambda *a, **k: None)

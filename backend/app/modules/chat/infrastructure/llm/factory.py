@@ -6,12 +6,12 @@ proveedor. Agregar uno es sumar una rama acá.
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from uuid import UUID
 
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
-from app.modules.chat.domain.entities import ChatEvent, ErrorEvent
+from app.modules.chat.domain.entities import ChatEvent, ErrorEvent, ImageInput
 from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
 from app.modules.chat.domain.interfaces import (
     ActiveProvider,
@@ -83,6 +83,7 @@ class ResolvingLLMRunner(LLMRunner):
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
         document_context: TurnDocumentContext | None = None,
+        images: Sequence[ImageInput] = (),
     ) -> AsyncIterator[ChatEvent]:
         try:
             runner = self._factory.build(await self._resolver.resolve())
@@ -95,6 +96,7 @@ class ResolvingLLMRunner(LLMRunner):
             allowed_modules=allowed_modules,
             erp_database_id=erp_database_id,
             document_context=document_context,
+            images=images,
         ):
             yield event
 

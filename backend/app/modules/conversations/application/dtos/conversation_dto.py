@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
+from app.modules.conversations.domain.entities import ChatAttachment
 from app.modules.conversations.domain.value_objects import (
     MessageFinishReason,
     MessageSource,
@@ -51,6 +52,7 @@ class MessageDTO:
     superseded_at: datetime | None = None
     superseded_by_id: UUID | None = None
     sources: tuple[MessageSource, ...] = ()
+    attachments: tuple[ChatAttachment, ...] = ()
 
 
 @dataclass(frozen=True)

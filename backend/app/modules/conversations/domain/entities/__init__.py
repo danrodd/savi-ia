@@ -1,4 +1,5 @@
+from app.modules.conversations.domain.entities.chat_attachment import ChatAttachment
 from app.modules.conversations.domain.entities.conversation import Conversation
 from app.modules.conversations.domain.entities.message import Message, MessageRole
 
-__all__ = ["Conversation", "Message", "MessageRole"]
+__all__ = ["ChatAttachment", "Conversation", "Message", "MessageRole"]

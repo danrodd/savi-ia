@@ -1,5 +1,6 @@
 from app.shared.rate_limit.guards import (
     effective_upload_limit,
+    enforce_chat_attachment_limits,
     enforce_chat_limits,
     enforce_login_limits,
     enforce_refresh_limits,
@@ -20,6 +21,7 @@ __all__ = [
     "RateLimitDecision",
     "RateLimitPolicy",
     "SlidingWindowRateLimiter",
+    "enforce_chat_attachment_limits",
     "enforce_chat_limits",
     "enforce_login_limits",
     "enforce_refresh_limits",

@@ -97,6 +97,7 @@ async def chat(
             user_id=user.id,
             erp_database_id=_require_database(user),
         ),
+        attachment_ids=request.attachment_ids,
     )
 
     # La base de la conversación tiene que seguir disponible: si la
@@ -145,6 +146,7 @@ async def chat(
             allowed_modules=modules_filter,
             erp_database_id=conversation_database_id,
             document_context=document_context,
+            attachment_ids=request.attachment_ids,
         ):
             turno.publish(event)
 

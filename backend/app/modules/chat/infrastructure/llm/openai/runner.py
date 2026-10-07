@@ -13,10 +13,11 @@ que la segunda vuelta falle o pierda contexto.
 from __future__ import annotations
 
 import asyncio
+import base64
 import inspect
 import json
 import logging
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Sequence
 from typing import Any, Protocol, cast
 from uuid import UUID
 
@@ -28,6 +29,7 @@ from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
+    ImageInput,
     TextDeltaEvent,
     ToolResult,
     ToolResultEvent,
@@ -106,6 +108,23 @@ def _quota_exhausted(error: Exception) -> bool:
     )
 
 
+def _user_content(prompt: str, images: Sequence[ImageInput]) -> str | list[dict[str, str]]:
+    """Contenido del mensaje del usuario.
+
+    Sin imágenes sigue siendo el texto a secas (cero cambio para los turnos
+    solo de texto). Con imágenes, una lista donde cada imagen va precedida de
+    una etiqueta que dice de cuál mensaje es.
+    """
+    if not images:
+        return prompt
+    content: list[dict[str, str]] = [{"type": "input_text", "text": prompt}]
+    for image in images:
+        encoded = base64.b64encode(image.data).decode("ascii")
+        content.append({"type": "input_text", "text": image.label})
+        content.append({"type": "input_image", "image_url": f"data:{image.mime};base64,{encoded}"})
+    return content
+
+
 def _failure_code(event: Any) -> int | None:
     """Código de un evento `response.failed`/`error`.
 
@@ -159,6 +178,7 @@ class OpenAIRunner(LLMRunner):
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
         document_context: TurnDocumentContext | None = None,
+        images: Sequence[ImageInput] = (),
     ) -> AsyncIterator[ChatEvent]:
         client = cast(
             _AsyncClient, self._client or AsyncOpenAI(api_key=self._provider.credential)
@@ -173,7 +193,7 @@ class OpenAIRunner(LLMRunner):
         # Mezcla deliberada de dicts neutros y objetos de la SDK: la API
         # acepta ambos y reenviar el objeto original preserva los items de
         # razonamiento que solo ella sabe serializar.
-        input_items: list[Any] = [{"role": "user", "content": prompt}]
+        input_items: list[Any] = [{"role": "user", "content": _user_content(prompt, images)}]
         usage = TokenUsage()
         truncator = ResponseTruncator(self._settings.max_response_chars)
         first_token = False

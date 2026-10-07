@@ -10,6 +10,7 @@ from app.modules.conversations.application.dtos import (
     ConversationWithMessagesDTO,
     MessageDTO,
 )
+from app.modules.conversations.domain.entities import ChatAttachment
 
 
 def _empty_input() -> dict[str, Any]:
@@ -77,6 +78,32 @@ def _empty_sources() -> list[MessageSourceResponse]:
     return []
 
 
+class ChatAttachmentResponse(BaseModel):
+    """Imagen adjunta. Los bytes se piden aparte: `GET /chat/attachments/{id}`."""
+
+    id: UUID
+    mime: str
+    filename: str
+    size_bytes: int
+    width: int
+    height: int
+
+    @classmethod
+    def from_entity(cls, attachment: ChatAttachment) -> "ChatAttachmentResponse":
+        return cls(
+            id=attachment.id,
+            mime=attachment.mime,
+            filename=attachment.filename,
+            size_bytes=attachment.size_bytes,
+            width=attachment.width,
+            height=attachment.height,
+        )
+
+
+def _empty_attachments() -> list[ChatAttachmentResponse]:
+    return []
+
+
 class MessageResponse(BaseModel):
     id: UUID
     conversation_id: UUID
@@ -94,6 +121,7 @@ class MessageResponse(BaseModel):
     superseded_at: datetime | None = None
     superseded_by_id: UUID | None = None
     sources: list[MessageSourceResponse] = Field(default_factory=_empty_sources)
+    attachments: list[ChatAttachmentResponse] = Field(default_factory=_empty_attachments)
 
     @classmethod
     def from_dto(cls, dto: MessageDTO) -> "MessageResponse":
@@ -131,6 +159,7 @@ class MessageResponse(BaseModel):
                 )
                 for s in dto.sources
             ],
+            attachments=[ChatAttachmentResponse.from_entity(a) for a in dto.attachments],
         )
 
 

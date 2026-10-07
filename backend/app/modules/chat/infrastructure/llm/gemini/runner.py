@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Sequence
 from typing import Protocol, cast
 from uuid import UUID, uuid4
 
@@ -16,6 +16,7 @@ from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
+    ImageInput,
     TextDeltaEvent,
     ThinkingDeltaEvent,
     ToolResult,
@@ -89,6 +90,16 @@ def _finish_reason(response: types.GenerateContentResponse) -> str | None:
     return reason.value if reason is not None else None
 
 
+def _user_parts(prompt: str, images: Sequence[ImageInput]) -> list[types.Part]:
+    """Partes del mensaje del usuario: el texto y, por cada imagen, una
+    etiqueta que dice de cuál mensaje es seguida de sus bytes."""
+    parts = [types.Part.from_text(text=prompt)]
+    for image in images:
+        parts.append(types.Part.from_text(text=image.label))
+        parts.append(types.Part.from_bytes(data=image.data, mime_type=image.mime))
+    return parts
+
+
 def _is_thinking_error(error: Exception) -> bool:
     text = str(error).lower()
     return "thinking" in text and ("support" in text or "invalid" in text)
@@ -145,6 +156,7 @@ class GeminiRunner(LLMRunner):
         allowed_modules: frozenset[ModuleCode] | None = None,
         erp_database_id: UUID | None = None,
         document_context: TurnDocumentContext | None = None,
+        images: Sequence[ImageInput] = (),
     ) -> AsyncIterator[ChatEvent]:
         client = self._client or genai.Client(api_key=self._provider.credential)
         tools = build_savi_tools(
@@ -153,7 +165,7 @@ class GeminiRunner(LLMRunner):
             erp_database_id=erp_database_id,
             document_context=document_context,
         )
-        contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt)])]
+        contents = [types.Content(role="user", parts=_user_parts(prompt, images))]
         usage = TokenUsage()
         truncator = ResponseTruncator(self._settings.max_response_chars)
         thinking = True

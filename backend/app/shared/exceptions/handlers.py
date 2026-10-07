@@ -168,6 +168,17 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=409, content={"errorCode": "document_conflict", "detail": str(exc)}
         )
 
+    from app.modules.conversations.domain.exceptions import ChatAttachmentTooLargeError
+
+    @app.exception_handler(ChatAttachmentTooLargeError)
+    async def _chat_attachment_too_large(
+        _: Request, exc: ChatAttachmentTooLargeError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=413,
+            content={"errorCode": "file_too_large", "detail": str(exc), "limit_mb": exc.limit_mb},
+        )
+
     @app.exception_handler(DomainError)
     async def _domain(_: Request, exc: DomainError) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})

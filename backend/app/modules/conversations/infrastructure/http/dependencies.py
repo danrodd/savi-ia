@@ -2,16 +2,24 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.infrastructure.config import Settings, get_settings
 from app.infrastructure.database.session import AgentSessionDep
 from app.modules.conversations.application.use_cases import (
     CreateConversationUseCase,
     DeleteConversationUseCase,
+    GetChatAttachmentUseCase,
     GetConversationWithMessagesUseCase,
     ListConversationsUseCase,
     RenameConversationUseCase,
+    UploadChatAttachmentUseCase,
 )
-from app.modules.conversations.domain.interfaces import ConversationRepository
+from app.modules.conversations.domain.interfaces import (
+    ChatAttachmentRepository,
+    ConversationRepository,
+)
+from app.modules.conversations.infrastructure.imaging import PillowImageProcessor
 from app.modules.conversations.infrastructure.persistence.repositories import (
+    SqlAlchemyChatAttachmentRepository,
     SqlAlchemyConversationRepository,
 )
 
@@ -67,4 +75,37 @@ RenameConversationUseCaseDep = Annotated[
 ]
 DeleteConversationUseCaseDep = Annotated[
     DeleteConversationUseCase, Depends(get_delete_conversation_use_case)
+]
+
+
+def get_chat_attachment_repository(session: AgentSessionDep) -> ChatAttachmentRepository:
+    return SqlAlchemyChatAttachmentRepository(session)
+
+
+ChatAttachmentRepositoryDep = Annotated[
+    ChatAttachmentRepository, Depends(get_chat_attachment_repository)
+]
+
+
+def _settings() -> Settings:
+    return get_settings()
+
+
+def get_upload_chat_attachment_use_case(
+    repository: ChatAttachmentRepositoryDep,
+) -> UploadChatAttachmentUseCase:
+    return UploadChatAttachmentUseCase(repository, PillowImageProcessor(), _settings())
+
+
+def get_get_chat_attachment_use_case(
+    repository: ChatAttachmentRepositoryDep,
+) -> GetChatAttachmentUseCase:
+    return GetChatAttachmentUseCase(repository)
+
+
+UploadChatAttachmentUseCaseDep = Annotated[
+    UploadChatAttachmentUseCase, Depends(get_upload_chat_attachment_use_case)
+]
+GetChatAttachmentUseCaseDep = Annotated[
+    GetChatAttachmentUseCase, Depends(get_get_chat_attachment_use_case)
 ]

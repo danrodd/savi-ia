@@ -112,6 +112,17 @@ class Settings(BaseSettings):
     # de ejecutar.
     free_query_max_estimated_rows: int = Field(default=1000)
 
+    # ── Imágenes adjuntas al chat ────────────────────────────────────────
+    # Peso máximo del archivo subido (antes de reducirlo).
+    chat_image_max_mb: int = Field(default=5)
+    chat_images_per_message: int = Field(default=4)
+    # Lado mayor tras reducir: 2048 px alcanza para leer texto de una captura
+    # y mantiene acotado el costo en tokens de imagen y el peso en la BD.
+    chat_image_max_side_px: int = Field(default=2048)
+    # Imágenes de turnos anteriores que se reenvían al modelo (las más
+    # recientes primero), además de las del turno actual.
+    chat_history_images_max: int = Field(default=4)
+
     # ── Conocimiento de la empresa (documentos propios) ──────────────────
     # Límites de carga por archivo y por documento. 60 MB porque un PDF
     # armado con fotos del celular pesa 1-5 MB por página.
@@ -222,6 +233,8 @@ class Settings(BaseSettings):
     rate_limit_chat_per_minute: int = Field(default=20)
     rate_limit_chat_per_hour: int = Field(default=200)
     rate_limit_upload_per_hour: int = Field(default=30)
+    # Imágenes adjuntas al chat: por usuario y por hora.
+    rate_limit_chat_attachments_per_hour: int = Field(default=60)
     # Techo del cupo que un administrador puede fijar desde la pantalla de
     # Conocimiento: sube el valor sin editar el `.env`, pero no sin límite.
     rate_limit_upload_per_hour_max: int = Field(default=1000)

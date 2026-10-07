@@ -11,6 +11,7 @@ from app.modules.chat.domain.entities.chat_event import (
     ToolResultEvent,
     ToolUseEvent,
 )
+from app.modules.chat.domain.entities.image_input import ImageInput
 from app.modules.chat.domain.entities.tool_spec import ToolHandler, ToolResult, ToolSpec
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     "ChatEventType",
     "DoneEvent",
     "ErrorEvent",
+    "ImageInput",
     "SourcesEvent",
     "SupersededEvent",
     "TextDeltaEvent",

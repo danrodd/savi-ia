@@ -21,6 +21,7 @@ request es lo correcto. El único que necesita esto es el turno.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -32,7 +33,7 @@ from app.modules.conversations.infrastructure.persistence.repositories import (
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-    from app.modules.conversations.domain.entities import Conversation, Message
+    from app.modules.conversations.domain.entities import ChatAttachment, Conversation, Message
 
 
 class ShortLivedConversationRepository(ConversationRepository):
@@ -96,6 +97,34 @@ class ShortLivedConversationRepository(ConversationRepository):
             result = await SqlAlchemyConversationRepository(session).add_message(message)
             await session.commit()
             return result
+
+    async def add_user_message_with_attachments(
+        self,
+        message: Message,
+        *,
+        link_attachment_ids: Sequence[UUID] = (),
+        copy_attachment_ids: Sequence[UUID] = (),
+    ) -> Message:
+        async with self._sessionmaker() as session:
+            result = await SqlAlchemyConversationRepository(
+                session
+            ).add_user_message_with_attachments(
+                message,
+                link_attachment_ids=link_attachment_ids,
+                copy_attachment_ids=copy_attachment_ids,
+            )
+            await session.commit()
+            return result
+
+    async def get_attachments(self, attachment_ids: Sequence[UUID]) -> list[ChatAttachment]:
+        async with self._sessionmaker() as session:
+            return await SqlAlchemyConversationRepository(session).get_attachments(attachment_ids)
+
+    async def get_attachment_contents(self, attachment_ids: Sequence[UUID]) -> dict[UUID, bytes]:
+        async with self._sessionmaker() as session:
+            return await SqlAlchemyConversationRepository(session).get_attachment_contents(
+                attachment_ids
+            )
 
     async def list_messages(
         self,

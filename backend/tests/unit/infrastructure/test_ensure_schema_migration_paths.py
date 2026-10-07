@@ -115,7 +115,7 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     finally:
         engine.dispose()
-        assert version == "f4b8d2e6a9c1"
+        assert version == "a5c9e3b7d1f4"
 
 
 def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
@@ -243,4 +243,73 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert row.erp_database_id == queried_database_id
     # ...y la identidad se backfillea desde la base consultada.
     assert row.owner_erp_database_id == queried_database_id
-    assert version == "f4b8d2e6a9c1"
+    assert version == "a5c9e3b7d1f4"
+
+
+_CHAT_ATTACHMENT_COLUMNS = {
+    "id",
+    "user_id",
+    "owner_erp_database_id",
+    "message_id",
+    "mime",
+    "filename",
+    "size_bytes",
+    "width",
+    "height",
+    "created_at",
+}
+
+
+def test_fresh_sqlite_includes_the_chat_attachment_tables(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Una instalación nueva nace del metadata: los modelos nuevos tienen que
+    estar registrados en `bootstrap.py` o `create_all` no crea sus tablas."""
+    db_path = tmp_path / "fresh_attachments.db"
+
+    ensure_schema(_settings_for(db_path, monkeypatch))
+
+    assert _table_columns(db_path, "chat_attachments") == _CHAT_ATTACHMENT_COLUMNS
+    assert _table_columns(db_path, "chat_attachment_blobs") == {"attachment_id", "content"}
+    assert "ix_chat_attachments_message" in _index_names(db_path, "chat_attachments")
+
+
+def test_existing_sqlite_gets_the_chat_attachment_tables_on_upgrade(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Instalación ya en uso, sellada en la revisión anterior a los adjuntos:
+    el arranque siguiente corre la migración real y crea las dos tablas."""
+    db_path = tmp_path / "existing_attachments.db"
+    settings = _settings_for(db_path, monkeypatch)
+    command.stamp(_alembic_config(), "f4b8d2e6a9c1")
+    get_settings.cache_clear()
+
+    ensure_schema(settings)
+
+    assert _table_columns(db_path, "chat_attachments") == _CHAT_ATTACHMENT_COLUMNS
+    assert _table_columns(db_path, "chat_attachment_blobs") == {"attachment_id", "content"}
+    assert "ix_chat_attachments_owner_created" in _index_names(db_path, "chat_attachments")
+
+    # Idempotente: arrancar otra vez no rompe nada.
+    get_settings.cache_clear()
+    ensure_schema(settings)
+
+
+def test_chat_attachment_migration_downgrades_cleanly(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db_path = tmp_path / "downgrade_attachments.db"
+    settings = _settings_for(db_path, monkeypatch)
+    command.stamp(_alembic_config(), "f4b8d2e6a9c1")
+    get_settings.cache_clear()
+    ensure_schema(settings)
+
+    get_settings.cache_clear()
+    command.downgrade(_alembic_config(), "f4b8d2e6a9c1")
+
+    engine = create_engine(f"sqlite:///{db_path.as_posix()}")
+    try:
+        tables = set(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()
+    assert not {"chat_attachments", "chat_attachment_blobs"} & tables

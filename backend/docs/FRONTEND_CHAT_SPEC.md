@@ -51,6 +51,18 @@ type Message = {
   superseded_by_id: string | null;    // UUID
   // Documentos de la empresa citados en la respuesta. [] si no citó ninguno.
   sources: MessageSource[];
+  // Imágenes adjuntas (solo mensajes role=user). [] si no tiene. Los mensajes
+  // superseded conservan las suyas. Los bytes: GET /chat/attachments/{id}.
+  attachments: ChatAttachment[];
+}
+
+type ChatAttachment = {
+  id: string;           // UUID
+  mime: "image/png" | "image/jpeg" | "image/webp";
+  filename: string;     // saneado, máx. 255
+  size_bytes: number;   // peso ya procesado (el que se guardó)
+  width: number;        // px, ya reducida
+  height: number;
 }
 
 type MessageSource = {
@@ -205,18 +217,25 @@ historial. Con `?include_superseded=true` lo usas para el panel de
 
 ```ts
 type ChatBody =
-  | { conversation_id: string; action?: "send"; message: string }
-  | { conversation_id: string; action: "edit_last"; message: string }
+  | { conversation_id: string; action?: "send"; message?: string; attachment_ids?: string[] }
+  | { conversation_id: string; action: "edit_last"; message?: string; attachment_ids?: string[] }
   | { conversation_id: string; action: "regenerate" }
 ```
 
 - `action: "send"` (default si se omite) — envío normal del primer
-  mensaje o de uno nuevo. Requiere `message` (1–16000 chars).
+  mensaje o de uno nuevo. Requiere `message` (hasta 16000 chars) **o**
+  `attachment_ids` (al menos uno): un mensaje solo con imágenes es válido.
 - `action: "edit_last"` — reemplaza el último mensaje del usuario
   activo. Marca el viejo (y el assistant que le respondió, si existe)
-  como `superseded` y regenera la respuesta. Requiere `message`.
+  como `superseded` y regenera la respuesta. Requiere `message` o
+  `attachment_ids`.
 - `action: "regenerate"` — regenera la última respuesta del asistente
-  sin tocar el mensaje del usuario. NO requiere `message`.
+  sin tocar el mensaje del usuario. NO requiere `message`; `message` y
+  `attachment_ids` se ignoran si llegan: se reusan las imágenes del
+  último mensaje del usuario.
+- `attachment_ids` — ids devueltos por `POST /chat/attachments` (ver
+  [Imágenes adjuntas](#imágenes-adjuntas)). Máximo 4 por mensaje
+  (`CHAT_IMAGES_PER_MESSAGE`); los repetidos cuentan una vez.
 
 **Errores antes del stream**:
 
@@ -229,6 +248,9 @@ type ChatBody =
   se pueda editar en esta conversación".
 - `regenerate` sin respuesta del asistente: "No hay una respuesta del
   asistente que se pueda regenerar; envía primero un mensaje".
+- Imágenes: más de las permitidas por mensaje ("Un mensaje admite hasta N
+  imágenes adjuntas."), o algún id que no existe, no es del usuario o ya se
+  usó en otro mensaje (ver reglas en [Imágenes adjuntas](#imágenes-adjuntas)).
 
 Estos errores llegan **antes** del SSE, así que llegan como JSON normal.
 Cuando uses `edit_last` o `regenerate`, deshabilita el botón si no se
@@ -265,6 +287,93 @@ data: {"type":"text_delta","text":" el asistente del ERP de SEO Group."}
 
 data: {"type":"done","usage":{...},"cost_usd":0.012,"finish_reason":"complete"}
 ```
+
+---
+
+### Imágenes adjuntas
+
+Subir y enviar son **dos pasos**: primero se sube cada imagen y se obtiene
+un `id`; después `POST /chat` lo referencia en `attachment_ids`. Permite
+mostrar la miniatura apenas termina la subida y reintentar solo la que falló.
+
+#### `POST /chat/attachments` — subir una imagen
+
+`multipart/form-data` con un único campo `file`. Requiere sesión.
+
+```
+POST /chat/attachments
+Content-Type: multipart/form-data; boundary=...
+
+file=<bytes>
+```
+
+`201`:
+
+```json
+{ "id": "…", "mime": "image/png", "filename": "captura.png",
+  "size_bytes": 184233, "width": 1280, "height": 720 }
+```
+
+Qué hace el backend con el archivo:
+
+- **Formato por contenido**: acepta PNG, JPEG, WEBP y GIF. No confía en el
+  nombre ni en el `Content-Type` que mande el navegador.
+- **Orientación EXIF** aplicada y metadatos (GPS, cámara) descartados.
+- **Reduce** el lado mayor a 2048 px (`CHAT_IMAGE_MAX_SIDE_PX`); nunca agranda.
+  Mantiene el formato. **GIF**: se guarda solo el primer cuadro, como PNG
+  (`mime` vuelve `image/png`); ningún proveedor interpreta la animación.
+- `filename` se sanea (sin ruta ni caracteres raros). `width`/`height` y
+  `size_bytes` son los de la imagen **ya procesada**.
+- Una imagen subida y nunca enviada se descarta sola pasadas 24 h (se limpia
+  al subir otra).
+
+Errores:
+
+| Status | Cuándo |
+|--------|--------|
+| `413` `{ "errorCode": "file_too_large", "detail", "limit_mb" }` | El archivo supera 5 MB (`CHAT_IMAGE_MAX_MB`). |
+| `422` `{ "detail" }` | No es una imagen válida, el formato no está admitido, está vacío o tiene dimensiones excesivas. |
+| `429` `{ "errorCode": "rate_limited" }` + `Retry-After` | Tope de 60 subidas por hora por usuario (`RATE_LIMIT_CHAT_ATTACHMENTS_PER_HOUR`), aparte del de `/chat`. |
+
+Validá en el cliente el peso y el tipo antes de subir para ahorrar el viaje;
+el backend igual lo vuelve a comprobar.
+
+#### `GET /chat/attachments/{id}` — bytes de la imagen
+
+Devuelve los bytes con su `Content-Type` y `Cache-Control: private,
+max-age=86400`. **Solo el dueño**: cualquier otro caso (ajena, inexistente)
+es `404`, sin distinguirlos. Como el endpoint exige el header
+`Authorization`, un `<img src>` directo no lo lleva: pedí el blob con el
+cliente HTTP y usá `URL.createObjectURL` (revocalo al desmontar).
+
+#### Reglas de `attachment_ids` en `POST /chat`
+
+| Acción | Qué se espera en `attachment_ids` | Qué pasa |
+|--------|-----------------------------------|----------|
+| `send` | Imágenes recién subidas (sin mensaje). | Se enlazan al mensaje nuevo, junto con el mensaje, en la misma transacción. |
+| `edit_last` | Las imágenes que el mensaje nuevo **debe tener**: las que se conservan del mensaje que se edita **más** las recién subidas. | Las recién subidas se enlazan. Las conservadas se **copian** (id nuevo): la versión anterior sigue con las suyas. Las que no se listan quedan fuera del mensaje nuevo. |
+| `regenerate` | Se ignora. | Se reusan las imágenes del último mensaje del usuario (no se crean nuevas). |
+
+En `edit_last`, los ids de las imágenes conservadas son los que ya trae
+`message.attachments` del mensaje que se edita; el mensaje nuevo recibe
+**ids distintos** (los de las copias), así que releé el hilo con
+`GET /conversations/{id}` si necesitás los ids definitivos.
+
+Una imagen sirve para **un solo mensaje**: reusar el id de una ya enviada
+(salvo en `edit_last`, del mensaje que se reemplaza) es `422`.
+
+#### Qué recibe el modelo
+
+- Todas las imágenes del mensaje actual.
+- Además, hasta 4 imágenes de mensajes **anteriores** del hilo activo (las
+  más recientes primero; `CHAT_HISTORY_IMAGES_MAX`), para que las preguntas
+  de seguimiento ("¿y de qué color es el fondo?") no obliguen a volver a
+  adjuntar. Los mensajes reemplazados no aportan imágenes.
+- En el historial en texto, cada imagen aparece como `[imagen adjunta:
+  nombre]`, aunque ya no se reenvíe.
+- Un mensaje **solo con imágenes** se guarda con `content: ""`; la UI debe
+  mostrar las miniaturas aunque no haya texto. El auto-título usa "Imagen
+  adjunta" cuando no hay texto.
 
 ---
 
