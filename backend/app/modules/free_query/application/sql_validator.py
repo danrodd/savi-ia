@@ -33,6 +33,9 @@ con lo que el alcance es la máquina entera, no solo la base.
 
 from __future__ import annotations
 
+import re
+from datetime import date, timedelta
+
 import sqlglot
 from sqlglot import errors as sqlglot_errors
 from sqlglot import exp
@@ -79,6 +82,25 @@ BLOCKED_SCHEMAS: frozenset[str] = frozenset({"pg_catalog", "pg_toast"})
 # Tablas del sistema accesibles sin calificar el esquema: `SELECT * FROM
 # pg_shadow` funciona sin escribir `pg_catalog.`.
 _BLOCKED_TABLE_PREFIX = "pg_"
+
+# Datos personales de terceros que nunca se devuelven al usuario
+# (`docs/DB_MAP.md`). El catálogo semántico ya no los expone, pero el SQL libre
+# sí podía: medido, un "¿qué proveedores están bloqueados?" mostró el número de
+# identificación del tercero. Se bloquean en lo que la consulta DEVUELVE; en un
+# WHERE siguen sirviendo para buscar (encontrar por NIT no lo muestra), y dentro
+# de un agregado (`COUNT(email)`) no exponen el valor.
+SENSITIVE_COLUMNS: frozenset[str] = frozenset(
+    {
+        "numeroidentificacion",
+        "telefonofijo",
+        "telefono",
+        "celular",
+        "email",
+        "correo",
+        "correoelectronico",
+        "direccion",
+    }
+)
 
 
 def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
@@ -127,7 +149,9 @@ def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
     _reject_select_star_top_level(root)
     _reject_dangerous_functions(root)
     _reject_system_catalogs(root)
+    _reject_sensitive_columns(root)
     _check_subquery_depth(root, policy)
+    _make_date_ranges_inclusive(root)
 
     # Saneamos el LIMIT del root: si falta o es mayor que el cap, lo
     # ponemos en el cap.
@@ -229,6 +253,58 @@ def _reject_system_catalogs(root: exp.Select) -> None:
                 "se puede consultar. Para descubrir nombres de tablas o columnas "
                 "usá `information_schema`."
             )
+
+
+def _reject_sensitive_columns(root: exp.Select) -> None:
+    # Cada SELECT, también los de subqueries: si no, `SELECT x FROM (SELECT
+    # email AS x ...)` lo devolvería renombrado.
+    for select in [root, *root.find_all(exp.Select)]:
+        for projection in select.expressions:
+            for column in projection.find_all(exp.Column):
+                if column.name.lower() not in SENSITIVE_COLUMNS:
+                    continue
+                if column.find_ancestor(exp.AggFunc) is not None:
+                    continue
+                raise AstValidationError(
+                    f"La columna '{column.name}' es un dato personal y no se puede "
+                    "devolver (identificación, teléfono, email, dirección). Mostrá "
+                    "el nombre y el código del tercero en su lugar."
+                )
+
+
+_DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _make_date_ranges_inclusive(root: exp.Select) -> None:
+    """`fecha BETWEEN '2026-01-01' AND '2026-03-31'` deja afuera el 31 entero
+    cuando `fecha` tiene hora: compara contra la medianoche. Medido con Gemini:
+    marzo dio $2.678 M en vez de $2.712 M (1.532 facturas del día 31 menos).
+
+    Se reescribe a `>= inicio AND < día siguiente al fin`, que es lo mismo para
+    una columna DATE y lo correcto para una con hora. El catálogo semántico ya
+    lo hacía así (`query_compiler`); esto lo extiende al SQL libre sin depender
+    de que el modelo lo sepa."""
+    for between in list(root.find_all(exp.Between)):
+        low, high = between.args.get("low"), between.args.get("high")
+        if not (isinstance(low, exp.Literal) and isinstance(high, exp.Literal)):
+            continue
+        if not (low.is_string and high.is_string):
+            continue
+        if not (_DATE_ONLY.match(low.this) and _DATE_ONLY.match(high.this)):
+            continue
+        try:
+            next_day = date.fromisoformat(high.this) + timedelta(days=1)
+        except ValueError:
+            continue
+        column = between.this
+        between.replace(
+            exp.paren(
+                exp.and_(
+                    exp.GTE(this=column.copy(), expression=exp.Literal.string(low.this)),
+                    exp.LT(this=column.copy(), expression=exp.Literal.string(next_day.isoformat())),
+                )
+            )
+        )
 
 
 def _check_subquery_depth(root: exp.Select, policy: FreeQueryPolicy) -> None:

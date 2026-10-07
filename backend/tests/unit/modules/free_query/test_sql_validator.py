@@ -183,3 +183,56 @@ def test_allows_information_schema() -> None:
 def test_allows_ordinary_query_functions(sql: str) -> None:
     """La lista de rechazo no puede llevarse puesto el uso legítimo."""
     assert _valida(sql)
+
+
+# ── Datos personales de terceros ─────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        'SELECT "numeroIdentificacion" FROM "Tercero"."Tercero" LIMIT 5',
+        'SELECT t."nombreCompleto", t."celular" FROM "Tercero"."Tercero" t LIMIT 5',
+        'SELECT CONCAT(t."email", \'\') AS x FROM "Tercero"."Tercero" t LIMIT 5',
+        'SELECT x FROM (SELECT "direccion" AS x FROM "Tercero"."Tercero") s LIMIT 5',
+    ],
+)
+def test_personal_data_is_never_returned(sql: str) -> None:
+    with pytest.raises(AstValidationError, match="dato personal"):
+        _valida(sql)
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        # Buscar por identificación no la muestra.
+        'SELECT "idTercero" FROM "Tercero"."Tercero" WHERE "numeroIdentificacion" = \'1\' LIMIT 1',
+        # Un agregado no expone el valor.
+        'SELECT COUNT("email") FROM "Tercero"."Tercero" LIMIT 1',
+    ],
+)
+def test_personal_data_can_still_be_used_to_search_or_count(sql: str) -> None:
+    assert _valida(sql)
+
+
+# ── Rangos de fechas ─────────────────────────────────────────────────────
+
+
+def test_a_date_between_includes_the_whole_last_day() -> None:
+    """Con `fecha` con hora, BETWEEN '...-31' cortaba el 31 a la medianoche."""
+    sql = _valida(
+        'SELECT SUM(total) FROM "CuentaCobrar"."Factura" '
+        "WHERE fecha BETWEEN '2026-03-01' AND '2026-03-31' LIMIT 1"
+    )
+
+    assert "BETWEEN" not in sql.upper()
+    assert "fecha >= '2026-03-01'" in sql and "fecha < '2026-04-01'" in sql
+
+
+def test_a_between_with_timestamps_or_numbers_is_left_alone() -> None:
+    sql = _valida(
+        'SELECT 1 FROM "CuentaCobrar"."Factura" WHERE total BETWEEN 1 AND 5 '
+        "AND fecha BETWEEN '2026-03-01 08:00' AND '2026-03-01 18:00' LIMIT 1"
+    )
+
+    assert sql.upper().count("BETWEEN") == 2
