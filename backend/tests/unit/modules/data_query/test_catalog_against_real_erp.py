@@ -210,6 +210,31 @@ async def test_terceros_with_a_boolean_filter_runs(erp_engine: AsyncEngine) -> N
 
 
 @pytest.mark.asyncio
+async def test_blocked_suppliers_are_not_the_inactive_ones(
+    erp_engine: AsyncEngine, erp_name: str
+) -> None:
+    """"¿Qué proveedores están bloqueados?" se respondía con los inactivos:
+    son columnas distintas del ERP. En farmacias el único bloqueado es
+    COPHARCOL, y está ACTIVO."""
+    query = SemanticQuery(
+        entidad="terceros",
+        modo=QueryMode.DETAIL,
+        campos=["id", "nombre", "activo", "bloqueado", "motivo_bloqueo"],
+        filtros=[
+            QueryFilter("es_proveedor", FilterOp.EQ, True),
+            QueryFilter("bloqueado", FilterOp.EQ, True),
+        ],
+    )
+
+    rows = await _run(erp_engine, query)
+
+    assert all(r["bloqueado"] is True for r in rows)
+    if erp_name == "farmacias_similares":
+        assert [(r["id"], r["nombre"], r["activo"]) for r in rows] == [(575, "COPHARCOL", True)]
+        assert rows[0]["motivo_bloqueo"] is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("entidad", "dimension", "metrica"),
     [
