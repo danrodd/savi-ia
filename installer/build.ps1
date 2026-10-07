@@ -186,6 +186,14 @@ try {
         --workpath (Join-Path $InstallerDir 'build\work') `
         (Join-Path $InstallerDir 'savi.spec')
     if ($LASTEXITCODE -ne 0) { throw 'PyInstaller falló.' }
+
+    # Chequeo de conexión del asistente: lo usa el instalador antes de copiar SAVI.
+    uv run pyinstaller `
+        --noconfirm `
+        --distpath (Join-Path $InstallerDir 'build\dbcheck') `
+        --workpath (Join-Path $InstallerDir 'build\work-dbcheck') `
+        (Join-Path $InstallerDir 'dbcheck.spec')
+    if ($LASTEXITCODE -ne 0) { throw 'PyInstaller falló al empaquetar savi-dbcheck.' }
 }
 finally {
     Pop-Location

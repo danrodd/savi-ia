@@ -11,7 +11,7 @@
 |---|---|
 | Equipo | Windows 10/11, con permisos de administrador para instalar |
 | Bases del ERP | Servidor, puerto, nombre de la base, usuario y contraseña de **cada** cliente que se va a atender. El ERP no se crea: es la base que ya existe; SAVI la abre en solo lectura |
-| Base de SAVI | **Archivo local** (por defecto): no hay que preparar nada, se crea sola. **PostgreSQL**: la base tiene que existir antes (vacía alcanza: `CREATE DATABASE savi;`); las tablas las crea SAVI al arrancar |
+| Base de SAVI | **PostgreSQL** (recomendado): el servidor y un usuario con permiso para crear bases (por ejemplo `postgres`). SAVI crea la base al terminar la instalación y las tablas al arrancar. **Archivo local**: no hay que preparar nada, pero es solo para pruebas o un único usuario (ver abajo) |
 | Proveedor de IA | Al menos uno: cuenta de Claude (sesión o API key), API key de OpenAI o de Gemini. Con saldo |
 | Internet | Para descargar prerrequisitos, para la IA y para leer sitios web |
 
@@ -24,12 +24,59 @@
 1. Ejecutar `SAVI-Setup-<versión>.exe` como administrador.
 2. **Requisitos**: el asistente instala lo que falte (CLI de Claude, Git).
 3. **Base del ERP**: los datos de la base principal. Las demás se agregan
-   después desde la aplicación.
-4. **Base de SAVI**: archivo local, salvo que se quiera compartir el historial
-   entre equipos.
+   después desde la aplicación. **Probar conexión** dice si los datos están
+   bien y, si no, qué falla.
+4. **Base de SAVI**: PostgreSQL. Probar conexión igual que en el paso
+   anterior.
 5. **Claude y puerto**: dejar el puerto en 31900. La credencial de Claude se
    puede dejar vacía y resolverla al final en el navegador.
 6. Finalizar: se abre SAVI en el navegador.
+
+### Prueba de conexión del asistente
+
+El botón **Probar conexión** y el botón **Siguiente** prueban los datos antes
+de instalar. Siguiente no avanza con un error salvo que se confirme "Continuar
+igual" (por ejemplo, si el servidor todavía no es accesible desde ese equipo).
+
+| Mensaje | Qué revisar |
+|---|---|
+| No se encontró el servidor | El nombre o la IP del servidor |
+| No acepta conexiones en el puerto N | El puerto (5432 por defecto) y que el servicio de PostgreSQL esté iniciado |
+| No respondió a tiempo | Servidor, puerto y firewall |
+| Usuario o contraseña incorrectos | Usuario y contraseña. PostgreSQL no distingue "el usuario no existe" de "la contraseña está mal", y lo mismo pasa si el servidor no acepta conexiones desde ese equipo (`pg_hba.conf`) |
+| La base no existe (ERP) | El nombre de la base del ERP |
+| La base no existe todavía (SAVI) | Nada: SAVI la crea al terminar la instalación |
+| No tiene permiso para crearla | Pedir al administrador el `CREATE DATABASE` que muestra el mensaje, o usar un usuario con permiso CREATEDB |
+| No puede crear tablas | Pedir el `GRANT CREATE ON SCHEMA public` que muestra el mensaje (PostgreSQL 15 o posterior) |
+| No parece la del ERP | La base apunta a otra cosa: revisar el nombre |
+| Ya tiene tablas que no son de SAVI | Usar una base propia para SAVI (por ejemplo `savi`) |
+
+### Si la base de SAVI ya existe
+
+Instalar, actualizar o reconfigurar **nunca borra datos**. Si la base ya tiene
+datos de SAVI, se conservan y se completan las tablas que falten. Al
+reconfigurar, el instalador conserva la clave de cifrado del `.env` anterior,
+así que las credenciales guardadas (bases del ERP, proveedores de IA) se
+siguen leyendo.
+
+Caso a cuidar: **otro equipo** que apunta a la misma base de PostgreSQL. Cada
+instalación nueva genera su propia clave de cifrado, y el asistente avisa si
+la base ya guarda credenciales. Para compartir la base, copiá
+`ERP_CREDENTIALS_KEY` del `.env` del primer equipo al nuevo
+(`C:\Program Files\SAVI\.env`) y reiniciá SAVI.
+
+### Archivo local: solo pruebas o un usuario
+
+Con archivo local no falta ninguna función. Lo que cambia es el uso:
+
+- **Un usuario a la vez.** Mientras el modelo responde, el turno de chat
+  bloquea el archivo. Si dos personas chatean al mismo tiempo, una espera o
+  falla.
+- **El historial queda en ese equipo** (`%LOCALAPPDATA%\SAVI\savi.db`). No se
+  comparte con otros equipos y no entra en los respaldos del servidor.
+- **No sirve para instalar SAVI como servidor** para varios usuarios.
+
+Para el uso normal en una empresa, PostgreSQL.
 
 **Se espera**: el acceso directo *SAVI* abre la aplicación; el pie del menú
 muestra la versión instalada. Si algo falla: acceso directo *Diagnosticar

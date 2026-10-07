@@ -689,6 +689,10 @@ def _collect_report() -> Report:
     from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
     from app.infrastructure.config import get_settings
+    from app.infrastructure.database.create_database import (
+        AgentDatabaseCreationError,
+        ensure_agent_database,
+    )
     from app.infrastructure.database.pool import get_agent_engine, init_engines
     from app.modules.erp_databases.infrastructure.seed import (
         erp_database_from_settings,
@@ -735,6 +739,27 @@ def _collect_report() -> Report:
         init_engines(settings)
         checks: list[CheckResult] = []
 
+        # El instalador corre este diagnóstico al terminar: es el momento de
+        # crear la base de Postgres si no existe, para que instalar alcance
+        # con el instalador. Un error de conexión acá no se reporta: lo
+        # reporta, con su remedio, el chequeo de conexión de abajo.
+        database_created = False
+        try:
+            database_created = await ensure_agent_database(settings)
+        except AgentDatabaseCreationError as error:
+            checks.append(
+                CheckResult(
+                    label="La base de datos de SAVI",
+                    ok=False,
+                    detail=str(error),
+                    remedy="Con la base creada, volvé a abrir SAVI: las tablas se "
+                    "crean solas al arrancar.",
+                )
+            )
+            return checks
+        except Exception:  # noqa: BLE001 - lo reporta el chequeo de conexión
+            logging.getLogger(__name__).info("diagnostico_crear_base_omitido", exc_info=True)
+
         # El ERP del `.env` se chequea armando un engine descartable: es un
         # diagnóstico previo al arranque, y el registry de engines por
         # cliente todavía no existe en este punto. Con el `.env` vacío ya
@@ -755,7 +780,10 @@ def _collect_report() -> Report:
             try:
                 async with engine.connect() as connection:
                     await connection.execute(text("SELECT 1"))
-                checks.append(CheckResult(label=title, ok=True, detail="Conexión correcta."))
+                detail = "Conexión correcta."
+                if database_created and engine is get_agent_engine():
+                    detail = f"Base '{settings.agent_db_name}' creada. Conexión correcta."
+                checks.append(CheckResult(label=title, ok=True, detail=detail))
             except Exception as error:  # noqa: BLE001 - se reporta al usuario final
                 checks.append(
                     CheckResult(
@@ -1056,11 +1084,17 @@ def main() -> None:
 
     # Import diferido: `get_settings()` lee el `.env`, así que el chdir
     # tiene que haber ocurrido antes de que se importe la configuración.
+    import asyncio
+
     import uvicorn
 
     from app import tray
     from app.infrastructure.config import get_settings
     from app.infrastructure.database.bootstrap import ensure_schema
+    from app.infrastructure.database.create_database import (
+        AgentDatabaseCreationError,
+        ensure_agent_database,
+    )
 
     try:
         settings = get_settings()
@@ -1114,6 +1148,17 @@ def main() -> None:
 
     _splash("Preparando la base de datos...")
     logger.info("Preparando la base de datos (%s).", settings.agent_db_engine)
+    try:
+        if asyncio.run(ensure_agent_database(settings)):
+            logger.info("Base de datos '%s' creada.", settings.agent_db_name)
+    except AgentDatabaseCreationError as error:
+        logger.error("No se pudo crear la base de datos de SAVI: %s", error)
+        _show_fatal_error(str(error))
+        raise SystemExit(1) from None
+    except Exception:
+        # Sin conexión: `ensure_schema` falla enseguida con el mismo motivo
+        # y muestra el error de siempre.
+        logger.info("crear_base_omitido", exc_info=True)
     try:
         ensure_schema(settings)
     except Exception:

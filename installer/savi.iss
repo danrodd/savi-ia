@@ -96,6 +96,9 @@ Name: "desktopicon"; Description: "Crear un acceso directo en el escritorio"; Gr
 [Files]
 Source: "build\dist\{#AppName}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "env.template"; DestDir: "{app}"; Flags: ignoreversion
+; Prueba de conexión del asistente: se extrae a {tmp} durante las páginas de
+; configuración, antes de instalar nada. No se copia a {app}.
+Source: "build\dbcheck\savi-dbcheck.exe"; Flags: dontcopy
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExe}"
@@ -151,6 +154,15 @@ var
   // nueva, y daba por buena la credencial con que el archivo existiera
   // — que es cierto tambien con el token vencido.
   AuthNeedsAttention: Boolean;
+
+  // Prueba de conexión (savi-dbcheck.exe). Los datos de la última prueba
+  // que salió bien, por página: "Siguiente" no repite una prueba que ya
+  // pasó con los mismos valores.
+  ErpTestButton:     TNewButton;
+  AgentTestButton:   TNewButton;
+  DbCheckExtracted:  Boolean;
+  LastOkErp:         String;
+  LastOkAgent:       String;
 
 { El PATH del propio proceso no se puede cambiar desde Pascal Script y
   hace falta cambiarlo — el porqué está en `PutNodeOnPath`. }
@@ -523,6 +535,223 @@ begin
             (Trim(ClaudePage.Values[0]) = '') and (Trim(ClaudePage.Values[1]) = '');
 end;
 
+{ ── Prueba de conexión ────────────────────────────────────────────── }
+
+function IsValidPort(const Value: String): Boolean;
+var
+  Number: Integer;
+begin
+  { StrToIntDef y no Val: Pascal Script no expone Val. }
+  Number := StrToIntDef(Value, -1);
+  Result := (Number > 0) and (Number < 65536);
+end;
+
+{ `Which` nombra la base en los mensajes de error ("del ERP" / "de SAVI").
+  No se llama Label: en Object Pascal es una palabra reservada. }
+function ValidateDbPage(Page: TInputQueryWizardPage; const Which: String): Boolean;
+begin
+  Result := False;
+  if Trim(Page.Values[0]) = '' then
+  begin
+    MsgBox('Indicá el servidor de ' + Which + '.', mbError, MB_OK);
+    Exit;
+  end;
+  if not IsValidPort(Trim(Page.Values[1])) then
+  begin
+    MsgBox('El puerto de ' + Which + ' tiene que ser un número entre 1 y 65535.', mbError, MB_OK);
+    Exit;
+  end;
+  if Trim(Page.Values[2]) = '' then
+  begin
+    MsgBox('Indicá el nombre de la base de datos de ' + Which + '.', mbError, MB_OK);
+    Exit;
+  end;
+  if Trim(Page.Values[3]) = '' then
+  begin
+    MsgBox('Indicá el usuario de ' + Which + '.', mbError, MB_OK);
+    Exit;
+  end;
+  Result := True;
+end;
+
+{ Valor de una clave del .env (vacío si no está). }
+function ReadEnvValue(const Path, Key: String): String;
+var
+  Lines: TArrayOfString;
+  I: Integer;
+begin
+  Result := '';
+  if not LoadStringsFromFile(Path, Lines) then
+    Exit;
+  for I := 0 to GetArrayLength(Lines) - 1 do
+    if Pos(Key + '=', Lines[I]) = 1 then
+    begin
+      Result := Trim(Copy(Lines[I], Length(Key) + 2, MaxInt));
+      Exit;
+    end;
+end;
+
+{ La clave de cifrado de la instalación anterior, si la hay y es real.
+  Al reconfigurar se reutiliza: con una nueva, las credenciales que ya
+  guarda la base de SAVI (bases del ERP, proveedores de IA) dejaban de
+  poder leerse. }
+function ExistingCredentialsKey(): String;
+begin
+  Result := '';
+  if not IsConfigured() then
+    Exit;
+  Result := ReadEnvValue(AddBackslash(WizardDirValue) + '.env', 'ERP_CREDENTIALS_KEY');
+  if Result = 'CAMBIAR-ESTE-VALOR' then
+    Result := '';
+end;
+
+function PageSignature(Page: TInputQueryWizardPage; const Kind: String): String;
+begin
+  Result := Kind + #1 + Trim(Page.Values[0]) + #1 + Trim(Page.Values[1]) + #1 +
+            Trim(Page.Values[2]) + #1 + Trim(Page.Values[3]) + #1 + Page.Values[4];
+end;
+
+{ Corre savi-dbcheck.exe con los datos de la página. Los datos van en un
+  archivo y no en la línea de comandos para que la contraseña no quede
+  visible en la lista de procesos; se borra apenas termina. }
+procedure RunDbCheck(Page: TInputQueryWizardPage; const Kind: String;
+  var Level, Message: String);
+var
+  Request: TArrayOfString;
+  RequestPath, ResultPath, Raw, NewKey: String;
+  RawAnsi: AnsiString;
+  Code, Separator: Integer;
+begin
+  Level := 'error';
+  Message := 'No se pudo ejecutar la prueba de conexión.';
+  if not DbCheckExtracted then
+  begin
+    ExtractTemporaryFile('savi-dbcheck.exe');
+    DbCheckExtracted := True;
+  end;
+  RequestPath := ExpandConstant('{tmp}\dbcheck-pedido.txt');
+  ResultPath  := ExpandConstant('{tmp}\dbcheck-resultado.txt');
+  DeleteFile(ResultPath);
+
+  if ExistingCredentialsKey() <> '' then
+    NewKey := '0'
+  else
+    NewKey := '1';
+  SetArrayLength(Request, 7);
+  Request[0] := Kind;
+  Request[1] := Trim(Page.Values[0]);
+  Request[2] := Trim(Page.Values[1]);
+  Request[3] := Trim(Page.Values[2]);
+  Request[4] := Trim(Page.Values[3]);
+  Request[5] := Page.Values[4];
+  Request[6] := NewKey;
+  SaveStringsToUTF8File(RequestPath, Request, False);
+  try
+    Exec(ExpandConstant('{tmp}\savi-dbcheck.exe'),
+         AddQuotes(RequestPath) + ' ' + AddQuotes(ResultPath),
+         '', SW_HIDE, ewWaitUntilTerminated, Code);
+  finally
+    DeleteFile(RequestPath);
+  end;
+
+  { El resultado viene en ANSI: primera línea el nivel, después el mensaje. }
+  if LoadStringFromFile(ResultPath, RawAnsi) then
+  begin
+    Raw := String(RawAnsi);
+    Separator := Pos(#10, Raw);
+    if Separator > 0 then
+    begin
+      Level := Trim(Copy(Raw, 1, Separator - 1));
+      Message := Trim(Copy(Raw, Separator + 1, MaxInt));
+    end;
+  end;
+  DeleteFile(ResultPath);
+end;
+
+{ Prueba la conexión de la página. `FromNext`: la llama "Siguiente", que
+  deja seguir igual si el técnico lo confirma (el servidor puede no estar
+  alcanzable desde este equipo al instalar); el botón solo informa.
+  Devuelve si se puede avanzar. }
+function TestDbPage(Page: TInputQueryWizardPage; const Kind, Which: String;
+  FromNext: Boolean; var LastOk: String): Boolean;
+var
+  Level, Message, Signature: String;
+begin
+  Result := False;
+  if not ValidateDbPage(Page, Which) then
+    Exit;
+  Signature := PageSignature(Page, Kind);
+  if FromNext and (Signature = LastOk) then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  WizardForm.NextButton.Enabled := False;
+  WizardForm.BackButton.Enabled := False;
+  try
+    RunDbCheck(Page, Kind, Level, Message);
+  finally
+    WizardForm.NextButton.Enabled := True;
+    WizardForm.BackButton.Enabled := True;
+  end;
+
+  if Level = 'ok' then
+  begin
+    LastOk := Signature;
+    if not FromNext then
+      MsgBox('Conexión correcta con la base de ' + Which + '.' + #13#10#13#10 + Message,
+             mbInformation, MB_OK);
+    Result := True;
+  end
+  else if Level = 'aviso' then
+  begin
+    if FromNext then
+      Result := MsgBox(Message + #13#10#13#10 + '¿Continuar con estos datos?',
+                       mbConfirmation, MB_YESNO) = IDYES
+    else
+      MsgBox(Message, mbInformation, MB_OK);
+  end
+  else
+  begin
+    if FromNext then
+      Result := MsgBox('No se pudo conectar a la base de ' + Which + '.' + #13#10#13#10 +
+                       Message + #13#10#13#10 +
+                       'SAVI no va a funcionar hasta corregirlo. ¿Continuar igual?',
+                       mbError, MB_YESNO or MB_DEFBUTTON2) = IDYES
+    else
+      MsgBox('No se pudo conectar a la base de ' + Which + '.' + #13#10#13#10 + Message,
+             mbError, MB_OK);
+  end;
+end;
+
+procedure ErpTestButtonClick(Sender: TObject);
+begin
+  TestDbPage(ErpPage, 'erp', 'el ERP', False, LastOkErp);
+end;
+
+procedure AgentTestButtonClick(Sender: TObject);
+begin
+  TestDbPage(AgentPgPage, 'savi', 'SAVI', False, LastOkAgent);
+end;
+
+{ Botón "Probar conexión" en la fila de la contraseña: debajo no entra en
+  la página sin que aparezca una barra de desplazamiento. }
+function CreateTestButton(Page: TInputQueryWizardPage): TNewButton;
+var
+  Password: TPasswordEdit;
+begin
+  Password := Page.Edits[4];
+  Result := TNewButton.Create(Page);
+  Result.Parent := Page.Surface;
+  Result.Caption := 'Probar conexión';
+  Result.Width := ScaleX(120);
+  Result.Height := Password.Height + ScaleY(2);
+  Result.Top := Password.Top - ScaleY(1);
+  Result.Left := Password.Left + Password.Width - Result.Width;
+  Password.Width := Password.Width - Result.Width - ScaleX(8);
+end;
+
 { ── Páginas del asistente ───────────────────────────────────────────── }
 
 procedure InitializeWizard();
@@ -559,17 +788,22 @@ begin
   AgentKindPage := CreateInputOptionPage(ErpPage.ID,
     'Base de datos de SAVI',
     'Dónde se guardan las conversaciones y los mensajes',
-    'Esta base es la del asistente, no la del ERP. Guarda el historial de ' +
-    'conversaciones y las sesiones de los usuarios.',
+    'Es la base del asistente, no la del ERP: guarda el historial, las sesiones, ' +
+    'los proveedores de IA y los documentos de la empresa. Con archivo local SAVI ' +
+    'atiende bien a UN usuario a la vez: si varios chatean al mismo tiempo, las ' +
+    'respuestas se traban o fallan, y el historial queda solo en este equipo.',
     True, False);
-  AgentKindPage.Add('Archivo local (recomendado) — no requiere instalar nada más');
-  AgentKindPage.Add('Servidor PostgreSQL — para compartir el historial entre varios equipos');
-  AgentKindPage.SelectedValueIndex := 0;
+  { El orden de los índices no cambia (0 = archivo local, 1 = PostgreSQL):
+    lo usan ShouldSkipPage y WriteEnvFile. }
+  AgentKindPage.Add('Archivo local — solo para pruebas o un único usuario en este equipo');
+  AgentKindPage.Add('Servidor PostgreSQL (recomendado) — varios usuarios, historial compartido y con respaldo');
+  AgentKindPage.SelectedValueIndex := 1;
 
   AgentPgPage := CreateInputQueryPage(AgentKindPage.ID,
     'PostgreSQL de SAVI',
     'Conexión al servidor donde vive el historial',
-    'La base tiene que existir y el usuario necesita permisos de lectura y escritura.');
+    'Si la base no existe, SAVI la crea (el usuario necesita permiso para crear ' +
+    'bases). Si ya tiene datos de SAVI, se conservan: nunca se borra nada.');
   AgentPgPage.Add('Servidor:',   False);
   AgentPgPage.Add('Puerto:',     False);
   AgentPgPage.Add('Base de datos:', False);
@@ -577,6 +811,11 @@ begin
   AgentPgPage.Add('Contraseña:', True);
   AgentPgPage.Values[1] := '5432';
   AgentPgPage.Values[2] := 'savi';
+
+  ErpTestButton := CreateTestButton(ErpPage);
+  ErpTestButton.OnClick := @ErpTestButtonClick;
+  AgentTestButton := CreateTestButton(AgentPgPage);
+  AgentTestButton.OnClick := @AgentTestButtonClick;
 
   ClaudePage := CreateInputQueryPage(AgentPgPage.ID,
     'Autenticación de Claude y puerto',
@@ -636,7 +875,8 @@ begin
       'Reconfiguración:' + NewLine +
       Space + 'Se reemplaza el archivo .env con los datos que cargaste' + NewLine +
       Space + 'El anterior queda como .env.anterior por si hay que volver' + NewLine +
-      Space + 'Se cierran las sesiones abiertas (cambia la clave de firma)'
+      Space + 'Se cierran las sesiones abiertas (cambia la clave de firma)' + NewLine +
+      Space + 'Se conservan los datos y la clave de cifrado: nada se borra'
   else if IsConfigured() then
     Result := Result + NewLine + NewLine +
       'Actualización:' + NewLine +
@@ -649,43 +889,6 @@ begin
 end;
 
 { ── Validación ──────────────────────────────────────────────────────── }
-
-function IsValidPort(const Value: String): Boolean;
-var
-  Number: Integer;
-begin
-  { StrToIntDef y no Val: Pascal Script no expone Val. }
-  Number := StrToIntDef(Value, -1);
-  Result := (Number > 0) and (Number < 65536);
-end;
-
-{ `Which` nombra la base en los mensajes de error ("del ERP" / "de SAVI").
-  No se llama Label: en Object Pascal es una palabra reservada. }
-function ValidateDbPage(Page: TInputQueryWizardPage; const Which: String): Boolean;
-begin
-  Result := False;
-  if Trim(Page.Values[0]) = '' then
-  begin
-    MsgBox('Indicá el servidor de ' + Which + '.', mbError, MB_OK);
-    Exit;
-  end;
-  if not IsValidPort(Trim(Page.Values[1])) then
-  begin
-    MsgBox('El puerto de ' + Which + ' tiene que ser un número entre 1 y 65535.', mbError, MB_OK);
-    Exit;
-  end;
-  if Trim(Page.Values[2]) = '' then
-  begin
-    MsgBox('Indicá el nombre de la base de datos de ' + Which + '.', mbError, MB_OK);
-    Exit;
-  end;
-  if Trim(Page.Values[3]) = '' then
-  begin
-    MsgBox('Indicá el usuario de ' + Which + '.', mbError, MB_OK);
-    Exit;
-  end;
-  Result := True;
-end;
 
 function DownloadPrerequisites(): Boolean;
 begin
@@ -719,10 +922,19 @@ begin
   Result := True;
 
   if CurPageID = ErpPage.ID then
-    Result := ValidateDbPage(ErpPage, 'el ERP')
+    Result := TestDbPage(ErpPage, 'erp', 'el ERP', True, LastOkErp)
+
+  else if (CurPageID = AgentKindPage.ID) and (AgentKindPage.SelectedValueIndex = 0) then
+    Result := MsgBox('Elegiste guardar los datos de SAVI en un archivo local.' + #13#10#13#10 +
+                     'Sirve para pruebas o para un único usuario: si varias personas ' +
+                     'usan el chat al mismo tiempo, las respuestas se traban o fallan, ' +
+                     'y el historial queda solo en este equipo, sin respaldo del servidor.' + #13#10#13#10 +
+                     'Para el uso normal en una empresa, elegí PostgreSQL.' + #13#10#13#10 +
+                     '¿Seguir con archivo local?',
+                     mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES
 
   else if CurPageID = AgentPgPage.ID then
-    Result := ValidateDbPage(AgentPgPage, 'SAVI')
+    Result := TestDbPage(AgentPgPage, 'savi', 'SAVI', True, LastOkAgent)
 
   else if CurPageID = ClaudePage.ID then
   begin
@@ -942,7 +1154,7 @@ end;
 
 procedure WriteEnvFile();
 var
-  TemplatePath, EnvPath, Secret, FernetKey: String;
+  TemplatePath, EnvPath, Secret, FernetKey, PreviousKey: String;
   Lines: TArrayOfString;
   UseSqlite: Boolean;
 begin
@@ -963,6 +1175,7 @@ begin
   { Se pidió reconfigurar: copia de seguridad antes de pisar. Si el dato
     nuevo está mal, el anterior —que funcionaba— sigue a mano en vez de
     haberse perdido para siempre. }
+  PreviousKey := ExistingCredentialsKey();
   if FileExists(EnvPath) then
     RenameFile(EnvPath, EnvPath + '.anterior');
 
@@ -1021,7 +1234,10 @@ begin
   end;
   ReplaceToken(Lines, '{{JWT_SECRET}}', Secret);
 
-  FernetKey := GenerateFernetKey();
+  if PreviousKey <> '' then
+    FernetKey := PreviousKey
+  else
+    FernetKey := GenerateFernetKey();
   if FernetKey = '' then
   begin
     MsgBox('No se pudo generar la clave de cifrado de credenciales del ERP.' + #13#10 +
