@@ -34,6 +34,8 @@ services:
       CLOUD_DATABASE_URL: postgresql+asyncpg://savi_cloud:${POSTGRES_PASSWORD}@db:5432/savi_cloud
       CLOUD_LOG_LEVEL: ${CLOUD_LOG_LEVEL:-INFO}
       CLOUD_ENROLLMENT_TOKEN_TTL_HOURS: ${CLOUD_ENROLLMENT_TOKEN_TTL_HOURS:-72}
+      # Consola del staff: firma de sesiones y cifrado de los secretos TOTP.
+      CLOUD_CONSOLE_SECRET: ${CLOUD_CONSOLE_SECRET:?definir CLOUD_CONSOLE_SECRET en .env}
     expose:
       - "8000"
     security_opt:

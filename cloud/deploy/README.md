@@ -30,6 +30,7 @@ curl https://cloud.tu-empresa.com/ready       # {"status":"ready"}
 ```
 
 Generar la contraseña de Postgres: `openssl rand -hex 24`.
+Generar la semilla de la consola: `openssl rand -hex 32` (`CLOUD_CONSOLE_SECRET`).
 
 Las migraciones se aplican solas al arrancar la API (`alembic upgrade head` en el entrypoint).
 
@@ -47,6 +48,8 @@ Otros comandos:
 
 ```bash
 docker compose exec api cloud-admin client list
+# Primer usuario de la consola (imprime una contraseña temporal una sola vez):
+docker compose exec api cloud-admin staff create --email vos@empresa.com --name "Tu Nombre" --role admin
 docker compose exec api cloud-admin token list --client FARMX
 docker compose exec api cloud-admin token revoke <id-del-token>
 docker compose exec api cloud-admin instance list --client FARMX

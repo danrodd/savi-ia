@@ -112,6 +112,36 @@ uv run pytest -q
 | `CLOUD_LOG_LEVEL` | `INFO` | Nivel de logs JSON |
 | `CLOUD_CORS_ORIGINS` | `[]` | JSON con orígenes permitidos (cerrado por defecto) |
 | `CLOUD_ENROLLMENT_TOKEN_TTL_HOURS` | `72` | Vigencia por defecto de un token |
+| `CLOUD_CONSOLE_SECRET` | (vacía = consola apagada) | Semilla de la consola: firma de sesiones y cifrado de TOTP. Mínimo 32 caracteres (`openssl rand -hex 32`) |
+| `CLOUD_CONSOLE_COOKIE_SECURE` | `true` | La cookie de refresh solo viaja por HTTPS; `false` solo en desarrollo local |
+| `CLOUD_LATEST_VERSION` | (vacía) | Última versión publicada de SAVI (p. ej. `v1.3.0`) |
+| `CLOUD_LATEST_VERSION_PUBLISHED_AT` | (vacía) | Fecha de publicación (ISO 8601); sin ella no se alerta por instancias desactualizadas |
+| `CLOUD_ALERTS_INTERVAL_SECONDS` | `300` | Cada cuánto se evalúan las alertas (`0` = apagado) |
+
+## Consola del staff
+
+API en `/console/api` y autenticación en `/console/auth` (contraseña argon2id + TOTP obligatorio,
+refresh en cookie `HttpOnly`). Roles `admin`, `soporte` y `comercial`; la matriz de permisos vive
+en `app/modules/staff/domain.py` y cada ruta declara `RequirePermission` (un test recorre el
+router y falla si falta alguna).
+
+```powershell
+# Primer administrador: imprime una contraseña temporal una sola vez. En el primer ingreso
+# tendrá que elegir una contraseña nueva y configurar el TOTP.
+uv run cloud-admin staff create --email vos@empresa.com --name "Tu Nombre" --role admin
+```
+
+| Módulo | Qué hace |
+|---|---|
+| `staff` | Usuarios, sesiones, login, MFA y permisos |
+| `audit` | Registro de solo inserción de toda acción que modifica estado (trigger en Postgres) |
+| `console` | Clientes, instancias, tokens de vinculación, staff y auditoría |
+| `metrics` | Definiciones únicas, resumen, uso por cliente, sucursales y usuarios (seudónimos) |
+| `alerts` | 10 reglas configurables, motor cada 5 minutos con estado abierta / reconocida / resuelta |
+
+Pendiente: particionado de las tablas de eventos y retención de heartbeats (30 días), la
+tabla agregada `daily_client_metrics` (hoy se calcula al consultar, con el índice
+`(client_id, occurred_at)`) y el frontend de la consola.
 
 ## Despliegue
 
