@@ -17,6 +17,7 @@ Flujo:
 6. Emitir access + refresh tokens con la identidad calificada.
 7. Persistir el `jti` del refresh para soportar revocación en logout.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -24,6 +25,7 @@ import time
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
+from app.modules.auth.application.mfa import MfaChallengeRequired, MfaGate
 from app.modules.auth.domain.entities import AuthenticatedUser, RefreshTokenRecord
 from app.modules.auth.domain.exceptions import (
     DatabaseDisabledError,
@@ -88,15 +90,15 @@ class LoginUseCase:
         refresh_token_repository: RefreshTokenRepository,
         password_hasher: PasswordHasher,
         token_service: TokenService,
+        mfa: MfaGate | None = None,
     ) -> None:
+        self._mfa = mfa
         self._users = user_repository_factory
         self._refresh_tokens = refresh_token_repository
         self._hasher = password_hasher
         self._tokens = token_service
 
-    async def execute(
-        self, login: str, password: str
-    ) -> tuple[TokenPair, AuthenticatedUser]:
+    async def execute(self, login: str, password: str) -> tuple[TokenPair, AuthenticatedUser]:
         started_at = time.perf_counter()
         try:
             return await self._authenticate(login, password)
@@ -107,9 +109,7 @@ class LoginUseCase:
             await _wait_until_floor(started_at)
             raise
 
-    async def _authenticate(
-        self, login: str, password: str
-    ) -> tuple[TokenPair, AuthenticatedUser]:
+    async def _authenticate(self, login: str, password: str) -> tuple[TokenPair, AuthenticatedUser]:
         raw_login, database_code = split_qualified_login(login)
 
         try:
@@ -149,21 +149,26 @@ class LoginUseCase:
             # atacante no supiera ya.
             raise UserDisabledError
 
+        # Segundo factor: la contraseña ya está verificada. Sin sesión hasta que el código
+        # sea correcto (los tokens del desafío no abren nada).
+        if self._mfa is not None:
+            challenge = await self._mfa.challenge_for(found.user)
+            if challenge is not None:
+                raise MfaChallengeRequired(challenge)
+
         return await self._issue(found.user)
 
-    async def _issue(
-        self, user: AuthenticatedUser
-    ) -> tuple[TokenPair, AuthenticatedUser]:
+    async def issue_session(self, user: AuthenticatedUser) -> tuple[TokenPair, AuthenticatedUser]:
+        """Abre la sesión de un usuario ya verificado (contraseña y segundo factor)."""
+        return await self._issue(user)
+
+    async def _issue(self, user: AuthenticatedUser) -> tuple[TokenPair, AuthenticatedUser]:
         access = self._tokens.issue_access_token(user)
 
         jti = uuid4()
         now = datetime.now(UTC)
-        expires_at = now + timedelta(
-            seconds=self._tokens.refresh_token_lifetime_seconds()
-        )
-        refresh = self._tokens.issue_refresh_token(
-            user, jti=jti, expires_at=expires_at
-        )
+        expires_at = now + timedelta(seconds=self._tokens.refresh_token_lifetime_seconds())
+        refresh = self._tokens.issue_refresh_token(user, jti=jti, expires_at=expires_at)
         await self._refresh_tokens.save(
             RefreshTokenRecord(
                 jti=jti,

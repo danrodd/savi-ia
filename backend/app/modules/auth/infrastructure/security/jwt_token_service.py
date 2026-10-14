@@ -5,6 +5,7 @@ sea un solo servicio. Cuando aparezca multi-servicio o algo que necesite
 verificación distribuida sin compartir secret, se cambia a RS256 con
 un KMS — esa migración no toca dominio ni use cases.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
@@ -39,9 +40,7 @@ def _qualified_subject(user: AuthenticatedUser) -> str:
         # Un usuario sin base es un bug de construcción, no una entrada
         # del cliente: fallar acá es preferible a emitir un token que
         # después nadie puede atribuir a un cliente.
-        raise InvalidTokenError(
-            "No se puede emitir un token sin la base del ERP del usuario."
-        )
+        raise InvalidTokenError("No se puede emitir un token sin la base del ERP del usuario.")
     return f"{user.erp_database_id}{_SUB_SEPARATOR}{user.id}"
 
 
@@ -83,6 +82,25 @@ class JwtTokenService(TokenService):
             "iss": self._issuer,
             "iat": now,
             "exp": expires_at,
+        }
+        return jwt.encode(payload, self._secret, algorithm=self._algorithm)
+
+    def issue_mfa_token(
+        self, user: AuthenticatedUser, *, purpose: TokenPurpose, ttl_seconds: int
+    ) -> str:
+        if purpose not in (TokenPurpose.MFA, TokenPurpose.MFA_SETUP):
+            raise InvalidTokenError("Propósito inválido para un token de segundo factor.")
+        now = datetime.now(UTC)
+        payload: dict[str, Any] = {
+            "sub": _qualified_subject(user),
+            "erp_db": str(user.erp_database_id),
+            "login": user.login,
+            "full_name": user.full_name,
+            "is_admin": user.is_admin,
+            "purpose": purpose.value,
+            "iss": self._issuer,
+            "iat": now,
+            "exp": now + timedelta(seconds=ttl_seconds),
         }
         return jwt.encode(payload, self._secret, algorithm=self._algorithm)
 

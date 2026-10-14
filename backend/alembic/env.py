@@ -8,7 +8,10 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from app.infrastructure.config import get_settings
 from app.infrastructure.database.base import Base
-from app.modules.auth.infrastructure.persistence.models import RefreshTokenModel  # noqa: F401
+from app.modules.auth.infrastructure.persistence.models import (  # noqa: F401
+    RefreshTokenModel,
+    UserTotpModel,
+)
 from app.modules.cloud_link.infrastructure.persistence.models import (  # noqa: F401
     CloudLinkModel,
     CloudSyncWatermarkModel,

@@ -1,3 +1,4 @@
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -15,6 +16,9 @@ class TokenResponse(BaseModel):
     programar el refresh anticipado.
     """
 
+    # Discriminador del login: `authenticated` es una sesión; `MfaChallengeResponse` es el
+    # segundo factor pendiente.
+    status: Literal["authenticated"] = "authenticated"
     access_token: str
     refresh_token: str
     token_type: str = "Bearer"
@@ -35,6 +39,21 @@ class TokenResponse(BaseModel):
             expires_in=tokens.access_token_expires_in,
             user=AuthenticatedUserResponse.from_domain(user, erp_database),
         )
+
+
+class MfaChallengeResponse(BaseModel):
+    """El login verificó la contraseña pero falta el segundo factor. No hay sesión."""
+
+    status: Literal["mfa_required", "mfa_setup_required"]
+    mfa_token: str
+    expires_in: int
+
+
+class MfaSetupResponse(BaseModel):
+    """Lo que muestra la pantalla de configuración (QR y clave manual)."""
+
+    secret: str
+    otpauth_uri: str
 
 
 class SessionDatabaseResponse(BaseModel):

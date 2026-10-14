@@ -18,6 +18,9 @@ from app.infrastructure.database import (
 )
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.auth.infrastructure.http.admin import SaviAdminDep
+from app.modules.auth.infrastructure.http.mfa_admin_routes import (
+    router as mfa_admin_router,
+)
 from app.modules.chat.infrastructure.http import router as chat_router
 from app.modules.cloud_link.infrastructure.composition import (
     build_cloud_link_services,
@@ -91,6 +94,7 @@ _API_PREFIXES = (
     "admin/company-documents",
     "admin/company-web-sources",
     "admin/erp-databases",
+    "admin/mfa",
     "admin/feedback",
     "admin/llm-providers",
     "erp-databases",
@@ -253,6 +257,7 @@ def create_app() -> FastAPI:
         }
 
     app.include_router(auth_router)
+    app.include_router(mfa_admin_router)
     app.include_router(conversations_router)
     app.include_router(feedback_router)
     app.include_router(feedback_admin_router)

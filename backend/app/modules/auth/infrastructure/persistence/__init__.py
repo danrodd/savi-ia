@@ -17,6 +17,9 @@ from app.modules.auth.infrastructure.persistence.erp_user_repository_factory imp
 from app.modules.auth.infrastructure.persistence.sqlalchemy_refresh_token_repository import (
     SqlAlchemyRefreshTokenRepository,
 )
+from app.modules.auth.infrastructure.persistence.sqlalchemy_totp_repository import (
+    SqlAlchemyTotpRepository,
+)
 
 __all__ = [
     "ErpPermissionRepository",
@@ -26,4 +29,5 @@ __all__ = [
     "ErpUserRepository",
     "ErpUserRepositoryFactory",
     "SqlAlchemyRefreshTokenRepository",
+    "SqlAlchemyTotpRepository",
 ]

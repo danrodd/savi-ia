@@ -82,6 +82,24 @@ class RefreshTokenRevokedError(AuthError):
         super().__init__("La sesión expiró. Iniciá sesión nuevamente.")
 
 
+class InvalidMfaCodeError(AuthError):
+    """El código del segundo factor no es válido (o ya se usó)."""
+
+    def __init__(self) -> None:
+        super().__init__("El código no es válido. Revisá el de tu aplicación e intentá de nuevo.")
+
+
+class MfaUnavailableError(AuthError):
+    """El segundo factor de este usuario no se puede usar sin intervención.
+
+    Pasa cuando el secreto guardado no se puede descifrar (cambió la clave del servidor) o
+    cuando se intenta configurar un TOTP que ya está activo. Se resuelve con un
+    restablecimiento hecho por un administrador."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
 class ModuleAccessDeniedError(Exception):
     """El usuario no tiene acceso al módulo requerido por el endpoint.
 

@@ -3,7 +3,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.domain.value_objects import TokenClaims
+from app.modules.auth.domain.value_objects import TokenClaims, TokenPurpose
 
 
 class TokenService(ABC):
@@ -21,6 +21,12 @@ class TokenService(ABC):
     def issue_refresh_token(
         self, user: AuthenticatedUser, *, jti: UUID, expires_at: datetime
     ) -> str: ...
+
+    @abstractmethod
+    def issue_mfa_token(
+        self, user: AuthenticatedUser, *, purpose: TokenPurpose, ttl_seconds: int
+    ) -> str:
+        """Token de un solo paso del segundo factor (`MFA` o `MFA_SETUP`)."""
 
     @abstractmethod
     def decode(self, token: str) -> TokenClaims:

@@ -1,6 +1,7 @@
 """Endpoints HTTP del módulo auth.
 
-- POST /auth/login    → {access, refresh, user}
+- POST /auth/login    → {access, refresh, user} o el desafío del segundo factor
+- POST /auth/mfa/setup, /auth/mfa/setup/confirm, /auth/mfa/verify → segundo factor (TOTP)
 - POST /auth/refresh  → rota tokens y devuelve nuevos
 - POST /auth/logout   → revoca el refresh recibido (idempotente)
 - GET  /auth/me       → devuelve el usuario del access token actual
@@ -8,26 +9,42 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 from fastapi import APIRouter, Request, status
 
-from app.modules.auth.application.requests import LoginRequest, RefreshRequest
+from app.modules.auth.application.mfa import MfaChallengeRequired
+from app.modules.auth.application.requests import (
+    LoginRequest,
+    MfaSetupRequest,
+    MfaVerifyRequest,
+    RefreshRequest,
+)
 from app.modules.auth.application.responses import (
     AuthenticatedUserResponse,
     BootstrapResponse,
+    MfaChallengeResponse,
+    MfaSetupResponse,
     ModulesVersionResponse,
     SessionDatabaseResponse,
     TokenResponse,
 )
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.domain.exceptions import InvalidCredentialsError, UserDisabledError
+from app.modules.auth.domain.exceptions import (
+    InvalidCredentialsError,
+    InvalidMfaCodeError,
+    InvalidTokenError,
+    UserDisabledError,
+)
 from app.modules.auth.infrastructure.http.dependencies import (
     CurrentUserDep,
     LoginUseCaseDep,
     LogoutUseCaseDep,
+    MfaServiceDep,
     RefreshUseCaseDep,
     SettingsDep,
+    TokenServiceDep,
 )
 from app.modules.erp_databases.infrastructure.http.dependencies import (
     ErpDatabaseRepositoryDep,
@@ -62,25 +79,115 @@ async def _session_database(
     return SessionDatabaseResponse(id=database.id, code=database.code, name=database.name)
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse | MfaChallengeResponse)
 async def login(
     http_request: Request,
     request: LoginRequest,
     use_case: LoginUseCaseDep,
     settings: SettingsDep,
     databases: ErpDatabaseRepositoryDep,
-) -> TokenResponse:
+) -> TokenResponse | MfaChallengeResponse:
     # El límite va ANTES del caso de uso: si corriera después, cada intento
     # rechazado igual pagaría el viaje al ERP y el hash, que es justo el
     # trabajo que un ataque de fuerza bruta busca hacernos gastar.
     enforce_login_limits(http_request, settings, request.login)
     try:
         tokens, user = await use_case.execute(request.login, request.password)
+    except MfaChallengeRequired as pending:
+        # La contraseña estaba bien, pero NO se limpia el contador de fallos: si lo hiciera,
+        # quien conoce la contraseña podría adivinar el código intercalando logins
+        # correctos que lo reinician. Se limpia recién cuando el código es correcto.
+        challenge = pending.challenge
+        return MfaChallengeResponse(
+            status="mfa_setup_required" if challenge.setup_required else "mfa_required",
+            mfa_token=challenge.token,
+            expires_in=challenge.expires_in,
+        )
     except (InvalidCredentialsError, UserDisabledError):
         record_login_failure(settings, request.login)
         raise
     record_login_success(settings, request.login)
     return TokenResponse.from_domain(tokens, user, await _session_database(user, databases))
+
+
+def _mfa_limit_key(claims_login: str, database_id: UUID) -> str:
+    """Clave de límite del segundo factor: por usuario real, no por lo que se escribió."""
+    return f"mfa:{database_id}:{claims_login}"
+
+
+@router.post("/mfa/setup", response_model=MfaSetupResponse)
+async def mfa_setup(
+    http_request: Request,
+    request: MfaSetupRequest,
+    service: MfaServiceDep,
+    tokens: TokenServiceDep,
+    settings: SettingsDep,
+    databases: ErpDatabaseRepositoryDep,
+) -> MfaSetupResponse:
+    """Genera el secreto (queda pendiente hasta confirmar un código) y devuelve lo que
+    muestra la pantalla: la URI del QR y la clave para cargar a mano."""
+    claims = tokens.decode(request.mfa_token)
+    enforce_login_limits(
+        http_request, settings, _mfa_limit_key(claims.login, claims.erp_database_id)
+    )
+    database = await databases.get_by_id(claims.erp_database_id)
+    label = f"{claims.login}@{database.code}" if database is not None else claims.login
+    setup = await service.begin_setup(request.mfa_token, account_label=label)
+    return MfaSetupResponse(secret=setup.secret, otpauth_uri=setup.otpauth_uri)
+
+
+@router.post("/mfa/setup/confirm", response_model=TokenResponse)
+async def mfa_setup_confirm(
+    http_request: Request,
+    request: MfaVerifyRequest,
+    service: MfaServiceDep,
+    tokens: TokenServiceDep,
+    use_case: LoginUseCaseDep,
+    settings: SettingsDep,
+    databases: ErpDatabaseRepositoryDep,
+) -> TokenResponse:
+    return await _complete_mfa(
+        http_request, request, service.confirm_setup, tokens, use_case, settings, databases
+    )
+
+
+@router.post("/mfa/verify", response_model=TokenResponse)
+async def mfa_verify(
+    http_request: Request,
+    request: MfaVerifyRequest,
+    service: MfaServiceDep,
+    tokens: TokenServiceDep,
+    use_case: LoginUseCaseDep,
+    settings: SettingsDep,
+    databases: ErpDatabaseRepositoryDep,
+) -> TokenResponse:
+    return await _complete_mfa(
+        http_request, request, service.verify, tokens, use_case, settings, databases
+    )
+
+
+async def _complete_mfa(
+    http_request: Request,
+    request: MfaVerifyRequest,
+    check_code: Callable[[str, str], Awaitable[AuthenticatedUser]],
+    tokens: TokenServiceDep,
+    use_case: LoginUseCaseDep,
+    settings: SettingsDep,
+    databases: ErpDatabaseRepositoryDep,
+) -> TokenResponse:
+    """Valida el código y recién entonces abre la sesión."""
+    claims = tokens.decode(request.mfa_token)
+    key = _mfa_limit_key(claims.login, claims.erp_database_id)
+    # Mismo límite y bloqueo que el login: 6 dígitos se adivinan sin freno.
+    enforce_login_limits(http_request, settings, key)
+    try:
+        user = await check_code(request.mfa_token, request.code)
+    except (InvalidMfaCodeError, InvalidTokenError):
+        record_login_failure(settings, key)
+        raise
+    record_login_success(settings, key)
+    pair, user = await use_case.issue_session(user)
+    return TokenResponse.from_domain(pair, user, await _session_database(user, databases))
 
 
 @router.post("/refresh", response_model=TokenResponse)

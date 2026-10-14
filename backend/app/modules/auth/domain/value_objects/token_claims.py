@@ -13,6 +13,10 @@ class TokenPurpose(StrEnum):
 
     ACCESS = "access"
     REFRESH = "refresh"
+    # Tokens de un solo paso del segundo factor: NO abren sesión. Solo sirven en los
+    # endpoints `/auth/mfa/*`, y vencen en minutos.
+    MFA = "mfa"
+    MFA_SETUP = "mfa_setup"
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,8 +33,8 @@ class TokenClaims:
     erp_database_id: UUID
     # `idUsuario` del ERP, ya parseado del `sub`.
     user_id: int
-    login: str           # codigo del usuario
-    full_name: str       # nombre para mostrar
+    login: str  # codigo del usuario
+    full_name: str  # nombre para mostrar
     is_admin: bool
     purpose: TokenPurpose
     # `jti` solo se setea en refresh tokens — se usa para revocar.

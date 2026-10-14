@@ -96,7 +96,7 @@ def test_upgrade_creates_tables_and_indexes_and_downgrade_removes_them(
     command.stamp(_config(), PREVIOUS_HEAD)
     assert NEW_TABLES.isdisjoint(_tables(db))
 
-    command.upgrade(_config(), "head")
+    command.upgrade(_config(), THIS_REVISION)
 
     assert _version(db) == THIS_REVISION
     assert _tables(db) >= NEW_TABLES
@@ -125,7 +125,7 @@ def test_upgrade_creates_tables_and_indexes_and_downgrade_removes_them(
         assert index not in _index_names(db, table)
 
     # Idempotente: volver a subir deja el mismo resultado.
-    command.upgrade(_config(), "head")
+    command.upgrade(_config(), THIS_REVISION)
     assert _version(db) == THIS_REVISION
     assert _tables(db) >= NEW_TABLES
 
@@ -145,7 +145,7 @@ def test_upgrade_is_a_noop_when_the_objects_already_exist(
         engine.dispose()
     command.stamp(_config(), PREVIOUS_HEAD)
 
-    command.upgrade(_config(), "head")
+    command.upgrade(_config(), THIS_REVISION)
 
     assert _version(db) == THIS_REVISION
     assert _tables(db) >= NEW_TABLES

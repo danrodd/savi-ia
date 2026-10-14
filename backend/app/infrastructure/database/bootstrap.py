@@ -21,7 +21,10 @@ from sqlalchemy import create_engine, inspect
 from alembic import command
 from app.infrastructure.config.settings import Settings
 from app.infrastructure.database.base import Base
-from app.modules.auth.infrastructure.persistence.models import RefreshTokenModel
+from app.modules.auth.infrastructure.persistence.models import (
+    RefreshTokenModel,
+    UserTotpModel,
+)
 from app.modules.cloud_link.infrastructure.persistence.models import (
     CloudLinkModel,
     CloudSyncWatermarkModel,
@@ -60,6 +63,7 @@ logger = logging.getLogger(__name__)
 _REGISTERED_MODELS = (
     ErpDatabaseModel,
     RefreshTokenModel,
+    UserTotpModel,
     ConversationModel,
     MessageModel,
     ChatAttachmentModel,

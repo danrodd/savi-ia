@@ -9,5 +9,19 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=200)
 
 
+class MfaVerifyRequest(BaseModel):
+    mfa_token: str = Field(min_length=20)
+    code: str = Field(min_length=1, max_length=16)
+
+
+class MfaSetupRequest(BaseModel):
+    mfa_token: str = Field(min_length=20)
+
+
+class MfaResetRequest(BaseModel):
+    # Login calificado, como en el inicio de sesión: `JPEREZ@NORTE`.
+    login: str = Field(min_length=1, max_length=120)
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(min_length=20)

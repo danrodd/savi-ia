@@ -9,6 +9,7 @@ from app.modules.auth.domain.interfaces.refresh_token_repository import (
 )
 from app.modules.auth.domain.interfaces.seo_plan_repository import SeoPlanRepository
 from app.modules.auth.domain.interfaces.token_service import TokenService
+from app.modules.auth.domain.interfaces.totp_repository import TotpRepository
 from app.modules.auth.domain.interfaces.user_repository import UserRepository
 from app.modules.auth.domain.interfaces.user_repository_factory import (
     UserRepositoryFactory,
@@ -22,6 +23,7 @@ __all__ = [
     "SeoPlanRepository",
     "SeoPlanRepositoryFactory",
     "TokenService",
+    "TotpRepository",
     "UserRepository",
     "UserRepositoryFactory",
 ]

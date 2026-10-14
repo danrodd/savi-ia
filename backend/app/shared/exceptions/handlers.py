@@ -5,6 +5,8 @@ from app.modules.auth.domain.exceptions import (
     AuthError,
     DatabaseDisabledError,
     DatabaseUnreachableError,
+    InvalidMfaCodeError,
+    MfaUnavailableError,
     ModuleAccessDeniedError,
     UnknownDatabaseError,
     UserDisabledError,
@@ -92,6 +94,23 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=503,
             content={"errorCode": "database_unreachable", "detail": exc.message},
+        )
+
+    @app.exception_handler(InvalidMfaCodeError)
+    async def _invalid_mfa_code(_: Request, exc: InvalidMfaCodeError) -> JSONResponse:
+        # 401 + `errorCode`: el formulario del segundo factor señala el campo del código.
+        return JSONResponse(
+            status_code=401,
+            content={"errorCode": "invalid_mfa_code", "detail": exc.message},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @app.exception_handler(MfaUnavailableError)
+    async def _mfa_unavailable(_: Request, exc: MfaUnavailableError) -> JSONResponse:
+        # 403: el pedido es válido pero esta cuenta necesita a un administrador.
+        return JSONResponse(
+            status_code=403,
+            content={"errorCode": "mfa_unavailable", "detail": exc.message},
         )
 
     @app.exception_handler(UserDisabledError)

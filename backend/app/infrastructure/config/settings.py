@@ -264,6 +264,13 @@ class Settings(BaseSettings):
     # siempre vuelve decorativo el límite: cualquiera falsea el header.
     trust_proxy_headers: bool = Field(default=False)
 
+    # ── Segundo factor (TOTP) ────────────────────────────────────────────
+    # `off`: no se pide (escritorio, como siempre). `admins`: lo exigen los administradores.
+    # `all`: lo exige todo el mundo. La contraseña vive en el ERP; el TOTP es de SAVI.
+    mfa_enforcement: Literal["off", "admins", "all"] = Field(default="off")
+    # Nombre que muestra la aplicación de autenticación junto al código.
+    mfa_issuer: str = Field(default="SAVI")
+
     # ── Concurrencia del chat ────────────────────────────────────────────
     # Cada turno con Claude levanta un subproceso del CLI con su contexto.
     # Sin tope, N usuarios simultáneos son N procesos y la máquina se queda

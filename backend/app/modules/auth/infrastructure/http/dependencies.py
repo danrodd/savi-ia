@@ -9,10 +9,12 @@ from fastapi import Depends, Header
 
 from app.infrastructure.config import Settings, get_settings
 from app.infrastructure.database import get_agent_sessionmaker
+from app.modules.auth.application.mfa import MfaService
 from app.modules.auth.application.use_cases import (
     LoginUseCase,
     LogoutUseCase,
     RefreshTokensUseCase,
+    ResetMfaUseCase,
     ResolveUserFromAccessTokenUseCase,
 )
 from app.modules.auth.application.use_cases.resolve_modules_for_database import (
@@ -27,12 +29,14 @@ from app.modules.auth.domain.interfaces import (
     PasswordHasher,
     RefreshTokenRepository,
     TokenService,
+    TotpRepository,
     UserRepositoryFactory,
 )
 from app.modules.auth.domain.value_objects import ModuleCode
 from app.modules.auth.infrastructure.persistence import (
     ErpUserRepositoryFactory,
     SqlAlchemyRefreshTokenRepository,
+    SqlAlchemyTotpRepository,
 )
 from app.modules.auth.infrastructure.security import JwtTokenService, Md5PasswordHasher
 from app.modules.erp_databases.infrastructure import (
@@ -91,13 +95,53 @@ def get_refresh_token_repository() -> RefreshTokenRepository:
 RefreshTokenRepositoryDep = Annotated[RefreshTokenRepository, Depends(get_refresh_token_repository)]
 
 
+def get_totp_repository(settings: SettingsDep) -> TotpRepository:
+    cipher = FernetCredentialCipher(
+        settings.erp_credentials_key, old_keys=[settings.erp_credentials_key_old]
+    )
+    return SqlAlchemyTotpRepository(get_agent_sessionmaker(), cipher)
+
+
+TotpRepositoryDep = Annotated[TotpRepository, Depends(get_totp_repository)]
+
+
+def _mfa_required_for(settings: Settings) -> Callable[[AuthenticatedUser], bool]:
+    """A quién le toca el segundo factor según `MFA_ENFORCEMENT`.
+
+    `admins` cubre al administrador del ERP de su base y a los de `SAVI_ADMIN_LOGINS`: la
+    misma definición de "administrador de SAVI" que usan las pantallas de Administración.
+    """
+    mode = settings.mfa_enforcement
+    if mode == "off":
+        return lambda _user: False
+    if mode == "all":
+        return lambda _user: True
+    listed = settings.savi_admin_logins_set
+    return lambda user: user.is_admin or user.login.strip().upper() in listed
+
+
+def get_mfa_service(
+    settings: SettingsDep, totp: TotpRepositoryDep, tokens: TokenServiceDep
+) -> MfaService:
+    return MfaService(
+        totp_repository=totp,
+        token_service=tokens,
+        is_required=_mfa_required_for(settings),
+        issuer=settings.mfa_issuer,
+    )
+
+
+MfaServiceDep = Annotated[MfaService, Depends(get_mfa_service)]
+
+
 def get_login_use_case(
     users: UserRepositoryFactoryDep,
     refresh: RefreshTokenRepositoryDep,
     hasher: PasswordHasherDep,
     tokens: TokenServiceDep,
+    mfa: MfaServiceDep,
 ) -> LoginUseCase:
-    return LoginUseCase(users, refresh, hasher, tokens)
+    return LoginUseCase(users, refresh, hasher, tokens, mfa)
 
 
 def get_refresh_use_case(
@@ -113,6 +157,30 @@ def get_logout_use_case(
     tokens: TokenServiceDep,
 ) -> LogoutUseCase:
     return LogoutUseCase(refresh, tokens)
+
+
+class _ErpDatabaseLookup:
+    """Adaptador: código de cliente -> id de base, sobre el repositorio de `erp_databases`."""
+
+    def __init__(self, settings: Settings) -> None:
+        cipher = FernetCredentialCipher(
+            settings.erp_credentials_key, old_keys=[settings.erp_credentials_key_old]
+        )
+        self._repository = SqlAlchemyErpDatabaseRepository(get_agent_sessionmaker(), cipher)
+
+    async def database_id_for(self, code: str | None):  # type: ignore[no-untyped-def]
+        database = (
+            await self._repository.get_default()
+            if code is None
+            else await self._repository.get_by_code(code.strip().upper())
+        )
+        return database.id if database is not None else None
+
+
+def get_reset_mfa_use_case(
+    settings: SettingsDep, totp: TotpRepositoryDep, refresh: RefreshTokenRepositoryDep
+) -> ResetMfaUseCase:
+    return ResetMfaUseCase(totp, refresh, _ErpDatabaseLookup(settings))
 
 
 def get_resolve_user_use_case(
@@ -134,6 +202,7 @@ def get_resolve_user_use_case(
 LoginUseCaseDep = Annotated[LoginUseCase, Depends(get_login_use_case)]
 RefreshUseCaseDep = Annotated[RefreshTokensUseCase, Depends(get_refresh_use_case)]
 LogoutUseCaseDep = Annotated[LogoutUseCase, Depends(get_logout_use_case)]
+ResetMfaUseCaseDep = Annotated[ResetMfaUseCase, Depends(get_reset_mfa_use_case)]
 ResolveUserUseCaseDep = Annotated[
     ResolveUserFromAccessTokenUseCase, Depends(get_resolve_user_use_case)
 ]
