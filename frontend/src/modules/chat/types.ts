@@ -72,6 +72,25 @@ export interface UIAttachment {
   previewUrl: string | null
 }
 
+/** Calificación del usuario sobre una respuesta del asistente. */
+export type FeedbackRating = 'up' | 'down'
+
+/** Motivo de un 👎 (los valores son el contrato con el backend). */
+export type FeedbackReason = 'dato_incorrecto' | 'no_entendio' | 'incompleta' | 'muy_lenta' | 'otra'
+
+export interface MessageFeedback {
+  rating: FeedbackRating
+  reason: FeedbackReason | null
+  comment: string | null
+}
+
+/** Lo que el usuario envía al calificar. `reason`/`comment` solo con `down`. */
+export interface FeedbackInput {
+  rating: FeedbackRating
+  reason?: FeedbackReason | null
+  comment?: string | null
+}
+
 export interface StoredMessage {
   id: string
   conversation_id: string
@@ -86,6 +105,8 @@ export interface StoredMessage {
   superseded_by_id: string | null
   sources?: MessageSource[]
   attachments?: ChatAttachment[]
+  /** Calificación propia. Un backend anterior no lo manda. */
+  feedback?: MessageFeedback | null
 }
 
 export interface ConversationDetail {
@@ -154,6 +175,8 @@ export interface UIMessage {
   interrupted?: boolean
   error?: string
   sources?: MessageSource[]
+  /** Calificación propia de la respuesta (`null`/ausente = sin calificar). */
+  feedback?: MessageFeedback | null
   /** Imágenes adjuntas (solo mensajes del usuario). */
   attachments?: UIAttachment[]
 }

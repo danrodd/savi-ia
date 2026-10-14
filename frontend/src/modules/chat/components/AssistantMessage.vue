@@ -5,6 +5,7 @@ import type { MessageVersion, UIMessage } from '../types'
 import { linkCitations } from '../utils/citations'
 import { groupToolCalls } from '../utils/groupToolCalls'
 import BrandMark from './BrandMark.vue'
+import FeedbackButtons from './FeedbackButtons.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import MessageSources from './MessageSources.vue'
 import ShareMenu from './ShareMenu.vue'
@@ -73,6 +74,16 @@ const isViewingHistorical = computed(
     versionIdx.value !== null &&
     props.versions !== null &&
     versionIdx.value < totalVersions.value - 1,
+)
+
+// Calificar: solo la versión vigente, ya persistida (con id real) y completa.
+const canRate = computed(
+  () =>
+    !props.readOnly &&
+    props.message.id !== null &&
+    props.message.done &&
+    !props.message.error &&
+    !isViewingHistorical.value,
 )
 
 async function copyText(): Promise<void> {
@@ -156,6 +167,11 @@ function next(): void {
           </svg>
           <span>{{ copied ? 'Copiado' : 'Copiar' }}</span>
         </button>
+        <FeedbackButtons
+          v-if="canRate"
+          :message-id="message.id as string"
+          :feedback="message.feedback"
+        />
         <ShareMenu
           v-if="!readOnly"
           kind="message"

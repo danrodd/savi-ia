@@ -6,10 +6,13 @@ import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { peekAttachmentUrl, seedAttachmentUrl } from '../lib/attachmentBlobCache'
 import { agentService } from '../services/agentService'
 import { conversationService } from '../services/conversationService'
+import { feedbackService } from '../services/feedbackService'
 import type {
   ChatAttachment,
   ChatEvent,
   Conversation,
+  FeedbackInput,
+  MessageFeedback,
   MessageVersion,
   SendChatBody,
   StoredMessage,
@@ -59,6 +62,7 @@ function storedToUI(m: StoredMessage): UIMessage {
     interrupted: m.finish_reason === 'interrupted',
     error: m.finish_reason === 'error' ? 'La respuesta falló.' : undefined,
     sources: m.sources ?? [],
+    feedback: m.feedback ?? null,
   }
 }
 
@@ -755,6 +759,47 @@ export const useChatStore = defineStore('chat', () => {
     abortController?.abort()
   }
 
+  /**
+   * Califica (o, con `null`, quita la calificación de) una respuesta.
+   *
+   * Optimista: la UI cambia al instante y, si el backend rechaza, vuelve al
+   * valor anterior. Devuelve si quedó guardada.
+   */
+  async function rateMessage(messageId: string, input: FeedbackInput | null): Promise<boolean> {
+    const convId = activeConversationId.value
+    const idx = messages.value.findIndex((m) => m.id === messageId && m.role === 'assistant')
+    const target = messages.value[idx]
+    if (!convId || !target) return false
+
+    const previous = target.feedback ?? null
+    const optimistic: MessageFeedback | null =
+      input === null
+        ? null
+        : {
+            rating: input.rating,
+            reason: input.rating === 'down' ? (input.reason ?? null) : null,
+            comment: input.rating === 'down' ? input.comment?.trim() || null : null,
+          }
+    const setFeedback = (value: MessageFeedback | null): void => {
+      const i = messages.value.findIndex((m) => m.id === messageId)
+      const current = messages.value[i]
+      if (current) messages.value[i] = { ...current, feedback: value }
+    }
+
+    setFeedback(optimistic)
+    try {
+      if (optimistic === null) {
+        await feedbackService.clear(convId, messageId)
+      } else {
+        await feedbackService.set(convId, messageId, optimistic)
+      }
+      return true
+    } catch {
+      setFeedback(previous)
+      return false
+    }
+  }
+
   /** Suelta el stream local sin tocar el turno del servidor. */
   function detachStream(): void {
     if (!streaming.value) return
@@ -796,5 +841,6 @@ export const useChatStore = defineStore('chat', () => {
     regenerateLastAssistant,
     stopStream,
     detachStream,
+    rateMessage,
   }
 })

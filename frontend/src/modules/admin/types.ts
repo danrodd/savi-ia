@@ -337,3 +337,64 @@ export interface RowAction<Id extends string = string> {
   /** Separador antes de esta acción. */
   divider?: boolean
 }
+
+// ── Feedback del piloto ──────────────────────────────────────────────────
+
+export type FeedbackRating = 'up' | 'down'
+
+export type FeedbackReason = 'dato_incorrecto' | 'no_entendio' | 'incompleta' | 'muy_lenta' | 'otra'
+
+export interface FeedbackItem {
+  id: string
+  rating: FeedbackRating
+  reason: FeedbackReason | null
+  comment: string | null
+  created_at: string
+  updated_at: string
+  user_id: number
+  user_login: string | null
+  user_name: string | null
+  conversation_id: string
+  message_id: string
+  question: string | null
+  answer: string
+  provider: string | null
+  model: string | null
+  cost_usd: number | null
+  tools: string[]
+  database_code: string | null
+}
+
+export interface FeedbackPage {
+  items: FeedbackItem[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface FeedbackDaily {
+  day: string
+  up: number
+  down: number
+}
+
+export interface FeedbackSummary {
+  total: number
+  up: number
+  down: number
+  positive_pct: number | null
+  daily: FeedbackDaily[]
+  top_reasons: { reason: FeedbackReason; count: number }[]
+  by_model: { provider: string | null; model: string | null; up: number; down: number }[]
+}
+
+/** Filtros del panel. Vacío = sin filtro. */
+export interface FeedbackFilters {
+  rating: FeedbackRating | ''
+  reason: FeedbackReason | ''
+  from: string
+  to: string
+  model: string
+  user: string
+  text: string
+}

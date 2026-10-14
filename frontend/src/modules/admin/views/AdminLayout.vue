@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { ChartColumn, ChevronLeft, Database, FileText, Sparkles } from 'lucide-vue-next'
+import {
+  ChartColumn,
+  ChevronLeft,
+  Database,
+  FileText,
+  MessageSquareHeart,
+  Sparkles,
+} from 'lucide-vue-next'
 import { RouterLink, RouterView } from 'vue-router'
 
 import AppVersion from '@/components/AppVersion.vue'
@@ -9,6 +16,7 @@ const NAV = [
   { to: { name: 'admin-llm-providers' }, label: 'Proveedores de IA', icon: Sparkles },
   { to: { name: 'admin-company-knowledge' }, label: 'Conocimiento de la empresa', icon: FileText },
   { to: { name: 'admin-usage' }, label: 'Consumo', icon: ChartColumn },
+  { to: { name: 'admin-feedback' }, label: 'Feedback del piloto', icon: MessageSquareHeart },
 ] as const
 </script>
 
