@@ -123,6 +123,24 @@ async def test_policy_travels_in_the_heartbeat_and_in_the_enrollment(fx: Fixture
     assert beat.json()["policy"]["identity_mode"] == "named"
 
 
+async def test_allow_local_cli_is_off_by_default_and_travels_in_the_heartbeat(
+    fx: Fixture,
+) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+    assert (await heartbeat(fx, linked)).json()["policy"]["allow_local_cli"] is False
+
+    res = await fx.console.http.patch(
+        f"{API}/clients/{client_id}/policy",
+        json={"allow_local_cli": True},
+        headers=fx.admin.auth,
+    )
+
+    assert res.status_code == 200
+    assert res.json()["allow_local_cli"] is True
+    assert (await heartbeat(fx, linked)).json()["policy"]["allow_local_cli"] is True
+
+
 async def test_only_admin_can_change_the_policy(fx: Fixture) -> None:
     client_id = await make_client(fx)
     for who in (fx.soporte, fx.comercial):

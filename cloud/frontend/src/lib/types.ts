@@ -60,6 +60,8 @@ export interface Client {
   identity_mode: 'pseudonym' | 'named'
   /** Las instalaciones del cliente quedan solo con el chat. */
   config_locked: boolean
+  /** La instalación local puede ofrecer el CLI de Claude con la cuenta de la persona. */
+  allow_local_cli: boolean
 }
 
 export interface Page<T> {

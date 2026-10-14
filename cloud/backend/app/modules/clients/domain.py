@@ -39,6 +39,8 @@ class Client:
     identity_mode: IdentityMode = IdentityMode.PSEUDONYM
     # Las instalaciones de este cliente quedan solo con el chat (sin Administración).
     config_locked: bool = False
+    # Las instalaciones locales pueden ofrecer el CLI de Claude con la cuenta de la persona.
+    allow_local_cli: bool = False
 
 
 class InvalidClientCode(DomainError):

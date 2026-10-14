@@ -40,6 +40,9 @@ class ClientModel(Base):
     config_locked: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=sa_false()
     )
+    allow_local_cli: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=sa_false()
+    )
 
 
 def to_entity(model: ClientModel) -> Client:
@@ -53,6 +56,7 @@ def to_entity(model: ClientModel) -> Client:
         updated_at=as_utc(model.updated_at),
         identity_mode=IdentityMode(model.identity_mode),
         config_locked=model.config_locked,
+        allow_local_cli=model.allow_local_cli,
     )
 
 
@@ -71,6 +75,7 @@ class SqlAlchemyClientRepository:
             updated_at=client.updated_at,
             identity_mode=client.identity_mode.value,
             config_locked=client.config_locked,
+            allow_local_cli=client.allow_local_cli,
         )
         try:
             async with self._session.begin_nested():
@@ -98,6 +103,7 @@ class SqlAlchemyClientRepository:
         model.status = client.status.value
         model.identity_mode = client.identity_mode.value
         model.config_locked = client.config_locked
+        model.allow_local_cli = client.allow_local_cli
         model.updated_at = client.updated_at
         await self._session.flush()
 

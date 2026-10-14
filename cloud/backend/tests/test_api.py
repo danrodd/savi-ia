@@ -184,6 +184,7 @@ async def test_redeem_creates_instance_and_matches_contract(env: Env) -> None:
         "max_batch_events": 500,
         "sync_enabled": True,
         "config_locked": False,
+        "allow_local_cli": False,
         "identity_mode": "pseudonym",
     }
     stored = await env.instance(body["instance_id"])

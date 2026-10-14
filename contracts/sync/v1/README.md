@@ -36,6 +36,9 @@ JSON Schema draft 2020-12. Todo viaja en JSON UTF-8; las fechas son ISO-8601 con
 - **Política por cliente (aditivo):** `policy.config_locked` (la instalación queda solo
   con el chat) y `policy.identity_mode` (`pseudonym` por defecto, `named` solo para la
   organización interna). Una instancia que no los conoce los ignora.
+- **`policy.allow_local_cli`** (aditivo, `false` por defecto): la instalación local puede
+  ofrecer el CLI de Claude con la cuenta de la persona. Solo aplica a SAVI local; el Master
+  nunca lo ofrece.
 - **`session/1.user_label`** (opcional) viaja **solo** con `identity_mode = named`: el
   código de usuario del ERP, nunca el nombre completo ni el correo. Cloud lo descarta si el
   cliente no está en modo `named`.

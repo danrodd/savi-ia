@@ -74,6 +74,7 @@ class Policy(_Envelope):
     sync_enabled: StrictBool
     # Política por cliente (aditivo dentro de v1: una instancia que no los conoce los ignora).
     config_locked: StrictBool = False
+    allow_local_cli: StrictBool = False
     identity_mode: Literal["pseudonym", "named"] = "pseudonym"
 
 

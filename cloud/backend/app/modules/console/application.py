@@ -125,6 +125,7 @@ class ClientActions:
         *,
         identity_mode: IdentityMode | None,
         config_locked: bool | None,
+        allow_local_cli: bool | None = None,
         ctx: RequestContext,
     ) -> Client:
         """Cambia la política que baja a las instalaciones del cliente (heartbeat).
@@ -137,6 +138,9 @@ class ClientActions:
             client,
             identity_mode=identity_mode or client.identity_mode,
             config_locked=client.config_locked if config_locked is None else config_locked,
+            allow_local_cli=(
+                client.allow_local_cli if allow_local_cli is None else allow_local_cli
+            ),
             updated_at=self.clock(),
         )
         await self.clients.save(updated)
@@ -148,10 +152,12 @@ class ClientActions:
             before={
                 "identity_mode": client.identity_mode.value,
                 "config_locked": client.config_locked,
+                "allow_local_cli": client.allow_local_cli,
             },
             after={
                 "identity_mode": updated.identity_mode.value,
                 "config_locked": updated.config_locked,
+                "allow_local_cli": updated.allow_local_cli,
             },
         )
         return updated

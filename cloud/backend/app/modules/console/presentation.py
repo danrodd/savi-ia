@@ -70,6 +70,7 @@ class ClientOut(BaseModel):
     oldest_version: str | None
     identity_mode: str
     config_locked: bool
+    allow_local_cli: bool
 
     @classmethod
     def of(cls, summary: ClientSummary) -> ClientOut:
@@ -88,6 +89,7 @@ class ClientOut(BaseModel):
             oldest_version=summary.oldest_version,
             identity_mode=c.identity_mode.value,
             config_locked=c.config_locked,
+            allow_local_cli=c.allow_local_cli,
         )
 
 
@@ -268,6 +270,7 @@ class ClientPatch(_Body):
 class ClientPolicyPatch(_Body):
     identity_mode: IdentityMode | None = None
     config_locked: bool | None = None
+    allow_local_cli: bool | None = None
 
 
 class RevokeBody(_Body):
@@ -443,6 +446,7 @@ async def set_client_policy(
             client_id,
             identity_mode=body.identity_mode,
             config_locked=body.config_locked,
+            allow_local_cli=body.allow_local_cli,
             ctx=request_context(request, principal),
         )
         return await _client_out(request, session, client_id)

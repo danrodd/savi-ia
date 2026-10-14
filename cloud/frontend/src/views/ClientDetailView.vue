@@ -103,7 +103,7 @@ async function runClientAction(): Promise<void> {
 }
 
 // --- política de las instalaciones del cliente
-type PolicyChange = 'lock' | 'unlock' | 'named' | 'pseudonym'
+type PolicyChange = 'lock' | 'unlock' | 'named' | 'pseudonym' | 'cli_on' | 'cli_off'
 const policyChange = ref<PolicyChange | null>(null)
 const policyBusy = ref(false)
 const policyError = ref<string | null>(null)
@@ -127,6 +127,18 @@ const POLICY_COPY: Record<PolicyChange, { title: string; message: string; confir
       'Cloud va a guardar el código de usuario de quienes inician sesión (por ejemplo JPEREZ), no solo un seudónimo. Corresponde a la organización interna: no lo actives para un cliente que no lo autorizó.',
     confirm: 'Identificar personas',
   },
+  cli_on: {
+    title: 'Permitir el CLI de Claude en las instalaciones',
+    message:
+      'Quien administre una instalación local podrá usar la sesión de Claude iniciada en su equipo, con su propia cuenta. El consumo de esa cuenta no pasa por SEO Group. Aplica en el próximo contacto.',
+    confirm: 'Permitir CLI de Claude',
+  },
+  cli_off: {
+    title: 'Dejar de permitir el CLI de Claude',
+    message:
+      'Las instalaciones que lo estén usando dejan de responder en el turno siguiente hasta que se configure otro proveedor de IA.',
+    confirm: 'No permitir',
+  },
   pseudonym: {
     title: 'Volver a seudónimos',
     message:
@@ -145,7 +157,9 @@ async function applyPolicy(): Promise<void> {
       id.value,
       change === 'lock' || change === 'unlock'
         ? { config_locked: change === 'lock' }
-        : { identity_mode: change },
+        : change === 'cli_on' || change === 'cli_off'
+          ? { allow_local_cli: change === 'cli_on' }
+          : { identity_mode: change },
     )
     await client.reload()
   } catch (e) {
@@ -272,6 +286,26 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
             @click="policyChange = client.data.value.identity_mode === 'named' ? 'pseudonym' : 'named'"
           >
             {{ client.data.value.identity_mode === 'named' ? 'Usar seudónimos' : 'Identificar personas' }}
+          </button>
+        </div>
+        <div class="policy__row">
+          <div>
+            <strong>CLI de Claude en el equipo</strong>
+            <p class="muted">
+              {{
+                client.data.value.allow_local_cli
+                  ? 'Permitido: la instalación local puede usar la sesión de Claude de la persona.'
+                  : 'No permitido: solo se usan las claves que configure el administrador.'
+              }}
+            </p>
+          </div>
+          <button
+            class="btn btn-small"
+            type="button"
+            data-test="toggle-cli"
+            @click="policyChange = client.data.value.allow_local_cli ? 'cli_off' : 'cli_on'"
+          >
+            {{ client.data.value.allow_local_cli ? 'No permitir' : 'Permitir CLI de Claude' }}
           </button>
         </div>
       </section>
@@ -595,7 +629,7 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
       :title="policyChange ? POLICY_COPY[policyChange].title : ''"
       :message="policyChange ? POLICY_COPY[policyChange].message : ''"
       :confirm-label="policyChange ? POLICY_COPY[policyChange].confirm : 'Confirmar'"
-      :danger="policyChange === 'lock' || policyChange === 'named'"
+      :danger="policyChange === 'lock' || policyChange === 'named' || policyChange === 'cli_on'"
       :busy="policyBusy"
       @confirm="applyPolicy"
       @cancel="policyChange = null"

@@ -49,6 +49,7 @@ def policy_for(status: InstanceStatus, client: Client | None = None) -> Policy:
         max_batch_events=MAX_BATCH_EVENTS,
         sync_enabled=status is InstanceStatus.ACTIVE,
         config_locked=client.config_locked if client else False,
+        allow_local_cli=client.allow_local_cli if client else False,
         identity_mode=client.identity_mode.value if client else "pseudonym",
     )
 

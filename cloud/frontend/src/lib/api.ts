@@ -76,7 +76,11 @@ export const consoleApi = {
     http.patch<Client>(`${API}/clients/${id}`, body),
   setClientPolicy: (
     id: string,
-    body: { identity_mode?: 'pseudonym' | 'named'; config_locked?: boolean },
+    body: {
+      identity_mode?: 'pseudonym' | 'named'
+      config_locked?: boolean
+      allow_local_cli?: boolean
+    },
   ) => http.patch<Client>(`${API}/clients/${id}/policy`, body),
   suspendClient: (id: string) => http.post<Client>(`${API}/clients/${id}/suspend`),
   activateClient: (id: string) => http.post<Client>(`${API}/clients/${id}/activate`),

@@ -37,6 +37,7 @@ const CLIENT: Client = {
   oldest_version: 'v1.2.0',
   identity_mode: 'pseudonym',
   config_locked: false,
+  allow_local_cli: false,
 }
 
 async function mountView(permissions: string[]) {
@@ -133,6 +134,22 @@ describe('política de las instalaciones del cliente', () => {
       ?.trigger('click')
     await flushPromises()
     expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { identity_mode: 'named' })
+  })
+
+  it('permitir el CLI de Claude pide confirmación y manda solo ese campo', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+
+    await wrapper.get('[data-test="toggle-cli"]').trigger('click')
+    expect(api.setClientPolicy).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('con su propia cuenta')
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Permitir CLI de Claude' && b.classes().includes('btn-danger'))
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { allow_local_cli: true })
   })
 
   it('un cliente ya bloqueado ofrece permitir la configuración', async () => {
