@@ -14,6 +14,7 @@ class ConversationMapper:
             title_locked=entity.title_locked,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
+            message_count=entity.message_count,
         )
 
     @staticmethod

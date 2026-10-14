@@ -62,7 +62,30 @@ class SqlAlchemyConversationRepository(ConversationRepository):
         stmt = stmt.order_by(ConversationModel.updated_at.desc()).limit(limit).offset(offset)
 
         result = await self._session.execute(stmt)
-        return [ConversationOrmMapper.to_entity(m) for m in result.scalars().all()]
+        models = list(result.scalars().all())
+        if not models:
+            return []
+
+        # Conteo de mensajes activos de la página: UNA consulta agrupada
+        # acotada a los ids ya paginados (no recorre toda `messages` ni hace
+        # una consulta por conversación). Las que no tienen mensajes no
+        # aparecen en el resultado y quedan en 0.
+        counts_result = await self._session.execute(
+            select(MessageModel.conversation_id, func.count(MessageModel.id))
+            .where(
+                MessageModel.conversation_id.in_([m.id for m in models]),
+                MessageModel.superseded_at.is_(None),
+            )
+            .group_by(MessageModel.conversation_id)
+        )
+        counts: dict[UUID, int] = {row[0]: row[1] for row in counts_result.all()}
+
+        conversations: list[Conversation] = []
+        for model in models:
+            entity = ConversationOrmMapper.to_entity(model)
+            entity.message_count = counts.get(model.id, 0)
+            conversations.append(entity)
+        return conversations
 
     async def update_title(
         self,

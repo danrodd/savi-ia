@@ -27,6 +27,7 @@ type Conversation = {
   title_locked: boolean; // true tras un PATCH manual del usuario
   created_at: string;    // ISO 8601 UTC
   updated_at: string;
+  message_count: number; // mensajes activos (no superseded); 0 = vacía, el sidebar la oculta salvo que sea la activa
 }
 ```
 
@@ -274,7 +275,7 @@ Todos los payloads incluyen `type`. Otros campos varían:
 | `sources`         | `sources: MessageSource[]`                         | Documentos de la empresa citados. Llega **justo antes** de `done` y solo si hubo referencias válidas. |
 | `title_update`    | `title: string`                                    | Renombra la conversación en el sidebar en vivo. Llega 0, 1 o 2 veces por turno (fase provisional + fase refinada). Sólo en conversaciones cuyo título sigue siendo el default. |
 | `done`            | `usage: object \| null`, `cost_usd: number \| null`, `finish_reason: string` | Cierre limpio |
-| `error`           | `message: string`                                  | El stream falló; muestra error y permite reintentar |
+| `error`           | `message: string`, `code?: "provider_error" \| "internal_error" \| null` | El stream falló; muestra error y permite reintentar. `provider_error` = credencial, saldo o cuota del proveedor de IA: el `message` trae detalle técnico solo apto para administradores (a los demás se les muestra un aviso genérico). `internal_error` = falla inesperada con texto crudo. `null`/ausente = mensaje apto para cualquiera |
 
 #### Ejemplo crudo del stream
 

@@ -1,3 +1,4 @@
+from dataclasses import replace
 from uuid import UUID
 
 from app.modules.conversations.application.dtos import ConversationWithMessagesDTO
@@ -34,7 +35,9 @@ class GetConversationWithMessagesUseCase:
             include_superseded=include_superseded,
         )
 
+        dto = ConversationMapper.to_dto(conversation)
+        active_count = sum(1 for m in messages if m.superseded_at is None)
         return ConversationWithMessagesDTO(
-            conversation=ConversationMapper.to_dto(conversation),
+            conversation=replace(dto, message_count=active_count),
             messages=[ConversationMapper.message_to_dto(m) for m in messages],
         )

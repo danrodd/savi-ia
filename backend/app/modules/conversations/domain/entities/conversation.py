@@ -30,6 +30,9 @@ class Conversation:
     created_at: datetime = field(default_factory=_utc_now)
     updated_at: datetime = field(default_factory=_utc_now)
     deleted_at: datetime | None = None
+    # Mensajes NO superseded. Solo lo calcula el listado (una subconsulta
+    # agrupada); en el resto de las lecturas queda en 0 y no es confiable.
+    message_count: int = 0
 
     def rename(self, new_title: str, *, lock: bool = False) -> None:
         """Renombra la conversación.

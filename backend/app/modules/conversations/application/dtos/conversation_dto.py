@@ -34,6 +34,8 @@ class ConversationDTO:
     updated_at: datetime
     erp_database_id: UUID | None = None
     owner_erp_database_id: UUID | None = None
+    # Mensajes activos (no superseded). Aditivo: 0 si no se calculó.
+    message_count: int = 0
 
 
 @dataclass(frozen=True)

@@ -45,6 +45,9 @@ class ConversationResponse(BaseModel):
     title_locked: bool
     created_at: datetime
     updated_at: datetime
+    # Mensajes activos (no superseded). La barra lateral oculta las
+    # conversaciones con 0 que no son la activa.
+    message_count: int = 0
 
     @classmethod
     def from_dto(cls, dto: ConversationDTO) -> "ConversationResponse":
@@ -56,6 +59,7 @@ class ConversationResponse(BaseModel):
             title_locked=dto.title_locked,
             created_at=dto.created_at,
             updated_at=dto.updated_at,
+            message_count=dto.message_count,
         )
 
 
