@@ -83,10 +83,28 @@ class DoneEvent:
     type: ChatEventType = ChatEventType.DONE
 
 
+class ErrorCode(StrEnum):
+    """Categoría de un error del turno, para que el cliente decida qué mostrar.
+
+    `PROVIDER`: el proveedor de IA no puede responder (credencial inválida,
+    sin saldo, cuota agotada, proveedor caído). Es un problema que sólo un
+    administrador puede resolver: el mensaje trae detalle técnico que un
+    usuario funcional no necesita ver.
+    `INTERNAL`: falla inesperada del turno; el mensaje es el texto crudo.
+    """
+
+    PROVIDER = "provider_error"
+    INTERNAL = "internal_error"
+
+
 @dataclass(slots=True)
 class ErrorEvent:
     message: str
     type: ChatEventType = ChatEventType.ERROR
+    # `None` = mensaje ya pensado para cualquier usuario (p.ej. "No pude
+    # generar una respuesta para esa consulta."). Campo aditivo: los clientes
+    # que no lo conocen siguen mostrando `message`.
+    code: ErrorCode | None = None
 
 
 ChatEvent = (

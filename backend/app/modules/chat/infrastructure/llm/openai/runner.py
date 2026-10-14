@@ -28,6 +28,7 @@ from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
+    ErrorCode,
     ErrorEvent,
     ImageInput,
     TextDeltaEvent,
@@ -255,7 +256,8 @@ class OpenAIRunner(LLMRunner):
                                 message=user_facing_error(
                                     "La API key de OpenAI no es válida o no tiene permisos.",
                                     credential_remedy=_CREDENTIAL_REMEDY,
-                                )
+                                ),
+                                code=ErrorCode.PROVIDER,
                             )
                         else:
                             yield ErrorEvent(message=_SECURITY_MESSAGE)
@@ -269,7 +271,8 @@ class OpenAIRunner(LLMRunner):
                             "La cuenta de OpenAI no tiene créditos. Un administrador "
                             "debe cargar saldo en la plataforma para que el asistente "
                             "pueda responder."
-                        )
+                        ),
+                        code=ErrorCode.PROVIDER,
                     )
                     return
                 if code in _AUTH_STATUS:
@@ -277,7 +280,8 @@ class OpenAIRunner(LLMRunner):
                         message=user_facing_error(
                             "La API key de OpenAI no es válida o no tiene permisos.",
                             credential_remedy=_CREDENTIAL_REMEDY,
-                        )
+                        ),
+                        code=ErrorCode.PROVIDER,
                     )
                     return
                 if _transient(error, code) and not first_token:
@@ -305,7 +309,8 @@ class OpenAIRunner(LLMRunner):
                         "openai_unavailable model=%s status=%s", selected_model, code
                     )
                     yield ErrorEvent(
-                        message="No pude generar una respuesta para esa consulta."
+                        message="No pude generar una respuesta para esa consulta.",
+                        code=ErrorCode.PROVIDER,
                     )
                     return
                 log.error(
@@ -315,13 +320,10 @@ class OpenAIRunner(LLMRunner):
                     retry_attempt,
                     exc_info=error,
                 )
-                yield ErrorEvent(
-                    message=(
-                        str(error)
-                        if first_token
-                        else "No pude generar una respuesta para esa consulta."
-                    )
-                )
+                if first_token:
+                    yield ErrorEvent(message=str(error), code=ErrorCode.INTERNAL)
+                else:
+                    yield ErrorEvent(message="No pude generar una respuesta para esa consulta.")
                 return
 
             if refusal_seen:

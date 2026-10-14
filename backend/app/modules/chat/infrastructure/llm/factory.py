@@ -11,7 +11,7 @@ from uuid import UUID
 
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
-from app.modules.chat.domain.entities import ChatEvent, ErrorEvent, ImageInput
+from app.modules.chat.domain.entities import ChatEvent, ErrorCode, ErrorEvent, ImageInput
 from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
 from app.modules.chat.domain.interfaces import (
     ActiveProvider,
@@ -88,7 +88,7 @@ class ResolvingLLMRunner(LLMRunner):
         try:
             runner = self._factory.build(await self._resolver.resolve())
         except LlmProviderUnavailableError as e:
-            yield ErrorEvent(message=e.reason)
+            yield ErrorEvent(message=e.reason, code=ErrorCode.PROVIDER)
             return
         async for event in runner.stream_turn(
             prompt,

@@ -9,6 +9,7 @@ from openai import APIConnectionError, APIError
 from app.infrastructure.config import Settings
 from app.modules.chat.domain.entities import (
     DoneEvent,
+    ErrorCode,
     ErrorEvent,
     TextDeltaEvent,
     ToolResultEvent,
@@ -171,6 +172,7 @@ async def test_runner_surfaces_credential_error(monkeypatch: pytest.MonkeyPatch)
 
     error = next(e for e in events if isinstance(e, ErrorEvent))
     assert "API key de OpenAI" in error.message
+    assert error.code == ErrorCode.PROVIDER
 
 
 @pytest.mark.asyncio
@@ -327,6 +329,7 @@ async def test_runner_does_not_retry_when_quota_is_exhausted(
 
     error = next(e for e in events if isinstance(e, ErrorEvent))
     assert "créditos" in error.message
+    assert error.code == ErrorCode.PROVIDER
     assert responses.calls == 1
 
 

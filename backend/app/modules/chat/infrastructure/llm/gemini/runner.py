@@ -15,6 +15,7 @@ from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
+    ErrorCode,
     ErrorEvent,
     ImageInput,
     TextDeltaEvent,
@@ -222,14 +223,15 @@ class GeminiRunner(LLMRunner):
                         message=user_facing_error(
                             "La API key de Gemini no es válida o no tiene permisos.",
                             credential_remedy=_CREDENTIAL_REMEDY,
-                        )
+                        ),
+                        code=ErrorCode.PROVIDER,
                     )
                     return
                 quota = classify_quota_error(error)
                 if quota == QuotaFailure.NO_CREDITS:
                     # Reintentar no carga saldo: se corta con el camino de salida.
                     log.error("gemini_no_credits model=%s", selected_model)
-                    yield ErrorEvent(message=_NO_CREDITS_MESSAGE)
+                    yield ErrorEvent(message=_NO_CREDITS_MESSAGE, code=ErrorCode.PROVIDER)
                     return
                 if quota == QuotaFailure.DAILY_QUOTA and not first_token:
                     # La cuota diaria es por modelo: el siguiente puede tener.
@@ -240,7 +242,7 @@ class GeminiRunner(LLMRunner):
                         log.warning("gemini_daily_quota_next_model model=%s", selected_model)
                         continue
                     log.error("gemini_daily_quota model=%s", selected_model)
-                    yield ErrorEvent(message=_DAILY_QUOTA_MESSAGE)
+                    yield ErrorEvent(message=_DAILY_QUOTA_MESSAGE, code=ErrorCode.PROVIDER)
                     return
                 if code in _RETRYABLE_STATUS and not first_token:
                     retry_attempt += 1
@@ -273,7 +275,10 @@ class GeminiRunner(LLMRunner):
                         code,
                         retry_attempt,
                     )
-                    yield ErrorEvent(message="No pude generar una respuesta para esa consulta.")
+                    yield ErrorEvent(
+                        message="No pude generar una respuesta para esa consulta.",
+                        code=ErrorCode.PROVIDER,
+                    )
                     return
                 if _is_thinking_error(error) and not first_token and not thinking_retry:
                     thinking_retry = True
@@ -285,13 +290,10 @@ class GeminiRunner(LLMRunner):
                     code,
                     retry_attempt,
                 )
-                yield ErrorEvent(
-                    message=(
-                        str(error)
-                        if first_token
-                        else "No pude generar una respuesta para esa consulta."
-                    )
-                )
+                if first_token:
+                    yield ErrorEvent(message=str(error), code=ErrorCode.INTERNAL)
+                else:
+                    yield ErrorEvent(message="No pude generar una respuesta para esa consulta.")
                 return
 
             if last_reason in _SECURITY_REASONS:

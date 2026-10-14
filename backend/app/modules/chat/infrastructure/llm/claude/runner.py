@@ -34,6 +34,7 @@ from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
     ChatEvent,
     DoneEvent,
+    ErrorCode,
     ErrorEvent,
     ImageInput,
     ThinkingDeltaEvent,
@@ -47,7 +48,7 @@ from app.modules.chat.infrastructure.llm.claude.mcp_adapter import (
     allowed_tool_names,
     build_mcp_server,
 )
-from app.modules.chat.infrastructure.llm.errors import user_facing_error
+from app.modules.chat.infrastructure.llm.errors import is_credential_error, user_facing_error
 from app.modules.chat.infrastructure.llm.system_prompt import build_system_prompt, today_in
 from app.modules.chat.infrastructure.llm.tools.registry import build_savi_tools
 from app.modules.chat.infrastructure.llm.truncation import ResponseTruncator
@@ -245,7 +246,7 @@ class ClaudeAgentRunner(LLMRunner):
                     )
                     if failure is not None:
                         log.error("claude_provider_error kind=%s", msg.error)
-                        yield ErrorEvent(message=failure)
+                        yield ErrorEvent(message=failure, code=ErrorCode.PROVIDER)
                         return
                     for block in msg.content:
                         if isinstance(block, TextBlock):
@@ -279,4 +280,7 @@ class ClaudeAgentRunner(LLMRunner):
                 log.info("agent_subprocess_cleanup_noise error=%s", e)
                 return
             log.exception("agent_turn_failed")
-            yield ErrorEvent(message=user_facing_error(str(e), credential_remedy=CREDENTIAL_REMEDY))
+            yield ErrorEvent(
+                message=user_facing_error(str(e), credential_remedy=CREDENTIAL_REMEDY),
+                code=ErrorCode.PROVIDER if is_credential_error(str(e)) else ErrorCode.INTERNAL,
+            )

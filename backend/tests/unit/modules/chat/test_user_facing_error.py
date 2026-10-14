@@ -15,7 +15,7 @@ import pytest
 from claude_agent_sdk import AssistantMessage, TextBlock
 
 from app.infrastructure.config import Settings
-from app.modules.chat.domain.entities.chat_event import ErrorEvent
+from app.modules.chat.domain.entities.chat_event import ErrorCode, ErrorEvent
 from app.modules.chat.domain.interfaces.active_provider import ActiveProvider
 from app.modules.chat.infrastructure.llm.claude import runner as claude_runner
 from app.modules.chat.infrastructure.llm.claude.runner import (
@@ -109,3 +109,18 @@ async def test_the_runner_does_not_stream_the_rejection_as_the_answer(
 
     assert [type(event) for event in events] == [ErrorEvent]
     assert "no tiene créditos" in cast(ErrorEvent, events[0]).message
+    # La categoría deja que el cliente oculte el detalle a quien no administra.
+    assert cast(ErrorEvent, events[0]).code == ErrorCode.PROVIDER
+
+
+def test_error_event_serializes_its_category_for_the_sse_payload() -> None:
+    from app.modules.chat.infrastructure.http.routes import _event_to_payload
+
+    provider = _event_to_payload(ErrorEvent(message="x", code=ErrorCode.PROVIDER))
+    plain = _event_to_payload(ErrorEvent(message="No pude generar una respuesta."))
+
+    assert provider["code"] == "provider_error"
+    assert provider["type"] == "error"
+    # Campo aditivo: sin categoría viaja `null` y `message` sigue intacto.
+    assert plain["code"] is None
+    assert plain["message"] == "No pude generar una respuesta."
