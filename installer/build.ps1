@@ -17,6 +17,12 @@
 .PARAMETER SkipInstaller
     Se detiene después de PyInstaller, sin compilar el .exe del instalador.
 
+.PARAMETER SaviCloudUrl
+    URL base de SAVI Cloud que el instalador escribe en el .env cuando el
+    técnico carga un token de vinculación (se pasa a Inno como
+    /DSaviCloudUrl). Vacía por defecto: sin URL, el asistente no muestra la
+    página "Conectar con SAVI Cloud" y no escribe nada de Cloud.
+
 .PARAMETER AllowDirty
     Permite construir con cambios sin commitear. La versión queda marcada
     con "-sucio". Solo para pruebas locales: un instalador que se entrega
@@ -29,7 +35,8 @@
 param(
     [switch]$SkipFrontend,
     [switch]$SkipInstaller,
-    [switch]$AllowDirty
+    [switch]$AllowDirty,
+    [string]$SaviCloudUrl = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -220,7 +227,16 @@ if ($SkipInstaller) {
 Write-Step "Compilando el instalador con Inno Setup (versión $($Build.version))"
 # AppVersion admite texto (v1.4.0-14-gbf8eee7); VersionInfoVersion, el recurso
 # de versión del .exe, exige un número puro: sale del último tag.
-& $Iscc "/DAppVersion=$($Build.version)" "/DAppVersionNumber=$($Build.numero)" (Join-Path $InstallerDir 'savi.iss')
+# La URL de SAVI Cloud es opcional: vacía, el instalador omite la página de
+# vinculación. Se valida acá para fallar en el build y no en el equipo del cliente.
+$IsccArgs = @("/DAppVersion=$($Build.version)", "/DAppVersionNumber=$($Build.numero)")
+if ($SaviCloudUrl) {
+    if ($SaviCloudUrl -notmatch '^https://[^\s"]+$') {
+        throw "-SaviCloudUrl tiene que ser una URL https sin espacios ni comillas: '$SaviCloudUrl'"
+    }
+    $IsccArgs += "/DSaviCloudUrl=$SaviCloudUrl"
+}
+& $Iscc @IsccArgs (Join-Path $InstallerDir 'savi.iss')
 if ($LASTEXITCODE -ne 0) { throw 'La compilación de Inno Setup falló.' }
 
 Write-Step 'Listo'

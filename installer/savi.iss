@@ -25,6 +25,14 @@
 #ifndef AppVersionNumber
   #define AppVersionNumber "0.0.0"
 #endif
+; URL de SAVI Cloud que se escribe en el .env cuando el asistente recibe un
+; token de vinculación. build.ps1 la pasa con /DSaviCloudUrl=<url> (parámetro
+; -SaviCloudUrl). Vacía a propósito por defecto: la de producción todavía no
+; está definida. Con la URL vacía la página "Conectar con SAVI Cloud" NO se
+; muestra y el instalador no escribe nada de SAVI Cloud en el .env.
+#ifndef SaviCloudUrl
+  #define SaviCloudUrl ""
+#endif
 #define AppPublisher   "SEO Group"
 #define AppExe         "SAVI.exe"
 
@@ -160,6 +168,7 @@ var
   AgentKindPage: TInputOptionWizardPage;
   AgentPgPage:   TInputQueryWizardPage;
   ClaudePage:    TInputQueryWizardPage;
+  CloudPage:     TInputQueryWizardPage;
   DownloadPage:  TDownloadWizardPage;
 
   NeedsNode: Boolean;
@@ -790,6 +799,32 @@ begin
             Trim(Page.Values[2]) + #1 + Trim(Page.Values[3]) + #1 + Page.Values[4];
 end;
 
+// ── SAVI Cloud ───────────────────────────────────────────────────────
+//
+// El token (svk_enr_...) es un secreto de un solo uso. Reglas de este
+// instalador: nunca se pasa a Log(), a un MsgBox ni a la línea de comandos
+// de un proceso; solo viaja al .env (entre comillas, con EnvQuote) y, una
+// vez canjeado, SAVI vacía esa variable.
+function CloudUrl(): String;
+begin
+  Result := Trim('{#SaviCloudUrl}');
+end;
+
+// La página solo existe si el build trae la URL de SAVI Cloud.
+function CloudAvailable(): Boolean;
+begin
+  Result := CloudUrl() <> '';
+end;
+
+// Formato: prefijo svk_enr_, algo después del prefijo, sin espacios y como
+// mucho 256 caracteres (el límite del API de administración).
+function IsValidCloudToken(const Token: String): Boolean;
+begin
+  Result := (Length(Token) > Length('svk_enr_')) and (Length(Token) <= 256) and
+            (Copy(Token, 1, Length('svk_enr_')) = 'svk_enr_') and
+            (Pos(' ', Token) = 0) and (Pos(#9, Token) = 0);
+end;
+
 { Corre savi-dbcheck.exe con los datos de la página. Los datos van en un
   archivo y no en la línea de comandos para que la contraseña no quede
   visible en la lista de procesos; se borra apenas termina. }
@@ -1005,6 +1040,14 @@ begin
   ClaudePage.Add('Puerto local:', False);
   ClaudePage.Values[2] := '{#DefaultPort}';
 
+  CloudPage := CreateInputQueryPage(ClaudePage.ID,
+    'Conectar con SAVI Cloud',
+    'Opcional: vincular esta instalación con SEO Group',
+    'Te lo entrega SEO Group. Podés hacerlo después desde Administración.' + #13#10#13#10 +
+    'Si tenés el token de vinculación, pegalo acá. Si lo dejás vacío, no se ' +
+    'conecta nada ahora.');
+  CloudPage.Add('Token de vinculación (empieza con svk_enr_):', True);
+
   DownloadPage := CreateDownloadPage(
     SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
 end;
@@ -1022,7 +1065,8 @@ begin
   { En una actualización no se pregunta nada, salvo que se haya pedido
     rehacer la configuración en la página anterior. }
   if (not MustAskConfig()) and ((PageID = ErpPage.ID) or (PageID = AgentKindPage.ID) or
-                                (PageID = AgentPgPage.ID) or (PageID = ClaudePage.ID)) then
+                                (PageID = AgentPgPage.ID) or (PageID = ClaudePage.ID) or
+                                (PageID = CloudPage.ID)) then
   begin
     Result := True;
     Exit;
@@ -1031,6 +1075,13 @@ begin
   { Los accesos directos ya existen de la instalación previa; volver a
     preguntar por ellos es ruido en lo que debería ser Siguiente-Siguiente. }
   if (PageID = wpSelectTasks) and IsConfigured() then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  { Sin URL de SAVI Cloud en el build no hay a dónde vincular: no se muestra. }
+  if (PageID = CloudPage.ID) and (not CloudAvailable()) then
   begin
     Result := True;
     Exit;
@@ -1135,6 +1186,21 @@ begin
     if Result and (not IsValidPort(Trim(ClaudePage.Values[2]))) then
     begin
       MsgBox('El puerto tiene que ser un número entre 1 y 65535.', mbError, MB_OK);
+      Result := False;
+    end;
+  end
+
+  else if CurPageID = CloudPage.ID then
+  begin
+    { Vacío es válido: se vincula después desde Administración. El mensaje
+      no repite el token que se escribió. }
+    if (Trim(CloudPage.Values[0]) <> '') and
+       (not IsValidCloudToken(Trim(CloudPage.Values[0]))) then
+    begin
+      MsgBox('El token no tiene el formato esperado: tiene que empezar con ' +
+             'svk_enr_ y no llevar espacios. Revisá que esté completo o dejá ' +
+             'el campo vacío para hacerlo después desde Administración.',
+             mbError, MB_OK);
       Result := False;
     end;
   end
@@ -1463,6 +1529,17 @@ begin
     a Postgres que se cargó en el asistente. Se completa a mano en el
     .env cuando hace falta. }
   ReplaceEnvToken(Lines, '{{SAVI_ADMIN_LOGINS}}', '');
+
+  { SAVI Cloud: solo si hay URL de build Y token. Campo vacío = no se
+    escribe nada. Al arrancar, SAVI canjea el token y vacía la variable. }
+  if CloudAvailable() and (Trim(CloudPage.Values[0]) <> '') then
+  begin
+    SetArrayLength(Lines, GetArrayLength(Lines) + 3);
+    Lines[GetArrayLength(Lines) - 3] := '';
+    Lines[GetArrayLength(Lines) - 2] := 'SAVI_CLOUD_URL=' + EnvQuote(CloudUrl());
+    Lines[GetArrayLength(Lines) - 1] :=
+      'SAVI_CLOUD_ENROLLMENT_TOKEN=' + EnvQuote(Trim(CloudPage.Values[0]));
+  end;
 
   { Sin BOM: pydantic-settings lee el .env como UTF-8 y un BOM le
     convertiria la primera clave en "﻿APP_NAME". }

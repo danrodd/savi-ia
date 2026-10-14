@@ -2,6 +2,7 @@
 import {
   ChartColumn,
   ChevronLeft,
+  CloudUpload,
   Database,
   FileText,
   MessageSquareHeart,
@@ -10,6 +11,7 @@ import {
 import { RouterLink, RouterView } from 'vue-router'
 
 import AppVersion from '@/components/AppVersion.vue'
+import CloudAlertBanner from '../components/CloudAlertBanner.vue'
 
 const NAV = [
   { to: { name: 'admin-databases' }, label: 'Bases de datos', icon: Database },
@@ -17,6 +19,7 @@ const NAV = [
   { to: { name: 'admin-company-knowledge' }, label: 'Conocimiento de la empresa', icon: FileText },
   { to: { name: 'admin-usage' }, label: 'Consumo', icon: ChartColumn },
   { to: { name: 'admin-feedback' }, label: 'Feedback del piloto', icon: MessageSquareHeart },
+  { to: { name: 'admin-cloud' }, label: 'SAVI Cloud', icon: CloudUpload },
 ] as const
 </script>
 
@@ -45,6 +48,7 @@ const NAV = [
 
     <main class="admin__main">
       <div class="admin__container">
+        <CloudAlertBanner />
         <RouterView />
       </div>
     </main>

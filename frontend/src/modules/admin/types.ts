@@ -388,6 +388,50 @@ export interface FeedbackSummary {
   by_model: { provider: string | null; model: string | null; up: number; down: number }[]
 }
 
+/* ───────── SAVI Cloud (GET/POST/DELETE /admin/cloud-link) ───────── */
+
+export type CloudLinkStatus =
+  | 'unlinked'
+  | 'linked'
+  | 'offline'
+  | 'suspended'
+  | 'unauthorized'
+  | 'revoked'
+
+export type CloudHistoryMode = 'all' | 'from_now'
+
+export interface CloudNotice {
+  code: string
+  severity: string
+  message: string
+}
+
+export interface CloudStreamStatus {
+  stream: string
+  watermark_at: string
+  last_ok_at: string | null
+}
+
+export interface CloudLinkState {
+  status: CloudLinkStatus
+  cloud_configured: boolean
+  sync_enabled: boolean
+  client_code: string | null
+  client_name: string | null
+  instance_id: string | null
+  linked_at: string | null
+  last_heartbeat_ok_at: string | null
+  last_attempt_at: string | null
+  last_error_code: string | null
+  streams: CloudStreamStatus[]
+  notices: CloudNotice[]
+}
+
+export interface CloudPreview {
+  heartbeat: Record<string, unknown>
+  events: Record<string, Record<string, unknown> | null>
+}
+
 /** Filtros del panel. Vacío = sin filtro. */
 export interface FeedbackFilters {
   rating: FeedbackRating | ''

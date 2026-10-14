@@ -15,6 +15,7 @@ const ErpDatabasesView = () => import('@/modules/admin/views/ErpDatabasesView.vu
 const AdminUsageView = () => import('@/modules/admin/views/AdminUsageView.vue')
 const LlmProvidersView = () => import('@/modules/admin/views/LlmProvidersView.vue')
 const FeedbackPilotView = () => import('@/modules/admin/views/FeedbackPilotView.vue')
+const CloudLinkView = () => import('@/modules/admin/views/CloudLinkView.vue')
 const CompanyKnowledgeView = () => import('@/modules/admin/views/CompanyKnowledgeView.vue')
 const NotFoundView = () => import('@/components/NotFoundView.vue')
 const LandingView = () => import('@/modules/landing/views/LandingView.vue')
@@ -107,6 +108,8 @@ const router = createRouter({
         { path: 'consumo', name: 'admin-usage', component: AdminUsageView },
         // `/admin/feedback` es del API: la pantalla vive en otro segmento.
         { path: 'piloto', name: 'admin-feedback', component: FeedbackPilotView },
+        // `/admin/cloud-link` es del API: la pantalla vive en otro segmento.
+        { path: 'cloud', name: 'admin-cloud', component: CloudLinkView },
       ],
     },
     {

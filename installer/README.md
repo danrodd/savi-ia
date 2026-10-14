@@ -43,7 +43,12 @@ Opciones útiles al iterar:
 ```powershell
 .\installer\build.ps1 -SkipFrontend    # reutiliza el build de Vue
 .\installer\build.ps1 -SkipInstaller   # se detiene después de PyInstaller
+.\installer\build.ps1 -SaviCloudUrl https://<url-de-savi-cloud>   # habilita la página de SAVI Cloud
 ```
+
+`-SaviCloudUrl` llega a Inno Setup como `/DSaviCloudUrl` (ver
+[Conectar con SAVI Cloud](#conectar-con-savi-cloud)). Es opcional y está
+**vacío por defecto**: la URL de producción todavía no está definida.
 
 ## Qué hace el asistente de instalación
 
@@ -73,9 +78,48 @@ Opciones útiles al iterar:
    campos de credencial **vacíos** y la autenticación se resuelve al
    final, en el navegador. Ver [Autenticación contra Claude](#autenticación-contra-claude).
 
+5. **Conectar con SAVI Cloud** (opcional) — un campo para el token de
+   vinculación. Solo aparece si el instalador se compiló con
+   `-SaviCloudUrl`; ver [Conectar con SAVI Cloud](#conectar-con-savi-cloud).
+
 Al terminar descarga e instala los prerrequisitos faltantes, genera el
 archivo `.env`, crea los accesos directos y ofrece iniciar sesión con la
 cuenta de Claude del cliente.
+
+## Conectar con SAVI Cloud
+
+Página opcional del asistente, después de *Cuenta de Claude y puerto*. Hay
+un único instalador (no hay uno de Servidor y otro de Escritorio), así que
+la página sirve para las dos formas de uso.
+
+- **Texto**: "Te lo entrega SEO Group. Podés hacerlo después desde
+  Administración."
+- **Campo vacío** (lo normal): no se escribe nada en el `.env`.
+- **Con token**: se valida el formato (empieza con `svk_enr_`, sin
+  espacios, hasta 256 caracteres) y se agregan al final del `.env`, con el
+  mismo quoting que el resto (`EnvQuote`, comillas simples):
+
+  ```
+  SAVI_CLOUD_URL='<la URL del build>'
+  SAVI_CLOUD_ENROLLMENT_TOKEN='svk_enr_…'
+  ```
+
+  Al arrancar, SAVI canjea el token y **vacía** `SAVI_CLOUD_ENROLLMENT_TOKEN`
+  del `.env`. Si falla (token vencido, sin internet), queda el aviso en
+  *Administración → SAVI Cloud* y se puede reintentar desde ahí.
+- **La URL sale del build, no del asistente**: se pasa con
+  `build.ps1 -SaviCloudUrl https://…` (define de Inno `SaviCloudUrl`, debe
+  ser https). Con la URL vacía —el valor por defecto, porque la de
+  producción todavía no está definida— **la página no se muestra** y el
+  instalador no escribe nada de Cloud. Es la opción más simple: un campo
+  deshabilitado solo confundiría al técnico.
+- **Actualizaciones**: igual que el resto de la configuración, la página no
+  se pregunta si se conserva el `.env`. Para vincular una instalación ya
+  hecha, usar *Administración → SAVI Cloud*.
+- **El token es un secreto**: el instalador nunca lo pasa a `Log()`, a un
+  mensaje ni a la línea de comandos de un proceso, y el diagnóstico
+  (`--check-config`) no lo lee. Solo queda en el `.env` hasta que SAVI lo
+  canjea (y, si se reconfigura antes de canjearlo, en `.env.anterior`).
 
 ## Puerto local
 

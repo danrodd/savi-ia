@@ -30,7 +30,9 @@
    anterior.
 5. **Claude y puerto**: dejar el puerto en 31900. La credencial de Claude se
    puede dejar vacía y resolverla al final en el navegador.
-6. Finalizar: se abre SAVI en el navegador.
+6. **SAVI Cloud** (solo si el instalador se compiló con URL de Cloud): el
+   token es opcional; ver *Conectar con SAVI Cloud* abajo.
+7. Finalizar: se abre SAVI en el navegador.
 
 ### Prueba de conexión del asistente
 
@@ -88,6 +90,21 @@ reporte queda en `C:\ProgramData\SAVI\diagnostico-instalacion.txt` para
 adjuntarlo a un pedido de soporte. Después se puede repetir con el acceso
 directo *Diagnosticar SAVI*; el log completo está en
 `%LOCALAPPDATA%\SAVI\savi.log`.
+
+### Conectar con SAVI Cloud (opcional)
+
+La página existe solo en instaladores compilados con `-SaviCloudUrl`.
+Usar un token de prueba entregado por SEO Group; no pegarlo en tickets ni
+capturas.
+
+| # | Prueba | Se espera |
+|---|---|---|
+| C1 | Dejar el token vacío y seguir | Instala normal; el `.env` no tiene `SAVI_CLOUD_*` |
+| C2 | Escribir algo que no empieza con `svk_enr_` | Error de formato; no deja avanzar hasta corregirlo o vaciarlo |
+| C3 | Token válido, con internet | Tras el primer arranque, *Administración → SAVI Cloud* dice "Conectada" y el `.env` ya no tiene el token |
+| C4 | Token válido, sin internet | SAVI arranca igual; en *Administración → SAVI Cloud* se puede reintentar |
+| C5 | Revisar `savi.log` y `diagnostico-instalacion.txt` tras C3 y C4 | El token no aparece en ninguno |
+| C6 | Instalador compilado sin URL de Cloud | La página no se muestra |
 
 ## 3. Configurar (como administrador)
 
