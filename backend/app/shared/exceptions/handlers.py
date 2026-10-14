@@ -142,10 +142,22 @@ def register_exception_handlers(app: FastAPI) -> None:
     # Import local para no crear un ciclo: este módulo lo importa el
     # paquete `shared.exceptions`, y la excepción vive en un módulo que a
     # su vez depende de `shared.exceptions.base`.
-    from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
+    from app.modules.chat.domain.exceptions import (
+        AiAccessDeniedError,
+        LlmProviderUnavailableError,
+    )
     from app.modules.erp_databases.domain.exceptions import (
         ErpDatabaseUnavailableError,
     )
+
+    @app.exception_handler(AiAccessDeniedError)
+    async def _ai_access_denied(_: Request, exc: AiAccessDeniedError) -> JSONResponse:
+        # 403 con `errorCode`: la interfaz explica el motivo (tope, proveedor no habilitado)
+        # en vez de un "sin permiso" genérico.
+        return JSONResponse(
+            status_code=403,
+            content={"errorCode": exc.error_code, "detail": exc.reason},
+        )
 
     @app.exception_handler(LlmProviderUnavailableError)
     async def _llm_provider_unavailable(

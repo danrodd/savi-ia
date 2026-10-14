@@ -27,6 +27,7 @@ from app.modules.chat.application.requests import ChatRequest
 from app.modules.chat.domain.entities import ChatEvent
 from app.modules.chat.infrastructure.http.dependencies import (
     ActiveProviderResolverDep,
+    AiBudgetGuardDep,
     ChatTurnUseCaseDep,
     TurnConversationRepositoryDep,
 )
@@ -81,6 +82,7 @@ async def chat(
     user: CurrentUserDep,
     modules_resolver: ResolveModulesForDatabaseUseCaseDep,
     provider_resolver: ActiveProviderResolverDep,
+    budget_guard: AiBudgetGuardDep,
 ) -> StreamingResponse:
     # Primero el límite por usuario: cada turno cuesta dinero de verdad, así
     # que no conviene pagar ni las validaciones de un pedido que va a 429.
@@ -117,7 +119,13 @@ async def chat(
     # Sin proveedor de IA usable, 409 `llm_provider_unavailable` acá, antes
     # del SSE. Va después de auth y ownership para no revelar el estado de
     # la configuración a quien no puede usar esta conversación.
-    await provider_resolver.resolve()
+    provider = await provider_resolver.resolve()
+
+    # Política de IA de SEO Group (proveedores permitidos y topes). Antes del SSE: un 403 con
+    # `errorCode` y mensaje legible, no un error a mitad de la respuesta.
+    await budget_guard.check(
+        user_id=user.id, erp_database_id=_require_database(user), provider=provider
+    )
 
     # Las tools del knowledge filtran contra este set. Un admin de la base
     # consultada pasa None = sin filtro.

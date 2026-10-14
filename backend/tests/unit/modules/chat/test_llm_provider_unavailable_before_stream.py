@@ -21,7 +21,7 @@ from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.chat.application.requests import ChatAction, ChatRequest
 from app.modules.chat.application.use_cases import ChatTurnUseCase
 from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
-from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver
+from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver, AiBudgetGuard
 from app.modules.chat.infrastructure.http.routes import chat
 
 _CONVERSATION_ID = uuid4()
@@ -63,6 +63,11 @@ def _user() -> AuthenticatedUser:
     )
 
 
+class _AllowAll(AiBudgetGuard):
+    async def check(self, **_: object) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        return None
+
+
 def _request() -> ChatRequest:
     return ChatRequest(conversation_id=_CONVERSATION_ID, action=ChatAction.SEND, message="hola")
 
@@ -73,4 +78,4 @@ async def test_raises_409_before_returning_the_streaming_response() -> None:
     provider_resolver = cast(ActiveProviderResolver, _UnavailableProviderResolver())
 
     with pytest.raises(LlmProviderUnavailableError):
-        await chat(_request(), use_case, _user(), modules_resolver, provider_resolver)
+        await chat(_request(), use_case, _user(), modules_resolver, provider_resolver, _AllowAll())

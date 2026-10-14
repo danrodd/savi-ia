@@ -26,7 +26,7 @@ from app.modules.auth.application.use_cases.resolve_modules_for_database import 
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.chat.application.requests import ChatAction, ChatRequest
 from app.modules.chat.application.use_cases import ChatTurnUseCase
-from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver
+from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver, AiBudgetGuard
 from app.modules.chat.infrastructure.http.routes import chat
 from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
 
@@ -82,6 +82,11 @@ def _user() -> AuthenticatedUser:
     )
 
 
+class _AllowAll(AiBudgetGuard):
+    async def check(self, **_: object) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        return None
+
+
 def _request(action: ChatAction = ChatAction.SEND) -> ChatRequest:
     return ChatRequest(
         conversation_id=_CONVERSATION_ID,
@@ -103,7 +108,7 @@ async def test_raises_409_before_returning_the_streaming_response() -> None:
     provider_resolver = cast(ActiveProviderResolver, _StubProviderResolver())
 
     with pytest.raises(ErpDatabaseUnavailableError) as excinfo:
-        await chat(_request(), use_case, _user(), resolver, provider_resolver)
+        await chat(_request(), use_case, _user(), resolver, provider_resolver, _AllowAll())
 
     assert str(_DATABASE_ID) == excinfo.value.database_id
 
@@ -120,6 +125,6 @@ async def test_streams_when_the_database_is_available() -> None:
 
     provider_resolver = cast(ActiveProviderResolver, _StubProviderResolver())
 
-    response = await chat(_request(), use_case, _user(), resolver, provider_resolver)
+    response = await chat(_request(), use_case, _user(), resolver, provider_resolver, _AllowAll())
 
     assert response.media_type == "text/event-stream"

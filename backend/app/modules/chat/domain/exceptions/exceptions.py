@@ -15,6 +15,19 @@ class LlmProviderUnavailableError(DomainError):
         super().__init__(reason)
 
 
+class AiAccessDeniedError(DomainError):
+    """La política de IA de SEO Group no permite este turno.
+
+    Se mapea a **403** con un `errorCode` estable (`ai_provider_not_allowed`,
+    `ai_budget_exceeded` o `ai_price_missing`) y se levanta ANTES de abrir el SSE.
+    """
+
+    def __init__(self, code: str, reason: str) -> None:
+        self.error_code = code
+        self.reason = reason
+        super().__init__(reason)
+
+
 class EmptyMessageError(ValidationError):
     def __init__(self) -> None:
         super().__init__("El mensaje no puede estar vacío")

@@ -7,6 +7,7 @@ from app.infrastructure.database import get_agent_sessionmaker
 from app.modules.chat.application.use_cases import ChatTurnUseCase
 from app.modules.chat.domain.interfaces import (
     ActiveProviderResolver,
+    AiBudgetGuard,
     AssistantMessageWriter,
     ConversationTitleUpdater,
     LLMRunner,
@@ -107,3 +108,34 @@ def get_chat_turn_use_case(
 
 
 ChatTurnUseCaseDep = Annotated[ChatTurnUseCase, Depends(get_chat_turn_use_case)]
+
+
+class _NoAiLimits(AiBudgetGuard):
+    """Sin servicio de vinculación a Cloud (tests, procesos sin lifespan): sin límites."""
+
+    async def check(self, **_: object) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        return None
+
+
+def get_ai_budget_guard(settings: SettingsDep) -> AiBudgetGuard:
+    # Import adentro: `cloud_link` importa modelos de otros módulos.
+    from app.modules.cloud_link.application.pseudonymizer import PseudonymizerProvider
+    from app.modules.cloud_link.infrastructure.ai_budget_guard import (
+        CloudAiBudgetGuard,
+        sql_usage_source,
+    )
+    from app.modules.cloud_link.infrastructure.composition import get_cloud_link_services
+
+    try:
+        services = get_cloud_link_services()
+    except RuntimeError:
+        return _NoAiLimits()
+    return CloudAiBudgetGuard(
+        services.repository,
+        PseudonymizerProvider(services.repository),
+        sql_usage_source(get_agent_sessionmaker(), settings.reporting_timezone),
+        settings.reporting_timezone,
+    )
+
+
+AiBudgetGuardDep = Annotated[AiBudgetGuard, Depends(get_ai_budget_guard)]

@@ -1,4 +1,5 @@
 from app.modules.chat.domain.exceptions.exceptions import (
+    AiAccessDeniedError,
     EmptyMessageError,
     LlmProviderUnavailableError,
     NoAssistantToRegenerateError,
@@ -7,6 +8,7 @@ from app.modules.chat.domain.exceptions.exceptions import (
 )
 
 __all__ = [
+    "AiAccessDeniedError",
     "EmptyMessageError",
     "LlmProviderUnavailableError",
     "NoAssistantToRegenerateError",

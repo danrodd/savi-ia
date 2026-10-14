@@ -17,6 +17,7 @@ import logging
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -33,7 +34,7 @@ from app.modules.cloud_link.domain.interfaces import (
     JsonObject,
     RejectedEvent,
 )
-from app.modules.cloud_link.domain.value_objects import SyncPolicy
+from app.modules.cloud_link.domain.value_objects import AiLimits, SyncPolicy
 from app.modules.cloud_link.infrastructure import contract_v1 as contract
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,21 @@ def _retry_after(response: httpx.Response) -> float | None:
         return None  # fecha HTTP: no se interpreta, se usa el backoff propio
 
 
+def _ai_limits(model: contract.AiPolicy | None) -> AiLimits | None:
+    if model is None:
+        return None
+    return AiLimits(
+        allowed_providers=(
+            frozenset(model.allowed_providers) if model.allowed_providers is not None else None
+        ),
+        user_monthly_usd=(
+            Decimal(model.user_monthly_usd) if model.user_monthly_usd is not None else None
+        ),
+        provider_monthly_usd={k: Decimal(v) for k, v in model.provider_monthly_usd.items()},
+        user_overrides={k: Decimal(v) for k, v in model.user_overrides.items()},
+    )
+
+
 def _policy(model: contract.Policy) -> SyncPolicy:
     return SyncPolicy(
         heartbeat_seconds=model.heartbeat_seconds,
@@ -86,6 +102,7 @@ def _policy(model: contract.Policy) -> SyncPolicy:
         sync_enabled=model.sync_enabled,
         config_locked=model.config_locked,
         allow_local_cli=model.allow_local_cli,
+        ai=_ai_limits(model.ai),
         identity_mode=model.identity_mode,
     )
 

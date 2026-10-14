@@ -226,4 +226,29 @@ describe('chatStore · imágenes adjuntas', () => {
     expect(store.rejectedAttachments).toEqual([local])
     expect(store.messages).toHaveLength(0)
   })
+
+  it('si la política de IA lo rechaza, el texto vuelve y se muestra el motivo', async () => {
+    const { HttpRequestError } = await import('@/lib/HttpClient')
+    const reason = 'Llegaste al tope mensual de IA (USD 5.00).'
+    agentMock.stream.mockImplementation(() => ({
+      [Symbol.asyncIterator]() {
+        return {
+          next: () =>
+            Promise.reject(
+              new HttpRequestError(reason, 403, {
+                errorCode: 'ai_budget_exceeded',
+                detail: reason,
+              }),
+            ),
+        }
+      },
+    }))
+    const store = await activeStore()
+
+    await store.sendMessage('hola', [])
+
+    expect(store.rejectedText).toBe('hola')
+    expect(store.error).toBe(reason)
+    expect(store.messages).toHaveLength(0)
+  })
 })

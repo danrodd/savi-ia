@@ -69,6 +69,22 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+_AMOUNT = r"^[0-9]{1,8}(\.[0-9]{1,4})?$"
+_Amount = Annotated[str, StringConstraints(pattern=_AMOUNT)]
+_AiProvider = Literal["claude", "gemini", "openai"]
+
+
+class AiPolicy(_Envelope):
+    allowed_providers: list[_AiProvider] | None = None
+    user_monthly_usd: _Amount | None = None
+    provider_monthly_usd: dict[_AiProvider, _Amount] = Field(
+        default_factory=dict[_AiProvider, _Amount]
+    )
+    user_overrides: dict[Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{32}$")], _Amount] = (
+        Field(default_factory=dict[str, _Amount], max_length=500)
+    )
+
+
 class Policy(_Envelope):
     heartbeat_seconds: Annotated[StrictInt, Field(ge=1)]
     ingest_seconds: Annotated[StrictInt, Field(ge=1)]
@@ -76,6 +92,7 @@ class Policy(_Envelope):
     sync_enabled: StrictBool
     config_locked: StrictBool = False
     allow_local_cli: StrictBool = False
+    ai: AiPolicy | None = None
     identity_mode: Literal["pseudonym", "named"] = "pseudonym"
 
 

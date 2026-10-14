@@ -223,21 +223,32 @@ function isLlmProviderUnavailable(e: unknown): boolean {
   return e instanceof HttpRequestError && e.body.errorCode === 'llm_provider_unavailable'
 }
 
+/** Rechazos de la política de IA de SEO Group: tope mensual o proveedor no habilitado. */
+const AI_POLICY_CODES = new Set([
+  'ai_budget_exceeded',
+  'ai_provider_not_allowed',
+  'ai_price_missing',
+])
+
 /**
- * Rechazos por límite de uso o por turno en curso. El backend corta ANTES de
+ * Rechazos por límite de uso, por turno en curso o por la política de IA. El backend corta ANTES de
  * abrir el stream, así que no se persistió nada: hay que sacar los
  * placeholders y devolverle al usuario el texto que había escrito, en lugar
  * de dejar un error rojo y el mensaje perdido.
  */
 function isBusyRejection(e: unknown): boolean {
   if (!(e instanceof HttpRequestError)) return false
-  return e.body.errorCode === 'rate_limited' || e.body.errorCode === 'conversation_busy'
+  const code = e.body.errorCode
+  return code === 'rate_limited' || code === 'conversation_busy' || AI_POLICY_CODES.has(code ?? '')
 }
 
 function busyMessage(e: unknown): string {
   if (!(e instanceof HttpRequestError)) return 'Probá de nuevo en un momento.'
   if (e.body.errorCode === 'conversation_busy') {
     return 'Ya hay una respuesta en curso en esta conversación.'
+  }
+  if (AI_POLICY_CODES.has(e.body.errorCode ?? '') && typeof e.body.detail === 'string') {
+    return e.body.detail
   }
   return typeof e.body.detail === 'string'
     ? e.body.detail

@@ -5,7 +5,8 @@ import logging
 import secrets
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any
+from decimal import Decimal, InvalidOperation
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import delete, select
@@ -14,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.modules.cloud_link.domain.entities import CloudLinkState, CloudNotice, StreamWatermark
 from app.modules.cloud_link.domain.interfaces import CloudLinkRepository
-from app.modules.cloud_link.domain.value_objects import LinkStatus, SyncPolicy
+from app.modules.cloud_link.domain.value_objects import AiLimits, LinkStatus, SyncPolicy
 from app.modules.cloud_link.infrastructure.persistence.models import (
     CloudLinkModel,
     CloudSyncWatermarkModel,
@@ -41,8 +42,63 @@ def _policy_to_json(policy: SyncPolicy | None) -> dict[str, Any] | None:
         "sync_enabled": policy.sync_enabled,
         "config_locked": policy.config_locked,
         "allow_local_cli": policy.allow_local_cli,
+        "ai": _ai_to_json(policy.ai),
         "identity_mode": policy.identity_mode,
     }
+
+
+def _ai_to_json(ai: AiLimits | None) -> dict[str, Any] | None:
+    if ai is None:
+        return None
+    return {
+        "allowed_providers": sorted(ai.allowed_providers)
+        if ai.allowed_providers is not None
+        else None,
+        "user_monthly_usd": str(ai.user_monthly_usd) if ai.user_monthly_usd is not None else None,
+        "provider_monthly_usd": {k: str(v) for k, v in ai.provider_monthly_usd.items()},
+        "user_overrides": {k: str(v) for k, v in ai.user_overrides.items()},
+    }
+
+
+def _amount(value: object) -> Decimal | None:
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    return amount if amount.is_finite() and amount >= 0 else None
+
+
+def _ai_from_json(raw: object) -> AiLimits | None:
+    """Tolerante: lo que no se entiende se descarta; nada inválido bloquea ni habilita de más."""
+    if not isinstance(raw, dict):
+        return None
+    data = cast("dict[str, Any]", raw)
+    providers = data.get("allowed_providers")
+    per_provider = data.get("provider_monthly_usd")
+    overrides = data.get("user_overrides")
+    monthly = data.get("user_monthly_usd")
+    return AiLimits(
+        allowed_providers=(
+            frozenset(str(p) for p in cast("list[Any]", providers))
+            if isinstance(providers, list)
+            else None
+        ),
+        user_monthly_usd=_amount(monthly) if monthly is not None else None,
+        provider_monthly_usd={
+            str(k): a
+            for k, v in cast("dict[Any, Any]", per_provider).items()
+            if (a := _amount(v)) is not None
+        }
+        if isinstance(per_provider, dict)
+        else {},
+        user_overrides={
+            str(k): a
+            for k, v in cast("dict[Any, Any]", overrides).items()
+            if (a := _amount(v)) is not None
+        }
+        if isinstance(overrides, dict)
+        else {},
+    )
 
 
 def _policy_from_json(raw: dict[str, Any] | None) -> SyncPolicy | None:
@@ -64,6 +120,7 @@ def _policy_from_json(raw: dict[str, Any] | None) -> SyncPolicy | None:
         max_batch_events=_int("max_batch_events", defaults.max_batch_events),
         sync_enabled=enabled if isinstance(enabled, bool) else defaults.sync_enabled,
         config_locked=locked if isinstance(locked, bool) else defaults.config_locked,
+        ai=_ai_from_json(raw.get("ai")),
         allow_local_cli=(
             local_cli if isinstance(local_cli, bool) else defaults.allow_local_cli
         ),
