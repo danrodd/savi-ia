@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAVI · Importar conocimiento</title>
+<style>
+/* Diseño compartido de los manuales de SAVI (se incrusta en cada HTML al generarlos). */
+:root {
+  --rojo: #bc0101;
+  --rojo-suave: #fbeaea;
+  --texto: #1f2328;
+  --suave: #5b6470;
+  --borde: #d9dde3;
+  --fondo-suave: #f5f6f8;
+  --azul: #1d4e89;
+  --azul-suave: #e9f1fb;
+  --verde: #1f7a45;
+  --verde-suave: #e8f5ed;
+  --ambar: #8a5a00;
+  --ambar-suave: #fff4dc;
+}
+
+@page { size: A4; margin: 14mm 17mm 18mm 17mm; }
+@page :first { margin: 0; }
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: var(--texto);
+  background: #fff;
+}
+.contenido { max-width: 178mm; margin: 0 auto; padding: 0 0 10mm; }
+
+/* Portada */
+.portada {
+  height: 297mm;
+  padding: 32mm 24mm 24mm;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fff 0%, #fff 58%, var(--rojo-suave) 100%);
+  border-top: 14mm solid var(--rojo);
+  page-break-after: always;
+  break-after: page;
+}
+.portada img.logo { width: 62mm; height: auto; border-radius: 4mm; align-self: flex-start; }
+.portada .marca { margin-top: 12mm; font-size: 12pt; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
+.portada h1 { margin: 4mm 0 0; font-size: 34pt; line-height: 1.12; color: var(--rojo); }
+.portada .subtitulo { margin-top: 8mm; font-size: 15pt; color: var(--texto); max-width: 140mm; }
+.portada .fecha { margin-top: auto; font-size: 13pt; color: var(--suave); border-top: 1px solid var(--borde); padding-top: 6mm; }
+.portada .para { margin-top: 3mm; font-size: 11pt; color: var(--suave); }
+
+/* Índice */
+.indice { padding-top: 16mm; page-break-after: always; break-after: page; }
+.indice h2 { margin: 0 0 6mm; font-size: 20pt; color: var(--rojo); border: 0; }
+.indice ol { margin: 0; padding: 0; list-style: none; }
+.indice li { margin: 0; border-bottom: 1px dotted var(--borde); }
+.indice a { display: block; padding: 2.2mm 0; color: var(--texto); text-decoration: none; font-size: 12pt; }
+.indice a:hover { color: var(--rojo); }
+.indice .intro { color: var(--suave); margin: 0 0 6mm; }
+
+/* Títulos */
+h2 {
+  margin: 8mm 0 3.5mm;
+  padding-bottom: 2mm;
+  font-size: 18pt;
+  line-height: 1.2;
+  color: var(--rojo);
+  border-bottom: 2px solid var(--rojo);
+  break-after: avoid;
+  page-break-after: avoid;
+}
+h3 { margin: 7mm 0 2.5mm; font-size: 13.5pt; color: var(--texto); break-after: avoid; page-break-after: avoid; }
+h3::before { content: ""; display: inline-block; width: 3mm; height: 3mm; margin-right: 2mm; background: var(--rojo); border-radius: 50%; }
+p { margin: 0 0 2.6mm; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 3.5mm; padding-left: 6.5mm; }
+li { margin: 0 0 1.6mm; }
+a { color: var(--azul); }
+code, kbd {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  background: var(--fondo-suave);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  padding: 0 1.2mm;
+}
+kbd { border-bottom-width: 2px; }
+.btn {
+  display: inline-block;
+  padding: 0 1.8mm;
+  font-weight: 600;
+  background: var(--fondo-suave);
+  border: 1px solid #b9c0ca;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.menu { font-weight: 600; color: var(--texto); }
+
+/* Pasos numerados */
+ol.pasos { counter-reset: paso; list-style: none; padding-left: 0; }
+ol.pasos > li {
+  counter-increment: paso;
+  position: relative;
+  padding-left: 10mm;
+  margin-bottom: 2.6mm;
+  break-inside: avoid;
+}
+ol.pasos > li::before {
+  content: counter(paso);
+  position: absolute; left: 0; top: .1mm;
+  width: 7mm; height: 7mm; line-height: 7mm;
+  text-align: center; font-weight: 700; font-size: 10pt;
+  color: #fff; background: var(--texto); border-radius: 50%;
+}
+
+/* Números rojos de las capturas */
+.n {
+  display: inline-block;
+  min-width: 5.2mm; height: 5.2mm; line-height: 5.2mm;
+  padding: 0 .8mm;
+  text-align: center; font-size: 9pt; font-weight: 700;
+  color: #fff; background: #d90429; border-radius: 50%;
+  vertical-align: 1px;
+}
+
+/* Capturas */
+figure {
+  margin: 3mm 0 5mm;
+  break-inside: avoid; page-break-inside: avoid;
+  text-align: center;
+}
+figure img {
+  max-width: 100%;
+  max-height: 96mm;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--borde);
+  border-radius: 3mm;
+  box-shadow: 0 1.2mm 3mm rgba(0,0,0,.14);
+}
+figure.angosta img { max-width: 62%; max-height: 110mm; }
+figure.media img { max-width: 82%; max-height: 80mm; }
+figure.dialogo img { max-height: 128mm; }
+figcaption { margin-top: 2.5mm; font-size: 9.5pt; color: var(--suave); }
+
+/* Leyenda de números */
+ul.leyenda { list-style: none; padding-left: 0; }
+ul.leyenda li { padding-left: 9mm; position: relative; margin-bottom: 1.8mm; break-inside: avoid; }
+ul.leyenda li .n { position: absolute; left: 0; top: .6mm; }
+
+/* Cajas */
+.nota {
+  margin: 4mm 0 5mm;
+  padding: 3mm 4mm 2mm;
+  border-left: 1.6mm solid var(--azul);
+  background: var(--azul-suave);
+  border-radius: 0 2mm 2mm 0;
+  break-inside: avoid; page-break-inside: avoid;
+}
+.nota > strong:first-child { display: block; margin-bottom: 1mm; font-size: 10.5pt; letter-spacing: .03em; text-transform: uppercase; }
+.nota p:last-child, .nota ul:last-child { margin-bottom: 1.5mm; }
+.nota.importante { border-color: var(--rojo); background: var(--rojo-suave); }
+.nota.importante > strong:first-child { color: var(--rojo); }
+.nota.consejo { border-color: var(--verde); background: var(--verde-suave); }
+.nota.consejo > strong:first-child { color: var(--verde); }
+.nota.falla { border-color: #c27c00; background: var(--ambar-suave); }
+.nota.falla > strong:first-child { color: var(--ambar); }
+.nota.info > strong:first-child { color: var(--azul); }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 10pt; }
+thead { display: table-header-group; }
+th { text-align: left; background: var(--texto); color: #fff; padding: 2mm 2.5mm; font-weight: 600; }
+td { padding: 2mm 2.5mm; border-bottom: 1px solid var(--borde); vertical-align: top; }
+tbody tr:nth-child(even) td { background: var(--fondo-suave); }
+tr { break-inside: avoid; page-break-inside: avoid; }
+table.larga { break-inside: auto; page-break-inside: auto; }
+
+/* Preguntas frecuentes */
+.faq { break-inside: avoid; margin-bottom: 4mm; }
+.faq h4 { margin: 0 0 1mm; font-size: 11pt; color: var(--texto); }
+.faq h4::before { content: "P. "; color: var(--rojo); font-weight: 700; }
+.faq p { margin-bottom: 1mm; }
+
+.salto { break-before: page; page-break-before: always; }
+.pie-doc { margin-top: 10mm; padding-top: 3mm; border-top: 1px solid var(--borde); font-size: 9.5pt; color: var(--suave); }
+
+</style>
+</head>
+<body>
+<section class="portada">
+    <img class="logo" src="imagenes/savi-logo.png" alt="SAVI">
+    <div class="marca">SAVI · Asistente Virtual Inteligente</div>
+    <h1>Importar conocimiento</h1>
+    <div class="subtitulo">Cómo cargar documentos y sitios web para que SAVI los use y los cite en sus respuestas.</div>
+    <div class="fecha">Octubre de 2026<div class="para">Para administradores de la empresa.</div></div>
+  </section>
+<main class="contenido">
+<section class="indice"><h2>Qué vas a encontrar</h2>
+    <p class="intro">Tocá o hacé clic en un título para ir directo a esa parte.</p>
+    <ol><li><a href="#s1">1. Qué es el conocimiento de la empresa</a></li><li><a href="#s2">2. Dónde está: Administración → Conocimiento de la empresa</a></li><li><a href="#s3">3. Subir documentos</a></li><li><a href="#s4">4. Quién puede ver cada documento</a></li><li><a href="#s5">5. Lectura con IA para PDF escaneados</a></li><li><a href="#s6">6. Probar qué encuentra SAVI</a></li><li><a href="#s7">7. Preguntarle a SAVI y leer la cita</a></li><li><a href="#s8">8. Sitios web</a></li><li><a href="#s9">9. Buenas prácticas</a></li><li><a href="#s10">10. Resolución de problemas</a></li></ol></section>
+<section>
+<h2 id="s1">1. Qué es el conocimiento de la empresa</h2>
+<p>Además de los datos del ERP, SAVI puede responder con información que <strong>vos le cargues</strong>: políticas internas, procedimientos, manuales, listas de precios publicadas, fichas técnicas o el sitio web de la empresa. A ese material lo llamamos <strong>conocimiento</strong>.</p>
+<p>Hay dos tipos de fuentes:</p>
+<ul>
+  <li><strong>Documentos:</strong> archivos PDF (con texto o escaneados), TXT o Markdown que subís desde tu equipo.</li>
+  <li><strong>Sitios web:</strong> direcciones de internet cuyo texto público SAVI lee y mantiene al día.</li>
+</ul>
+<p>Cuando alguien hace una pregunta, SAVI busca primero en este material y, si encuentra algo útil, lo usa y <strong>cita la fuente</strong>: el nombre del documento, la página y, si corresponde, un enlace para abrirlo.</p>
+<div class="nota importante"><strong>Importante</strong>
+<p>Todo lo que cargues puede aparecer en respuestas. Cargá solo material que quieras que SAVI use, y elegí bien <strong>quién puede verlo</strong> (sección 4). Los fragmentos que sirven para responder se envían al proveedor de IA activo, igual que los datos del ERP.</p></div>
+</section>
+
+<section>
+<h2 id="s2">2. Dónde está: Administración → Conocimiento de la empresa</h2>
+<ol class="pasos">
+  <li>Entrá a SAVI con un usuario administrador.</li>
+  <li>Tocá <span class="btn">Administración</span> en el menú de la izquierda.</li>
+  <li>Elegí <span class="btn">Conocimiento de la empresa</span>.</li>
+</ol>
+<figure><img src="imagenes/con-01-vista.png" alt="Pantalla Conocimiento de la empresa con sus partes numeradas"><figcaption>Pantalla Conocimiento de la empresa.</figcaption></figure>
+<ul class="leyenda">
+  <li><span class="n">1</span><span class="btn">Configuración</span>: lectura con IA y límite de subidas.</li>
+  <li><span class="n">2</span><span class="btn">Probar qué encuentra SAVI</span>: simula una pregunta para ver qué fragmentos se usarían.</li>
+  <li><span class="n">3</span><span class="btn">Subir documentos</span>: carga uno o varios archivos.</li>
+  <li><span class="n">4</span><strong>Pestañas</strong> <em>Documentos</em> y <em>Sitios web</em>.</li>
+  <li><span class="n">5</span><strong>Buscador</strong> por nombre y filtro por estado (<em>Listos</em>, <em>En proceso</em>, <em>Con problemas</em>).</li>
+  <li><span class="n">6</span><strong>Tabla de documentos</strong>, con quién los ve, a qué bases aplican y su estado.</li>
+</ul>
+<p>Arriba de la tabla ves cuántos documentos hay y cuánto espacio ocupan. Si algún PDF no se pudo leer con IA, aparece un aviso con los botones <span class="btn">Ir a Proveedores de IA</span> y <span class="btn">Reintentar todos</span>.</p>
+</section>
+
+<section>
+<h2 id="s3">3. Subir documentos</h2>
+<h3>Qué se puede subir</h3>
+<table>
+<thead><tr><th>Tipo</th><th>Detalle</th></tr></thead>
+<tbody>
+<tr><td><strong>PDF</strong></td><td>Con texto digital o escaneados (imágenes de hojas). Los escaneados se leen con IA (sección 5).</td></tr>
+<tr><td><strong>TXT</strong></td><td>Texto simple.</td></tr>
+<tr><td><strong>Markdown (.md)</strong></td><td>Texto con formato simple.</td></tr>
+</tbody></table>
+<p>El tamaño máximo es de <strong>60 MB por archivo</strong>. Los demás tipos (Word, Excel, imágenes sueltas) no se aceptan: convertilos antes a PDF.</p>
+
+<h3>Paso a paso</h3>
+<ol class="pasos">
+  <li>Tocá <span class="btn">Subir documentos</span>.</li>
+  <li>Arrastrá los archivos hasta el recuadro <span class="n">1</span>, o tocá <span class="btn">Elegir archivos</span>. Podés elegir varios a la vez.</li>
+  <li>Revisá el <strong>título</strong> <span class="n">2</span> de cada uno. SAVI propone el nombre del archivo: cambialo por uno claro, porque ese título se muestra en las citas.</li>
+  <li>Mirá la línea de lectura <span class="n">3</span>. Dice cuántas páginas tiene el PDF y si se leerá con IA, con una estimación del costo.</li>
+  <li>Elegí <strong>quién puede consultar</strong> el documento <span class="n">4</span> y <strong>en qué bases aplica</strong> <span class="n">5</span> (sección 4).</li>
+  <li>Leé el aviso de privacidad <span class="n">6</span>. Con <em>Ver más</em> se despliega completo.</li>
+  <li>Tocá <span class="btn">Subir</span> <span class="n">7</span>. El número entre paréntesis es la cantidad de archivos.</li>
+</ol>
+<figure class="dialogo"><img src="imagenes/con-02-subir.png" alt="Diálogo para subir documentos con un archivo de ejemplo"><figcaption>Diálogo Subir documentos con un archivo de ejemplo.</figcaption></figure>
+<p>Cada archivo muestra su propio resultado: <strong>Subido</strong> (se está procesando), <strong>Duplicado</strong> (<em>"Ya existe: …"</em>) o <strong>Rechazado</strong> (por ejemplo, <em>"Solo se aceptan PDF, TXT y Markdown."</em> o <em>"Supera el límite de 60 MB."</em>). Un archivo con problema no frena a los demás.</p>
+
+<h3>Estados de un documento</h3>
+<figure><img src="imagenes/con-04-documento-listo.png" alt="Fila de un documento ya procesado"><figcaption>Fila de un documento: título <span class="n">1</span>, quién lo ve <span class="n">2</span>, bases <span class="n">3</span>, estado <span class="n">4</span> y menú de acciones <span class="n">5</span>.</figcaption></figure>
+<table>
+<thead><tr><th style="width:26%">Estado</th><th>Qué significa</th><th>Qué hacer</th></tr></thead>
+<tbody>
+<tr><td><strong>En cola</strong> / <strong>Procesando…</strong></td><td>SAVI está leyendo el archivo y preparándolo para buscar. Si lo lee con IA, ves "Leyendo con IA: página X de Y".</td><td>Esperar. Puede tardar de unos segundos a algunos minutos.</td></tr>
+<tr><td><strong>Listo</strong></td><td>Se leyó el texto digital del archivo. Ya se puede usar.</td><td>Nada.</td></tr>
+<tr><td><strong>Listo (leído con IA)</strong></td><td>Se leyó con IA (por ejemplo, un escaneo). Ya se puede usar.</td><td>Nada.</td></tr>
+<tr><td><strong>No se pudo leer</strong></td><td>No se pudo extraer el texto. Debajo del estado hay una pista con la causa.</td><td>Ver la tabla siguiente.</td></tr>
+</tbody></table>
+<table>
+<thead><tr><th>Pista bajo "No se pudo leer"</th><th>Qué hacer</th></tr></thead>
+<tbody>
+<tr><td>El PDF parece dañado. Probá subirlo de nuevo.</td><td>Volvé a generar el PDF desde el original y subilo otra vez.</td></tr>
+<tr><td>Quitale la contraseña al PDF y subilo de nuevo.</td><td>Abrí el PDF, guardalo sin contraseña y subilo.</td></tr>
+<tr><td>Revisá el proveedor de IA.</td><td>Falla de clave, saldo o cuota del proveedor (manual 02). Cuando lo resolvés, usá <span class="btn">Reintentar todos</span> o <strong>Leer con IA</strong> en el documento.</td></tr>
+<tr><td>La IA no pudo leer las páginas. Probá con un escaneo más nítido.</td><td>Escaneá de nuevo con más resolución y buen contraste.</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2 id="s4">4. Quién puede ver cada documento</h2>
+<p>No todo el material es para todas las personas. Al subir, definís <strong>dos cosas</strong>:</p>
+<table>
+<thead><tr><th style="width:30%">Pregunta</th><th>Opciones</th></tr></thead>
+<tbody>
+<tr><td><strong>¿Quién puede consultar este documento?</strong></td><td><strong>Toda la empresa:</strong> cualquier usuario con acceso a la base.<br><strong>Usuarios con ciertos módulos:</strong> quien tenga al menos uno de los módulos elegidos en el ERP (por ejemplo, solo Inventario).<br><strong>Solo administradores:</strong> administradores del ERP en esa base.</td></tr>
+<tr><td><strong>¿En qué bases aplica?</strong></td><td><strong>Todas las bases, incluidas las que se agreguen después.</strong><br><strong>Solo en algunas bases:</strong> elegís cuáles (útil cuando un documento es de un solo cliente).</td></tr>
+</tbody></table>
+<p>Los permisos se pueden cambiar después con <strong>Editar</strong> en el menú de la fila. Si el cambio le quita el acceso a alguien que hoy lo tiene, SAVI te pide confirmar: las citas anteriores de esas personas pasan a mostrarse como no disponibles.</p>
+<div class="nota importante"><strong>Importante</strong>
+<p>Un documento reservado a administradores o a ciertos módulos <strong>no se usa</strong> para responder a quienes no tienen ese permiso. Un acta de directorio debería subirse como <em>Solo administradores</em>.</p></div>
+
+<h3>Acciones sobre un documento</h3>
+<figure class="media"><img src="imagenes/con-05-menu-documento.png" alt="Menú de acciones de un documento"><figcaption>Menú de la fila (los tres puntos).</figcaption></figure>
+<table>
+<thead><tr><th style="width:26%">Acción</th><th>Para qué sirve</th></tr></thead>
+<tbody>
+<tr><td><strong>Editar</strong> <span class="n">1</span></td><td>Cambiar el título y los permisos.</td></tr>
+<tr><td><strong>Reemplazar archivo</strong> <span class="n">2</span></td><td>Subir una versión nueva del mismo documento (por ejemplo, la política actualizada). El documento conserva su lugar y pasa a "versión 2".</td></tr>
+<tr><td><strong>Reprocesar</strong></td><td>Aparece cuando no se pudo leer. Vuelve a intentar con el mismo archivo.</td></tr>
+<tr><td><strong>Leer con IA</strong> <span class="n">3</span></td><td>Fuerza la lectura con IA de un PDF ya cargado (útil si se subió antes de activar la lectura con IA, o para un escaneo que se leyó mal).</td></tr>
+<tr><td><strong>Eliminar</strong> <span class="n">4</span></td><td>Borra el archivo. Deja de usarse de inmediato y pide confirmación.</td></tr>
+</tbody></table>
+<figure class="media"><img src="imagenes/con-09-eliminar.png" alt="Confirmación para eliminar un documento"><figcaption>Confirmación al eliminar: "Se borra el archivo y deja de usarse de inmediato. Las respuestas anteriores mostrarán la fuente como eliminada."</figcaption></figure>
+</section>
+
+<section>
+<h2 id="s5">5. Lectura con IA para PDF escaneados</h2>
+<p>Un PDF "con texto" se lee directamente. Un PDF <strong>escaneado</strong> (una foto de una hoja) no tiene texto: hace falta que una IA lo "lea" mirando la imagen. Eso es la <strong>lectura con IA</strong>. También sirve para tablas, planos y fichas técnicas.</p>
+<figure><img src="imagenes/con-07-configuracion.png" alt="Configuración de conocimiento con el interruptor Leer PDF con IA"><figcaption>Configuración de conocimiento: interruptor de lectura con IA <span class="n">1</span> y límite de subidas por hora <span class="n">2</span>.</figcaption></figure>
+<ul>
+  <li>El interruptor <strong>Leer PDF con IA</strong> la activa o desactiva. Muestra qué <em>proveedor</em> y <em>modelo de lectura</em> se usan y un <em>costo estimado</em> cada 100 páginas.</li>
+  <li>El proveedor y el modelo se cambian en <strong>Proveedores de IA</strong> (manual 02).</li>
+  <li>Al subir, cada PDF muestra cuántas páginas tiene y una estimación de costo, <strong>antes</strong> de enviarlo.</li>
+</ul>
+<div class="nota importante"><strong>Aviso de privacidad y consentimiento</strong>
+<p>Con la lectura con IA activa, los PDF <strong>completos</strong> se envían al proveedor de IA para transcribirlos, y quedan sujetos a sus condiciones de uso de datos. Sin ella solo se lee el texto digital y el archivo no sale del servidor.</p>
+<p>La primera vez, SAVI pide que un administrador acepte el envío al proveedor. Queda registrado quién lo aceptó y cuándo. Si cambiás de proveedor, hay que aceptarlo de nuevo.</p></div>
+<div class="nota consejo"><strong>Consejo</strong><p>Si un documento tiene información sensible y alcanza con su texto digital, dejá la lectura con IA desactivada antes de subirlo, o subilo en formato TXT.</p></div>
+
+<h3>Límite de subidas por hora</h3>
+<p>En <strong>Configuración → Avanzado</strong> está el <em>Límite de subidas por hora</em>: cuántas veces por hora puede cada persona subir o reemplazar un documento, agregar un sitio o pedir que se lea de nuevo. Sirve para frenar cargas masivas hechas por error. El valor por defecto es 30 por hora (máximo permitido: 1000). Para cambiarlo, escribí el número y tocá <span class="btn">Guardar</span>. En la misma sección ves cuánto del espacio de búsqueda está usado. Si el espacio se llena, SAVI avisa <em>"La instalación alcanzó el límite de fragmentos"</em> y hay que eliminar documentos que ya no se usan. Si alguien alcanza el límite por hora, tiene que esperar o un administrador debe aumentarlo.</p>
+</section>
+
+<section>
+<h2 id="s6">6. Probar qué encuentra SAVI</h2>
+<p>Antes de contárselo a todos, comprobá que SAVI encuentra lo que cargaste.</p>
+<ol class="pasos">
+  <li>Tocá <span class="btn">Probar qué encuentra SAVI</span>.</li>
+  <li>En <strong>Consulta</strong> <span class="n">1</span> escribí una pregunta como la haría un usuario.</li>
+  <li>En <strong>Cliente</strong> <span class="n">2</span> elegí la base. Opcionalmente, en <em>Probar como usuario</em>, escribí el código de un usuario del ERP para ver qué encontraría esa persona según sus permisos.</li>
+  <li>Tocá <span class="btn">Probar</span> <span class="n">3</span>. Debajo, <strong>Encontraría</strong> lista los fragmentos, con el documento y las páginas de donde salen.</li>
+</ol>
+<figure class="dialogo"><img src="imagenes/con-06-probar.png" alt="Resultado de la prueba de búsqueda"><figcaption>La prueba muestra los fragmentos que SAVI usaría para responder.</figcaption></figure>
+<p>Si tu documento no aparece, revisá que esté en estado <em>Listo</em>, que los permisos incluyan a ese usuario y a esa base, y que la pregunta use palabras parecidas a las del documento.</p>
+</section>
+
+<section>
+<h2 id="s7">7. Preguntarle a SAVI y leer la cita</h2>
+<p>Los usuarios no tienen que hacer nada especial: preguntan con naturalidad. Si el documento contiene la respuesta, SAVI la usa.</p>
+<figure><img src="imagenes/con-08-cita.png" alt="Respuesta de SAVI con el bloque Fuentes"><figcaption>Respuesta basada en el documento de ejemplo: etiqueta <em>Consultó los documentos</em> <span class="n">2</span> y bloque <strong>Fuentes</strong> <span class="n">1</span>.</figcaption></figure>
+<ul>
+  <li>La etiqueta <strong>Consultó los documentos</strong> indica que la respuesta usó tu material.</li>
+  <li>Los números pequeños (¹) marcan la frase que se apoya en una fuente.</li>
+  <li>En <strong>Fuentes</strong> aparece el título del documento y las <strong>páginas</strong> usadas (por ejemplo, "p. 1-2").</li>
+  <li>Tocar la fuente <strong>abre el documento</strong> (o la página web) para comprobar el dato.</li>
+</ul>
+<div class="nota consejo"><strong>Consejo</strong><p>Para que SAVI encuentre mejor, los usuarios deberían preguntar con las palabras del documento: "¿Cuál es el tope de caja menor?" funciona mejor que "¿Cuánto puedo gastar?".</p></div>
+</section>
+
+<section>
+<h2 id="s8">8. Sitios web</h2>
+<p>SAVI también puede leer el texto <strong>público</strong> de un sitio web y usarlo para responder, citando el enlace. Es útil para el sitio institucional, catálogos o páginas de políticas y de precios publicados.</p>
+<figure><img src="imagenes/con-10-sitios.png" alt="Pestaña Sitios web con la lista de sitios"><figcaption>Pestaña <em>Sitios web</em> <span class="n">2</span> y botón <em>Agregar sitio o página</em> <span class="n">1</span>.</figcaption></figure>
+<h3>Agregar un sitio paso a paso</h3>
+<ol class="pasos">
+  <li>Entrá a la pestaña <span class="btn">Sitios web</span> y tocá <span class="btn">Agregar sitio o página</span>.</li>
+  <li>En <strong>Dirección</strong> <span class="n">1</span> escribí la dirección, por ejemplo <code>www.empresa.com</code>.</li>
+  <li>En <strong>Qué leer</strong> <span class="n">2</span> elegí:
+    <br>• <strong>Todo el sitio:</strong> la dirección y las páginas del mismo sitio. Podés limitar el <em>Máximo de páginas</em> (por defecto 200).
+    <br>• <strong>Solo esta página:</strong> útil para una página de precios o de políticas.</li>
+  <li>Tocá <span class="btn">Revisar</span> <span class="n">3</span>. SAVI busca las páginas y lee la primera; puede tardar unos segundos. <strong>Todavía no se guardó nada.</strong></li>
+</ol>
+<figure class="media"><img src="imagenes/con-11-sitio-agregar.png" alt="Diálogo Agregar sitio o página"><figcaption>Primer paso: dirección y qué leer.</figcaption></figure>
+<ol class="pasos" start="5">
+  <li>Mirá la <strong>vista previa</strong> <span class="n">1</span>. Dice cuántas páginas se leerán y si las encontró en el mapa del sitio o siguiendo los enlaces. En "Todo el sitio" aparece la lista de <strong>Secciones</strong>: desmarcá las que no aportan, como el blog o las etiquetas. <em>Texto leído de la primera página</em> te deja ver el texto.</li>
+  <li>Revisá el <strong>Nombre</strong>, <strong>Volver a leer</strong> (<em>Solo manual</em>, <em>Diario</em> o <em>Semanal</em>) y los permisos (iguales a los de los documentos).</li>
+  <li>Tocá <span class="btn">Agregar</span> <span class="n">2</span>. Aparece el aviso "<em>… se está leyendo</em>".</li>
+</ol>
+<figure class="dialogo"><img src="imagenes/con-12-sitio-revisar.png" alt="Vista previa del sitio antes de agregarlo"><figcaption>Segundo paso: vista previa de lo que se leerá (ejemplo con una sola página).</figcaption></figure>
+
+<h3>Estados y acciones</h3>
+<table>
+<thead><tr><th style="width:26%">Estado</th><th>Significado</th></tr></thead>
+<tbody>
+<tr><td><strong>En cola</strong> / <strong>Leyendo el sitio…</strong></td><td>SAVI está recorriendo el sitio.</td></tr>
+<tr><td><strong>Listo</strong></td><td>Se leyó. Ves cuántas páginas se leyeron y cuántas no (<em>"41 páginas leídas · 4 no se pudieron leer"</em>) y la fecha de la última lectura.</td></tr>
+<tr><td><strong>No se pudo leer</strong></td><td>No se pudo acceder al sitio. Revisá la dirección y probá <em>Leer ahora</em>.</td></tr>
+</tbody></table>
+<figure class="media"><img src="imagenes/con-13-menu-sitio.png" alt="Menú de acciones de un sitio web"><figcaption>Menú de un sitio web (los tres puntos).</figcaption></figure>
+<table>
+<thead><tr><th style="width:26%">Acción</th><th>Para qué sirve</th></tr></thead>
+<tbody>
+<tr><td><strong>Ver páginas</strong></td><td>Muestra la lista de páginas leídas con su estado: <em>Leída</em>, <em>Sin cambios</em>, <em>No se pudo leer</em> o <em>Ya no existe</em>. Permite filtrar entre <em>Todas</em>, <em>Leídas</em> y <em>Con problemas</em>, y ver cuándo es la próxima lectura.</td></tr>
+<tr><td><strong>Editar</strong></td><td>Cambiar el nombre, cada cuánto se vuelve a leer y los permisos.</td></tr>
+<tr><td><strong>Leer ahora</strong></td><td>Actualiza el sitio ya, sin esperar la próxima lectura programada.</td></tr>
+<tr><td><strong>Eliminar</strong></td><td>Quita el sitio y deja de usarse. Pide confirmación.</td></tr>
+</tbody></table>
+<div class="nota importante"><strong>Importante: límites de la lectura de sitios</strong>
+<ul>
+<li>SAVI lee el <strong>texto público</strong>. No entra a páginas que piden usuario y contraseña.</li>
+<li>Los sitios que arman su contenido con JavaScript (el texto aparece recién después de cargar) pueden leerse <strong>incompletos</strong>. Si la vista previa muestra poco texto, probá con una página específica o cargá el contenido como documento PDF.</li>
+<li>Las páginas sin texto útil o repetidas se omiten: por eso a veces hay algunas "que no se pudieron leer".</li>
+<li>Los enlaces de las fuentes aparecen en las respuestas, así que los usuarios llegan a la página original.</li>
+</ul></div>
+</section>
+
+<section>
+<h2 id="s9">9. Buenas prácticas</h2>
+<ul>
+  <li><strong>Poné nombres claros.</strong> "Política de viáticos 2026" es mejor que "scan0045". Ese título es el que ven los usuarios en las fuentes.</li>
+  <li><strong>Un tema por documento.</strong> Los documentos cortos y enfocados se encuentran mejor que uno gigante con todo mezclado.</li>
+  <li><strong>Evitá duplicados.</strong> Si hay dos versiones de lo mismo, SAVI puede citar la vieja. Usá <em>Reemplazar archivo</em> para actualizar.</li>
+  <li><strong>Mantenelos al día.</strong> Revisá periódicamente qué documentos ya no rigen y eliminalos o reemplazalos.</li>
+  <li><strong>Escaneá bien.</strong> Buena luz, hoja derecha y resolución suficiente. Un escaneo nítido ahorra problemas.</li>
+  <li><strong>Revisá los permisos</strong> antes de subir: lo que es solo de directivos, solo para administradores.</li>
+  <li><strong>Probá siempre</strong> con <em>Probar qué encuentra SAVI</em> después de cargar algo importante.</li>
+</ul>
+</section>
+
+<section>
+<h2 id="s10">10. Resolución de problemas</h2>
+<table class="larga">
+<thead><tr><th style="width:32%">Problema</th><th>Causa probable</th><th>Qué hacer</th></tr></thead>
+<tbody>
+<tr><td>No me deja subir: "Solo se aceptan PDF, TXT y Markdown."</td><td>El archivo es de otro tipo (Word, Excel, imagen).</td><td>Convertilo a PDF.</td></tr>
+<tr><td>"Supera el límite de 60 MB."</td><td>El archivo es muy pesado.</td><td>Comprimilo o dividilo en partes.</td></tr>
+<tr><td>"Duplicado — Ya existe: …"</td><td>Ya se subió el mismo contenido.</td><td>No hace falta subirlo de nuevo. Para actualizarlo, usá <em>Reemplazar archivo</em>.</td></tr>
+<tr><td>El documento quedó en "No se pudo leer"</td><td>Archivo dañado, con contraseña, escaneo ilegible o falla del proveedor de IA.</td><td>Seguí la pista que aparece debajo del estado (sección 3).</td></tr>
+<tr><td>Muchos documentos con "Revisá el proveedor de IA"</td><td>El proveedor activo no responde: clave, saldo o cuota.</td><td>Resolvelo en <em>Proveedores de IA</em> (manual 02) y tocá <span class="btn">Reintentar todos</span>.</td></tr>
+<tr><td>Subí el documento, pero SAVI no lo usa</td><td>No está en estado Listo, o el usuario no tiene permiso, o la pregunta no se parece al texto.</td><td>Usá <em>Probar qué encuentra SAVI</em> y revisá estado y permisos.</td></tr>
+<tr><td>Una persona no ve las citas de un documento</td><td>El documento está reservado a ciertos módulos o a administradores.</td><td>Revisá <em>Quién lo ve</em> y <em>Bases</em> con <em>Editar</em>.</td></tr>
+<tr><td>Un sitio quedó con pocas páginas leídas</td><td>El sitio carga el contenido con JavaScript o bloquea la lectura.</td><td>Probá "Solo esta página" con páginas clave o cargá su contenido como PDF.</td></tr>
+
+</tbody></table>
+</section>
+
+</main>
+</body>
+</html>

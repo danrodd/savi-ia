@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAVI · Manual de uso de SAVI</title>
+<style>
+/* Diseño compartido de los manuales de SAVI (se incrusta en cada HTML al generarlos). */
+:root {
+  --rojo: #bc0101;
+  --rojo-suave: #fbeaea;
+  --texto: #1f2328;
+  --suave: #5b6470;
+  --borde: #d9dde3;
+  --fondo-suave: #f5f6f8;
+  --azul: #1d4e89;
+  --azul-suave: #e9f1fb;
+  --verde: #1f7a45;
+  --verde-suave: #e8f5ed;
+  --ambar: #8a5a00;
+  --ambar-suave: #fff4dc;
+}
+
+@page { size: A4; margin: 14mm 17mm 18mm 17mm; }
+@page :first { margin: 0; }
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: var(--texto);
+  background: #fff;
+}
+.contenido { max-width: 178mm; margin: 0 auto; padding: 0 0 10mm; }
+
+/* Portada */
+.portada {
+  height: 297mm;
+  padding: 32mm 24mm 24mm;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fff 0%, #fff 58%, var(--rojo-suave) 100%);
+  border-top: 14mm solid var(--rojo);
+  page-break-after: always;
+  break-after: page;
+}
+.portada img.logo { width: 62mm; height: auto; border-radius: 4mm; align-self: flex-start; }
+.portada .marca { margin-top: 12mm; font-size: 12pt; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
+.portada h1 { margin: 4mm 0 0; font-size: 34pt; line-height: 1.12; color: var(--rojo); }
+.portada .subtitulo { margin-top: 8mm; font-size: 15pt; color: var(--texto); max-width: 140mm; }
+.portada .fecha { margin-top: auto; font-size: 13pt; color: var(--suave); border-top: 1px solid var(--borde); padding-top: 6mm; }
+.portada .para { margin-top: 3mm; font-size: 11pt; color: var(--suave); }
+
+/* Índice */
+.indice { padding-top: 16mm; page-break-after: always; break-after: page; }
+.indice h2 { margin: 0 0 6mm; font-size: 20pt; color: var(--rojo); border: 0; }
+.indice ol { margin: 0; padding: 0; list-style: none; }
+.indice li { margin: 0; border-bottom: 1px dotted var(--borde); }
+.indice a { display: block; padding: 2.2mm 0; color: var(--texto); text-decoration: none; font-size: 12pt; }
+.indice a:hover { color: var(--rojo); }
+.indice .intro { color: var(--suave); margin: 0 0 6mm; }
+
+/* Títulos */
+h2 {
+  margin: 8mm 0 3.5mm;
+  padding-bottom: 2mm;
+  font-size: 18pt;
+  line-height: 1.2;
+  color: var(--rojo);
+  border-bottom: 2px solid var(--rojo);
+  break-after: avoid;
+  page-break-after: avoid;
+}
+h3 { margin: 7mm 0 2.5mm; font-size: 13.5pt; color: var(--texto); break-after: avoid; page-break-after: avoid; }
+h3::before { content: ""; display: inline-block; width: 3mm; height: 3mm; margin-right: 2mm; background: var(--rojo); border-radius: 50%; }
+p { margin: 0 0 2.6mm; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 3.5mm; padding-left: 6.5mm; }
+li { margin: 0 0 1.6mm; }
+a { color: var(--azul); }
+code, kbd {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  background: var(--fondo-suave);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  padding: 0 1.2mm;
+}
+kbd { border-bottom-width: 2px; }
+.btn {
+  display: inline-block;
+  padding: 0 1.8mm;
+  font-weight: 600;
+  background: var(--fondo-suave);
+  border: 1px solid #b9c0ca;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.menu { font-weight: 600; color: var(--texto); }
+
+/* Pasos numerados */
+ol.pasos { counter-reset: paso; list-style: none; padding-left: 0; }
+ol.pasos > li {
+  counter-increment: paso;
+  position: relative;
+  padding-left: 10mm;
+  margin-bottom: 2.6mm;
+  break-inside: avoid;
+}
+ol.pasos > li::before {
+  content: counter(paso);
+  position: absolute; left: 0; top: .1mm;
+  width: 7mm; height: 7mm; line-height: 7mm;
+  text-align: center; font-weight: 700; font-size: 10pt;
+  color: #fff; background: var(--texto); border-radius: 50%;
+}
+
+/* Números rojos de las capturas */
+.n {
+  display: inline-block;
+  min-width: 5.2mm; height: 5.2mm; line-height: 5.2mm;
+  padding: 0 .8mm;
+  text-align: center; font-size: 9pt; font-weight: 700;
+  color: #fff; background: #d90429; border-radius: 50%;
+  vertical-align: 1px;
+}
+
+/* Capturas */
+figure {
+  margin: 3mm 0 5mm;
+  break-inside: avoid; page-break-inside: avoid;
+  text-align: center;
+}
+figure img {
+  max-width: 100%;
+  max-height: 96mm;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--borde);
+  border-radius: 3mm;
+  box-shadow: 0 1.2mm 3mm rgba(0,0,0,.14);
+}
+figure.angosta img { max-width: 62%; max-height: 110mm; }
+figure.media img { max-width: 82%; max-height: 80mm; }
+figure.dialogo img { max-height: 128mm; }
+figcaption { margin-top: 2.5mm; font-size: 9.5pt; color: var(--suave); }
+
+/* Leyenda de números */
+ul.leyenda { list-style: none; padding-left: 0; }
+ul.leyenda li { padding-left: 9mm; position: relative; margin-bottom: 1.8mm; break-inside: avoid; }
+ul.leyenda li .n { position: absolute; left: 0; top: .6mm; }
+
+/* Cajas */
+.nota {
+  margin: 4mm 0 5mm;
+  padding: 3mm 4mm 2mm;
+  border-left: 1.6mm solid var(--azul);
+  background: var(--azul-suave);
+  border-radius: 0 2mm 2mm 0;
+  break-inside: avoid; page-break-inside: avoid;
+}
+.nota > strong:first-child { display: block; margin-bottom: 1mm; font-size: 10.5pt; letter-spacing: .03em; text-transform: uppercase; }
+.nota p:last-child, .nota ul:last-child { margin-bottom: 1.5mm; }
+.nota.importante { border-color: var(--rojo); background: var(--rojo-suave); }
+.nota.importante > strong:first-child { color: var(--rojo); }
+.nota.consejo { border-color: var(--verde); background: var(--verde-suave); }
+.nota.consejo > strong:first-child { color: var(--verde); }
+.nota.falla { border-color: #c27c00; background: var(--ambar-suave); }
+.nota.falla > strong:first-child { color: var(--ambar); }
+.nota.info > strong:first-child { color: var(--azul); }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 10pt; }
+thead { display: table-header-group; }
+th { text-align: left; background: var(--texto); color: #fff; padding: 2mm 2.5mm; font-weight: 600; }
+td { padding: 2mm 2.5mm; border-bottom: 1px solid var(--borde); vertical-align: top; }
+tbody tr:nth-child(even) td { background: var(--fondo-suave); }
+tr { break-inside: avoid; page-break-inside: avoid; }
+table.larga { break-inside: auto; page-break-inside: auto; }
+
+/* Preguntas frecuentes */
+.faq { break-inside: avoid; margin-bottom: 4mm; }
+.faq h4 { margin: 0 0 1mm; font-size: 11pt; color: var(--texto); }
+.faq h4::before { content: "P. "; color: var(--rojo); font-weight: 700; }
+.faq p { margin-bottom: 1mm; }
+
+.salto { break-before: page; page-break-before: always; }
+.pie-doc { margin-top: 10mm; padding-top: 3mm; border-top: 1px solid var(--borde); font-size: 9.5pt; color: var(--suave); }
+
+</style>
+</head>
+<body>
+<section class="portada">
+    <img class="logo" src="imagenes/savi-logo.png" alt="SAVI">
+    <div class="marca">SAVI · Asistente Virtual Inteligente</div>
+    <h1>Manual de uso de SAVI</h1>
+    <div class="subtitulo">Cómo hacer preguntas, leer las respuestas y sacarle provecho al asistente.</div>
+    <div class="fecha">Octubre de 2026<div class="para">Para el personal que usa SAVI todos los días.</div></div>
+  </section>
+<main class="contenido">
+<section class="indice"><h2>Qué vas a encontrar</h2>
+    <p class="intro">Tocá o hacé clic en un título para ir directo a esa parte.</p>
+    <ol><li><a href="#s1">1. Qué es SAVI y qué puede hacer por vos</a></li><li><a href="#s2">2. Cómo entrar</a></li><li><a href="#s3">3. Conocé la pantalla principal</a></li><li><a href="#s4">4. Hacer una pregunta</a></li><li><a href="#s5">5. Entender la respuesta</a></li><li><a href="#s6">6. Descargar una tabla en Excel o CSV</a></li><li><a href="#s7">7. Adjuntar imágenes</a></li><li><a href="#s8">8. Preguntas de seguimiento, editar y regenerar</a></li><li><a href="#s9">9. Copiar y compartir</a></li><li><a href="#s10">10. Tus conversaciones</a></li><li><a href="#s11">11. Cambiar de cliente o de base de datos</a></li><li><a href="#s12">12. Mi consumo y apariencia</a></li><li><a href="#s13">13. Si algo no sale como esperabas</a></li><li><a href="#s14">14. Consejos para preguntar mejor</a></li><li><a href="#s15">15. Tabla rápida de preguntas de ejemplo</a></li><li><a href="#s16">16. Preguntas frecuentes</a></li></ol></section>
+<section>
+<h2 id="s1">1. Qué es SAVI y qué puede hacer por vos</h2>
+<p><strong>SAVI</strong> es un asistente que conversa con vos como si fuera un compañero de trabajo que conoce el ERP de tu empresa. Le escribís una pregunta en tus palabras, y SAVI busca la información, la interpreta y te la explica con números, tablas y una lectura corta.</p>
+
+<h3>Lo que sí puede hacer</h3>
+<ul>
+  <li><strong>Consultar los datos de tu empresa en el ERP:</strong> ventas, inventario, cartera, compras, contabilidad y otros módulos a los que tengas acceso.</li>
+  <li><strong>Explicarte cómo hacer algo en el ERP</strong>, por ejemplo "¿Cómo se anula una factura de venta?".</li>
+  <li><strong>Responder desde los documentos y sitios web de tu empresa</strong> (políticas, procedimientos, precios publicados) y decirte de dónde sacó cada dato.</li>
+  <li><strong>Explicar términos del negocio</strong>, como "¿Qué es la UVT?".</li>
+  <li><strong>Leer imágenes</strong> que le adjuntes, como una captura del ERP o una factura.</li>
+</ul>
+
+<h3>Lo que no hace</h3>
+<ul>
+  <li>No contesta temas que no tengan que ver con el ERP, con tu empresa o con sus documentos (deportes, recetas, tareas escolares, etc.). Si le preguntás algo así, te va a decir amablemente que no puede ayudarte con eso.</li>
+  <li>No muestra datos personales, como teléfonos, documentos de identidad o correos electrónicos.</li>
+  <li>No modifica nada en el ERP: SAVI solo <strong>lee</strong> la información. No puede crear, cambiar ni borrar registros.</li>
+  <li>Solo te muestra lo que tu usuario tiene permitido ver. Si no tenés acceso a un módulo, SAVI tampoco te muestra sus datos.</li>
+</ul>
+
+<div class="nota consejo"><strong>Consejo</strong>
+<p>Pensá en SAVI como alguien muy rápido pero que no adivina. Cuanto más claro le digas qué querés (período, producto, cliente), mejor te responde.</p></div>
+</section>
+
+<section>
+<h2 id="s2">2. Cómo entrar</h2>
+<ol class="pasos">
+  <li>Abrí SAVI con el acceso directo del escritorio. Se abre la pantalla de inicio de sesión.</li>
+  <li>Escribí tu <strong>usuario</strong> en el campo <span class="n">1</span>. Es el mismo que usás en el ERP.</li>
+  <li>Escribí tu <strong>contraseña</strong> en el campo <span class="n">3</span>. Si querés ver lo que escribís, tocá el ojito <span class="n">4</span>; tocalo de nuevo para volver a ocultarla.</li>
+  <li>Tocá <span class="btn">Entrar</span> <span class="n">5</span>.</li>
+</ol>
+<figure class="media"><img src="imagenes/uso-01-login.png" alt="Pantalla de inicio de sesión con los campos numerados"><figcaption>Pantalla de inicio de sesión. El aviso <span class="n">2</span> explica cómo agregar el código del cliente.</figcaption></figure>
+
+<h3>Si atendés a varios clientes</h3>
+<p>Algunas personas, como el equipo de soporte, atienden a más de una empresa. En ese caso escribí el usuario seguido de una arroba y el <strong>código del cliente</strong>, con este formato: <code>USUARIO@CODIGO</code>. Por ejemplo, <code>maria@MIEMPRESA</code>. El código te lo da tu administrador.</p>
+<figure class="angosta"><img src="imagenes/uso-02-login-codigo.png" alt="Campo de usuario con un ejemplo de usuario más código de cliente"><figcaption>Ejemplo con el código del cliente después de la arroba.</figcaption></figure>
+<p>SAVI recuerda en este equipo los códigos que ya usaste, y te los sugiere cuando escribís tu usuario.</p>
+
+<div class="nota falla"><strong>Si algo falla</strong>
+<table>
+<thead><tr><th>Mensaje</th><th>Qué significa y qué hacer</th></tr></thead>
+<tbody>
+<tr><td>Ingresá usuario y contraseña.</td><td>Dejaste un campo vacío. Completá los dos.</td></tr>
+<tr><td>No pudimos entrar. Revisá el usuario, la contraseña y el código del cliente.</td><td>Algún dato está mal escrito. Revisá mayúsculas, espacios y el código después de la arroba.</td></tr>
+<tr><td>No encontramos ese cliente. Revisá el código después de la @.</td><td>El código del cliente no existe. Confirmalo con tu administrador.</td></tr>
+<tr><td>Ese cliente está desactivado en SAVI. Avisale a tu administrador.</td><td>El código existe, pero ese cliente fue desactivado. Tu administrador puede volver a activarlo.</td></tr>
+<tr><td>No pudimos conectar con la base de ese cliente. Probá de nuevo en unos minutos o avisale a tu administrador.</td><td>El código es correcto, pero SAVI no logra comunicarse con la base de datos de ese cliente (por ejemplo, el servidor está apagado). Esperá unos minutos; si sigue, avisá a tu administrador.</td></tr>
+<tr><td>No pudimos conectarnos con SAVI. Revisá tu conexión e intentá de nuevo.</td><td>Hay un problema de red entre tu equipo y SAVI.</td></tr>
+<tr><td>SAVI no está respondiendo en este momento. Probá de nuevo en unos minutos.</td><td>El servicio está detenido o reiniciándose. Si sigue, avisá a soporte.</td></tr>
+</tbody></table>
+<p>Si tu cuenta está deshabilitada, o hubo demasiados intentos seguidos, SAVI te lo dice con el motivo y el tiempo de espera.</p></div>
+</section>
+
+<section>
+<h2 id="s3">3. Conocé la pantalla principal</h2>
+<figure><img src="imagenes/uso-03-pantalla.png" alt="Pantalla principal de SAVI con sus partes numeradas"><figcaption>Pantalla principal.</figcaption></figure>
+<ul class="leyenda">
+  <li><span class="n">1</span><strong>Nueva conversación.</strong> Empieza un tema desde cero.</li>
+  <li><span class="n">2</span><strong>Buscar conversaciones.</strong> Filtra tu historial por palabras del título.</li>
+  <li><span class="n">3</span><strong>Lista de conversaciones.</strong> Están agrupadas por fecha: Hoy, Ayer, Últimos 7 días, Este mes y Anteriores. Debajo de cada título ves el cliente al que pertenece.</li>
+  <li><span class="n">4</span><strong>Mi consumo.</strong> Cuántas consultas hiciste.</li>
+  <li><span class="n">5</span><strong>Tu usuario.</strong> Tocá tu nombre para ver tu perfil; el botón de la derecha cierra la sesión.</li>
+  <li><span class="n">6</span><strong>Apariencia.</strong> Cambia entre claro, oscuro o automático.</li>
+  <li><span class="n">7</span><strong>Sugerencias.</strong> Preguntas listas para tocar, según los módulos que tenés habilitados. El botón <span class="btn">Otras</span> muestra otras ideas.</li>
+  <li><span class="n">8</span><strong>Cliente.</strong> La empresa sobre la que vas a preguntar.</li>
+  <li><span class="n">9</span><strong>Cuadro de mensaje.</strong> Acá escribís tu pregunta.</li>
+</ul>
+<p>Si tu usuario es administrador, vas a ver además el botón <span class="btn">Administración</span>. Las personas que no administran SAVI no lo ven.</p>
+</section>
+
+<section>
+<h2 id="s4">4. Hacer una pregunta</h2>
+<ol class="pasos">
+  <li>Elegí el <strong>Cliente</strong> si atendés a más de uno (ver sección 11). Si trabajás con una sola empresa, ya viene elegida.</li>
+  <li>Escribí tu pregunta en el cuadro <span class="n">1</span>. Podés escribir como hablás.</li>
+  <li>Apretá <kbd>Enter</kbd> o el botón de la flecha <span class="n">4</span>. Para escribir en varias líneas usá <kbd>Shift</kbd> + <kbd>Enter</kbd>.</li>
+  <li>Esperá unos segundos. Vas a ver qué está consultando SAVI y, enseguida, la respuesta. Si querés cortarla, tocá el botón <span class="btn">Detener</span>; la respuesta queda marcada como "Respuesta detenida".</li>
+</ol>
+<figure><img src="imagenes/uso-05-adjuntar.png" alt="Cuadro de mensaje con una pregunta escrita y una imagen adjunta"><figcaption>Cuadro de mensaje: texto <span class="n">1</span>, clip para adjuntar <span class="n">2</span>, imagen adjunta <span class="n">3</span> y botón de enviar <span class="n">4</span>.</figcaption></figure>
+
+<h3>Ejemplos por área</h3>
+<table>
+<thead><tr><th style="width:22%">Área</th><th>Podés preguntar</th></tr></thead>
+<tbody>
+<tr><td>Ventas</td><td>¿Cuánto facturamos en marzo de 2026?<br>¿Cómo vamos en ventas de junio de 2026 comparado con junio de 2025?<br>Mostrame las ventas por mes de enero a marzo de 2026.</td></tr>
+<tr><td>Inventario</td><td>¿Cuántas unidades hay del producto X?<br>¿Qué productos tienen menos de 10 unidades en stock?<br>¿Cuál es el valor total del inventario actual?</td></tr>
+<tr><td>Cartera</td><td>¿Cuánto es la cartera vencida total?<br>Mostrame la edad de cartera de clientes.<br>¿Qué pagos se recibieron esta semana?</td></tr>
+<tr><td>Compras</td><td>¿Cuánto compramos en marzo de 2026?<br>¿Qué órdenes de compra están pendientes?</td></tr>
+<tr><td>Contabilidad</td><td>¿Cuál fue el estado de resultados del mes pasado?<br>Mostrame el balance general del último trimestre.</td></tr>
+<tr><td>Glosario</td><td>¿Qué es la UVT?<br>¿Qué significa CUFE?</td></tr>
+<tr><td>Cómo se hace en el ERP</td><td>¿Cómo se anula una factura de venta en el ERP?<br>¿Dónde registro una devolución de un cliente?</td></tr>
+<tr><td>Documentos de la empresa</td><td>¿Qué dice la política de descuentos sobre el tope sin autorización?</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2 id="s5">5. Entender la respuesta</h2>
+<figure><img src="imagenes/uso-06-respuesta.png" alt="Respuesta de SAVI con tabla, lectura y botones"><figcaption>Una respuesta típica, con sus partes numeradas.</figcaption></figure>
+<ul class="leyenda">
+  <li><span class="n">1</span><strong>Qué consultó.</strong> Una etiqueta te dice de dónde salió la información: <em>Consultó el ERP</em>, <em>Consultó los documentos</em> o <em>Consultó el conocimiento del ERP</em>. Un "×2" indica que hizo más de una consulta.</li>
+  <li><span class="n">2</span><strong>Descargar.</strong> Baja la tabla a tu equipo (sección 6).</li>
+  <li><span class="n">3</span><strong>La tabla.</strong> Los números ordenados en filas y columnas.</li>
+  <li><span class="n">4</span><strong>Lectura.</strong> Un resumen corto que explica qué significan los números: qué creció, qué bajó, qué llama la atención.</li>
+  <li><span class="n">5</span><strong>Copiar.</strong> Copia la respuesta para pegarla en otro lado.</li>
+  <li><span class="n">6</span><strong>Regenerar.</strong> Pide una respuesta nueva a la misma pregunta.</li>
+</ul>
+<p>Debajo de la respuesta también está el botón <span class="btn">Compartir</span>, que sirve para copiarla o enviarla (sección 9). No lo confundas con la flecha del cuadro de mensaje: esa envía tu pregunta.</p>
+
+<h3>Fuentes: de dónde sale cada dato</h3>
+<p>Cuando SAVI responde con información de un documento o de un sitio web de tu empresa, al final aparece el bloque <strong>Fuentes</strong>. Ahí ves el nombre del documento y las páginas usadas. Tocá la fuente para abrir el documento, o la página web, y comprobar el dato por tu cuenta.</p>
+<figure><img src="imagenes/con-08-cita.png" alt="Respuesta con el bloque Fuentes al final"><figcaption>La respuesta indica "Consultó los documentos" <span class="n">2</span> y muestra las fuentes <span class="n">1</span>.</figcaption></figure>
+
+<h3>Gráficos</h3>
+<p>Cuando conviene, SAVI muestra la información como un gráfico de barras, de líneas o de torta, además de la tabla. Si querés uno, pedilo con claridad: "Mostrame en un gráfico de barras…". No siempre es posible; si los datos no se prestan, SAVI te responde con la tabla.</p>
+
+<div class="nota importante"><strong>Importante</strong>
+<p>Leé siempre la respuesta con ojo crítico. Si un número te sorprende, mirá la etiqueta de qué consultó SAVI, repetí la pregunta con más detalle o verificalo en el ERP.</p></div>
+</section>
+
+<section>
+<h2 id="s6">6. Descargar una tabla en Excel o CSV</h2>
+<ol class="pasos">
+  <li>En la respuesta, tocá el botón <span class="btn">Descargar</span> que está arriba de la tabla.</li>
+  <li>Elegí el formato: <strong>Excel (.xlsx)</strong> <span class="n">1</span> para abrirlo en Excel, o <strong>CSV (para otros programas)</strong> <span class="n">2</span>.</li>
+  <li>El archivo se guarda en la carpeta de descargas de tu navegador.</li>
+</ol>
+<figure><img src="imagenes/uso-07-descargar.png" alt="Menú de descarga con las opciones Excel y CSV"><figcaption>Menú de descarga de una tabla.</figcaption></figure>
+<div class="nota consejo"><strong>Consejo</strong><p>Si vas a trabajar los datos en Excel, elegí <strong>Excel (.xlsx)</strong>: los números y los acentos se ven bien sin ningún paso extra.</p></div>
+</section>
+
+<section>
+<h2 id="s7">7. Adjuntar imágenes</h2>
+<p>Podés mostrarle a SAVI una imagen para que la lea y te ayude. Es útil para una pantalla del ERP que no entendés o para una factura.</p>
+<h3>Tres formas de adjuntar</h3>
+<ol class="pasos">
+  <li>Tocá el <strong>clip</strong> <span class="n">2</span> del cuadro de mensaje y elegí la imagen en tu equipo.</li>
+  <li>Arrastrá la imagen desde una carpeta y soltala sobre el cuadro de mensaje (aparece el aviso "Soltá las imágenes acá").</li>
+  <li>Copiá una captura de pantalla y, con el cursor en el cuadro de mensaje, apretá <kbd>Ctrl</kbd> + <kbd>V</kbd>.</li>
+</ol>
+<p>La imagen aparece en miniatura <span class="n">3</span> sobre el texto. Si te equivocaste, tocá la <strong>x</strong> de la miniatura para quitarla. Después escribí tu pregunta y enviala.</p>
+<h3>Qué conviene adjuntar y qué no</h3>
+<table>
+<thead><tr><th>Sí</th><th>No</th></tr></thead>
+<tbody>
+<tr><td>Capturas de pantallas del ERP, por ejemplo un mensaje de error.</td><td>Fotos o imágenes que no tengan que ver con el trabajo. SAVI no las analiza.</td></tr>
+<tr><td>Facturas o documentos comerciales que querés revisar.</td><td>Imágenes de documentos de identidad, tarjetas o datos personales.</td></tr>
+<tr><td>Imágenes nítidas y completas.</td><td>Imágenes borrosas o cortadas.</td></tr>
+</tbody></table>
+<p><strong>Límites:</strong> hasta <strong>4 imágenes</strong> por mensaje, de hasta <strong>5 MB</strong> cada una, en formato PNG, JPG, WEBP o GIF.</p>
+<div class="nota falla"><strong>Si algo falla</strong>
+<ul>
+<li><em>“nombre” no es una imagen compatible. Usá PNG, JPG, WEBP o GIF.</em> Guardá la imagen en uno de esos formatos.</li>
+<li><em>“nombre” pesa más de 5 MB.</em> Achicá la imagen o recortala.</li>
+<li><em>Podés adjuntar hasta 4 imágenes por mensaje.</em> Enviá el resto en otro mensaje.</li>
+</ul></div>
+</section>
+
+<section>
+<h2 id="s8">8. Preguntas de seguimiento, editar y regenerar</h2>
+<h3>Seguir la conversación</h3>
+<p>SAVI recuerda lo que hablaron en la misma conversación. Por eso podés preguntar "¿Y en abril?" o "¿Podés mostrarlo por producto?" sin repetir todo. Cada conversación está atada a un cliente; si querés consultar a otro, empezá una conversación nueva.</p>
+<h3>Editar tu último mensaje</h3>
+<p>Si te equivocaste al escribir, o querés cambiar el período, podés corregir el último mensaje.</p>
+<ol class="pasos">
+  <li>Pasá el mouse por tu mensaje y tocá <span class="btn">Editar</span> <span class="n">2</span>.</li>
+  <li>Cambiá el texto y tocá <span class="btn">Enviar</span>. Para dejarlo como estaba, tocá <span class="btn">Cancelar</span> o apretá <kbd>Esc</kbd>.</li>
+</ol>
+<figure class="media"><img src="imagenes/uso-09-editar.png" alt="Botones Copiar y Editar debajo del mensaje del usuario"><figcaption>Botones debajo de tu mensaje: Copiar <span class="n">1</span> y Editar <span class="n">2</span>.</figcaption></figure>
+<figure class="media"><img src="imagenes/uso-10-editando.png" alt="Mensaje en modo edición con los botones Cancelar y Enviar"><figcaption>Edición del mensaje: texto <span class="n">1</span>, <span class="btn">Cancelar</span> <span class="n">2</span> y <span class="btn">Enviar</span> <span class="n">3</span>.</figcaption></figure>
+<h3>Regenerar una respuesta</h3>
+<p>Si una respuesta no te convence, tocá <span class="btn">Regenerar</span> debajo de ella. SAVI vuelve a consultar y arma una respuesta nueva.</p>
+<div class="nota info"><strong>Para saber</strong><p>Al editar o regenerar, la versión anterior no se pierde. Aparecen flechas para ir a la versión anterior o a la siguiente, y un botón <em>← actual</em> para volver a la última.</p></div>
+</section>
+
+<section>
+<h2 id="s9">9. Copiar y compartir</h2>
+<ul>
+  <li><strong>Copiar:</strong> el botón <span class="btn">Copiar</span> debajo de cualquier mensaje lo copia al portapapeles.</li>
+  <li><strong>Compartir:</strong> el botón <span class="btn">Compartir</span> debajo de una respuesta abre un menú para copiar o enviar esa respuesta.</li>
+  <li><strong>Compartir conversación:</strong> el botón de arriba a la derecha abre el mismo menú para toda la conversación.</li>
+</ul>
+<figure><img src="imagenes/uso-08-compartir.png" alt="Menú de compartir con Copiar enlace, Imprimir y Más formatos"><figcaption>Menú de compartir: <strong>Copiar enlace</strong> <span class="n">1</span>, <strong>Imprimir / Guardar como PDF</strong> <span class="n">2</span> y <strong>Más formatos</strong> <span class="n">3</span>.</figcaption></figure>
+<table>
+<thead><tr><th>Opción</th><th>Para qué sirve</th></tr></thead>
+<tbody>
+<tr><td>Copiar enlace</td><td>Copia un enlace a la conversación. <strong>Funciona para vos</strong> (con tu usuario): no sirve para mostrársela a otra persona que no tenga acceso.</td></tr>
+<tr><td>Imprimir / Guardar como PDF</td><td>Abre la vista de impresión de tu navegador. Elegí "Guardar como PDF" para tener un archivo que podés mandar por correo.</td></tr>
+<tr><td>Más formatos</td><td>Despliega <strong>Página web (.html)</strong> y <strong>Texto con formato (.md)</strong>.</td></tr>
+<tr><td>Compartir… (Sistema)</td><td>Aparece solo en equipos que lo permiten. Usa las opciones de compartir del sistema.</td></tr>
+</tbody></table>
+<div class="nota consejo"><strong>Consejo</strong><p>Para mostrarle un resultado a alguien que no usa SAVI, lo más simple es guardar la respuesta como PDF.</p></div>
+</section>
+
+<section>
+<h2 id="s10">10. Tus conversaciones</h2>
+<p>Cada tema que hablás con SAVI queda guardado como una conversación en la lista de la izquierda. SAVI les pone un nombre automáticamente, según de qué se habló. Una conversación nueva en la que todavía no enviaste ningún mensaje no aparece en la lista hasta que la uses.</p>
+<figure class="media"><img src="imagenes/uso-11-menu-conversacion.png" alt="Menú de una conversación con Renombrar, Compartir y Eliminar"><figcaption>Menú de la conversación. Aparece al tocar los tres puntos que se ven al pasar el mouse sobre su título.</figcaption></figure>
+<h3>Renombrar</h3>
+<p>Tocá los tres puntos de la conversación y elegí <strong>Renombrar</strong> <span class="n">1</span>. Escribí el nombre y apretá <kbd>Enter</kbd> (<kbd>Esc</kbd> cancela). Una conversación que renombraste a mano conserva tu nombre: SAVI ya no se lo cambia.</p>
+<h3>Eliminar</h3>
+<p>Elegí <strong>Eliminar</strong> <span class="n">3</span>. SAVI te pide confirmar: <em>“Se eliminará … Esta acción no se puede deshacer.”</em> Confirmá solo si estás segura o seguro.</p>
+<h3>Buscar</h3>
+<p>Escribí una palabra en <strong>Buscar conversaciones</strong>. La lista se acorta a las que la contienen en el título, sin importar mayúsculas ni tildes. Para volver a ver todas, tocá <span class="btn">Ver todas</span> o borrá el texto.</p>
+<figure class="media"><img src="imagenes/uso-12-buscar.png" alt="Búsqueda de conversaciones con la palabra ventas"><figcaption>Búsqueda: campo <span class="n">1</span> y resultados <span class="n">2</span>.</figcaption></figure>
+</section>
+
+<section>
+<h2 id="s11">11. Cambiar de cliente o de base de datos</h2>
+<p>Cada <strong>cliente</strong> es una empresa con su propia información en el ERP. SAVI trabaja con un solo cliente por conversación, y lo ves arriba de la conversación como "Cliente: …".</p>
+<ol class="pasos">
+  <li>Tocá <span class="btn">Nueva conversación</span>.</li>
+  <li>En el selector <strong>Cliente</strong> <span class="n">1</span> elegí la empresa. Podés escribir parte del nombre para buscarla.</li>
+  <li>Escribí tu pregunta. A partir de ahí, la conversación queda con ese cliente.</li>
+</ol>
+<figure><img src="imagenes/uso-04-cliente.png" alt="Selector de cliente desplegado con tres opciones"><figcaption>Selector de cliente. La opción marcada "tu sesión" es la del usuario con el que entraste.</figcaption></figure>
+<div class="nota importante"><strong>Importante</strong><p>Elegí el cliente <strong>antes</strong> de enviar el primer mensaje. Una vez enviado, esa conversación no cambia de cliente. Solo ves los clientes a los que tu usuario tiene acceso.</p></div>
+</section>
+
+<section>
+<h2 id="s12">12. Mi consumo y apariencia</h2>
+<h3>Mi consumo</h3>
+<p>Tocá <strong>Mi consumo</strong> en el menú de la izquierda. Se abre tu perfil con la cantidad de consultas que hiciste. Con los botones <span class="btn">Hoy</span>, <span class="btn">Ayer</span>, <span class="btn">7 días</span>, <span class="btn">30 días</span>, <span class="btn">90 días</span> o <span class="btn">Personalizado</span> elegís el período.</p>
+<figure><img src="imagenes/uso-14-consumo.png" alt="Perfil del usuario con la sección Mi consumo"><figcaption>Perfil y consumo: módulos habilitados <span class="n">1</span>, período <span class="n">2</span> y consultas realizadas <span class="n">3</span>.</figcaption></figure>
+<p>En el perfil también ves tu usuario, el cliente actual y los <strong>módulos habilitados</strong>: son los que SAVI te deja consultar.</p>
+<h3>Apariencia</h3>
+<p>El botón <strong>Apariencia</strong> (abajo a la izquierda) cambia el aspecto de SAVI cada vez que lo tocás: <em>automática</em> (sigue la configuración de tu equipo), <em>clara</em> u <em>oscura</em>. Se recuerda en ese equipo.</p>
+<figure class="angosta"><img src="imagenes/uso-13-apariencia.png" alt="SAVI con la apariencia clara"><figcaption>El botón <span class="n">1</span> indica el modo actual.</figcaption></figure>
+</section>
+
+<section>
+<h2 id="s13">13. Si algo no sale como esperabas</h2>
+<table>
+<thead><tr><th style="width:38%">Lo que ves</th><th>Qué significa y qué hacer</th></tr></thead>
+<tbody>
+<tr><td>El asistente no está disponible en este momento. Avisale a tu administrador.</td><td>SAVI no puede conectarse con el proveedor de inteligencia artificial (por ejemplo, falta saldo o la clave venció). Vos no podés resolverlo: avisá a tu administrador.</td></tr>
+<tr><td>No pude completar la respuesta. Probá de nuevo en un momento.</td><td>Hubo un problema pasajero. Esperá un minuto y repetí la pregunta, o tocá <span class="btn">Regenerar</span>.</td></tr>
+<tr><td>Sin acceso — Esta sección requiere acceso al módulo …</td><td>Tu usuario no tiene habilitado ese módulo del ERP. Pedíselo al administrador del ERP.</td></tr>
+<tr><td>No encontré registros con ese nombre / No encontré datos para ese período.</td><td>SAVI buscó y no halló nada. Revisá el nombre, el código del producto o el período, o probá con otras palabras.</td></tr>
+<tr><td>No pude generar una respuesta para esa consulta.</td><td>La consulta no se pudo responder. Reformulala con otras palabras y sin datos personales.</td></tr>
+<tr><td>Una respuesta que no se parece a lo que esperabas</td><td>Agregá el período, el producto o el cliente a la pregunta. Si sigue igual, avisá a soporte con una captura.</td></tr>
+</tbody></table>
+<figure class="media"><img src="imagenes/uso-15-sin-acceso.png" alt="Pantalla Sin acceso"><figcaption>Pantalla que aparece cuando falta el permiso de un módulo.</figcaption></figure>
+</section>
+
+<section>
+<h2 id="s14">14. Consejos para preguntar mejor</h2>
+<ul>
+  <li><strong>Decí el período.</strong> "Ventas de marzo de 2026" es mejor que "ventas".</li>
+  <li><strong>Nombrá el producto, cliente o concepto</strong> con el nombre o el código tal como está en el ERP.</li>
+  <li><strong>Una cosa por vez.</strong> Si necesitás varias, pedilas en mensajes separados: es más fácil de leer.</li>
+  <li><strong>Pedí comparaciones</strong> cuando quieras contexto: "comparado con el mismo mes del año pasado".</li>
+  <li><strong>Usá el seguimiento.</strong> Empezá con algo general y afinalo: "¿Y por producto?".</li>
+  <li><strong>Si no sabés cómo preguntar</strong>, escribí "¿Qué módulos del ERP puedo consultar?" o "Explicame qué cosas podés hacer".</li>
+</ul>
+<table>
+<thead><tr><th>Mejor así</th><th>Menos útil</th></tr></thead>
+<tbody>
+<tr><td>¿Cuánto facturamos en marzo de 2026?</td><td>¿Cuánto vendimos?</td></tr>
+<tr><td>¿Cuántas unidades hay del tornillo MAD 6 * 2?</td><td>¿Hay tornillos?</td></tr>
+<tr><td>Mostrame las ventas por mes de enero a marzo de 2026.</td><td>Dame las ventas.</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2 id="s15">15. Tabla rápida de preguntas de ejemplo</h2>
+<table class="larga">
+<thead><tr><th style="width:24%">Quiero saber…</th><th>Pregunta</th></tr></thead>
+<tbody>
+<tr><td>Cuánto facturé</td><td>¿Cuánto facturamos en marzo de 2026?</td></tr>
+<tr><td>Cómo voy contra el año pasado</td><td>¿Cómo vamos en ventas de junio de 2026 comparado con junio de 2025?</td></tr>
+<tr><td>Ventas mes a mes</td><td>Mostrame las ventas por mes de enero a marzo de 2026.</td></tr>
+<tr><td>Existencias de un producto</td><td>¿Cuántas unidades hay del tornillo MAD 6 * 2?</td></tr>
+<tr><td>Faltantes</td><td>¿Qué productos tienen menos de 10 unidades en stock?</td></tr>
+<tr><td>Valor del inventario</td><td>¿Cuál es el valor total del inventario actual?</td></tr>
+<tr><td>Cartera vencida</td><td>¿Cuánto es la cartera vencida total?</td></tr>
+<tr><td>Antigüedad de la cartera</td><td>Mostrame la edad de cartera de clientes.</td></tr>
+<tr><td>Compras</td><td>¿Cuánto compramos en marzo de 2026?</td></tr>
+<tr><td>Contabilidad</td><td>¿Cuál fue el estado de resultados del mes pasado?</td></tr>
+<tr><td>Un término</td><td>¿Qué es la UVT?</td></tr>
+<tr><td>Un procedimiento del ERP</td><td>¿Cómo se anula una factura de venta en el ERP?</td></tr>
+<tr><td>Una política de la empresa</td><td>¿Qué dice la política de devolución de mercancía sobre el plazo?</td></tr>
+<tr><td>Qué puedo consultar</td><td>¿Qué módulos del ERP puedo consultar?</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2 id="s16">16. Preguntas frecuentes</h2>
+<div class="faq"><h4>¿SAVI puede cambiar algo en el ERP?</h4><p>No. SAVI solo lee la información. No crea, modifica ni elimina registros.</p></div>
+<div class="faq"><h4>¿Por qué no me muestra el teléfono o el correo de un cliente?</h4><p>SAVI no muestra datos personales (teléfonos, documentos de identidad, correos) para proteger a las personas.</p></div>
+<div class="faq"><h4>¿Por qué no me contesta una pregunta sobre otro tema?</h4><p>SAVI solo responde sobre el ERP, los datos y los documentos de tu empresa. Está pensado así a propósito.</p></div>
+<div class="faq"><h4>Mi compañero ve datos que yo no veo. ¿Por qué?</h4><p>Cada usuario tiene sus propios módulos habilitados en el ERP. SAVI respeta esos permisos. Si necesitás un módulo, pedíselo al administrador del ERP.</p></div>
+<div class="faq"><h4>¿Se guardan mis conversaciones?</h4><p>Sí, quedan en tu lista hasta que las elimines. Otras personas no ven tus conversaciones.</p></div>
+<div class="faq"><h4>La respuesta tarda mucho. ¿Qué hago?</h4><p>Las consultas grandes pueden demorar. Si pasan más de un par de minutos, tocá <span class="btn">Detener</span> y probá con una pregunta más acotada (un mes en lugar de un año).</p></div>
+<div class="faq"><h4>¿Puedo usar SAVI desde el celular?</h4><p>La pantalla se adapta a pantallas chicas, con un menú que se abre desde el botón de arriba. Pedile a tu administrador la dirección de acceso desde tu red.</p></div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAVI · Configurar las bases de datos</title>
+<style>
+/* Diseño compartido de los manuales de SAVI (se incrusta en cada HTML al generarlos). */
+:root {
+  --rojo: #bc0101;
+  --rojo-suave: #fbeaea;
+  --texto: #1f2328;
+  --suave: #5b6470;
+  --borde: #d9dde3;
+  --fondo-suave: #f5f6f8;
+  --azul: #1d4e89;
+  --azul-suave: #e9f1fb;
+  --verde: #1f7a45;
+  --verde-suave: #e8f5ed;
+  --ambar: #8a5a00;
+  --ambar-suave: #fff4dc;
+}
+
+@page { size: A4; margin: 14mm 17mm 18mm 17mm; }
+@page :first { margin: 0; }
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: var(--texto);
+  background: #fff;
+}
+.contenido { max-width: 178mm; margin: 0 auto; padding: 0 0 10mm; }
+
+/* Portada */
+.portada {
+  height: 297mm;
+  padding: 32mm 24mm 24mm;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fff 0%, #fff 58%, var(--rojo-suave) 100%);
+  border-top: 14mm solid var(--rojo);
+  page-break-after: always;
+  break-after: page;
+}
+.portada img.logo { width: 62mm; height: auto; border-radius: 4mm; align-self: flex-start; }
+.portada .marca { margin-top: 12mm; font-size: 12pt; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
+.portada h1 { margin: 4mm 0 0; font-size: 34pt; line-height: 1.12; color: var(--rojo); }
+.portada .subtitulo { margin-top: 8mm; font-size: 15pt; color: var(--texto); max-width: 140mm; }
+.portada .fecha { margin-top: auto; font-size: 13pt; color: var(--suave); border-top: 1px solid var(--borde); padding-top: 6mm; }
+.portada .para { margin-top: 3mm; font-size: 11pt; color: var(--suave); }
+
+/* Índice */
+.indice { padding-top: 16mm; page-break-after: always; break-after: page; }
+.indice h2 { margin: 0 0 6mm; font-size: 20pt; color: var(--rojo); border: 0; }
+.indice ol { margin: 0; padding: 0; list-style: none; }
+.indice li { margin: 0; border-bottom: 1px dotted var(--borde); }
+.indice a { display: block; padding: 2.2mm 0; color: var(--texto); text-decoration: none; font-size: 12pt; }
+.indice a:hover { color: var(--rojo); }
+.indice .intro { color: var(--suave); margin: 0 0 6mm; }
+
+/* Títulos */
+h2 {
+  margin: 8mm 0 3.5mm;
+  padding-bottom: 2mm;
+  font-size: 18pt;
+  line-height: 1.2;
+  color: var(--rojo);
+  border-bottom: 2px solid var(--rojo);
+  break-after: avoid;
+  page-break-after: avoid;
+}
+h3 { margin: 7mm 0 2.5mm; font-size: 13.5pt; color: var(--texto); break-after: avoid; page-break-after: avoid; }
+h3::before { content: ""; display: inline-block; width: 3mm; height: 3mm; margin-right: 2mm; background: var(--rojo); border-radius: 50%; }
+p { margin: 0 0 2.6mm; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 3.5mm; padding-left: 6.5mm; }
+li { margin: 0 0 1.6mm; }
+a { color: var(--azul); }
+code, kbd {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  background: var(--fondo-suave);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  padding: 0 1.2mm;
+}
+kbd { border-bottom-width: 2px; }
+.btn {
+  display: inline-block;
+  padding: 0 1.8mm;
+  font-weight: 600;
+  background: var(--fondo-suave);
+  border: 1px solid #b9c0ca;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.menu { font-weight: 600; color: var(--texto); }
+
+/* Pasos numerados */
+ol.pasos { counter-reset: paso; list-style: none; padding-left: 0; }
+ol.pasos > li {
+  counter-increment: paso;
+  position: relative;
+  padding-left: 10mm;
+  margin-bottom: 2.6mm;
+  break-inside: avoid;
+}
+ol.pasos > li::before {
+  content: counter(paso);
+  position: absolute; left: 0; top: .1mm;
+  width: 7mm; height: 7mm; line-height: 7mm;
+  text-align: center; font-weight: 700; font-size: 10pt;
+  color: #fff; background: var(--texto); border-radius: 50%;
+}
+
+/* Números rojos de las capturas */
+.n {
+  display: inline-block;
+  min-width: 5.2mm; height: 5.2mm; line-height: 5.2mm;
+  padding: 0 .8mm;
+  text-align: center; font-size: 9pt; font-weight: 700;
+  color: #fff; background: #d90429; border-radius: 50%;
+  vertical-align: 1px;
+}
+
+/* Capturas */
+figure {
+  margin: 3mm 0 5mm;
+  break-inside: avoid; page-break-inside: avoid;
+  text-align: center;
+}
+figure img {
+  max-width: 100%;
+  max-height: 96mm;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--borde);
+  border-radius: 3mm;
+  box-shadow: 0 1.2mm 3mm rgba(0,0,0,.14);
+}
+figure.angosta img { max-width: 62%; max-height: 110mm; }
+figure.media img { max-width: 82%; max-height: 80mm; }
+figure.dialogo img { max-height: 128mm; }
+figcaption { margin-top: 2.5mm; font-size: 9.5pt; color: var(--suave); }
+
+/* Leyenda de números */
+ul.leyenda { list-style: none; padding-left: 0; }
+ul.leyenda li { padding-left: 9mm; position: relative; margin-bottom: 1.8mm; break-inside: avoid; }
+ul.leyenda li .n { position: absolute; left: 0; top: .6mm; }
+
+/* Cajas */
+.nota {
+  margin: 4mm 0 5mm;
+  padding: 3mm 4mm 2mm;
+  border-left: 1.6mm solid var(--azul);
+  background: var(--azul-suave);
+  border-radius: 0 2mm 2mm 0;
+  break-inside: avoid; page-break-inside: avoid;
+}
+.nota > strong:first-child { display: block; margin-bottom: 1mm; font-size: 10.5pt; letter-spacing: .03em; text-transform: uppercase; }
+.nota p:last-child, .nota ul:last-child { margin-bottom: 1.5mm; }
+.nota.importante { border-color: var(--rojo); background: var(--rojo-suave); }
+.nota.importante > strong:first-child { color: var(--rojo); }
+.nota.consejo { border-color: var(--verde); background: var(--verde-suave); }
+.nota.consejo > strong:first-child { color: var(--verde); }
+.nota.falla { border-color: #c27c00; background: var(--ambar-suave); }
+.nota.falla > strong:first-child { color: var(--ambar); }
+.nota.info > strong:first-child { color: var(--azul); }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 10pt; }
+thead { display: table-header-group; }
+th { text-align: left; background: var(--texto); color: #fff; padding: 2mm 2.5mm; font-weight: 600; }
+td { padding: 2mm 2.5mm; border-bottom: 1px solid var(--borde); vertical-align: top; }
+tbody tr:nth-child(even) td { background: var(--fondo-suave); }
+tr { break-inside: avoid; page-break-inside: avoid; }
+table.larga { break-inside: auto; page-break-inside: auto; }
+
+/* Preguntas frecuentes */
+.faq { break-inside: avoid; margin-bottom: 4mm; }
+.faq h4 { margin: 0 0 1mm; font-size: 11pt; color: var(--texto); }
+.faq h4::before { content: "P. "; color: var(--rojo); font-weight: 700; }
+.faq p { margin-bottom: 1mm; }
+
+.salto { break-before: page; page-break-before: always; }
+.pie-doc { margin-top: 10mm; padding-top: 3mm; border-top: 1px solid var(--borde); font-size: 9.5pt; color: var(--suave); }
+
+</style>
+</head>
+<body>
+<section class="portada">
+    <img class="logo" src="imagenes/savi-logo.png" alt="SAVI">
+    <div class="marca">SAVI · Asistente Virtual Inteligente</div>
+    <h1>Configurar las bases de datos</h1>
+    <div class="subtitulo">Cómo registrar la base del ERP de cada cliente y dejar a SAVI listo para atenderlo.</div>
+    <div class="fecha">Octubre de 2026<div class="para">Para administradores y personal de soporte.</div></div>
+  </section>
+<main class="contenido">
+<section class="indice"><h2>Qué vas a encontrar</h2>
+    <p class="intro">Tocá o hacé clic en un título para ir directo a esa parte.</p>
+    <ol><li><a href="#s1">1. Las dos bases de datos que usa SAVI</a></li><li><a href="#s2">2. Un cliente, una base, un código</a></li><li><a href="#s3">3. La pantalla Administración → Bases de datos</a></li><li><a href="#s4">4. Agregar una base nueva</a></li><li><a href="#s5">5. Probar la conexión</a></li><li><a href="#s6">6. Administrar las bases ya registradas</a></li><li><a href="#s7">7. Qué pide el instalador</a></li><li><a href="#s8">8. Si la base del ERP está en otro equipo</a></li><li><a href="#s9">9. Cómo obtienen acceso las personas</a></li><li><a href="#s10">10. Consejos y resolución de problemas</a></li></ol></section>
+<section>
+<h2 id="s1">1. Las dos bases de datos que usa SAVI</h2>
+<p>SAVI trabaja con <strong>dos bases de datos</strong> distintas. Es importante no confundirlas:</p>
+<table>
+<thead><tr><th style="width:22%"></th><th>Base del ERP</th><th>Base de SAVI</th></tr></thead>
+<tbody>
+<tr><td><strong>Qué guarda</strong></td><td>Los datos de la empresa: ventas, inventario, cartera, compras, contabilidad.</td><td>El historial de conversaciones, las sesiones, la configuración de proveedores de IA y los documentos de conocimiento.</td></tr>
+<tr><td><strong>Quién la crea</strong></td><td>El ERP de SEO Group. Ya existe.</td><td>SAVI (si no existe, la crea el instalador).</td></tr>
+<tr><td><strong>Cómo la usa SAVI</strong></td><td><strong>Solo lectura.</strong> SAVI nunca escribe, modifica ni borra nada en la base del ERP.</td><td>Lectura y escritura.</td></tr>
+<tr><td><strong>Cuántas hay</strong></td><td>Una por cliente (empresa).</td><td>Una por instalación de SAVI.</td></tr>
+<tr><td><strong>Tipo</strong></td><td>PostgreSQL.</td><td><strong>PostgreSQL (recomendado)</strong> o archivo local (solo para pruebas o un único usuario).</td></tr>
+</tbody></table>
+<div class="nota importante"><strong>Importante</strong>
+<p>Con el <strong>archivo local</strong>, SAVI atiende bien a <em>un</em> usuario a la vez: si varias personas chatean al mismo tiempo, las respuestas se traban o fallan, y el historial queda solo en ese equipo, sin respaldo. Para el uso normal en una empresa, elegí <strong>PostgreSQL</strong>.</p></div>
+<p>Esta guía explica cómo registrar las bases del <strong>ERP</strong> de cada cliente desde la pantalla de administración, y cómo se piden los datos al instalar.</p>
+</section>
+
+<section>
+<h2 id="s2">2. Un cliente, una base, un código</h2>
+<p>SAVI puede atender a <strong>varias empresas</strong> desde la misma instalación. Cada empresa (cliente) corresponde a <strong>una base del ERP</strong> y tiene un <strong>código</strong> propio, por ejemplo <code>CLIENTE01</code>.</p>
+<ul>
+  <li>El código es lo que las personas escriben al iniciar sesión, después de una arroba: <code>USUARIO@CLIENTE01</code>. Así SAVI sabe contra qué base validar el usuario.</li>
+  <li>En el chat, cada conversación queda atada a un cliente, que se elige en el selector <strong>Cliente</strong>.</li>
+  <li>Una de las bases se marca como <strong>Predeterminada</strong>: es la que se usa cuando alguien entra sin escribir un código.</li>
+</ul>
+</section>
+
+<section>
+<h2 id="s3">3. La pantalla Administración → Bases de datos</h2>
+<ol class="pasos">
+  <li>Entrá a SAVI con un usuario administrador.</li>
+  <li>Tocá <span class="btn">Administración</span> en el menú de la izquierda.</li>
+  <li>Elegí <span class="btn">Bases de datos</span>.</li>
+</ol>
+<figure><img src="imagenes/bases-01-lista.png" alt="Lista de bases de datos con botones Importar, Exportar y Nueva base"><figcaption>Lista de bases de datos registradas.</figcaption></figure>
+<ul class="leyenda">
+  <li><span class="n">1</span><span class="btn">Nueva base</span>: registra el ERP de un cliente.</li>
+  <li><span class="n">2</span><span class="btn">Importar</span>: carga las bases desde un archivo exportado de otra instalación.</li>
+  <li><span class="n">3</span><span class="btn">Exportar</span>: genera un archivo con las bases activas.</li>
+  <li><span class="n">4</span><strong>Columnas:</strong> <em>Cliente</em> (nombre y código), <em>Conexión</em> (servidor:puerto/base y usuario), <em>Estado</em> y <em>Última conexión exitosa</em>.</li>
+  <li><span class="n">5</span><strong>Acciones</strong> de cada fila: <span class="btn">Editar</span>, <span class="btn">Predeterminar</span>, <span class="btn">Desactivar</span> y <span class="btn">Eliminar</span>.</li>
+</ul>
+<h3>Estados de una base</h3>
+<table>
+<thead><tr><th>Estado</th><th>Significado</th></tr></thead>
+<tbody>
+<tr><td><strong>Activa</strong></td><td>Se puede usar normalmente.</td></tr>
+<tr><td><strong>Desactivada</strong></td><td>No se pueden iniciar conversaciones nuevas ni enviar mensajes contra esta base. El historial se sigue viendo.</td></tr>
+<tr><td><strong>Credenciales ilegibles</strong></td><td>No se pudo leer la contraseña guardada. Editá la base y volvé a ingresarla.</td></tr>
+<tr><td><span class="btn">Predeterminada</span> (etiqueta)</td><td>Es la base que se usa por defecto.</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2 id="s4">4. Agregar una base nueva</h2>
+<p>Antes de empezar, tené a mano los datos de conexión de la base del ERP del cliente (los entrega quien administra el servidor de base de datos).</p>
+<ol class="pasos">
+  <li>Tocá <span class="btn">Nueva base</span>. Se abre el formulario <strong>Nueva base de datos</strong>.</li>
+  <li>Completá los campos, uno por uno (tabla de abajo).</li>
+  <li>Tocá <span class="btn">Probar conexión</span> y esperá el resultado (sección 5).</li>
+  <li>Si salió bien, tocá <span class="btn">Guardar</span>. Si no, corregí lo que indica el mensaje.</li>
+</ol>
+<figure class="dialogo"><img src="imagenes/bases-02-nueva.png" alt="Formulario Nueva base de datos con todos los campos numerados"><figcaption>Formulario con datos de ejemplo. Los valores son ficticios.</figcaption></figure>
+<table>
+<thead><tr><th style="width:5%">N.º</th><th style="width:20%">Campo</th><th>Qué poner</th><th style="width:24%">Ejemplo</th></tr></thead>
+<tbody>
+<tr><td><span class="n">1</span></td><td><strong>Código</strong></td><td>Una sigla corta del cliente, de 2 a 32 caracteres: letras, números, guion o guion bajo. Se guarda en mayúsculas. Es lo que se escribe después de la arroba al entrar.</td><td><code>CLIENTE01</code></td></tr>
+<tr><td><span class="n">2</span></td><td><strong>Nombre</strong></td><td>El nombre que verán los usuarios en el selector. Si lo dejás vacío, se propone la razón social de la empresa al probar la conexión.</td><td>Empresa de ejemplo S.A.S.</td></tr>
+<tr><td><span class="n">3</span></td><td><strong>Servidor</strong></td><td>La dirección del servidor donde está la base. Es el mismo dato que el "servidor" del instalador. Si SAVI y la base están en el mismo equipo, <code>localhost</code>. Si no, la dirección IP o el nombre del servidor.</td><td><code>192.168.1.50</code></td></tr>
+<tr><td><span class="n">4</span></td><td><strong>Puerto</strong></td><td>El puerto de PostgreSQL. Casi siempre <code>5432</code>.</td><td><code>5432</code></td></tr>
+<tr><td><span class="n">5</span></td><td><strong>Base de datos</strong></td><td>El nombre de la base del ERP dentro del servidor.</td><td><code>erp_cliente</code></td></tr>
+<tr><td><span class="n">6</span></td><td><strong>Usuario</strong></td><td>El usuario de PostgreSQL con el que SAVI se conecta. Conviene uno de <strong>solo lectura</strong>, creado para SAVI. No es el usuario con el que las personas entran a SAVI.</td><td><code>savi_lectura</code></td></tr>
+<tr><td><span class="n">7</span></td><td><strong>Contraseña</strong></td><td>La contraseña de ese usuario de PostgreSQL. Se muestra con puntos. Al editar una base, dejala vacía para conservar la actual.</td><td>(puntos)</td></tr>
+<tr><td><span class="n">8</span></td><td><strong>Tiempo máximo de consulta (ms)</strong></td><td>Cuánto puede tardar una consulta antes de cortarla, en milisegundos. Entre 1000 y 600000. Normalmente no se toca.</td><td><code>60000</code> (un minuto)</td></tr>
+</tbody></table>
+<div class="nota consejo"><strong>Consejo</strong><p>Pedile a quien administra el servidor un usuario de PostgreSQL exclusivo para SAVI con permisos de <strong>solo lectura</strong>. Si usás el superusuario (<em>postgres</em>), la prueba de conexión te avisa que no es lo recomendable: SAVI solo necesita leer.</p></div>
+</section>
+
+<section>
+<h2 id="s5">5. Probar la conexión</h2>
+<p><span class="btn">Probar conexión</span> intenta entrar a la base con los datos del formulario y verifica que sea realmente el ERP de SEO (que tenga sus tablas). <strong>No guarda nada</strong>, y la prueba también es de solo lectura.</p>
+<h3>Cuando sale bien</h3>
+<p>Aparece un mensaje verde: <strong>Conexión exitosa.</strong> y el nombre de la empresa (<em>Empresa: …</em>). Si el nombre estaba vacío, se completa solo. Si el usuario es superusuario de PostgreSQL, además te avisa que conviene un rol de solo lectura.</p>
+<h3>Cuando falla</h3>
+<p>Aparece un recuadro rojo con el motivo, en una sola frase que dice qué revisar.</p>
+<figure class="dialogo"><img src="imagenes/bases-03-error-servidor.png" alt="Formulario con el error de conexión al servidor"><figcaption>Prueba contra un servidor que no responde: botón <span class="n">1</span> y resultado <span class="n">2</span>.</figcaption></figure>
+<table class="larga">
+<thead><tr><th style="width:42%">Mensaje</th><th>Qué significa</th><th>Qué revisar</th></tr></thead>
+<tbody>
+<tr><td>No encontramos ese servidor. Revisá que el nombre o la dirección estén bien escritos.</td><td>El nombre o la dirección del servidor no existe en la red.</td><td>El campo <em>Servidor</em>: que esté bien escrito, sin espacios ni errores de tipeo.</td></tr>
+<tr><td>No se pudo conectar al servidor. Revisá el servidor y el puerto, y que PostgreSQL esté aceptando conexiones.</td><td>El servidor rechazó la conexión o no está ahí.</td><td>Servidor y puerto bien escritos; que PostgreSQL esté encendido; que acepte conexiones de red (sección 8).</td></tr>
+<tr><td>El servidor no respondió a tiempo. Revisá el servidor, el puerto y que el firewall permita la conexión.</td><td>Se esperó y no hubo respuesta (tiempo agotado).</td><td>Que la IP sea correcta, que el servidor esté encendido y que el firewall deje pasar el puerto 5432.</td></tr>
+<tr><td>No se pudo conectar. Revisá los datos de conexión.</td><td>Mensaje general: algún dato de conexión no es correcto (suele ser el servidor o el puerto).</td><td>Revisá servidor y puerto; probá desde otro equipo con el mismo dato.</td></tr>
+<tr><td>Usuario o contraseña incorrectos para esa base de datos.</td><td>PostgreSQL rechazó el usuario o la clave.</td><td>Usuario y contraseña. Cuidá mayúsculas y espacios.</td></tr>
+<tr><td>No se pudo conectar. Revisá el usuario y la contraseña, y que el servidor acepte conexiones desde este equipo.</td><td>El usuario no existe, la clave no coincide, o el servidor no permite conexiones desde la IP de este equipo.</td><td>Usuario y contraseña; y la regla de acceso del servidor (sección 8).</td></tr>
+<tr><td>La base de datos no existe en ese servidor. Revisá el nombre. / El servidor responde y las credenciales son válidas, pero la base '…' no existe ahí. Revisá el nombre.</td><td>El servidor y el usuario están bien, pero el nombre de la base no.</td><td>El campo <em>Base de datos</em>.</td></tr>
+<tr><td>La conexión funciona, pero la base no parece ser un ERP de SEO: faltan las tablas … Revisá que el nombre de la base sea el correcto.</td><td>Conectó, pero es otra base. Debajo aparece <em>Tablas faltantes</em>.</td><td>Que sea la base del ERP y no otra del mismo servidor.</td></tr>
+
+</tbody></table>
+<figure class="dialogo"><img src="imagenes/bases-04-error-usuario.png" alt="Formulario con el error de usuario o contraseña"><figcaption>Prueba con un usuario inexistente: el mensaje pide revisar usuario y contraseña.</figcaption></figure>
+<div class="nota importante"><strong>Importante</strong>
+<p>Al tocar <span class="btn">Guardar</span>, SAVI vuelve a probar la conexión antes de guardar. Si falla, no se guarda la base.</p></div>
+</section>
+
+<section>
+<h2 id="s6">6. Administrar las bases ya registradas</h2>
+<table>
+<thead><tr><th style="width:20%">Acción</th><th>Qué hace</th></tr></thead>
+<tbody>
+<tr><td><span class="btn">Editar</span></td><td>Abre el mismo formulario con los datos actuales. La contraseña aparece vacía; dejala así para conservar la que ya está. Probá la conexión y guardá.</td></tr>
+<tr><td><span class="btn">Predeterminar</span></td><td>La convierte en la base por defecto. Solo se puede con una base activa y utilizable. Confirma con un aviso: "<em>… es ahora la base predeterminada</em>".</td></tr>
+<tr><td><span class="btn">Desactivar</span></td><td>Pausa el uso de esa base: no se pueden iniciar conversaciones nuevas ni enviar mensajes contra ella. El historial se sigue viendo y se puede reactivar con <span class="btn">Activar</span>.</td></tr>
+<tr><td><span class="btn">Eliminar</span></td><td>La quita del listado y del selector del chat. El historial de sus conversaciones se conserva. No se puede deshacer desde la aplicación. Pide confirmación.</td></tr>
+</tbody></table>
+<figure class="media"><img src="imagenes/bases-05-confirmar.png" alt="Diálogo de confirmación para eliminar una base"><figcaption>Confirmación antes de eliminar una base. Tocá <span class="btn">Cancelar</span> <span class="n">1</span> si no estás seguro.</figcaption></figure>
+<div class="nota importante"><strong>Importante</strong>
+<p>La base <strong>predeterminada</strong> no se puede desactivar ni eliminar. Primero marcá otra como predeterminada.</p></div>
+<h3>Exportar e importar</h3>
+<p>Sirven para pasar la lista de bases de una instalación de SAVI a otra, sin volver a tipear los datos.</p>
+<ol class="pasos">
+  <li>En la instalación de origen, tocá <span class="btn">Exportar</span>, elegí una <strong>contraseña del archivo</strong>, repetila y tocá <span class="btn">Exportar</span>.</li>
+  <li>Pasá el archivo a la otra instalación y compartí la contraseña por <strong>otro canal</strong> (no junto con el archivo).</li>
+  <li>En el destino tocá <span class="btn">Importar</span>, elegí el archivo, escribí la contraseña y confirmá. Las bases con el mismo código se actualizan; el resto se crea.</li>
+</ol>
+<figure class="media"><img src="imagenes/bases-06-exportar.png" alt="Diálogo para exportar bases de datos"><figcaption>Exportar pide una contraseña para proteger el archivo.</figcaption></figure>
+</section>
+
+<section>
+<h2 id="s7">7. Qué pide el instalador</h2>
+<p>El instalador de SAVI (<em>SAVI-Setup</em>) guía la instalación en un asistente de varias pantallas. Estas son las que piden datos de bases de datos:</p>
+<table>
+<thead><tr><th style="width:26%">Pantalla</th><th>Qué pide</th><th>Notas</th></tr></thead>
+<tbody>
+<tr><td><strong>Base de datos del ERP</strong></td><td>Servidor, Puerto, Base de datos, Usuario y Contraseña.</td><td>Es obligatoria. El puerto viene cargado en 5432. SAVI abre esta base en modo solo lectura. Tiene el botón <span class="btn">Probar conexión</span>, que también corre al tocar Siguiente.</td></tr>
+<tr><td><strong>Base de datos de SAVI</strong></td><td>Elegir entre <em>Archivo local — solo para pruebas o un único usuario en este equipo</em> y <em>Servidor PostgreSQL (recomendado) — varios usuarios, historial compartido y con respaldo</em>.</td><td>Viene marcada la opción PostgreSQL. Si elegís archivo local, el instalador pide confirmar y explica sus límites.</td></tr>
+<tr><td><strong>PostgreSQL de SAVI</strong></td><td>Servidor, Puerto, Base de datos (viene <code>savi</code>), Usuario y Contraseña.</td><td>Solo aparece si elegiste PostgreSQL. Tiene también <span class="btn">Probar conexión</span>. Si la base no existe, SAVI la crea (el usuario necesita permiso para crear bases). Si ya tiene datos de SAVI, se conservan: nunca se borra nada.</td></tr>
+<tr><td><strong>Cuenta de Claude y puerto</strong></td><td>Token y clave de Claude (opcionales) y el puerto local (viene <code>31900</code>).</td><td>Normalmente se dejan los campos de credencial vacíos. Los demás proveedores se cargan después desde SAVI (manual 02).</td></tr>
+</tbody></table>
+<div class="nota consejo"><strong>Consejo</strong><p>Usá siempre <span class="btn">Probar conexión</span> en el instalador antes de continuar. Es más fácil corregir un dato ahí que descubrir el error al abrir SAVI por primera vez.</p></div>
+<p>Si el equipo ya tenía SAVI configurado, el instalador ofrece <em>Conservar la configuración actual (recomendado)</em> o <em>Volver a configurar</em>. Al reconfigurar, el archivo de configuración anterior queda guardado como copia y no se borra ningún dato.</p>
+<div class="nota info"><strong>Para saber</strong><p>Las pantallas del instalador no están capturadas en este manual porque pertenecen al asistente de Windows. Los nombres de los campos y botones de la tabla son los que ves en la ventana.</p></div>
+</section>
+
+<section>
+<h2 id="s8">8. Si la base del ERP está en otro equipo</h2>
+<p>Cuando SAVI corre en una PC distinta a la del servidor PostgreSQL, hay que <strong>permitir que esa PC se conecte</strong>. Estos pasos los hace quien administra el servidor de base de datos. Se explican en simple:</p>
+<ol class="pasos">
+  <li><strong>Usá la dirección del servidor, no "localhost".</strong> En el campo <em>Servidor</em> poné la IP o el nombre del equipo donde está PostgreSQL (por ejemplo <code>192.168.1.50</code>). "localhost" significa "este mismo equipo", y no sirve si la base está en otra máquina.</li>
+  <li><strong>Que PostgreSQL escuche en la red.</strong> En el archivo <code>postgresql.conf</code> del servidor, el parámetro <code>listen_addresses</code> debe incluir la IP del servidor (o <code>'*'</code> para todas).</li>
+  <li><strong>Autorizar a la PC de SAVI.</strong> En el archivo <code>pg_hba.conf</code> hay que agregar una línea que deje entrar al usuario de SAVI desde la IP de esa PC:
+    <br><code>host  erp_cliente  savi_lectura  192.168.1.20/32  scram-sha-256</code>
+    <br>Reemplazá nombre de la base, usuario e IP por los reales. Después, recargá la configuración de PostgreSQL.</li>
+  <li><strong>Abrir el puerto en el firewall.</strong> En el servidor, permití conexiones entrantes al puerto <code>5432</code> (TCP), al menos desde la IP de la PC de SAVI.</li>
+  <li><strong>Un usuario con permiso de lectura.</strong> El usuario debe poder conectarse y <em>leer</em> las tablas del ERP. Por ejemplo, un administrador de la base puede crear un rol dedicado:
+    <br><code>CREATE ROLE savi_lectura LOGIN PASSWORD 'CAMBIAR_ESTA_CLAVE';</code>
+    <br><code>GRANT pg_read_all_data TO savi_lectura;</code>
+    <br>(<code>pg_read_all_data</code> existe desde PostgreSQL 14. En versiones anteriores hay que dar permiso de lectura esquema por esquema.)</li>
+</ol>
+<div class="nota consejo"><strong>Consejo</strong><p>Desde la PC de SAVI, abrí PowerShell y escribí <code>Test-NetConnection 192.168.1.50 -Port 5432</code>. Si dice <em>TcpTestSucceeded: True</em>, la red y el firewall están bien; si dice <em>False</em>, el problema es de red o de firewall, no de usuario.</p></div>
+<div class="nota importante"><strong>Importante</strong>
+<p>No abras el puerto 5432 a todo internet. Limitalo a la red interna o a la IP de la PC de SAVI.</p></div>
+</section>
+
+<section>
+<h2 id="s9">9. Cómo obtienen acceso las personas</h2>
+<ul>
+  <li>Las personas <strong>entran a SAVI con su usuario del ERP</strong> y su contraseña del ERP. No hay que crear usuarios aparte en SAVI.</li>
+  <li>Si el usuario escribe solo su nombre, SAVI lo busca en la base <strong>predeterminada</strong>. Para entrar a otra base usan <code>USUARIO@CODIGO</code>.</li>
+  <li>Lo que cada persona puede consultar lo deciden los <strong>módulos habilitados en el ERP</strong> para su usuario. SAVI no los amplía.</li>
+  <li>Para dar o quitar acceso a un módulo, se cambia en el ERP, no en SAVI.</li>
+  <li>El menú <em>Administración</em> es para administradores. Las pantallas de <em>Bases de datos</em>, <em>Proveedores de IA</em> y <em>Consumo</em> son del <strong>administrador de la instalación</strong>: cuando hay varias bases, es quien administra la base predeterminada (o quien figura en la lista de administradores que se carga al instalar). El administrador de otra empresa solo gestiona el conocimiento de su empresa.</li>
+</ul>
+</section>
+
+<section>
+<h2 id="s10">10. Consejos y resolución de problemas</h2>
+<ul>
+  <li>Elegí códigos cortos y fáciles de dictar por teléfono (sin guiones raros).</li>
+  <li>Registrá siempre la base con un usuario de <strong>solo lectura</strong>.</li>
+  <li>No elimines una base para "arreglarla": usá <em>Editar</em>. Si necesitás pausarla, usá <em>Desactivar</em>.</li>
+  <li>Después de cambiar la contraseña del usuario en PostgreSQL, actualizala en SAVI con <em>Editar</em>.</li>
+  <li>En el acceso directo <em>Diagnosticar SAVI</em> (se instala con SAVI) podés comprobar si SAVI está corriendo y qué puerto usa.</li>
+</ul>
+<table class="larga">
+<thead><tr><th style="width:32%">Problema</th><th>Causa probable</th><th>Qué hacer</th></tr></thead>
+<tbody>
+<tr><td>Al entrar: "No encontramos ese cliente. Revisá el código después de la @."</td><td>El código no está registrado o está mal escrito.</td><td>Mirá el código en <em>Bases de datos</em> (columna Cliente).</td></tr>
+<tr><td>Al entrar: "Ese cliente está desactivado en SAVI. Avisale a tu administrador."</td><td>El código existe, pero la base de ese cliente está desactivada.</td><td>Activala con <span class="btn">Activar</span> en <em>Bases de datos</em>.</td></tr>
+<tr><td>Al entrar: "No pudimos conectar con la base de ese cliente. Probá de nuevo en unos minutos o avisale a tu administrador."</td><td>La base está activa, pero SAVI no logra conectarse (servidor apagado, red, contraseña cambiada o credenciales ilegibles).</td><td>Probá la conexión desde <em>Editar</em> y seguí la tabla de la sección 5.</td></tr>
+<tr><td>Un cliente no aparece en el selector del chat</td><td>La base está desactivada, eliminada o el usuario no pertenece a ese cliente.</td><td>Revisá el estado en <em>Bases de datos</em>.</td></tr>
+<tr><td>Estado "Credenciales ilegibles"</td><td>No se puede leer la contraseña guardada.</td><td><em>Editar</em> y volver a ingresar la contraseña.</td></tr>
+<tr><td>No puedo desactivar ni eliminar una base</td><td>Es la predeterminada.</td><td>Marcá otra como predeterminada primero.</td></tr>
+<tr><td>Funcionaba y dejó de funcionar</td><td>Cambió la contraseña, la IP del servidor o se apagó PostgreSQL.</td><td>Probá la conexión desde <em>Editar</em> y seguí la tabla de la sección 5.</td></tr>
+<tr><td>Un usuario ve menos datos de los esperados</td><td>No tiene el módulo habilitado en el ERP.</td><td>Habilitarlo en el ERP.</td></tr>
+<tr><td>Respuestas lentas o cortadas en consultas grandes</td><td>La consulta supera el tiempo máximo.</td><td>Pedir un período menor o, con soporte, aumentar el tiempo máximo.</td></tr>
+</tbody></table>
+</section>
+
+</main>
+</body>
+</html>
