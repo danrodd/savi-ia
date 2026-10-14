@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+from datetime import datetime
+from uuid import UUID
+
+from sqlalchemy import CheckConstraint, DateTime, String, Uuid, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db import Base
+from app.modules.clients.domain import Client, ClientCodeAlreadyExists, ClientStatus
+from app.shared.clock import as_utc
+
+
+class ClientModel(Base):
+    __tablename__ = "clients"
+    __table_args__ = (
+        CheckConstraint("status in ('active', 'suspended')", name="status_valid"),
+        CheckConstraint("length(code) between 2 and 32", name="code_length"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    nit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+def _to_entity(model: ClientModel) -> Client:
+    return Client(
+        id=model.id,
+        code=model.code,
+        name=model.name,
+        nit=model.nit,
+        status=ClientStatus(model.status),
+        created_at=as_utc(model.created_at),
+        updated_at=as_utc(model.updated_at),
+    )
+
+
+class SqlAlchemyClientRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, client: Client) -> None:
+        model = ClientModel(
+            id=client.id,
+            code=client.code,
+            name=client.name,
+            nit=client.nit,
+            status=client.status.value,
+            created_at=client.created_at,
+            updated_at=client.updated_at,
+        )
+        try:
+            async with self._session.begin_nested():
+                self._session.add(model)
+        except IntegrityError as exc:
+            raise ClientCodeAlreadyExists(
+                f"Ya existe un cliente con el código {client.code}."
+            ) from exc
+
+    async def get_by_id(self, client_id: UUID) -> Client | None:
+        model = await self._session.get(ClientModel, client_id)
+        return _to_entity(model) if model else None
+
+    async def get_by_code(self, code: str) -> Client | None:
+        result = await self._session.execute(select(ClientModel).where(ClientModel.code == code))
+        model = result.scalar_one_or_none()
+        return _to_entity(model) if model else None
+
+    async def list_all(self) -> list[Client]:
+        result = await self._session.execute(select(ClientModel).order_by(ClientModel.code))
+        return [_to_entity(m) for m in result.scalars()]
