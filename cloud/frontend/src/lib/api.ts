@@ -17,6 +17,8 @@ import type {
   EnrollmentToken,
   Heartbeat,
   Instance,
+  LedgerEntry,
+  LedgerEntryInput,
   LoginStep,
   MetricDefinition,
   MfaSetup,
@@ -26,6 +28,8 @@ import type {
   Role,
   Severity,
   StaffMember,
+  Subscription,
+  SubscriptionInput,
   TokenResponse,
 } from './types'
 
@@ -88,6 +92,12 @@ export const consoleApi = {
     http.put<Client>(`${API}/clients/${id}/access-policy`, body),
   setClientAiPolicy: (id: string, body: AiPolicy) =>
     http.put<Client>(`${API}/clients/${id}/ai-policy`, body),
+  subscription: (id: string) => http.get<Subscription>(`${API}/clients/${id}/subscription`),
+  setSubscription: (id: string, body: SubscriptionInput) =>
+    http.put<Subscription>(`${API}/clients/${id}/subscription`, body),
+  ledger: (id: string) => http.get<LedgerEntry[]>(`${API}/clients/${id}/ledger`),
+  recordLedgerEntry: (id: string, body: LedgerEntryInput) =>
+    http.post<LedgerEntry>(`${API}/clients/${id}/ledger`, body),
   suspendClient: (id: string) => http.post<Client>(`${API}/clients/${id}/suspend`),
   activateClient: (id: string) => http.post<Client>(`${API}/clients/${id}/activate`),
   clientMetrics: (id: string, period: Period = {}) =>

@@ -231,6 +231,25 @@ Notas:
   de 500 personas.
 - Pendiente a propósito: reglas para conocimiento fuera de las bases.
 
+### Avance de M5-A (clave propia del cliente)
+
+Alcance acordado: el cliente usa **su propia clave**, así que no hace falta gateway.
+SAVI Cloud **no cobra**: el pago se hace por fuera y el staff lo registra.
+
+- **Plan por cliente**: nombre, cuota mensual (USD), cupo de personas, vigencia y notas
+  (`clients.subscription`, migración 0010). `PUT/GET /console/api/clients/{id}/subscription`.
+- **Libro de movimientos** (`client_ledger`): pagos y ajustes con nota obligatoria y quién
+  los registró. Un pago puede extender la vigencia (nunca la acorta). `GET/POST .../ledger`.
+- **Permiso `clients.billing`** (admin y comercial; soporte no ve montos). Auditado:
+  `client.subscription`, `client.ledger_entry`.
+- **Alerta `subscription_due`**: avisa a 7 días (umbral configurable) y pasa a crítica al
+  vencer; se resuelve sola al extender la vigencia. La organización propia (identidad
+  nombrada) no se factura.
+- **Consola**: tarjeta «Suscripción» en el detalle del cliente (estado, plan, registrar
+  movimiento, historial).
+- **No incluido**: saldo prepago ni descuento por consumo (corresponde a M5-B, con gateway),
+  pasarela de pago, bloqueo automático al vencer (queda a decisión del staff: suspender).
+
 ### Orden recomendado y por qué
 
 1. **M1 primero**, porque sin servidor no hay nada que probar con

@@ -293,6 +293,41 @@ export interface AiPolicy {
   user_overrides: Record<string, string>
 }
 
+/** Plan del cliente y estado de su vigencia (montos en USD como texto). */
+export interface Subscription {
+  plan_name: string | null
+  monthly_fee_usd: string | null
+  max_users: number | null
+  /** Último día cubierto (`AAAA-MM-DD`). */
+  valid_until: string | null
+  notes: string | null
+  status: 'none' | 'active' | 'expiring' | 'expired'
+  days_left: number | null
+}
+
+export type SubscriptionInput = Pick<
+  Subscription,
+  'plan_name' | 'monthly_fee_usd' | 'max_users' | 'valid_until' | 'notes'
+>
+
+/** Pago o ajuste que registró el staff. */
+export interface LedgerEntry {
+  id: string
+  kind: 'payment' | 'adjustment'
+  amount_usd: string
+  note: string
+  extends_until: string | null
+  created_by: string
+  created_at: string
+}
+
+export interface LedgerEntryInput {
+  kind: 'payment' | 'adjustment'
+  amount_usd: string
+  note: string
+  extends_until: string | null
+}
+
 export interface Person {
   user_ref: string
   /** Solo en clientes con identidad `named`. */

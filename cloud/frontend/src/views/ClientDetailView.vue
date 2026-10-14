@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import FreshnessChip from '@/components/FreshnessChip.vue'
 import KpiCard from '@/components/KpiCard.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
+import SubscriptionCard from '@/components/SubscriptionCard.vue'
 import { consoleApi } from '@/lib/api'
 import {
   formatDateTime,
@@ -164,6 +165,8 @@ async function runClientAction(): Promise<void> {
         :policy="client.data.value.access_policy"
         @saved="client.reload()"
       />
+
+      <SubscriptionCard v-if="auth.can('clients.billing')" :client-id="id" />
 
       <div class="tabs" role="tablist">
         <button
