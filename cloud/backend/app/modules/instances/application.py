@@ -30,6 +30,9 @@ from app.shared.sync_v1 import (
     Notice,
     Policy,
 )
+from app.shared.sync_v1 import (
+    AiPolicy as WireAiPolicy,
+)
 from app.shared.tokens import INSTANCE_SECRET_PREFIX, generate_secret, hash_secret
 
 PREVIOUS_SECRET_GRACE = timedelta(hours=24)
@@ -41,6 +44,12 @@ _WIRE_STATUS: dict[InstanceStatus, Literal["active", "suspended", "revoked"]] = 
 }
 
 
+def _wire_ai(client: Client | None) -> WireAiPolicy | None:
+    if client is None or client.ai_policy.is_empty:
+        return None
+    return WireAiPolicy.model_validate(client.ai_policy.to_json())
+
+
 def policy_for(status: InstanceStatus, client: Client | None = None) -> Policy:
     """Política vigente de una instancia: la general más la de su cliente."""
     return Policy(
@@ -50,6 +59,7 @@ def policy_for(status: InstanceStatus, client: Client | None = None) -> Policy:
         sync_enabled=status is InstanceStatus.ACTIVE,
         config_locked=client.config_locked if client else False,
         allow_local_cli=client.allow_local_cli if client else False,
+        ai=_wire_ai(client),
         identity_mode=client.identity_mode.value if client else "pseudonym",
     )
 

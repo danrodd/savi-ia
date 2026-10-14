@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, String, Uuid, select
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, String, Uuid, select
 from sqlalchemy import false as sa_false
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
 from app.modules.clients.domain import (
+    AiPolicy,
     Client,
     ClientCodeAlreadyExists,
     ClientStatus,
@@ -43,6 +45,7 @@ class ClientModel(Base):
     allow_local_cli: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=sa_false()
     )
+    ai_policy: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
 
 def to_entity(model: ClientModel) -> Client:
@@ -57,6 +60,7 @@ def to_entity(model: ClientModel) -> Client:
         identity_mode=IdentityMode(model.identity_mode),
         config_locked=model.config_locked,
         allow_local_cli=model.allow_local_cli,
+        ai_policy=AiPolicy.from_json(model.ai_policy),
     )
 
 
@@ -76,6 +80,7 @@ class SqlAlchemyClientRepository:
             identity_mode=client.identity_mode.value,
             config_locked=client.config_locked,
             allow_local_cli=client.allow_local_cli,
+            ai_policy=client.ai_policy.to_json() if not client.ai_policy.is_empty else None,
         )
         try:
             async with self._session.begin_nested():
@@ -104,6 +109,7 @@ class SqlAlchemyClientRepository:
         model.identity_mode = client.identity_mode.value
         model.config_locked = client.config_locked
         model.allow_local_cli = client.allow_local_cli
+        model.ai_policy = client.ai_policy.to_json() if not client.ai_policy.is_empty else None
         model.updated_at = client.updated_at
         await self._session.flush()
 

@@ -1,0 +1,12 @@
+{
+  "server_time": "2026-10-14T12:00:00Z",
+  "instance_status": "active",
+  "policy": {
+    "heartbeat_seconds": 300,
+    "ingest_seconds": 300,
+    "max_batch_events": 500,
+    "sync_enabled": true,
+    "ai": { "user_monthly_usd": "-5" }
+  },
+  "notices": []
+}

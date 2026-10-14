@@ -1,0 +1,20 @@
+{
+  "server_time": "2026-10-14T12:00:00Z",
+  "instance_status": "active",
+  "policy": {
+    "heartbeat_seconds": 300,
+    "ingest_seconds": 300,
+    "max_batch_events": 500,
+    "sync_enabled": true,
+    "config_locked": false,
+    "allow_local_cli": false,
+    "identity_mode": "named",
+    "ai": {
+      "allowed_providers": ["claude", "gemini"],
+      "user_monthly_usd": "5.00",
+      "provider_monthly_usd": { "gemini": "50.00" },
+      "user_overrides": { "0123456789abcdef0123456789abcdef": "20" }
+    }
+  },
+  "notices": []
+}

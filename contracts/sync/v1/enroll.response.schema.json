@@ -35,6 +35,29 @@
         "sync_enabled": { "type": "boolean" },
         "config_locked": { "type": "boolean" },
         "allow_local_cli": { "type": "boolean" },
+        "ai": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "allowed_providers": {
+              "type": ["array", "null"],
+              "items": { "enum": ["claude", "gemini", "openai"] },
+              "uniqueItems": true
+            },
+            "user_monthly_usd": { "type": ["string", "null"], "pattern": "^[0-9]{1,8}(\\.[0-9]{1,4})?$" },
+            "provider_monthly_usd": {
+              "type": "object",
+              "propertyNames": { "enum": ["claude", "gemini", "openai"] },
+              "additionalProperties": { "type": "string", "pattern": "^[0-9]{1,8}(\\.[0-9]{1,4})?$" }
+            },
+            "user_overrides": {
+              "type": "object",
+              "maxProperties": 500,
+              "propertyNames": { "pattern": "^[0-9a-f]{32}$" },
+              "additionalProperties": { "type": "string", "pattern": "^[0-9]{1,8}(\\.[0-9]{1,4})?$" }
+            }
+          }
+        },
         "identity_mode": { "enum": ["pseudonym", "named"] }
       }
     }

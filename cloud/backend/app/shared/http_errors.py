@@ -30,6 +30,7 @@ _DOMAIN_STATUS: dict[str, int] = {
     "alert_rule_not_found": 404,
     "alert_already_resolved": 409,
     "invalid_alert_rule": 422,
+    "invalid_ai_policy": 422,
 }
 
 

@@ -36,6 +36,10 @@ JSON Schema draft 2020-12. Todo viaja en JSON UTF-8; las fechas son ISO-8601 con
 - **Política por cliente (aditivo):** `policy.config_locked` (la instalación queda solo
   con el chat) y `policy.identity_mode` (`pseudonym` por defecto, `named` solo para la
   organización interna). Una instancia que no los conoce los ignora.
+- **`policy.ai`** (aditivo, ausente = sin límites): `allowed_providers` (`null` = todos),
+  `user_monthly_usd` (tope mensual por persona), `user_overrides` (`user_ref` → tope) y
+  `provider_monthly_usd` (tope mensual de la instalación por proveedor). Montos como texto
+  decimal. La instancia mide y bloquea antes de abrir el chat; Cloud solo decide.
 - **`policy.allow_local_cli`** (aditivo, `false` por defecto): la instalación local puede
   ofrecer el CLI de Claude con la cuenta de la persona. Solo aplica a SAVI local; el Master
   nunca lo ofrece.

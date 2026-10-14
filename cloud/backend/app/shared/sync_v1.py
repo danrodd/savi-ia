@@ -67,6 +67,23 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+Money = Annotated[str, _text(pattern=r"^[0-9]{1,8}(\.[0-9]{1,4})?$")]
+AiProvider = Literal["claude", "gemini", "openai"]
+
+
+class AiPolicy(_Envelope):
+    """Proveedores y topes de IA de las instalaciones del cliente (aditivo dentro de v1)."""
+
+    allowed_providers: list[AiProvider] | None = None
+    user_monthly_usd: Money | None = None
+    provider_monthly_usd: dict[AiProvider, Money] = Field(
+        default_factory=dict[AiProvider, Money]
+    )
+    user_overrides: dict[Annotated[str, _text(pattern=r"^[0-9a-f]{32}$")], Money] = Field(
+        default_factory=dict[str, Money], max_length=500
+    )
+
+
 class Policy(_Envelope):
     heartbeat_seconds: Annotated[StrictInt, Field(ge=1)]
     ingest_seconds: Annotated[StrictInt, Field(ge=1)]
@@ -75,6 +92,7 @@ class Policy(_Envelope):
     # Política por cliente (aditivo dentro de v1: una instancia que no los conoce los ignora).
     config_locked: StrictBool = False
     allow_local_cli: StrictBool = False
+    ai: AiPolicy | None = None
     identity_mode: Literal["pseudonym", "named"] = "pseudonym"
 
 

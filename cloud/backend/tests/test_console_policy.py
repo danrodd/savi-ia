@@ -268,3 +268,104 @@ async def test_label_longer_than_the_contract_is_rejected_per_event(fx: Fixture)
 
     assert answer["accepted"] == 0
     assert answer["rejected"] == [{"source_id": "s1", "reason": "invalid_event"}]
+
+
+# ------------------------------------------------------------------ política de IA (M3)
+AI_BODY: dict[str, Any] = {
+    "allowed_providers": ["claude", "gemini"],
+    "user_monthly_usd": "5",
+    "provider_monthly_usd": {"gemini": "50"},
+    "user_overrides": {USER_A: "20"},
+}
+
+
+async def test_ai_policy_is_empty_by_default_and_not_sent(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    body = (await heartbeat(fx, linked)).json()
+
+    assert body["policy"]["ai"] is None
+    client = (await fx.console.http.get(f"{API}/clients/{client_id}", headers=fx.admin.auth)).json()
+    assert client["ai_policy"]["allowed_providers"] is None
+    assert client["ai_policy"]["user_monthly_usd"] is None
+
+
+async def test_ai_policy_travels_in_the_heartbeat_and_matches_the_contract(fx: Fixture) -> None:
+    from tests.test_api import assert_matches_schema
+
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    res = await fx.console.http.put(
+        f"{API}/clients/{client_id}/ai-policy", json=AI_BODY, headers=fx.admin.auth
+    )
+
+    assert res.status_code == 200, res.text
+    beat = (await heartbeat(fx, linked)).json()
+    assert beat["policy"]["ai"] == {
+        "allowed_providers": ["claude", "gemini"],
+        "user_monthly_usd": "5",
+        "provider_monthly_usd": {"gemini": "50"},
+        "user_overrides": {USER_A: "20"},
+    }
+    assert_matches_schema("heartbeat.response", beat)
+
+
+async def test_ai_policy_can_be_cleared(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+    await fx.console.http.put(
+        f"{API}/clients/{client_id}/ai-policy", json=AI_BODY, headers=fx.admin.auth
+    )
+
+    await fx.console.http.put(
+        f"{API}/clients/{client_id}/ai-policy", json={}, headers=fx.admin.auth
+    )
+
+    assert (await heartbeat(fx, linked)).json()["policy"]["ai"] is None
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"allowed_providers": ["otro"]},
+        {"user_monthly_usd": "-1"},
+        {"provider_monthly_usd": {"otro": "5"}},
+        {"user_overrides": {"no-es-un-user-ref": "5"}},
+        {"user_monthly_usd": "5", "campo_extra": 1},
+    ],
+)
+async def test_invalid_ai_policy_is_rejected(fx: Fixture, body: dict[str, Any]) -> None:
+    client_id = await make_client(fx)
+
+    res = await fx.console.http.put(
+        f"{API}/clients/{client_id}/ai-policy", json=body, headers=fx.admin.auth
+    )
+
+    assert res.status_code == 422, res.text
+
+
+async def test_only_admin_can_change_the_ai_policy(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    for who in (fx.soporte, fx.comercial):
+        res = await fx.console.http.put(
+            f"{API}/clients/{client_id}/ai-policy", json=AI_BODY, headers=who.auth
+        )
+        assert res.status_code == 403
+
+
+async def test_ai_policy_changes_are_audited_with_before_and_after(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    await fx.console.http.put(
+        f"{API}/clients/{client_id}/ai-policy", json=AI_BODY, headers=fx.admin.auth
+    )
+
+    audit = (
+        await fx.console.http.get(f"{API}/audit?action=client.ai_policy", headers=fx.admin.auth)
+    ).json()
+
+    entry = audit["items"][0]
+    assert entry["before"]["user_monthly_usd"] is None
+    assert entry["after"]["user_monthly_usd"] == "5"
+    assert entry["after"]["provider_monthly_usd"] == {"gemini": "50"}

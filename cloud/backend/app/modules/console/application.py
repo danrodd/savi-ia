@@ -13,6 +13,7 @@ from app.modules.audit.application import AuditRecorder
 from app.modules.audit.domain import RequestContext
 from app.modules.clients.application import CreateClientUseCase
 from app.modules.clients.domain import (
+    AiPolicy,
     Client,
     ClientNotFound,
     ClientRepository,
@@ -159,6 +160,27 @@ class ClientActions:
                 "config_locked": updated.config_locked,
                 "allow_local_cli": updated.allow_local_cli,
             },
+        )
+        return updated
+
+    async def set_ai_policy(
+        self, client_id: UUID, policy: AiPolicy, *, ctx: RequestContext
+    ) -> Client:
+        """Reemplaza los proveedores permitidos y los topes de IA del cliente.
+
+        Cloud decide; la instancia mide y bloquea antes de abrir el chat. Es una decisión de
+        dinero y de acceso: de administrador y auditada con el antes y el después.
+        """
+        client = await self._get(client_id)
+        updated = replace(client, ai_policy=policy, updated_at=self.clock())
+        await self.clients.save(updated)
+        await self.audit.record(
+            ctx,
+            "client.ai_policy",
+            target_type="client",
+            target_id=str(client_id),
+            before=client.ai_policy.to_json(),
+            after=updated.ai_policy.to_json(),
         )
         return updated
 

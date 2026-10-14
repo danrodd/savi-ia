@@ -7,7 +7,8 @@ El frontend oculta lo que el backend igual rechaza.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, Literal
+from decimal import Decimal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -18,7 +19,12 @@ from app.dependencies import get_clock, transaction
 from app.modules.audit.application import AuditRecorder
 from app.modules.audit.domain import AuditEntry
 from app.modules.audit.infrastructure import SqlAlchemyAuditRepository
-from app.modules.clients.domain import ClientNotFound, ClientStatus, IdentityMode
+from app.modules.clients.domain import (
+    AiPolicy,
+    ClientNotFound,
+    ClientStatus,
+    IdentityMode,
+)
 from app.modules.clients.infrastructure import SqlAlchemyClientRepository
 from app.modules.console.application import (
     ClientActions,
@@ -71,6 +77,7 @@ class ClientOut(BaseModel):
     identity_mode: str
     config_locked: bool
     allow_local_cli: bool
+    ai_policy: dict[str, Any]
 
     @classmethod
     def of(cls, summary: ClientSummary) -> ClientOut:
@@ -90,6 +97,7 @@ class ClientOut(BaseModel):
             identity_mode=c.identity_mode.value,
             config_locked=c.config_locked,
             allow_local_cli=c.allow_local_cli,
+            ai_policy=c.ai_policy.to_json(),
         )
 
 
@@ -265,6 +273,17 @@ class ClientCreate(_Body):
 class ClientPatch(_Body):
     name: str | None = Field(default=None, max_length=200)
     nit: str | None = Field(default=None, max_length=32)
+
+
+_Usd = Annotated[Decimal, Field(ge=0, le=99999999, max_digits=12, decimal_places=4)]
+_Provider = Literal["claude", "gemini", "openai"]
+
+
+class AiPolicyBody(_Body):
+    allowed_providers: list[_Provider] | None = None
+    user_monthly_usd: _Usd | None = None
+    provider_monthly_usd: dict[_Provider, _Usd] = Field(default_factory=dict[_Provider, _Usd])
+    user_overrides: dict[str, _Usd] = Field(default_factory=dict[str, _Usd], max_length=500)
 
 
 class ClientPolicyPatch(_Body):
@@ -448,6 +467,26 @@ async def set_client_policy(
             config_locked=body.config_locked,
             allow_local_cli=body.allow_local_cli,
             ctx=request_context(request, principal),
+        )
+        return await _client_out(request, session, client_id)
+
+
+@router.put("/clients/{client_id}/ai-policy", response_model=ClientOut)
+async def set_client_ai_policy(
+    client_id: UUID,
+    body: AiPolicyBody,
+    request: Request,
+    principal: Principal = Depends(RequirePermission(Permission.CLIENTS_POLICY)),
+) -> ClientOut:
+    policy = AiPolicy.build(
+        allowed_providers=body.allowed_providers,
+        user_monthly_usd=body.user_monthly_usd,
+        provider_monthly_usd={str(k): v for k, v in body.provider_monthly_usd.items()},
+        user_overrides=dict(body.user_overrides),
+    )
+    async with transaction(request) as session:
+        await _client_actions(request, session).set_ai_policy(
+            client_id, policy, ctx=request_context(request, principal)
         )
         return await _client_out(request, session, client_id)
 
