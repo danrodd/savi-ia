@@ -112,6 +112,11 @@ data/
 !backend/app/modules/knowledge/data/
 !backend/app/modules/knowledge/data/**
 
+# Despliegue (deploy/master): secretos y respaldos nunca se versionan. `.env` y `data/` ya
+# están cubiertos arriba.
+secrets/
+backups/
+
 *.sqlite
 *.sqlite3
 *.db

@@ -6,7 +6,7 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     alerts_interval_seconds: float = Field(default=300, ge=0)
     # Carpeta con la consola web compilada. Vacía = solo API (desarrollo y tests).
     console_static_dir: str = ""
+
+    @field_validator("latest_version_published_at", mode="before")
+    @classmethod
+    def _empty_means_unset(cls, value: object) -> object:
+        # Docker Compose pasa las variables sin valor como cadena vacía: eso es "sin definir".
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @model_validator(mode="after")
     def _validate(self) -> Settings:

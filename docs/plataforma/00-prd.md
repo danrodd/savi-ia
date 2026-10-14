@@ -7,13 +7,19 @@
 > Gemini) y la [landing](06-landing.md); las preguntas abiertas (§11) y la
 > decisión de modelo (§15) se responden al final, antes de empezar la
 > Fase 1.
+> **Actualización 2026-10-14:** el primer destino es un **SAVI Master de SEO
+> en Linux con Docker, accesible por internet**, que gobierna proveedores,
+> claves, presupuestos y permisos de todos los equipos. Cambia el orden y
+> corrige el §3 (acceso desde internet) y el §15. Ver
+> [SAVI Master](07-savi-master.md).
 > Specs por fase:
 > [Fase 1 — SAVI Servidor](01-fase-savi-servidor.md) ·
 > [Fase 2 — Vinculación y sincronización](02-fase-vinculacion-y-sincronizacion.md) ·
 > [Fase 3 — Consola SAVI Cloud](03-fase-consola-cloud.md) ·
 > [Fase 4 — Pestaña SAVI en el ERP](04-fase-pestana-erp.md) ·
 > [Fase 5 — IA gestionada por SEO (créditos)](05-fase-creditos-gestionados.md) ·
-> [Landing](06-landing.md)
+> [Landing](06-landing.md) ·
+> [SAVI Master](07-savi-master.md)
 
 Este PRD lleva SAVI a producción en empresas: cada empresa instala **un
 SAVI Servidor** en su red, lo administra desde un solo lugar y sus

@@ -36,7 +36,7 @@ npx biome check src
 ## Producción
 
 La imagen de `cloud/backend/Dockerfile` compila la consola y la sirve el mismo proceso del
-API (`CLOUD_CONSOLE_STATIC_DIR`). No hay un contenedor aparte. Ver `cloud/deploy/README.md`.
+API (`CLOUD_CONSOLE_STATIC_DIR`). No hay un contenedor aparte. Ver `deploy/master/README.md`.
 
 ## Decisiones
 

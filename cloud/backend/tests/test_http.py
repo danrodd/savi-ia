@@ -90,3 +90,12 @@ async def test_access_log_has_no_query_or_secrets(
     record = json.loads(next(line for line in out.splitlines() if '"request"' in line))
     assert record["path"] == "/health"
     assert record["status"] == 200
+
+
+def test_empty_published_at_means_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Docker Compose entrega las variables vacías como cadena vacía."""
+    from app.config import Settings
+
+    monkeypatch.setenv("CLOUD_LATEST_VERSION_PUBLISHED_AT", "")
+    settings = Settings(database_url="sqlite+aiosqlite://")  # pyright: ignore[reportCallIssue]
+    assert settings.latest_version_published_at is None

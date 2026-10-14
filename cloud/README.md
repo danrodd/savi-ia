@@ -30,7 +30,7 @@ cloud/
 │   ├── alembic/              # migraciones (async)
 │   ├── tests/
 │   └── Dockerfile
-└── deploy/                   # docker-compose, Caddyfile, backup, README en español
+(el despliegue vive en ../deploy/master)
 ```
 
 Capas por módulo: `domain` (entidades, errores, puertos) ← `application` (casos de uso) ←
@@ -148,4 +148,5 @@ tabla agregada `daily_client_metrics` (hoy se calcula al consultar, con el índi
 
 ## Despliegue
 
-Ver [`deploy/README.md`](deploy/README.md).
+Ver [`deploy/master/README.md`](../deploy/master/README.md): SAVI, Cloud, PostgreSQL y Caddy
+con HTTPS automático en un solo `docker compose`.
