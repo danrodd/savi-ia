@@ -63,6 +63,7 @@ export interface Client {
   /** La instalación local puede ofrecer el CLI de Claude con la cuenta de la persona. */
   allow_local_cli: boolean
   ai_policy: AiPolicy
+  access_policy: AccessPolicy
 }
 
 export interface Page<T> {
@@ -260,6 +261,14 @@ export interface ClientDatabase {
   credentials_unreadable: boolean
   last_connection_ok_at: string | null
   snapshot_date: string
+}
+
+/** Bases (`database_ref`) que puede consultar cada persona; solo restringe lo que da el ERP. */
+export interface AccessPolicy {
+  /** `null` = sin restricción general (manda el ERP). */
+  default_databases: string[] | null
+  /** Regla propia por `user_ref`; una lista vacía deja a la persona sin ninguna base. */
+  user_databases: Record<string, string[]>
 }
 
 /** Proveedores y topes de IA de un cliente (montos en USD como texto). */

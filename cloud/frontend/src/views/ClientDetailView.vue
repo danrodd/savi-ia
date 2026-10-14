@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import AccessPolicyCard from '@/components/AccessPolicyCard.vue'
 import AiPolicyCard from '@/components/AiPolicyCard.vue'
 import BarChart from '@/components/BarChart.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -315,6 +316,13 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
         v-if="auth.can('clients.policy')"
         :client-id="id"
         :policy="client.data.value.ai_policy"
+        @saved="client.reload()"
+      />
+
+      <AccessPolicyCard
+        v-if="auth.can('clients.policy')"
+        :client-id="id"
+        :policy="client.data.value.access_policy"
         @saved="client.reload()"
       />
 

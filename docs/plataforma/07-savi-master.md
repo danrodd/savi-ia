@@ -201,6 +201,26 @@ Límites conocidos (por diseño):
 - El costo se conoce al terminar el turno: una persona puede pasarse por una respuesta.
 - Un cambio en Cloud aplica en el próximo heartbeat (hasta ~5 min).
 
+### Avance de M4 (bases por persona)
+
+Decisión: reglas **por persona** (A); los grupos (B) se suman después sin rehacer la aplicación.
+Cloud decide y la instancia aplica antes de abrir el chat, igual que en M3. **Solo restringe**:
+la persona además tiene que tener acceso en el ERP.
+
+| Paso | Estado |
+|---|---|
+| M4.1 Contrato aditivo `policy.access`: `default_databases` (`null` = sin restricción) y `user_databases` (`user_ref` → bases; lista vacía = ninguna) | Hecho |
+| M4.2 Cloud: `PUT /console/api/clients/{id}/access-policy` (permiso `clients.policy`, auditada), viaja por heartbeat y enroll | Hecho; tests de API, contrato y auditoría |
+| M4.3 Instancia: el selector de bases oculta las no asignadas y el chat responde 403 `database_not_assigned` antes del SSE | Hecho; 523 tests de los módulos tocados |
+| M4.4 Consola: tarjeta "Bases por persona" (regla general y reglas por persona) | Hecho; 48 tests |
+
+Notas:
+
+- El conocimiento (documentos) ya tiene visibilidad por base y módulo: queda acotado por las bases
+  asignadas sin agregar un mecanismo nuevo.
+- Una referencia ilegible en la política **nunca amplía** el acceso (se descarta esa base).
+- Pendiente a propósito: grupos con nombre (B) y reglas para conocimiento fuera de las bases.
+
 ### Orden recomendado y por qué
 
 1. **M1 primero**, porque sin servidor no hay nada que probar con

@@ -14,6 +14,7 @@ const api = vi.hoisted(() => ({
   alerts: vi.fn(),
   setClientPolicy: vi.fn(),
   setClientAiPolicy: vi.fn(),
+  setClientAccessPolicy: vi.fn(),
   suspendClient: vi.fn(),
   activateClient: vi.fn(),
   definitions: vi.fn(),
@@ -23,6 +24,9 @@ vi.mock('@/lib/api', () => ({ consoleApi: api, authApi: {} }))
 
 import { useAuthStore } from '@/stores/authStore'
 import ClientDetailView from '@/views/ClientDetailView.vue'
+
+const DB_1 = '7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d'
+const DB_2 = '11111111-2222-4333-8444-555555555555'
 
 const CLIENT: Client = {
   id: 'c1',
@@ -45,6 +49,7 @@ const CLIENT: Client = {
     provider_monthly_usd: {},
     user_overrides: {},
   },
+  access_policy: { default_databases: null, user_databases: {} },
 }
 
 async function mountView(permissions: string[]) {
@@ -102,6 +107,29 @@ beforeEach(() => {
   api.definitions.mockResolvedValue([])
   api.setClientPolicy.mockResolvedValue({ ...CLIENT, config_locked: true })
   api.setClientAiPolicy.mockResolvedValue({ ...CLIENT })
+  api.setClientAccessPolicy.mockResolvedValue({ ...CLIENT })
+  api.clientDatabases.mockResolvedValue([
+    {
+      database_ref: DB_1,
+      code: 'NORTE',
+      name: 'Sede Norte',
+      is_active: true,
+      is_usable: true,
+      credentials_unreadable: false,
+      last_connection_ok_at: null,
+      snapshot_date: '2026-10-01',
+    },
+    {
+      database_ref: DB_2,
+      code: 'SUR',
+      name: 'Sede Sur',
+      is_active: true,
+      is_usable: true,
+      credentials_unreadable: false,
+      last_connection_ok_at: null,
+      snapshot_date: '2026-10-01',
+    },
+  ])
   api.clientUsers.mockResolvedValue([
     {
       user_ref: 'a'.repeat(32),
@@ -271,5 +299,70 @@ describe('IA: proveedores y topes del cliente', () => {
     await wrapper.get('[data-test="ai-user-cap"]').setValue('5')
 
     expect(wrapper.get('[data-test="ai-price-warning"]').text()).toContain('precios')
+  })
+})
+
+describe('bases por persona', () => {
+  async function save(wrapper: Awaited<ReturnType<typeof mountView>>) {
+    await wrapper.get('[data-test="access-save"]').trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Guardar reglas')
+      ?.trigger('click')
+    await flushPromises()
+  }
+
+  it('solo la ve quien tiene el permiso', async () => {
+    const without = await mountView(['clients.read'])
+    expect(without.find('[data-test="access-policy"]').exists()).toBe(false)
+  })
+
+  it('sin restricción general manda null', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+
+    await save(wrapper)
+
+    expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
+      default_databases: null,
+      user_databases: {},
+    })
+  })
+
+  it('limitar por defecto manda solo las bases marcadas', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+
+    await wrapper.get('[data-test="access-limit-default"]').setValue(true)
+    await wrapper.get(`[data-test="access-default-${DB_1}"]`).setValue(true)
+    await save(wrapper)
+
+    expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
+      default_databases: [DB_1],
+      user_databases: {},
+    })
+  })
+
+  it('una regla por persona con bases marcadas', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+    const ref = 'a'.repeat(32)
+
+    await wrapper.get('[data-test="access-rule-person"]').setValue(ref)
+    await wrapper.get('[data-test="access-rule-add"]').trigger('click')
+    expect(wrapper.get('[data-test="access-rule"]').text()).toContain('JPEREZ')
+    await wrapper.get(`[data-test="access-rule-${ref}-${DB_2}"]`).setValue(true)
+    await save(wrapper)
+
+    expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
+      default_databases: null,
+      user_databases: { [ref]: [DB_2] },
+    })
+  })
+
+  it('avisa cuando una regla queda sin ninguna base', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+
+    await wrapper.get('[data-test="access-rule-person"]').setValue('a'.repeat(32))
+    await wrapper.get('[data-test="access-rule-add"]').trigger('click')
+
+    expect(wrapper.get('[data-test="access-rule-empty"]').text()).toContain('no podrán consultar')
   })
 })
