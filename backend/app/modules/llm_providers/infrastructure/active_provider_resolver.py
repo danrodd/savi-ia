@@ -8,6 +8,7 @@ y `activate`. Expirar por tiempo solo agregaría lecturas a la BD.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 
 from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
 from app.modules.chat.domain.interfaces import (
@@ -17,11 +18,17 @@ from app.modules.chat.domain.interfaces import (
 )
 from app.modules.llm_providers.domain.entities import LlmProviderConfig, get_descriptor
 from app.modules.llm_providers.domain.interfaces import LlmProviderRepository
+from app.modules.llm_providers.domain.value_objects import CredentialKind
 
 
 class CachedActiveProviderResolver(ActiveProviderResolver):
-    def __init__(self, repository: LlmProviderRepository) -> None:
+    def __init__(
+        self,
+        repository: LlmProviderRepository,
+        local_cli_allowed: Callable[[], Awaitable[bool]] | None = None,
+    ) -> None:
         self._repository = repository
+        self._local_cli_allowed = local_cli_allowed
         self._cached: ActiveProvider | None = None
         # Sube en cada invalidación. Una lectura que empezó antes de un
         # `save` no puede dejar cacheada la configuración vieja.
@@ -33,6 +40,21 @@ class CachedActiveProviderResolver(ActiveProviderResolver):
         self._cached = None
 
     async def resolve(self) -> ActiveProvider:
+        provider = await self._resolve_cached()
+        # La política de Cloud puede cambiar entre turnos: se revisa en cada uno, no en la
+        # caché, para que revocar el permiso corte la sesión local en el turno siguiente.
+        if (
+            provider.credential_kind == CredentialKind.LOCAL_SESSION.value
+            and self._local_cli_allowed is not None
+            and not await self._local_cli_allowed()
+        ):
+            raise LlmProviderUnavailableError(
+                "SEO Group no habilitó el CLI de Claude en esta instalación. Un "
+                "administrador tiene que configurar otro proveedor de IA."
+            )
+        return provider
+
+    async def _resolve_cached(self) -> ActiveProvider:
         cached = self._cached
         if cached is not None:
             return cached
@@ -85,9 +107,10 @@ _resolver: CachedActiveProviderResolver | None = None
 
 def init_active_provider_resolver(
     repository: LlmProviderRepository,
+    local_cli_allowed: Callable[[], Awaitable[bool]] | None = None,
 ) -> CachedActiveProviderResolver:
     global _resolver
-    _resolver = CachedActiveProviderResolver(repository)
+    _resolver = CachedActiveProviderResolver(repository, local_cli_allowed)
     return _resolver
 
 

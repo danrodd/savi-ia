@@ -75,6 +75,7 @@ class Policy(_Envelope):
     max_batch_events: Annotated[StrictInt, Field(ge=1, le=MAX_BATCH_EVENTS)]
     sync_enabled: StrictBool
     config_locked: StrictBool = False
+    allow_local_cli: StrictBool = False
     identity_mode: Literal["pseudonym", "named"] = "pseudonym"
 
 

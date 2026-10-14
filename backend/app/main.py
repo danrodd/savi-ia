@@ -71,6 +71,7 @@ from app.modules.llm_providers.infrastructure.http import router as llm_provider
 from app.modules.llm_providers.infrastructure.http.dependencies import (
     build_llm_provider_repository,
 )
+from app.modules.llm_providers.infrastructure.local_cli_policy import local_cli_allowed
 from app.modules.llm_providers.infrastructure.seed import seed_llm_providers
 from app.modules.usage.infrastructure.http import router as usage_router
 from app.paths import resource_dir
@@ -148,7 +149,7 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # por turno.
     llm_repository = build_llm_provider_repository(settings)
     await seed_llm_providers(llm_repository, settings)
-    init_active_provider_resolver(llm_repository)
+    init_active_provider_resolver(llm_repository, lambda: local_cli_allowed(settings))
 
     # SAVI Cloud: vinculación y sincronización de consumo. Los servicios
     # existen siempre (la pantalla de Administración los usa); el scheduler

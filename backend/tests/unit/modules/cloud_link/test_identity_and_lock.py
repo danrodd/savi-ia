@@ -270,3 +270,44 @@ async def test_admin_api_answers_config_locked_with_its_own_error_code(
     assert response.status_code == 403
     assert response.json()["errorCode"] == "config_locked"
     assert "SEO Group" in response.json()["detail"]
+
+
+# ── CLI de Claude local ───────────────────────────────────────────────────────────────────
+async def _link(services: CloudLinkServices, policy: SyncPolicy) -> None:
+    def mutate(state: CloudLinkState) -> None:
+        state.instance_id = uuid4()
+        state.secret = "svk_inst_secreto"
+        state.policy = policy
+
+    await services.repository.update(mutate)
+
+
+async def test_local_cli_is_allowed_without_a_link(registered: CloudLinkServices) -> None:
+    from app.modules.llm_providers.infrastructure.local_cli_policy import local_cli_allowed
+
+    assert await local_cli_allowed(get_settings()) is True
+
+
+async def test_local_cli_follows_the_cloud_policy_once_linked(
+    registered: CloudLinkServices,
+) -> None:
+    from app.modules.llm_providers.infrastructure.local_cli_policy import local_cli_allowed
+
+    settings = get_settings()
+    await _link(registered, SyncPolicy(allow_local_cli=False))
+    assert await local_cli_allowed(settings) is False
+
+    await _link(registered, SyncPolicy(allow_local_cli=True))
+    assert await local_cli_allowed(settings) is True
+
+
+async def test_local_cli_is_off_in_a_deployment_that_disables_it(
+    registered: CloudLinkServices,
+) -> None:
+    from app.modules.llm_providers.infrastructure.local_cli_policy import local_cli_allowed
+
+    await _link(registered, SyncPolicy(allow_local_cli=True))
+    settings = get_settings().model_copy(update={"local_cli_enabled": False})
+
+    # El Master: manda el despliegue, aunque Cloud lo permita.
+    assert await local_cli_allowed(settings) is False

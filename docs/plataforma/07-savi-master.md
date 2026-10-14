@@ -174,6 +174,7 @@ pestaña del ERP E6) **se difiere** hasta que haya un cliente real.
 | M2.3 Instancia SAVI: política recibida por heartbeat, `user_label` solo con autorización, bloqueo de configuración (`403 config_locked`) también para administradores, `GET /auth/me/policy` | Hecho; suite completa del backend pendiente |
 | M2.4 Consola: tarjeta "Política de las instalaciones" y tabla "Personas que usan esta instalación" | Hecho; 35 tests |
 | M2.5 Instalador: `-SaviCloudRequired` (con `-SaviCloudUrl`) hace obligatorio el token de vinculación | Hecho; compila con ISCC, sin probar el asistente a mano |
+| M2.6 CLI de Claude local gobernado: `policy.allow_local_cli` por cliente (apagado por defecto, interruptor en la consola). La opción `local_session` solo se ofrece, guarda y activa en el SAVI local si Cloud la permite; el Master la apaga con `LOCAL_CLI_ENABLED=false`; revocarla corta el CLI en el turno siguiente | Hecho; 281 tests de instancia, 145 de Cloud, 36 de consola |
 
 > El bloqueo es de interfaz y de API, no una defensa contra quien administra el equipo. Lo que
 > protege las claves es que no estén en el equipo (gateway de M3).

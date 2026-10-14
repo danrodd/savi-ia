@@ -13,6 +13,7 @@ from app.modules.llm_providers.domain.value_objects import ProviderKind
 from app.modules.llm_providers.infrastructure.active_provider_resolver import (
     get_active_provider_resolver,
 )
+from app.modules.llm_providers.infrastructure.local_cli_policy import local_cli_allowed
 from app.modules.llm_providers.infrastructure.persistence import (
     SqlAlchemyLlmProviderRepository,
 )
@@ -45,6 +46,7 @@ def get_manage_llm_providers_use_case(settings: SettingsDep) -> ManageLlmProvide
             ProviderKind.OPENAI: OpenAIProbe(),
         },
         on_change=get_active_provider_resolver().invalidate,
+        local_cli_allowed=lambda: local_cli_allowed(settings),
     )
 
 

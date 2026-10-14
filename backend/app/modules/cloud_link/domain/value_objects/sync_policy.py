@@ -44,6 +44,9 @@ class SyncPolicy:
     sync_enabled: bool = True
     # Esta instalación queda solo con el chat: SEO Group la administra desde Cloud.
     config_locked: bool = False
+    # La instalación puede ofrecer el CLI de Claude con la cuenta de la persona
+    # (`local_session`). Apagado por defecto: lo habilita SEO Group por cliente.
+    allow_local_cli: bool = False
     # `named`: las sesiones llevan el código de usuario (organización interna). Por defecto,
     # solo seudónimos.
     identity_mode: str = "pseudonym"

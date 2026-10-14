@@ -12,7 +12,8 @@ Reglas del dominio que viven acá y no en HTTP:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from app.modules.llm_providers.application.dtos import LlmProviderDTO, SaveLlmProviderDTO
@@ -35,6 +36,27 @@ from app.modules.llm_providers.domain.value_objects import (
 )
 from app.shared.exceptions import ValidationError
 
+LOCAL_CLI_NOT_ALLOWED_MESSAGE = (
+    "Usar la sesión del CLI de Claude no está habilitado para esta instalación. "
+    "Si lo necesitás, pedíselo a SEO Group."
+)
+
+
+async def _always_allowed() -> bool:
+    return True
+
+
+def _visible(descriptor: ProviderDescriptor, local_cli_allowed: bool) -> ProviderDescriptor:
+    """El descriptor sin `local_session` cuando no está permitida: la interfaz no la ofrece."""
+    if local_cli_allowed or CredentialKind.LOCAL_SESSION not in descriptor.credential_kinds:
+        return descriptor
+    return replace(
+        descriptor,
+        credential_kinds=tuple(
+            k for k in descriptor.credential_kinds if k != CredentialKind.LOCAL_SESSION
+        ),
+    )
+
 
 class ManageLlmProvidersUseCase:
     def __init__(
@@ -42,16 +64,23 @@ class ManageLlmProvidersUseCase:
         repository: LlmProviderRepository,
         probes: Mapping[ProviderKind, ProviderProbe],
         on_change: Callable[[], None],
+        local_cli_allowed: Callable[[], Awaitable[bool]] | None = None,
     ) -> None:
         self._repository = repository
         self._probes = probes
         self._on_change = on_change
+        # Sin compuerta (tests, uso interno) la sesión local está permitida.
+        self._local_cli_allowed = local_cli_allowed or _always_allowed
 
     # ── Lectura ──────────────────────────────────────────────────────
 
     async def list(self) -> list[LlmProviderDTO]:
         configs = {c.provider: c for c in await self._repository.list_all()}
-        return [LlmProviderDTO.build(d, configs.get(d.kind)) for d in PROVIDER_DESCRIPTORS]
+        allowed = await self._local_cli_allowed()
+        return [
+            LlmProviderDTO.build(_visible(d, allowed), configs.get(d.kind))
+            for d in PROVIDER_DESCRIPTORS
+        ]
 
     async def list_models(self, provider: str) -> list[ModelInfo]:
         descriptor = self._implemented(provider)
@@ -70,6 +99,7 @@ class ManageLlmProvidersUseCase:
         descriptor = self._implemented(provider)
         stored = await self._repository.get(descriptor.kind)
         candidate = self._candidate(descriptor, dto, stored)
+        await self._require_local_cli_if_used(candidate)
         if stored is not None:
             candidate.id = stored.id
             candidate.is_active = stored.is_active
@@ -121,6 +151,7 @@ class ManageLlmProvidersUseCase:
         stored = await self._repository.get(descriptor.kind)
         if stored is None:
             raise ValidationError("Configurá el proveedor antes de activarlo.")
+        await self._require_local_cli_if_used(stored)
         if not stored.is_usable:
             raise ValidationError(
                 "No se puede activar: falta la credencial o no se puede leer."
@@ -130,6 +161,12 @@ class ManageLlmProvidersUseCase:
         return LlmProviderDTO.build(descriptor, await self._repository.get(descriptor.kind))
 
     # ── Interno ──────────────────────────────────────────────────────
+
+    async def _require_local_cli_if_used(self, config: LlmProviderConfig) -> None:
+        if config.credential_kind != CredentialKind.LOCAL_SESSION:
+            return
+        if not await self._local_cli_allowed():
+            raise ValidationError(LOCAL_CLI_NOT_ALLOWED_MESSAGE)
 
     def _implemented(self, provider: str) -> ProviderDescriptor:
         descriptor = get_descriptor(provider)

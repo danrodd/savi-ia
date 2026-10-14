@@ -40,6 +40,7 @@ def _policy_to_json(policy: SyncPolicy | None) -> dict[str, Any] | None:
         "max_batch_events": policy.max_batch_events,
         "sync_enabled": policy.sync_enabled,
         "config_locked": policy.config_locked,
+        "allow_local_cli": policy.allow_local_cli,
         "identity_mode": policy.identity_mode,
     }
 
@@ -55,6 +56,7 @@ def _policy_from_json(raw: dict[str, Any] | None) -> SyncPolicy | None:
 
     enabled = raw.get("sync_enabled")
     locked = raw.get("config_locked")
+    local_cli = raw.get("allow_local_cli")
     identity = raw.get("identity_mode")
     return SyncPolicy(
         heartbeat_seconds=_int("heartbeat_seconds", defaults.heartbeat_seconds),
@@ -62,6 +64,9 @@ def _policy_from_json(raw: dict[str, Any] | None) -> SyncPolicy | None:
         max_batch_events=_int("max_batch_events", defaults.max_batch_events),
         sync_enabled=enabled if isinstance(enabled, bool) else defaults.sync_enabled,
         config_locked=locked if isinstance(locked, bool) else defaults.config_locked,
+        allow_local_cli=(
+            local_cli if isinstance(local_cli, bool) else defaults.allow_local_cli
+        ),
         identity_mode=identity if identity in ("pseudonym", "named") else defaults.identity_mode,
     )
 

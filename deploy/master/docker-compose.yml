@@ -93,6 +93,9 @@ services:
       # `off` lo apaga. Expuesto a internet, `off` no es una opción razonable.
       MFA_ENFORCEMENT: ${SAVI_MFA_ENFORCEMENT:-admins}
       MFA_ISSUER: ${SAVI_MFA_ISSUER:-SAVI}
+      # El CLI de Claude con la cuenta de cada persona solo existe en el SAVI local: acá
+      # correría con la cuenta del servidor. Las claves del Master van como API key.
+      LOCAL_CLI_ENABLED: "false"
       SAVI_CLOUD_URL: ${SAVI_CLOUD_URL:-}
     secrets:
       - savi_db_password

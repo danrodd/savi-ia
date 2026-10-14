@@ -44,6 +44,10 @@ async def seed_llm_providers(repository: LlmProviderRepository, settings: Settin
     if await repository.count() > 0:
         return
     config = claude_config_from_settings(settings)
+    if config.credential_kind == CredentialKind.LOCAL_SESSION and not settings.local_cli_enabled:
+        # Sin credencial y sin CLI permitido (el Master): nada que sembrar; el administrador
+        # carga una clave desde la aplicación.
+        return
     await repository.save(config)
     logger.info(
         "Proveedor de IA sembrado desde .env: Claude (%s, modelo %s).",

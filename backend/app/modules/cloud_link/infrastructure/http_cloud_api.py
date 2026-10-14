@@ -85,6 +85,7 @@ def _policy(model: contract.Policy) -> SyncPolicy:
         max_batch_events=model.max_batch_events,
         sync_enabled=model.sync_enabled,
         config_locked=model.config_locked,
+        allow_local_cli=model.allow_local_cli,
         identity_mode=model.identity_mode,
     )
 

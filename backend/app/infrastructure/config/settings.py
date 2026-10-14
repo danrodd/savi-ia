@@ -268,6 +268,10 @@ class Settings(BaseSettings):
     # `off`: no se pide (escritorio, como siempre). `admins`: lo exigen los administradores.
     # `all`: lo exige todo el mundo. La contraseña vive en el ERP; el TOTP es de SAVI.
     mfa_enforcement: Literal["off", "admins", "all"] = Field(default="off")
+    # ¿Esta instalación puede usar la sesión del CLI de Claude (`local_session`)?
+    # El SAVI Master la apaga: ahí el CLI correría con la cuenta del servidor, no con la
+    # de cada persona. En una instalación local manda además la política de Cloud.
+    local_cli_enabled: bool = Field(default=True)
     # Nombre que muestra la aplicación de autenticación junto al código.
     mfa_issuer: str = Field(default="SAVI")
 
