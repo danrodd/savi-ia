@@ -112,9 +112,11 @@ nav {
 }
 @media (max-width: 760px) {
   .shell {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)`: sin el 0 la columna crece al ancho del menú y desborda la página. */
+    grid-template-columns: minmax(0, 1fr);
   }
   .side {
+    min-width: 0;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
