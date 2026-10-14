@@ -2,6 +2,9 @@
 
 Los handlers HTTP globales las mapean a status codes:
 - AuthError / InvalidCredentialsError → 401
+- UnknownDatabaseError → 401 con `errorCode: unknown_database`
+- DatabaseDisabledError → 401 con `errorCode: database_disabled`
+- DatabaseUnreachableError → 503 con `errorCode: database_unreachable`
 - UserDisabledError → 403
 - InvalidTokenError → 401
 - RefreshTokenRevokedError → 401
@@ -17,8 +20,51 @@ class AuthError(Exception):
 
 
 class InvalidCredentialsError(AuthError):
+    def __init__(self, message: str = "Usuario o contraseña inválidos") -> None:
+        super().__init__(message)
+
+
+class UnknownDatabaseError(InvalidCredentialsError):
+    """El código de cliente de `USUARIO@CODIGO` no corresponde a ninguna base
+    usable.
+
+    Es un `InvalidCredentialsError` a propósito: sigue siendo un login
+    fallido (cuenta para el límite de intentos y comparte el piso de
+    duración), solo que la respuesta le dice a la persona qué revisar. Habla
+    únicamente de la base: nunca revela si el usuario existe.
+    """
+
     def __init__(self) -> None:
-        super().__init__("Usuario o contraseña inválidos")
+        super().__init__("No encontramos ese cliente. Revisá el código después de la @.")
+
+
+class DatabaseDisabledError(InvalidCredentialsError):
+    """El cliente de `USUARIO@CODIGO` existe pero está desactivado en SAVI.
+
+    Es un `InvalidCredentialsError` por la misma razón que
+    `UnknownDatabaseError`: sigue siendo un login fallido (cuenta para el
+    límite de intentos y comparte el piso de duración). Habla únicamente de
+    la base: nunca revela si el usuario existe.
+    """
+
+    def __init__(self) -> None:
+        super().__init__("Ese cliente está desactivado en SAVI. Avisale a tu administrador.")
+
+
+class DatabaseUnreachableError(AuthError):
+    """El cliente existe y está activo, pero no se pudo conectar con su ERP
+    (red, credenciales de conexión, timeout o base sin el esquema esperado).
+
+    NO es un `InvalidCredentialsError`: nadie adivinó nada, así que no suma
+    al límite de intentos fallidos. Tampoco llegó a comparar contraseñas, de
+    modo que no revela nada sobre el usuario.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            "No pudimos conectar con la base de ese cliente. "
+            "Probá de nuevo en unos minutos o avisale a tu administrador."
+        )
 
 
 class InvalidTokenError(AuthError):

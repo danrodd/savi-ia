@@ -4,8 +4,10 @@ Lo que se protege:
 
 - El identificador de cliente resuelve UNA base, siempre. Nunca hay
   cascada sobre las demás.
-- Un cliente inexistente responde exactamente igual que una contraseña
-  mala, y en el mismo tiempo: si no, se pueden enumerar los clientes.
+- Un usuario inexistente responde exactamente igual que una contraseña
+  mala, y en el mismo tiempo: si no, se pueden enumerar los usuarios.
+- Un código de cliente inexistente se señala aparte (`unknown_database`),
+  pero tarda lo mismo y jamás dice nada sobre el usuario.
 - El JWT lleva la identidad calificada, y un token viejo (sin base) se
   rechaza en vez de atribuirse a la default.
 """
@@ -26,6 +28,7 @@ from app.modules.auth.domain.entities import AuthenticatedUser, RefreshTokenReco
 from app.modules.auth.domain.exceptions import (
     InvalidCredentialsError,
     InvalidTokenError,
+    UnknownDatabaseError,
 )
 from app.modules.auth.domain.interfaces import (
     PasswordHasher,
@@ -194,22 +197,63 @@ async def test_refresh_record_carries_the_database() -> None:
     assert refresh.saved[0].user_id == 5
 
 
-# ── Sin enumeración de clientes ──────────────────────────────────────
+# ── Sin enumeración de usuarios ──────────────────────────────────────
 
 
 @pytest.mark.parametrize(
     "intento",
     [
-        "JPEREZ@NOEXISTE",  # cliente inexistente
         "NOEXISTE@NORTE",  # usuario inexistente
         "JPEREZ@NORTE",  # usuario correcto, contraseña mala
+        "NOEXISTE",  # usuario inexistente en la base por defecto
     ],
 )
-async def test_every_failure_gives_the_same_error(intento: str) -> None:
+async def test_user_failures_give_the_same_generic_error(intento: str) -> None:
+    """Quien no existe y quien erró la contraseña son indistinguibles."""
     use_case, _, _ = _use_case()
 
-    with pytest.raises(InvalidCredentialsError):
+    with pytest.raises(InvalidCredentialsError) as caught:
         await use_case.execute(intento, "incorrecta")
+
+    assert type(caught.value) is InvalidCredentialsError
+    assert caught.value.message == "Usuario o contraseña inválidos"
+
+
+async def test_unknown_client_code_is_reported_on_its_own() -> None:
+    use_case, _, _ = _use_case()
+
+    with pytest.raises(UnknownDatabaseError) as caught:
+        await use_case.execute("JPEREZ@NOEXISTE", "incorrecta")
+
+    assert "código" in caught.value.message
+    # Sigue siendo un login fallido para el resto del sistema.
+    assert isinstance(caught.value, InvalidCredentialsError)
+
+
+async def test_unknown_client_code_says_nothing_about_the_user() -> None:
+    """Con un código inexistente da igual si el usuario es real o no: la
+    respuesta es la misma, así no se aprende nada sobre cuentas."""
+    use_case, _, _ = _use_case()
+
+    messages: list[str] = []
+    for intento in ("JPEREZ@NOEXISTE", "FANTASMA@NOEXISTE"):
+        with pytest.raises(UnknownDatabaseError) as caught:
+            await use_case.execute(intento, "correcta")
+        messages.append(caught.value.message)
+
+    assert messages[0] == messages[1]
+    assert "JPEREZ" not in messages[0]
+
+
+@pytest.mark.parametrize("raw", ["@NORTE", "JPEREZ@"])
+async def test_malformed_qualified_logins_stay_generic(raw: str) -> None:
+    """Las formas degeneradas no traen un código válido que señalar."""
+    use_case, _, _ = _use_case()
+
+    with pytest.raises(InvalidCredentialsError) as caught:
+        await use_case.execute(raw, "correcta")
+
+    assert type(caught.value) is InvalidCredentialsError
 
 
 async def test_failed_logins_take_the_same_minimum_time() -> None:
@@ -218,14 +262,15 @@ async def test_failed_logins_take_the_same_minimum_time() -> None:
     Sin él, "el cliente no existe" corta antes de ir a la BD del ERP y
     responde mucho más rápido que "la contraseña está mal" — medido
     contra el ERP real, 3,4 ms contra 14 ms. Esa diferencia permite
-    enumerar los clientes registrados cronometrando respuestas.
+    enumerar los clientes registrados cronometrando respuestas. El mensaje
+    ya distingue el código inexistente, pero el tiempo no agrega otra señal.
     """
     use_case, _, _ = _use_case()
     elapsed: list[float] = []
 
     for intento in ("JPEREZ@NOEXISTE", "JPEREZ@NORTE"):
         started = time.perf_counter()
-        with pytest.raises(InvalidCredentialsError):
+        with pytest.raises(InvalidCredentialsError):  # incluye UnknownDatabaseError
             await use_case.execute(intento, "incorrecta")
         elapsed.append(time.perf_counter() - started)
 

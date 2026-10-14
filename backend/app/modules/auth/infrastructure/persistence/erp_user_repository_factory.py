@@ -8,6 +8,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from app.modules.auth.domain.exceptions import (
+    DatabaseDisabledError,
+    DatabaseUnreachableError,
+)
 from app.modules.auth.domain.interfaces import UserRepository, UserRepositoryFactory
 from app.modules.auth.infrastructure.persistence.erp_user_repository import (
     ErpUserRepository,
@@ -49,9 +53,17 @@ class ErpUserRepositoryFactory(UserRepositoryFactory):
                 # "está mal escrito".
                 return None
             database = await self._databases.get_by_code(normalized)
+        if database is not None and not database.is_deleted:
+            # Registrada pero inutilizable: el login distingue el motivo
+            # para no mandar a la persona a revisar un código que está bien.
+            if not database.is_active:
+                raise DatabaseDisabledError
+            if database.credentials_unreadable:
+                raise DatabaseUnreachableError
         return await self._build(database)
 
     async def for_database_id(self, database_id: UUID) -> UserRepository | None:
+        # El refresh no distingue motivos: la sesión simplemente no se renueva.
         return await self._build(await self._databases.get_by_id(database_id))
 
     async def _build(self, database: ErpDatabase | None) -> UserRepository | None:

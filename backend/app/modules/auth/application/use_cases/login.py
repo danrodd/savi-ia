@@ -5,9 +5,14 @@ Flujo:
    Sin `@`, la base default.
 2. Resolver la base del ERP contra la que autenticar.
 3. Buscar el usuario por `login` en esa base.
-4. Si no existe, la base no existe, o el usuario está deshabilitado →
-   InvalidCredentialsError. No distinguimos ninguno de los casos: filtrar
-   cuál falló le regala información al atacante.
+4. Si el usuario no existe o la contraseña es incorrecta →
+   InvalidCredentialsError, sin distinguir cuál de las dos falló: filtrar
+   si un usuario existe le regala información al atacante. La única
+   distinción permitida es la del CÓDIGO DE CLIENTE: si `@CODIGO` no
+   corresponde a ninguna base registrada se levanta `UnknownDatabaseError`;
+   si está registrada pero desactivada, `DatabaseDisabledError`; y si está
+   activa pero no se puede conectar, `DatabaseUnreachableError` (503, no
+   cuenta como intento fallido). Nunca dicen nada sobre el usuario.
 5. Verificar password contra el hash (MD5 hoy).
 6. Emitir access + refresh tokens con la identidad calificada.
 7. Persistir el `jti` del refresh para soportar revocación en logout.
@@ -21,7 +26,9 @@ from uuid import UUID, uuid4
 
 from app.modules.auth.domain.entities import AuthenticatedUser, RefreshTokenRecord
 from app.modules.auth.domain.exceptions import (
+    DatabaseDisabledError,
     InvalidCredentialsError,
+    UnknownDatabaseError,
     UserDisabledError,
 )
 from app.modules.auth.domain.interfaces import (
@@ -105,12 +112,24 @@ class LoginUseCase:
     ) -> tuple[TokenPair, AuthenticatedUser]:
         raw_login, database_code = split_qualified_login(login)
 
-        repository = await self._users.for_code(database_code)
-        if repository is None:
-            # El cliente no existe, está desactivado o tiene credenciales
-            # ilegibles. Se responde igual que ante una contraseña mala
-            # para que no se pueda enumerar clientes desde el login.
+        try:
+            repository = await self._users.for_code(database_code)
+        except DatabaseDisabledError:
+            # Registrado pero desactivado: mismo trabajo y mismo piso de
+            # duración (lo aplica `execute`, es un `InvalidCredentialsError`)
+            # que cualquier otro fallo. Dice algo del cliente, nunca del usuario.
             self._hasher.verify(password, _DUMMY_HASH)
+            raise
+        if repository is None:
+            # El cliente no está registrado (o fue eliminado; desactivado y
+            # sin conexión se señalan aparte, desde la fábrica). Hace el
+            # mismo trabajo y tarda lo mismo que cualquier otro login fallido
+            # (el piso de duración lo aplica `execute`); cuando la persona
+            # escribió un código, se le avisa que revise ESE dato. Sin `@CODIGO` (base por defecto) no hay nada que
+            # señalar y se mantiene el error genérico.
+            self._hasher.verify(password, _DUMMY_HASH)
+            if database_code is not None:
+                raise UnknownDatabaseError
             raise InvalidCredentialsError
 
         # Normalizamos a mayúsculas porque el `codigo` del ERP está así.

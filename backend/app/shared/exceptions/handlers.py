@@ -3,7 +3,10 @@ from fastapi.responses import JSONResponse
 
 from app.modules.auth.domain.exceptions import (
     AuthError,
+    DatabaseDisabledError,
+    DatabaseUnreachableError,
     ModuleAccessDeniedError,
+    UnknownDatabaseError,
     UserDisabledError,
 )
 from app.shared.exceptions.base import (
@@ -60,6 +63,35 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=429,
             content={"errorCode": "rate_limited", "detail": exc.detail},
             headers={"Retry-After": str(exc.retry_after_seconds)},
+        )
+
+    @app.exception_handler(UnknownDatabaseError)
+    async def _unknown_database(_: Request, exc: UnknownDatabaseError) -> JSONResponse:
+        # 401 como cualquier login fallido, más un `errorCode` para que el
+        # formulario señale el código de cliente en vez del mensaje genérico.
+        return JSONResponse(
+            status_code=401,
+            content={"errorCode": "unknown_database", "detail": exc.message},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @app.exception_handler(DatabaseDisabledError)
+    async def _database_disabled(_: Request, exc: DatabaseDisabledError) -> JSONResponse:
+        # Mismo patrón que `unknown_database`: 401 + `errorCode` para que el
+        # formulario diga que el cliente está desactivado.
+        return JSONResponse(
+            status_code=401,
+            content={"errorCode": "database_disabled", "detail": exc.message},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @app.exception_handler(DatabaseUnreachableError)
+    async def _database_unreachable(_: Request, exc: DatabaseUnreachableError) -> JSONResponse:
+        # 503 y no 401: no es un problema de credenciales sino que el ERP del
+        # cliente no responde. Sin `WWW-Authenticate`: no hay nada que reautenticar.
+        return JSONResponse(
+            status_code=503,
+            content={"errorCode": "database_unreachable", "detail": exc.message},
         )
 
     @app.exception_handler(UserDisabledError)

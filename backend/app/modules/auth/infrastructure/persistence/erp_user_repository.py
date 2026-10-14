@@ -10,14 +10,24 @@ tokens internos, etc.) — el `select` es explícito.
 """
 from __future__ import annotations
 
+import asyncio
+import logging
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import RowMapping, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.modules.auth.domain.entities import AuthenticatedUser
+from app.modules.auth.domain.exceptions import DatabaseUnreachableError
 from app.modules.auth.domain.interfaces import UserRepository
 from app.modules.auth.domain.interfaces.user_repository import UserWithHash
+
+logger = logging.getLogger(__name__)
+
+# Tope de espera de la consulta de login. El connect de asyncpg espera 60 s
+# por defecto: una base caída dejaría la pantalla de login colgada un minuto.
+_QUERY_TIMEOUT_SECONDS = 10.0
 
 _SELECT_USER_SQL = """
 SELECT
@@ -44,9 +54,17 @@ class ErpUserRepository(UserRepository):
         self._erp_database_id = erp_database_id
 
     async def find_by_login(self, login: str) -> UserWithHash | None:
-        async with self._engine.connect() as conn:
-            result = await conn.execute(text(_SELECT_USER_SQL), {"login": login})
-            row = result.mappings().first()
+        try:
+            row = await asyncio.wait_for(self._fetch_row(login), _QUERY_TIMEOUT_SECONDS)
+        except (SQLAlchemyError, OSError) as exc:
+            # `TimeoutError` es un `OSError`. Sin el `from`, el log no
+            # arrastra el DSN: solo el tipo de falla.
+            logger.warning(
+                "No se pudo consultar el ERP %s en el login: %s",
+                self._erp_database_id,
+                type(exc).__name__,
+            )
+            raise DatabaseUnreachableError from None
         if row is None:
             return None
         return UserWithHash(
@@ -60,3 +78,8 @@ class ErpUserRepository(UserRepository):
             ),
             password_hash=str(row["clave"]),
         )
+
+    async def _fetch_row(self, login: str) -> RowMapping | None:
+        async with self._engine.connect() as conn:
+            result = await conn.execute(text(_SELECT_USER_SQL), {"login": login})
+            return result.mappings().first()

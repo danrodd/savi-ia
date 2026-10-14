@@ -22,11 +22,14 @@ class UserRepositoryFactory(ABC):
         """Repositorio de usuarios de la base con ese código, o de la
         default si `code` es `None`.
 
-        Devuelve `None` —y no levanta— cuando la base no existe, está
-        desactivada, fue eliminada o tiene credenciales ilegibles. El
-        caso de uso lo traduce a "credenciales inválidas", que es la
-        misma respuesta que da ante una contraseña mala: distinguirlos
-        permitiría enumerar los clientes registrados desde el login.
+        Devuelve `None` cuando la base no está registrada (o fue
+        eliminada). El caso de uso lo traduce a `UnknownDatabaseError`
+        cuando la persona escribió un código de cliente (para que revise
+        ese dato) y a "credenciales inválidas" cuando no escribió ninguno.
+
+        Levanta `DatabaseDisabledError` si está registrada pero
+        desactivada, y `DatabaseUnreachableError` si está activa pero no se
+        puede abrir (credenciales de conexión ilegibles).
         """
 
     @abstractmethod
