@@ -7,6 +7,7 @@ export type Permission =
   | 'clients.read'
   | 'clients.write'
   | 'clients.suspend'
+  | 'clients.policy'
   | 'instances.read'
   | 'instances.read_technical'
   | 'instances.manage'
@@ -55,6 +56,10 @@ export interface Client {
   instances_online: number
   last_seen_at: string | null
   oldest_version: string | null
+  /** `named`: las personas se identifican por su código de usuario (organización interna). */
+  identity_mode: 'pseudonym' | 'named'
+  /** Las instalaciones del cliente quedan solo con el chat. */
+  config_locked: boolean
 }
 
 export interface Page<T> {
@@ -254,8 +259,17 @@ export interface ClientDatabase {
   snapshot_date: string
 }
 
+export interface Person {
+  user_ref: string
+  /** Solo en clientes con identidad `named`. */
+  label: string | null
+  sessions: number
+  last_session_at: string
+}
+
 export interface ClientUser {
   user_ref: string
+  label: string | null
   turns: number
   cost_usd: string
   last_used_at: string

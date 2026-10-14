@@ -165,6 +165,19 @@ pestaña del ERP E6) **se difiere** hasta que haya un cliente real.
 > por IP, `TRUST_PROXY_HEADERS`) **ya está implementado** en SAVI. M1 solo agrega lo que
 > faltaba: ocultar OpenAPI y el segundo factor.
 
+### Avance de M2
+
+| Paso | Estado |
+|---|---|
+| M2.1 Contrato sync v1 (aditivo): `policy.config_locked`, `policy.identity_mode`, `session.user_label` opcional (≤ 64, solo en `named`) | Hecho |
+| M2.2 Cloud: política por cliente (`PATCH /console/api/clients/{id}/policy`, permiso `clients.policy`, auditada), personas por instalación, etiqueta en usuarios | Hecho; 297 tests + Postgres 6/6 |
+| M2.3 Instancia SAVI: política recibida por heartbeat, `user_label` solo con autorización, bloqueo de configuración (`403 config_locked`) también para administradores, `GET /auth/me/policy` | Hecho; suite completa del backend pendiente |
+| M2.4 Consola: tarjeta "Política de las instalaciones" y tabla "Personas que usan esta instalación" | Hecho; 35 tests |
+| M2.5 Instalador: `-SaviCloudRequired` (con `-SaviCloudUrl`) hace obligatorio el token de vinculación | Hecho; compila con ISCC, sin probar el asistente a mano |
+
+> El bloqueo es de interfaz y de API, no una defensa contra quien administra el equipo. Lo que
+> protege las claves es que no estén en el equipo (gateway de M3).
+
 ### Orden recomendado y por qué
 
 1. **M1 primero**, porque sin servidor no hay nada que probar con

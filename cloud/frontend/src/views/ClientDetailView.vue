@@ -102,6 +102,60 @@ async function runClientAction(): Promise<void> {
   }
 }
 
+// --- política de las instalaciones del cliente
+type PolicyChange = 'lock' | 'unlock' | 'named' | 'pseudonym'
+const policyChange = ref<PolicyChange | null>(null)
+const policyBusy = ref(false)
+const policyError = ref<string | null>(null)
+
+const POLICY_COPY: Record<PolicyChange, { title: string; message: string; confirm: string }> = {
+  lock: {
+    title: 'Dejar las instalaciones solo con el chat',
+    message:
+      'En cada equipo de este cliente se oculta Administración y se rechaza cualquier cambio de configuración. Aplica en el próximo contacto de cada instalación.',
+    confirm: 'Bloquear configuración',
+  },
+  unlock: {
+    title: 'Permitir configurar las instalaciones',
+    message:
+      'Las personas administradoras de cada equipo vuelven a ver Administración. Aplica en el próximo contacto.',
+    confirm: 'Permitir configuración',
+  },
+  named: {
+    title: 'Identificar a las personas por su usuario',
+    message:
+      'Cloud va a guardar el código de usuario de quienes inician sesión (por ejemplo JPEREZ), no solo un seudónimo. Corresponde a la organización interna: no lo actives para un cliente que no lo autorizó.',
+    confirm: 'Identificar personas',
+  },
+  pseudonym: {
+    title: 'Volver a seudónimos',
+    message:
+      'Las instalaciones dejan de enviar el código de usuario. Los ya guardados se conservan hasta que venzan.',
+    confirm: 'Usar seudónimos',
+  },
+}
+
+async function applyPolicy(): Promise<void> {
+  const change = policyChange.value
+  if (!change) return
+  policyBusy.value = true
+  policyError.value = null
+  try {
+    await consoleApi.setClientPolicy(
+      id.value,
+      change === 'lock' || change === 'unlock'
+        ? { config_locked: change === 'lock' }
+        : { identity_mode: change },
+    )
+    await client.reload()
+  } catch (e) {
+    policyError.value = errorMessage(e)
+  } finally {
+    policyBusy.value = false
+    policyChange.value = null
+  }
+}
+
 // --- tokens de vinculación
 const expiresHours = ref(72)
 const createdToken = ref<string | null>(null)
@@ -176,6 +230,51 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
         </div>
       </div>
       <p v-if="actionError" class="error-text" role="alert">{{ actionError }}</p>
+
+      <section v-if="auth.can('clients.policy')" class="card policy" data-test="client-policy">
+        <h2>Política de las instalaciones</h2>
+        <p v-if="policyError" class="error-text" role="alert">{{ policyError }}</p>
+        <div class="policy__row">
+          <div>
+            <strong>Configuración</strong>
+            <p class="muted">
+              {{
+                client.data.value.config_locked
+                  ? 'Bloqueada: cada equipo queda solo con el chat.'
+                  : 'Libre: las personas administradoras de cada equipo pueden configurar.'
+              }}
+            </p>
+          </div>
+          <button
+            class="btn btn-small"
+            type="button"
+            data-test="toggle-lock"
+            @click="policyChange = client.data.value.config_locked ? 'unlock' : 'lock'"
+          >
+            {{ client.data.value.config_locked ? 'Permitir configuración' : 'Bloquear configuración' }}
+          </button>
+        </div>
+        <div class="policy__row">
+          <div>
+            <strong>Identidad de las personas</strong>
+            <p class="muted">
+              {{
+                client.data.value.identity_mode === 'named'
+                  ? 'Por código de usuario (organización interna).'
+                  : 'Por seudónimo: Cloud no sabe quiénes son.'
+              }}
+            </p>
+          </div>
+          <button
+            class="btn btn-small"
+            type="button"
+            data-test="toggle-identity"
+            @click="policyChange = client.data.value.identity_mode === 'named' ? 'pseudonym' : 'named'"
+          >
+            {{ client.data.value.identity_mode === 'named' ? 'Usar seudónimos' : 'Identificar personas' }}
+          </button>
+        </div>
+      </section>
 
       <div class="tabs" role="tablist">
         <button
@@ -342,7 +441,8 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
             <tbody>
               <tr v-for="u in users.data.value ?? []" :key="u.user_ref">
                 <td>
-                  <code>{{ u.user_ref.slice(0, 8) }}…</code>
+                  <strong v-if="u.label">{{ u.label }}</strong>
+                  <code v-else>{{ u.user_ref.slice(0, 8) }}…</code>
                 </td>
                 <td class="num">{{ formatInt(u.turns) }}</td>
                 <td class="num">{{ formatUsd(u.cost_usd) }}</td>
@@ -490,6 +590,16 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
       @confirm="runClientAction"
       @cancel="action = null"
     />
+    <ConfirmDialog
+      :open="policyChange !== null"
+      :title="policyChange ? POLICY_COPY[policyChange].title : ''"
+      :message="policyChange ? POLICY_COPY[policyChange].message : ''"
+      :confirm-label="policyChange ? POLICY_COPY[policyChange].confirm : 'Confirmar'"
+      :danger="policyChange === 'lock' || policyChange === 'named'"
+      :busy="policyBusy"
+      @confirm="applyPolicy"
+      @cancel="policyChange = null"
+    />
     <SecretDialog
       :open="createdToken !== null"
       title="Token de vinculación"
@@ -523,5 +633,19 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
 }
 .hours {
   max-width: 280px;
+}
+.policy {
+  display: grid;
+  gap: 0.8rem;
+}
+.policy__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+.policy__row p {
+  margin: 0.15rem 0 0;
 }
 </style>

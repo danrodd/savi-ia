@@ -16,6 +16,7 @@ const auth = useAuthStore()
 const id = computed(() => String(route.params.id))
 
 const instance = useAsync(() => consoleApi.instance(id.value))
+const people = useAsync(() => consoleApi.instancePeople(id.value))
 const technical = computed(() => auth.can('instances.read_technical'))
 
 const history = ref<Heartbeat[]>([])
@@ -205,6 +206,34 @@ async function run(): Promise<void> {
         <div v-if="technical && instance.data.value.rotation_requested_at">
           <span class="muted">Renovación pedida</span>
           {{ relativeTime(instance.data.value.rotation_requested_at) }}
+        </div>
+      </section>
+
+      <section class="card stack" data-test="instance-people">
+        <h2>Personas que usan esta instalación</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Persona</th>
+                <th class="num">Sesiones</th>
+                <th>Última vez</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in people.data.value ?? []" :key="p.user_ref">
+                <td>
+                  <strong v-if="p.label">{{ p.label }}</strong>
+                  <code v-else>{{ p.user_ref.slice(0, 8) }}…</code>
+                </td>
+                <td class="num">{{ p.sessions }}</td>
+                <td>{{ relativeTime(p.last_session_at) }}</td>
+              </tr>
+              <tr v-if="!people.loading.value && !(people.data.value?.length ?? 0)">
+                <td colspan="3" class="empty">Todavía nadie inició sesión en esta instalación.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 

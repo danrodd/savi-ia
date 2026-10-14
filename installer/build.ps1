@@ -23,6 +23,11 @@
     /DSaviCloudUrl). Vacía por defecto: sin URL, el asistente no muestra la
     página "Conectar con SAVI Cloud" y no escribe nada de Cloud.
 
+.PARAMETER SaviCloudRequired
+    Hace OBLIGATORIA la vinculación con SAVI Cloud: el asistente no avanza sin
+    un token válido. Es el build de la organización interna (SAVI Master), donde
+    cada equipo tiene que quedar registrado. Requiere -SaviCloudUrl.
+
 .PARAMETER AllowDirty
     Permite construir con cambios sin commitear. La versión queda marcada
     con "-sucio". Solo para pruebas locales: un instalador que se entrega
@@ -36,7 +41,8 @@ param(
     [switch]$SkipFrontend,
     [switch]$SkipInstaller,
     [switch]$AllowDirty,
-    [string]$SaviCloudUrl = ''
+    [string]$SaviCloudUrl = '',
+    [switch]$SaviCloudRequired
 )
 
 $ErrorActionPreference = 'Stop'
@@ -235,6 +241,14 @@ if ($SaviCloudUrl) {
         throw "-SaviCloudUrl tiene que ser una URL https sin espacios ni comillas: '$SaviCloudUrl'"
     }
     $IsccArgs += "/DSaviCloudUrl=$SaviCloudUrl"
+}
+if ($SaviCloudRequired) {
+    # Sin URL no hay a dónde vincular: un build "obligatorio" sin Cloud dejaría al equipo
+    # sin poder terminar la instalación.
+    if (-not $SaviCloudUrl) {
+        throw '-SaviCloudRequired necesita -SaviCloudUrl: sin URL no hay a dónde vincular.'
+    }
+    $IsccArgs += '/DSaviCloudRequired=1'
 }
 & $Iscc @IsccArgs (Join-Path $InstallerDir 'savi.iss')
 if ($LASTEXITCODE -ne 0) { throw 'La compilación de Inno Setup falló.' }

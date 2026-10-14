@@ -20,6 +20,7 @@ import type {
   MfaSetup,
   Overview,
   Page,
+  Person,
   Role,
   Severity,
   StaffMember,
@@ -73,6 +74,10 @@ export const consoleApi = {
     http.post<Client>(`${API}/clients`, body),
   updateClient: (id: string, body: { name?: string; nit?: string | null }) =>
     http.patch<Client>(`${API}/clients/${id}`, body),
+  setClientPolicy: (
+    id: string,
+    body: { identity_mode?: 'pseudonym' | 'named'; config_locked?: boolean },
+  ) => http.patch<Client>(`${API}/clients/${id}/policy`, body),
   suspendClient: (id: string) => http.post<Client>(`${API}/clients/${id}/suspend`),
   activateClient: (id: string) => http.post<Client>(`${API}/clients/${id}/activate`),
   clientMetrics: (id: string, period: Period = {}) =>
@@ -88,6 +93,7 @@ export const consoleApi = {
     outdated?: boolean
   }) => http.get<Instance[]>(`${API}/instances`, query),
   instance: (id: string) => http.get<Instance>(`${API}/instances/${id}`),
+  instancePeople: (id: string) => http.get<Person[]>(`${API}/instances/${id}/people`),
   heartbeats: (id: string, cursor?: string) =>
     http.get<Cursored<Heartbeat>>(`${API}/instances/${id}/heartbeats`, { limit: 20, cursor }),
   instanceAction: (

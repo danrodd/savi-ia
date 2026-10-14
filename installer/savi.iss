@@ -33,6 +33,13 @@
 #ifndef SaviCloudUrl
   #define SaviCloudUrl ""
 #endif
+; 1 = la vinculación es OBLIGATORIA: el asistente no avanza sin un token válido.
+; Es el build de la organización interna (SAVI Master): cada equipo tiene que quedar
+; registrado en SAVI Cloud para que SEO Group sepa cuántas instalaciones hay y de quién
+; son. build.ps1 lo pasa con /DSaviCloudRequired=1 (parámetro -SaviCloudRequired).
+#ifndef SaviCloudRequired
+  #define SaviCloudRequired 0
+#endif
 #define AppPublisher   "SEO Group"
 #define AppExe         "SAVI.exe"
 
@@ -818,6 +825,11 @@ end;
 
 // Formato: prefijo svk_enr_, algo después del prefijo, sin espacios y como
 // mucho 256 caracteres (el límite del API de administración).
+function CloudRequired(): Boolean;
+begin
+  Result := ({#SaviCloudRequired} = 1) and CloudAvailable();
+end;
+
 function IsValidCloudToken(const Token: String): Boolean;
 begin
   Result := (Length(Token) > Length('svk_enr_')) and (Length(Token) <= 256) and
@@ -1040,12 +1052,20 @@ begin
   ClaudePage.Add('Puerto local:', False);
   ClaudePage.Values[2] := '{#DefaultPort}';
 
-  CloudPage := CreateInputQueryPage(ClaudePage.ID,
-    'Conectar con SAVI Cloud',
-    'Opcional: vincular esta instalación con SEO Group',
-    'Te lo entrega SEO Group. Podés hacerlo después desde Administración.' + #13#10#13#10 +
-    'Si tenés el token de vinculación, pegalo acá. Si lo dejás vacío, no se ' +
-    'conecta nada ahora.');
+  if CloudRequired() then
+    CloudPage := CreateInputQueryPage(ClaudePage.ID,
+      'Conectar con SAVI Cloud',
+      'Obligatorio: esta instalación la administra SEO Group',
+      'Pegá el token de vinculación que te entregó SEO Group. Sin él no se ' +
+      'puede continuar: así cada equipo queda registrado y SEO Group puede ' +
+      'darte soporte y administrar tu acceso.')
+  else
+    CloudPage := CreateInputQueryPage(ClaudePage.ID,
+      'Conectar con SAVI Cloud',
+      'Opcional: vincular esta instalación con SEO Group',
+      'Te lo entrega SEO Group. Podés hacerlo después desde Administración.' + #13#10#13#10 +
+      'Si tenés el token de vinculación, pegalo acá. Si lo dejás vacío, no se ' +
+      'conecta nada ahora.');
   CloudPage.Add('Token de vinculación (empieza con svk_enr_):', True);
 
   DownloadPage := CreateDownloadPage(
@@ -1192,9 +1212,17 @@ begin
 
   else if CurPageID = CloudPage.ID then
   begin
-    { Vacío es válido: se vincula después desde Administración. El mensaje
-      no repite el token que se escribió. }
-    if (Trim(CloudPage.Values[0]) <> '') and
+    { En el build obligatorio el token no puede faltar. En el resto, vacío es
+      válido: se vincula después desde Administración. El mensaje no repite el
+      token que se escribió. }
+    if CloudRequired() and (Trim(CloudPage.Values[0]) = '') then
+    begin
+      MsgBox('Este instalador requiere el token de vinculación que te entregó ' +
+             'SEO Group. Pedilo a soporte y pegalo para continuar.',
+             mbError, MB_OK);
+      Result := False;
+    end
+    else if (Trim(CloudPage.Values[0]) <> '') and
        (not IsValidCloudToken(Trim(CloudPage.Values[0]))) then
     begin
       MsgBox('El token no tiene el formato esperado: tiene que empezar con ' +

@@ -105,6 +105,8 @@ capturas.
 | C4 | Token válido, sin internet | SAVI arranca igual; en *Administración → SAVI Cloud* se puede reintentar |
 | C5 | Revisar `savi.log` y `diagnostico-instalacion.txt` tras C3 y C4 | El token no aparece en ninguno |
 | C6 | Instalador compilado sin URL de Cloud | La página no se muestra |
+| C7 | Instalador compilado con `-SaviCloudRequired`, token vacío | Mensaje "Este instalador requiere el token…"; no deja avanzar |
+| C8 | Mismo instalador, token con formato válido | Avanza y sigue como C3/C4 |
 
 ## 3. Configurar (como administrador)
 

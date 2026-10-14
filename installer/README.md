@@ -50,6 +50,10 @@ Opciones útiles al iterar:
 [Conectar con SAVI Cloud](#conectar-con-savi-cloud)). Es opcional y está
 **vacío por defecto**: la URL de producción todavía no está definida.
 
+`-SaviCloudRequired` (build de la organización interna, SAVI Master) hace
+la vinculación **obligatoria**; exige `-SaviCloudUrl`. Ver
+[Vinculación obligatoria](#vinculación-obligatoria).
+
 ## Qué hace el asistente de instalación
 
 1. **Requisitos del sistema** — detecta qué falta y lo muestra.
@@ -79,8 +83,8 @@ Opciones útiles al iterar:
    final, en el navegador. Ver [Autenticación contra Claude](#autenticación-contra-claude).
 
 5. **Conectar con SAVI Cloud** (opcional) — un campo para el token de
-   vinculación. Solo aparece si el instalador se compiló con
-   `-SaviCloudUrl`; ver [Conectar con SAVI Cloud](#conectar-con-savi-cloud).
+   vinculación (obligatorio si se compiló con `-SaviCloudRequired`). Solo
+   aparece si el instalador se compiló con `-SaviCloudUrl`; ver [Conectar con SAVI Cloud](#conectar-con-savi-cloud).
 
 Al terminar descarga e instala los prerrequisitos faltantes, genera el
 archivo `.env`, crea los accesos directos y ofrece iniciar sesión con la
@@ -120,6 +124,20 @@ la página sirve para las dos formas de uso.
   mensaje ni a la línea de comandos de un proceso, y el diagnóstico
   (`--check-config`) no lo lee. Solo queda en el `.env` hasta que SAVI lo
   canjea (y, si se reconfigura antes de canjearlo, en `.env.anterior`).
+
+### Vinculación obligatoria
+
+`build.ps1 -SaviCloudUrl https://… -SaviCloudRequired` compila con
+`/DSaviCloudRequired=1`. Es el instalador de la organización interna: cada
+equipo tiene que quedar registrado en SAVI Cloud.
+
+- La página cambia el texto a "Obligatorio" y **no deja avanzar** con el
+  campo vacío; el formato (`svk_enr_…`) se sigue validando igual.
+- Sin `-SaviCloudUrl` el build falla: sin URL no hay a dónde vincular y el
+  técnico quedaría trabado en el asistente.
+- Sin el flag el comportamiento no cambia (página opcional).
+- El token sigue siendo un secreto: ni log, ni mensaje, ni línea de
+  comandos.
 
 ## Puerto local
 
