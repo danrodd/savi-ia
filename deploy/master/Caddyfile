@@ -1,0 +1,56 @@
+{
+	# Certificados de Let's Encrypt: Caddy los obtiene y los renueva solo. Requiere que los
+	# dominios apunten a este servidor y que los puertos 80 y 443 lleguen a Caddy.
+	email {$ACME_EMAIL}
+}
+
+# Cabeceras comunes. La aplicación agrega su propia CSP; Caddy aporta HSTS y quita el banner.
+(seguridad) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+	# Caddy omite por defecto Authorization y Cookie en sus logs (log_credentials desactivado).
+	log {
+		output stdout
+		format json
+	}
+}
+
+# SAVI: chat y administración.
+{$SAVI_DOMAIN} {
+	import seguridad
+
+	# Subida de documentos de la empresa: el tope de SAVI es de 60 MB por archivo.
+	request_body {
+		max_size 70MB
+	}
+
+	reverse_proxy savi:8000 {
+		health_uri /health
+		health_interval 15s
+		# Las respuestas del chat llegan por SSE: sin buffer, el usuario vería el texto de golpe.
+		flush_interval -1
+		# El turno más largo de un agente puede tardar minutos.
+		transport http {
+			response_header_timeout 10m
+		}
+	}
+}
+
+# SAVI Cloud: consola del equipo de SEO y API de las instancias.
+{$CLOUD_DOMAIN} {
+	import seguridad
+
+	# `ingest` recibe lotes con gzip de hasta 5 MB descomprimidos.
+	request_body {
+		max_size 10MB
+	}
+
+	reverse_proxy cloud:8000 {
+		health_uri /health
+		health_interval 15s
+	}
+}

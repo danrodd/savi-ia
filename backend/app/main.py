@@ -188,11 +188,17 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
 def create_app() -> FastAPI:
     settings = get_settings()
 
+    # La documentación interactiva describe todo el API a quien llegue por la
+    # red. Fuera de producción sirve; en producción solo le sirve a un atacante.
+    docs_enabled = settings.app_env != "production"
     app = FastAPI(
         title=settings.app_name,
         version=__version__,
         debug=settings.app_debug,
         lifespan=lifespan,
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        openapi_url="/openapi.json" if docs_enabled else None,
     )
 
     # Cabeceras de seguridad en toda respuesta, incluida la SPA.

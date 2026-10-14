@@ -1,0 +1,32 @@
+# Contexto de build de backend/Dockerfile: la raíz del monorepo. Lo que no hace falta en la
+# imagen no entra ni al contexto (más rápido) ni, sobre todo, a una capa (más seguro).
+.git
+**/.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.pyright
+**/dist
+**/*.db
+
+# Secretos y configuración local: nunca en la imagen.
+**/.env
+**/.env.*
+deploy/**/secrets
+deploy/**/data
+deploy/**/backups
+
+# Otras aplicaciones del monorepo y material que la imagen no usa.
+cloud
+installer
+docs
+skills
+backend/tests
+backend/.models
+backend/docs
+frontend/e2e
+frontend/playwright-report
+frontend/test-results
