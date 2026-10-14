@@ -48,4 +48,6 @@ class AuditQueryModel(Base):
     __table_args__ = (
         Index("ix_audit_query_conversation_created", "conversation_id", "created_at"),
         Index("ix_audit_query_result_created", "result", "created_at"),
+        # Extractor incremental de SAVI Cloud: keyset `(created_at, id)`.
+        Index("ix_audit_query_created_at_id", "created_at", "id"),
     )

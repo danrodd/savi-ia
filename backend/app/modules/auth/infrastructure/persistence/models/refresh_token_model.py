@@ -42,4 +42,6 @@ class RefreshTokenModel(Base):
         Index("ix_refresh_token_user_id", "erp_database_id", "user_id"),
         # Para una tarea opcional de purga de tokens viejos.
         Index("ix_refresh_token_expires_at", "expires_at"),
+        # Extractor incremental de SAVI Cloud: keyset `(created_at, jti)`.
+        Index("ix_refresh_token_created_at_jti", "created_at", "jti"),
     )

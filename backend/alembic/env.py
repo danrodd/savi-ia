@@ -9,6 +9,10 @@ from alembic import context
 from app.infrastructure.config import get_settings
 from app.infrastructure.database.base import Base
 from app.modules.auth.infrastructure.persistence.models import RefreshTokenModel  # noqa: F401
+from app.modules.cloud_link.infrastructure.persistence.models import (  # noqa: F401
+    CloudLinkModel,
+    CloudSyncWatermarkModel,
+)
 from app.modules.company_knowledge.infrastructure.persistence.models import (  # noqa: F401
     CompanyDocumentAiReadModel,
     CompanyDocumentBlobModel,

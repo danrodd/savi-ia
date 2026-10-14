@@ -274,6 +274,17 @@ class Settings(BaseSettings):
     # el subproceso y la conexión SSE.
     chat_turn_timeout_seconds: float = Field(default=180.0)
 
+    # ── SAVI Cloud (vinculación y sincronización) ────────────────────────
+    # URL base de SAVI Cloud. La fija el instalador. `https` obligatorio salvo
+    # `APP_ENV=development`.
+    savi_cloud_url: str = Field(default="")
+    # Token de vinculación de un solo uso. Si está presente y la instalación no
+    # está vinculada, SAVI la vincula al arrancar y deja la variable vacía.
+    savi_cloud_enrollment_token: str = Field(default="")
+    # `false` apaga por completo el sincronizador (heartbeat, envío de eventos
+    # y vinculación automática): tests y desarrollo.
+    savi_cloud_sync_enabled: bool = Field(default=True)
+
     # ── Usage / consumo ──────────────────────────────────────────────────
     # El consumo se ALMACENA siempre en USD (lo que reporta el SDK). Esta
     # tasa es solo para que el frontend muestre el equivalente en COP — no

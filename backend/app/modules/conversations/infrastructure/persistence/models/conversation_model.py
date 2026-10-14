@@ -93,6 +93,8 @@ class ConversationModel(Base):
         # Filtrado por dueño: listado, ownership del chat, "mi consumo".
         Index("ix_conversations_owner", "owner_erp_database_id", "user_id"),
         Index("ix_conversations_updated_at", "updated_at"),
+        # Extractor incremental de SAVI Cloud: keyset `(created_at, id)`.
+        Index("ix_conversations_created_at_id", "created_at", "id"),
     )
 
 
@@ -159,4 +161,6 @@ class MessageModel(Base):
             "ix_messages_superseded_by",
             "superseded_by_id",
         ),
+        # Extractor incremental de SAVI Cloud: keyset `(created_at, id)`.
+        Index("ix_messages_created_at_id", "created_at", "id"),
     )

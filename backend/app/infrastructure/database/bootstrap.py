@@ -22,6 +22,10 @@ from alembic import command
 from app.infrastructure.config.settings import Settings
 from app.infrastructure.database.base import Base
 from app.modules.auth.infrastructure.persistence.models import RefreshTokenModel
+from app.modules.cloud_link.infrastructure.persistence.models import (
+    CloudLinkModel,
+    CloudSyncWatermarkModel,
+)
 from app.modules.company_knowledge.infrastructure.persistence.models import (
     CompanyDocumentAiReadModel,
     CompanyDocumentBlobModel,
@@ -70,6 +74,8 @@ _REGISTERED_MODELS = (
     CompanyDocumentAiReadModel,
     CompanyKnowledgeSettingsModel,
     MessageFeedbackModel,
+    CloudLinkModel,
+    CloudSyncWatermarkModel,
 )
 
 

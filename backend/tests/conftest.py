@@ -22,6 +22,9 @@ os.environ.setdefault("ERP_DB_NAME", "test")
 # Clave Fernet fija para la suite: los tests que ejercitan el cifrado
 # generan la suya cuando necesitan una distinta.
 os.environ.setdefault("ERP_CREDENTIALS_KEY", "sIYQBhcJUxE6vsRRrJvVKa3CtoUj_o8SPDBSAcHDCyM=")
+# El sincronizador con SAVI Cloud no corre en la suite: los tests que lo
+# ejercitan lo construyen a mano con una `CloudApi` falsa.
+os.environ.setdefault("SAVI_CLOUD_SYNC_ENABLED", "false")
 
 
 @pytest.fixture(autouse=True)

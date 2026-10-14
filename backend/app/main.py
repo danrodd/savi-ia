@@ -19,6 +19,12 @@ from app.infrastructure.database import (
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.auth.infrastructure.http.admin import SaviAdminDep
 from app.modules.chat.infrastructure.http import router as chat_router
+from app.modules.cloud_link.infrastructure.composition import (
+    build_cloud_link_services,
+    init_cloud_link_services,
+)
+from app.modules.cloud_link.infrastructure.http import router as cloud_link_router
+from app.modules.cloud_link.infrastructure.scheduler import CloudLinkScheduler
 from app.modules.company_knowledge.infrastructure.http import (
     public_router as company_documents_public_router,
 )
@@ -81,6 +87,7 @@ _API_PREFIXES = (
     # Bajo `/admin` conviven el API y las pantallas del frontend, así que se
     # listan los prefijos COMPLETOS del API. Poner solo "admin" hacía que
     # `/admin/consumo` y las demás pantallas devolvieran un 404 JSON.
+    "admin/cloud-link",
     "admin/company-documents",
     "admin/company-web-sources",
     "admin/erp-databases",
@@ -139,6 +146,20 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     await seed_llm_providers(llm_repository, settings)
     init_active_provider_resolver(llm_repository)
 
+    # SAVI Cloud: vinculación y sincronización de consumo. Los servicios
+    # existen siempre (la pantalla de Administración los usa); el scheduler
+    # solo corre con `SAVI_CLOUD_SYNC_ENABLED=true`. Va DESPUÉS del resolver
+    # de proveedores y se cancela antes de cerrar los engines.
+    cloud_link_services = init_cloud_link_services(
+        build_cloud_link_services(
+            settings=settings,
+            sessionmaker=get_agent_sessionmaker(),
+            cipher=cipher,
+            engine=get_agent_engine(),
+        )
+    )
+    cloud_link_scheduler: CloudLinkScheduler | None = None
+
     # Carga del catálogo de conocimiento al startup. Si los archivos
     # están corruptos o faltan datos requeridos, falla loud — preferimos
     # crashear que servir respuestas sin knowledge.
@@ -150,9 +171,15 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # Documentos de la empresa: worker de ingesta + índice en memoria. La
     # carga del índice corre en segundo plano y no demora el arranque.
     await start_company_knowledge(settings)
+    if settings.savi_cloud_sync_enabled:
+        cloud_link_scheduler = CloudLinkScheduler(cloud_link_services)
+        cloud_link_scheduler.start()
     try:
         yield
     finally:
+        if cloud_link_scheduler is not None:
+            await cloud_link_scheduler.stop()
+        await cloud_link_services.drain_background()
         await stop_company_knowledge()
         await close_engine_registry()
         await close_engines()
@@ -223,6 +250,7 @@ def create_app() -> FastAPI:
     app.include_router(conversations_router)
     app.include_router(feedback_router)
     app.include_router(feedback_admin_router)
+    app.include_router(cloud_link_router)
     app.include_router(chat_router)
     app.include_router(attachments_router)
     app.include_router(usage_router)
