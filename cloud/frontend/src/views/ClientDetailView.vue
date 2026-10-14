@@ -4,10 +4,11 @@ import { RouterLink, useRoute } from 'vue-router'
 import AccessPolicyCard from '@/components/AccessPolicyCard.vue'
 import AiPolicyCard from '@/components/AiPolicyCard.vue'
 import BarChart from '@/components/BarChart.vue'
+import ClientPolicyCard from '@/components/ClientPolicyCard.vue'
+import ClientTokensPanel from '@/components/ClientTokensPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import FreshnessChip from '@/components/FreshnessChip.vue'
 import KpiCard from '@/components/KpiCard.vue'
-import SecretDialog from '@/components/SecretDialog.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
 import {
@@ -103,111 +104,6 @@ async function runClientAction(): Promise<void> {
     actionBusy.value = false
   }
 }
-
-// --- política de las instalaciones del cliente
-type PolicyChange = 'lock' | 'unlock' | 'named' | 'pseudonym' | 'cli_on' | 'cli_off'
-const policyChange = ref<PolicyChange | null>(null)
-const policyBusy = ref(false)
-const policyError = ref<string | null>(null)
-
-const POLICY_COPY: Record<PolicyChange, { title: string; message: string; confirm: string }> = {
-  lock: {
-    title: 'Dejar las instalaciones solo con el chat',
-    message:
-      'En cada equipo de este cliente se oculta Administración y se rechaza cualquier cambio de configuración. Aplica en el próximo contacto de cada instalación.',
-    confirm: 'Bloquear configuración',
-  },
-  unlock: {
-    title: 'Permitir configurar las instalaciones',
-    message:
-      'Las personas administradoras de cada equipo vuelven a ver Administración. Aplica en el próximo contacto.',
-    confirm: 'Permitir configuración',
-  },
-  named: {
-    title: 'Identificar a las personas por su usuario',
-    message:
-      'Cloud va a guardar el código de usuario de quienes inician sesión (por ejemplo JPEREZ), no solo un seudónimo. Corresponde a la organización interna: no lo actives para un cliente que no lo autorizó.',
-    confirm: 'Identificar personas',
-  },
-  cli_on: {
-    title: 'Permitir el CLI de Claude en las instalaciones',
-    message:
-      'Quien administre una instalación local podrá usar la sesión de Claude iniciada en su equipo, con su propia cuenta. El consumo de esa cuenta no pasa por SEO Group. Aplica en el próximo contacto.',
-    confirm: 'Permitir CLI de Claude',
-  },
-  cli_off: {
-    title: 'Dejar de permitir el CLI de Claude',
-    message:
-      'Las instalaciones que lo estén usando dejan de responder en el turno siguiente hasta que se configure otro proveedor de IA.',
-    confirm: 'No permitir',
-  },
-  pseudonym: {
-    title: 'Volver a seudónimos',
-    message:
-      'Las instalaciones dejan de enviar el código de usuario. Los ya guardados se conservan hasta que venzan.',
-    confirm: 'Usar seudónimos',
-  },
-}
-
-async function applyPolicy(): Promise<void> {
-  const change = policyChange.value
-  if (!change) return
-  policyBusy.value = true
-  policyError.value = null
-  try {
-    await consoleApi.setClientPolicy(
-      id.value,
-      change === 'lock' || change === 'unlock'
-        ? { config_locked: change === 'lock' }
-        : change === 'cli_on' || change === 'cli_off'
-          ? { allow_local_cli: change === 'cli_on' }
-          : { identity_mode: change },
-    )
-    await client.reload()
-  } catch (e) {
-    policyError.value = errorMessage(e)
-  } finally {
-    policyBusy.value = false
-    policyChange.value = null
-  }
-}
-
-// --- tokens de vinculación
-const expiresHours = ref(72)
-const createdToken = ref<string | null>(null)
-const tokenError = ref<string | null>(null)
-
-async function createToken(): Promise<void> {
-  tokenError.value = null
-  try {
-    const created = await consoleApi.createToken(id.value, expiresHours.value)
-    createdToken.value = created.token
-  } catch (e) {
-    tokenError.value = errorMessage(e)
-  }
-}
-
-async function closeToken(): Promise<void> {
-  // El token ya no se puede recuperar: se descarta de memoria al cerrar.
-  createdToken.value = null
-  await tokens.reload()
-}
-
-async function revokeToken(tokenId: string): Promise<void> {
-  try {
-    await consoleApi.revokeToken(tokenId)
-    await tokens.reload()
-  } catch (e) {
-    tokenError.value = errorMessage(e)
-  }
-}
-
-const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn' | 'bad' }> = {
-  pending: { label: 'Vigente', tone: 'ok' },
-  used: { label: 'Usado', tone: 'muted' },
-  expired: { label: 'Vencido', tone: 'warn' },
-  revoked: { label: 'Revocado', tone: 'bad' },
-}
 </script>
 
 <template>
@@ -247,70 +143,13 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
       </div>
       <p v-if="actionError" class="error-text" role="alert">{{ actionError }}</p>
 
-      <section v-if="auth.can('clients.policy')" class="card policy" data-test="client-policy">
-        <h2>Política de las instalaciones</h2>
-        <p v-if="policyError" class="error-text" role="alert">{{ policyError }}</p>
-        <div class="policy__row">
-          <div>
-            <strong>Configuración</strong>
-            <p class="muted">
-              {{
-                client.data.value.config_locked
-                  ? 'Bloqueada: cada equipo queda solo con el chat.'
-                  : 'Libre: las personas administradoras de cada equipo pueden configurar.'
-              }}
-            </p>
-          </div>
-          <button
-            class="btn btn-small"
-            type="button"
-            data-test="toggle-lock"
-            @click="policyChange = client.data.value.config_locked ? 'unlock' : 'lock'"
-          >
-            {{ client.data.value.config_locked ? 'Permitir configuración' : 'Bloquear configuración' }}
-          </button>
-        </div>
-        <div class="policy__row">
-          <div>
-            <strong>Identidad de las personas</strong>
-            <p class="muted">
-              {{
-                client.data.value.identity_mode === 'named'
-                  ? 'Por código de usuario (organización interna).'
-                  : 'Por seudónimo: Cloud no sabe quiénes son.'
-              }}
-            </p>
-          </div>
-          <button
-            class="btn btn-small"
-            type="button"
-            data-test="toggle-identity"
-            @click="policyChange = client.data.value.identity_mode === 'named' ? 'pseudonym' : 'named'"
-          >
-            {{ client.data.value.identity_mode === 'named' ? 'Usar seudónimos' : 'Identificar personas' }}
-          </button>
-        </div>
-        <div class="policy__row">
-          <div>
-            <strong>CLI de Claude en el equipo</strong>
-            <p class="muted">
-              {{
-                client.data.value.allow_local_cli
-                  ? 'Permitido: la instalación local puede usar la sesión de Claude de la persona.'
-                  : 'No permitido: solo se usan las claves que configure el administrador.'
-              }}
-            </p>
-          </div>
-          <button
-            class="btn btn-small"
-            type="button"
-            data-test="toggle-cli"
-            @click="policyChange = client.data.value.allow_local_cli ? 'cli_off' : 'cli_on'"
-          >
-            {{ client.data.value.allow_local_cli ? 'No permitir' : 'Permitir CLI de Claude' }}
-          </button>
-        </div>
-      </section>
+
+      <ClientPolicyCard
+        v-if="auth.can('clients.policy')"
+        :client-id="id"
+        :client="client.data.value"
+        @saved="client.reload()"
+      />
 
       <AiPolicyCard
         v-if="auth.can('clients.policy')"
@@ -548,57 +387,13 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
       </div>
 
       <!-- Vinculación -->
-      <div v-else-if="tab === 'tokens'" class="stack">
-        <div class="card row">
-          <label class="hours">
-            Vigencia del token (horas, hasta 168)
-            <input v-model.number="expiresHours" type="number" min="1" max="168" />
-          </label>
-          <button class="btn btn-primary" type="button" @click="createToken">
-            Generar token de vinculación
-          </button>
-        </div>
-        <p v-if="tokenError" class="error-text" role="alert">{{ tokenError }}</p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Estado</th>
-                <th>Creado</th>
-                <th>Vence</th>
-                <th>Creado por</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="t in tokens.data.value ?? []" :key="t.id">
-                <td>
-                  <StatusBadge
-                    :tone="TOKEN_STATE[t.state]?.tone ?? 'muted'"
-                    :label="TOKEN_STATE[t.state]?.label ?? t.state"
-                  />
-                </td>
-                <td>{{ formatDateTime(t.created_at) }}</td>
-                <td>{{ formatDateTime(t.expires_at) }}</td>
-                <td>{{ t.created_by }}</td>
-                <td>
-                  <button
-                    v-if="t.state === 'pending'"
-                    class="btn btn-small btn-danger"
-                    type="button"
-                    @click="revokeToken(t.id)"
-                  >
-                    Revocar
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="!tokens.loading.value && !(tokens.data.value?.length ?? 0)">
-                <td colspan="5" class="empty">Todavía no se generó ningún token.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ClientTokensPanel
+        v-else-if="tab === 'tokens'"
+        :client-id="id"
+        :tokens="tokens.data.value ?? []"
+        :loading="tokens.loading.value"
+        @changed="tokens.reload()"
+      />
 
       <!-- Alertas -->
       <div v-else class="table-wrap">
@@ -640,23 +435,6 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
       @confirm="runClientAction"
       @cancel="action = null"
     />
-    <ConfirmDialog
-      :open="policyChange !== null"
-      :title="policyChange ? POLICY_COPY[policyChange].title : ''"
-      :message="policyChange ? POLICY_COPY[policyChange].message : ''"
-      :confirm-label="policyChange ? POLICY_COPY[policyChange].confirm : 'Confirmar'"
-      :danger="policyChange === 'lock' || policyChange === 'named' || policyChange === 'cli_on'"
-      :busy="policyBusy"
-      @confirm="applyPolicy"
-      @cancel="policyChange = null"
-    />
-    <SecretDialog
-      :open="createdToken !== null"
-      title="Token de vinculación"
-      :secret="createdToken ?? ''"
-      instructions="Pegalo en SAVI → Administración → SAVI Cloud, o en el instalador."
-      @close="closeToken"
-    />
   </div>
 </template>
 
@@ -680,22 +458,5 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
   color: var(--text);
   border-bottom-color: var(--accent);
   font-weight: 600;
-}
-.hours {
-  max-width: 280px;
-}
-.policy {
-  display: grid;
-  gap: 0.8rem;
-}
-.policy__row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.6rem;
-}
-.policy__row p {
-  margin: 0.15rem 0 0;
 }
 </style>
