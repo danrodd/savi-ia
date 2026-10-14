@@ -224,7 +224,12 @@ Notas:
   grupos recibe la **unión** de sus bases; una regla propia de la persona manda sobre los grupos;
   un grupo sin bases deja a sus miembros sin ninguna. Máximo 50 grupos y 500 personas con regla
   (ya compiladas), nombres únicos sin distinguir mayúsculas.
-- Pendiente a propósito: topes de IA por grupo y reglas para conocimiento fuera de las bases.
+- **Topes de IA por grupo**: un grupo puede fijar un tope mensual (USD) para cada miembro. Cloud
+  lo compila a `ai.user_overrides`, así que la instancia no cambia. Quien está en varios grupos
+  recibe el **mayor** de sus topes (pertenecer a más grupos nunca quita acceso), y la excepción
+  propia de la persona manda sobre los grupos. Se valida al guardar que el total compilado no pase
+  de 500 personas.
+- Pendiente a propósito: reglas para conocimiento fuera de las bases.
 
 ### Orden recomendado y por qué
 

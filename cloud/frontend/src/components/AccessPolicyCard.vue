@@ -35,6 +35,7 @@ function hydrate(policy: AccessPolicy): void {
     name: g.name,
     members: [...g.members],
     databases: [...g.databases],
+    user_monthly_usd: g.user_monthly_usd,
   }))
 }
 
@@ -71,7 +72,7 @@ function addGroup(): void {
     return
   }
   error.value = null
-  groups.value.push({ id: null, name, members: [], databases: [] })
+  groups.value.push({ id: null, name, members: [], databases: [], user_monthly_usd: null })
   newGroupName.value = ''
 }
 
@@ -96,6 +97,7 @@ function buildBody(): AccessPolicy {
       name: g.name,
       members: [...g.members],
       databases: [...g.databases],
+      user_monthly_usd: g.user_monthly_usd?.trim() ? g.user_monthly_usd.trim() : null,
     })),
   }
 }
@@ -153,8 +155,9 @@ async function save(): Promise<void> {
     <fieldset>
       <legend>Grupos</legend>
       <p class="muted">
-        Un grupo reúne personas que comparten las mismas bases. Quien está en varios grupos recibe
-        la unión de sus bases; una regla propia de la persona manda sobre los grupos.
+        Un grupo reúne personas que comparten las mismas bases y, si querés, un tope mensual de IA.
+        Quien está en varios grupos recibe la unión de sus bases y el mayor de sus topes; una regla
+        propia de la persona manda sobre los grupos.
       </p>
       <div v-for="(g, index) in groups" :key="g.id ?? g.name" class="rule" data-test="access-group">
         <div class="rule__head">
@@ -174,6 +177,15 @@ async function save(): Promise<void> {
           </label>
           <p v-if="!people.length" class="muted">Todavía no hay personas con consumo registrado.</p>
         </details>
+        <label class="cap">
+          Tope mensual de IA por persona (USD)
+          <input
+            v-model="g.user_monthly_usd"
+            inputmode="decimal"
+            placeholder="Sin tope"
+            :data-test="`access-group-${g.name}-cap`"
+          />
+        </label>
         <details open>
           <summary>Bases ({{ g.databases.length }})</summary>
           <label v-for="d in databases" :key="d.database_ref" class="check">
@@ -281,6 +293,9 @@ async function save(): Promise<void> {
   gap: 0.35rem;
   padding: 0.5rem 0;
   border-top: 1px solid var(--border, #e4e7ec);
+}
+.cap {
+  max-width: 280px;
 }
 .rule__head {
   display: flex;

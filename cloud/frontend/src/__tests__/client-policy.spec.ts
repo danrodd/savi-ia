@@ -383,7 +383,15 @@ describe('bases por persona', () => {
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
       default_databases: null,
       user_databases: {},
-      groups: [{ id: null, name: 'Soporte norte', members: [ref], databases: [DB_1] }],
+      groups: [
+        {
+          id: null,
+          name: 'Soporte norte',
+          members: [ref],
+          databases: [DB_1],
+          user_monthly_usd: null,
+        },
+      ],
     })
   })
 
@@ -397,5 +405,21 @@ describe('bases por persona', () => {
 
     expect(wrapper.findAll('[data-test="access-group"]')).toHaveLength(1)
     expect(wrapper.get('[data-test="access-error"]').text()).toContain('ese nombre')
+  })
+
+  it('un grupo puede fijar el tope mensual de IA de sus miembros', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+
+    await wrapper.get('[data-test="access-group-name"]').setValue('Soporte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('click')
+    await wrapper.get('[data-test="access-group-Soporte-cap"]').setValue(' 7.5 ')
+    await save(wrapper)
+
+    expect(api.setClientAccessPolicy).toHaveBeenCalledWith(
+      'c1',
+      expect.objectContaining({
+        groups: [expect.objectContaining({ name: 'Soporte', user_monthly_usd: '7.5' })],
+      }),
+    )
   })
 })

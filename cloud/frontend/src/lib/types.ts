@@ -271,6 +271,8 @@ export interface AccessGroup {
   name: string
   members: string[]
   databases: string[]
+  /** Tope mensual de IA (USD) por miembro; `null` = el grupo no fija tope. */
+  user_monthly_usd: string | null
 }
 
 export interface AccessPolicy {
