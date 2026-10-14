@@ -136,6 +136,11 @@ if (-not $SkipFrontend) {
         $env:VITE_API_BASE_URL = '/'
         # Queda incrustada en el bundle: es lo que muestra el pie del sidebar.
         $env:VITE_APP_VERSION = $Build.version
+        # La landing comercial es del sitio público, no de la app de
+        # escritorio: con el `.env` de desarrollo (VITE_LANDING_ENABLED=true)
+        # el equipo del cliente abría "Solicitar demo" en vez del login. La
+        # variable de entorno le gana al `.env` en Vite.
+        $env:VITE_LANDING_ENABLED = 'false'
         npm run build
         if ($LASTEXITCODE -ne 0) { throw 'El build del frontend falló.' }
     }

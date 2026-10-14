@@ -1033,7 +1033,16 @@ def _collect_report() -> Report:
     return report
 
 
-def _check_config(*, pause: bool = True) -> int:
+def _report_file_arg() -> Path | None:
+    """`--report-file=<ruta>`: donde el instalador quiere el reporte en texto."""
+    prefix = "--report-file="
+    for arg in sys.argv:
+        if arg.startswith(prefix) and len(arg) > len(prefix):
+            return Path(arg[len(prefix) :].strip('"'))
+    return None
+
+
+def _check_config(*, pause: bool = True, report_file: Path | None = None) -> int:
     """Valida el `.env` y la conectividad de las dos bases.
 
     Con `pause=False` (`--no-pause`) nunca se abre una consola ni se espera
@@ -1057,11 +1066,27 @@ def _check_config(*, pause: bool = True) -> int:
     logging.getLogger(__name__).info("Diagnóstico:\n%s", report.as_text())
 
     destination = data_dir() / "diagnostico.html"
-    try:
-        destination.write_text(render_html(report), encoding="utf-8")
-        opened = webbrowser.open(destination.as_uri())
-    except (OSError, webbrowser.Error):
-        opened = False
+    if report_file is not None:
+        # Modo instalador: el reporte lo muestra el propio asistente, que lo
+        # lee de este archivo. No se abre el navegador: en un equipo con la
+        # asociación de .html rota, Windows mostraba "¿Cómo quieres abrir este
+        # archivo?", se cerraba sola y el técnico se quedaba sin saber qué
+        # falló (pasó en un equipo de soporte). ANSI porque es lo que lee
+        # `LoadStringFromFile` de Inno Setup; la flecha no existe en ANSI.
+        try:
+            destination.write_text(render_html(report), encoding="utf-8")
+            report_file.write_text(
+                report.as_text().replace("→", "->"), encoding="mbcs", errors="replace"
+            )
+        except OSError:
+            logging.getLogger(__name__).exception("No se pudo escribir el reporte del instalador")
+        opened = True
+    else:
+        try:
+            destination.write_text(render_html(report), encoding="utf-8")
+            opened = webbrowser.open(destination.as_uri())
+        except (OSError, webbrowser.Error):
+            opened = False
 
     if not opened and not pause:
         logging.getLogger(__name__).info(
@@ -1118,7 +1143,9 @@ def main() -> None:
     logger = logging.getLogger(__name__)
 
     if "--check-config" in sys.argv:
-        raise SystemExit(_check_config(pause="--no-pause" not in sys.argv))
+        raise SystemExit(
+            _check_config(pause="--no-pause" not in sys.argv, report_file=_report_file_arg())
+        )
 
     # Antes de tocar la configuración ni la base: iniciar sesión es lo que
     # se hace cuando SAVI todavía no arranca, así que no puede depender de

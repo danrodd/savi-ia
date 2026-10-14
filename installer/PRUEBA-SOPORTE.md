@@ -79,15 +79,22 @@ Con archivo local no falta ninguna función. Lo que cambia es el uso:
 Para el uso normal en una empresa, PostgreSQL.
 
 **Se espera**: el acceso directo *SAVI* abre la aplicación; el pie del menú
-muestra la versión instalada. Si algo falla: acceso directo *Diagnosticar
-SAVI* y el log en `%LOCALAPPDATA%\SAVI\savi.log`.
+muestra la versión instalada.
+
+**Si la verificación del final encuentra problemas**, el instalador muestra
+una ventana *Resultado de la verificación de SAVI* con cada chequeo: las
+líneas `[FALLA]` dicen qué falló y, debajo (`->`), qué hacer. El mismo
+reporte queda en `C:\ProgramData\SAVI\diagnostico-instalacion.txt` para
+adjuntarlo a un pedido de soporte. Después se puede repetir con el acceso
+directo *Diagnosticar SAVI*; el log completo está en
+`%LOCALAPPDATA%\SAVI\savi.log`.
 
 ## 3. Configurar (como administrador)
 
 | Paso | Dónde | Se espera |
 |---|---|---|
-| Proveedores de IA | Administración → Proveedores de IA | "Probar" responde OK con cada proveedor cargado; uno queda activo |
-| Más bases | Administración → Bases de datos → Agregar | "Probar conexión" OK por cada base del cliente |
+| Proveedores de IA | Administración → Proveedores de IA | "Probar conexión" en la tarjeta de cada proveedor responde OK; uno queda "En uso" |
+| Más bases | Administración → Bases de datos → **Nueva base** | "Probar conexión" OK por cada base del cliente |
 | Lectura de PDF con IA | Administración → Conocimiento → Configuración | Activarla pide aceptar el envío al proveedor activo |
 
 ## 4. Pruebas

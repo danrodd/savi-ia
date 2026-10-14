@@ -140,6 +140,12 @@ Filename: "{app}\{#AppExe}"; Parameters: "--login"; \
     Flags: postinstall skipifsilent; Check: NeedsClaudeLogin
 Filename: "{app}\{#AppExe}"; Description: "Iniciar {#AppName} ahora"; Flags: postinstall nowait skipifsilent
 
+[Dirs]
+; Reporte del diagnóstico que muestra el instalador. Lo escribe SAVI.exe
+; corriendo como el usuario que lanzó el instalador (no elevado): por eso
+; una carpeta común con permiso de escritura para los usuarios.
+Name: "{commonappdata}\SAVI"; Permissions: users-modify
+
 [UninstallDelete]
 ; El .env se genera en la instalación, no viene en [Files]: sin esto
 ; queda huérfano al desinstalar.
@@ -450,28 +456,28 @@ begin
   Top := 0;
   AddPrereqText(Page,
     Top,
-    'SAVI usa el SDK de Claude, que necesita estos componentes en el equipo. ' +
-    'El instalador descarga e instala los que falten.',
+    'SAVI necesita estos programas en el equipo para conectarse con la ' +
+    'inteligencia artificial. El instalador descarga e instala los que falten.',
     0);
   Top := Top + ScaleY(10);
 
   if NeedsCli then
-    AddPrereqRow(Page, Top, #$2715, MarkMissing, 'CLI de Claude Code — falta, se instala ahora')
+    AddPrereqRow(Page, Top, #$2715, MarkMissing, 'Componente de Claude — falta, se instala ahora')
   else
-    AddPrereqRow(Page, Top, #$2713, MarkOk, 'CLI de Claude Code');
+    AddPrereqRow(Page, Top, #$2713, MarkOk, 'Componente de Claude');
 
   if NeedsNode then
     AddPrereqRow(Page, Top, #$2715, MarkMissing,
-                 'Node.js {#NodeVersion} — falta, se instala para poder poner el CLI')
+                 'Node.js {#NodeVersion} — falta, se necesita para instalar el componente de Claude')
   else if NodeExePath() = '' then
     AddPrereqRow(Page, Top, #$2013, MarkNotNeeded,
-                 'Node.js — no hace falta, el CLI ya está instalado')
+                 'Node.js — no hace falta, el componente de Claude ya está instalado')
   else
     AddPrereqRow(Page, Top, #$2713, MarkOk, 'Node.js');
 
   if NeedsGit then
     AddPrereqRow(Page, Top, #$2715, MarkMissing,
-                 'Git for Windows {#GitVersion} — falta, aporta el bash.exe que necesita el SDK')
+                 'Git for Windows {#GitVersion} — falta, lo necesita el componente de Claude')
   else
     AddPrereqRow(Page, Top, #$2713, MarkOk, 'Git for Windows');
 
@@ -501,7 +507,9 @@ begin
       'el navegador para iniciar sesión con esa cuenta, y no hay nada que ' +
       'copiar. Completá un campo solo si te entregaron la credencial ya ' +
       'generada. El puerto es el que usa SAVI en este equipo; cambialo solo ' +
-      'si ya está ocupado — está elegido para no chocar con nada.';
+      'si ya está ocupado — está elegido para no chocar con nada.' + #13#10 +
+      'Si el cliente usa Gemini u OpenAI en vez de Claude, dejá estos campos ' +
+      'vacíos y cargá la clave después en SAVI: Administración → Proveedores de IA.';
 end;
 
 { `True` si en el directorio elegido ya hay una instalación configurada.
@@ -989,11 +997,11 @@ begin
   AgentTestButton.OnClick := @AgentTestButtonClick;
 
   ClaudePage := CreateInputQueryPage(AgentPgPage.ID,
-    'Autenticación de Claude y puerto',
-    'Acceso al modelo y puerto local de la aplicación',
+    'Cuenta de Claude y puerto',
+    'Gemini y OpenAI se configuran después, desde SAVI',
     AuthPageDescription());
-  ClaudePage.Add('Token de Claude Code (recomendado, generado con: claude setup-token):', True);
-  ClaudePage.Add('Clave de API de Anthropic (alternativa, console.anthropic.com):', True);
+  ClaudePage.Add('Token de Claude (opcional; lo genera el cliente con: claude setup-token):', True);
+  ClaudePage.Add('Clave de API de Claude (opcional; alternativa al token):', True);
   ClaudePage.Add('Puerto local:', False);
   ClaudePage.Values[2] := '{#DefaultPort}';
 
@@ -1210,7 +1218,7 @@ begin
     dudas cuando se acaba de poner Node. }
   if NeedsCli then
   begin
-    WizardForm.StatusLabel.Caption := 'Instalando el CLI de Claude Code...';
+    WizardForm.StatusLabel.Caption := 'Instalando el componente de Claude...';
     PutNodeOnPath();
     { Por ruta completa y no por nombre: si Node acaba de instalarse, el
       PATH de este proceso todavía no lo incluye. }
@@ -1469,8 +1477,78 @@ end;
   y recibe un 500 sin explicación. Verificarlo acá lo pone delante del
   técnico mientras todavía está sentado en el equipo y puede corregirlo.
 
-  Con SW_HIDE: el diagnóstico se muestra solo, como una página en el
-  navegador. La consola quedó de respaldo para equipos sin navegador. }
+  Con SW_HIDE y --report-file: el diagnóstico no abre el navegador; el
+  instalador muestra el reporte en su propia ventana (ShowDiagnosticReport). }
+function DiagnosticReportPath(): String;
+begin
+  Result := ExpandConstant('{commonappdata}\SAVI\diagnostico-instalacion.txt');
+end;
+
+{ Muestra el reporte del diagnóstico en una ventana del propio instalador.
+
+  Antes el detalle quedaba solo en una página que se abría en el navegador:
+  en un equipo de soporte con la asociación de .html rota, Windows mostraba
+  "¿Cómo quieres abrir este archivo?", se cerraba sola, y el técnico se
+  quedaba con un "hubo un error" sin saber cuál. Acá se lee siempre. }
+procedure ShowDiagnosticReport(const Intro: String);
+var
+  Form: TSetupForm;
+  Info: TNewStaticText;
+  Memo: TNewMemo;
+  CloseButton: TNewButton;
+  RawAnsi: AnsiString;
+  Text: String;
+begin
+  if LoadStringFromFile(DiagnosticReportPath(), RawAnsi) then
+    Text := String(RawAnsi)
+  else
+    Text := 'No se encontró el reporte del diagnóstico. Abrí el acceso directo ' +
+            '"Diagnosticar SAVI" desde el menú Inicio para verlo.';
+
+  Form := CreateCustomForm(ScaleX(620), ScaleY(420), False, False);
+  try
+    Form.Caption := 'Resultado de la verificación de SAVI';
+
+    Info := TNewStaticText.Create(Form);
+    Info.Parent := Form;
+    Info.Left := ScaleX(12);
+    Info.Top := ScaleY(12);
+    Info.Width := Form.ClientWidth - ScaleX(24);
+    Info.AutoSize := False;
+    Info.WordWrap := True;
+    Info.Height := ScaleY(48);
+    Info.Caption := Intro;
+
+    Memo := TNewMemo.Create(Form);
+    Memo.Parent := Form;
+    Memo.Left := ScaleX(12);
+    Memo.Top := Info.Top + Info.Height + ScaleY(6);
+    Memo.Width := Form.ClientWidth - ScaleX(24);
+    Memo.Height := Form.ClientHeight - Memo.Top - ScaleY(23 + 24);
+    Memo.ReadOnly := True;
+    Memo.ScrollBars := ssVertical;
+    Memo.WordWrap := True;
+    Memo.Text := Text;
+
+    CloseButton := TNewButton.Create(Form);
+    CloseButton.Parent := Form;
+    CloseButton.Caption := 'Cerrar';
+    CloseButton.Width := ScaleX(90);
+    CloseButton.Height := ScaleY(23);
+    CloseButton.Left := Form.ClientWidth - CloseButton.Width - ScaleX(12);
+    CloseButton.Top := Form.ClientHeight - ScaleY(23 + 12);
+    CloseButton.ModalResult := mrOk;
+    CloseButton.Default := True;
+    CloseButton.Cancel := True;
+
+    Form.ActiveControl := CloseButton;
+    Form.FlipAndCenterIfNeeded(True, WizardForm, False);
+    Form.ShowModal();
+  finally
+    Form.Free();
+  end;
+end;
+
 procedure VerifyInstallation();
 var
   ResultCode: Integer;
@@ -1483,7 +1561,7 @@ begin
     corre oculto y esperando: sin él, un equipo sin navegador dejaba el
     instalador colgado en un "Enter para cerrar" que nadie veía. }
   if not ExecAsOriginalUser(ExpandConstant('{app}\{#AppExe}'),
-              '--check-config --no-pause', '', SW_HIDE,
+              '--check-config --no-pause --report-file="' + DiagnosticReportPath() + '"', '', SW_HIDE,
               ewWaitUntilTerminated, ResultCode) then
   begin
     MsgBox('No se pudo ejecutar la verificación de la configuración.' + #13#10 +
@@ -1518,12 +1596,10 @@ begin
   end;
 
   if ResultCode <> 0 then
-    MsgBox('La verificación encontró problemas en la configuración.' + #13#10#13#10 +
-           'SAVI quedó instalado, pero no va a funcionar hasta corregirlos. ' +
-           'El detalle de qué falló está en el reporte que se abrió en el navegador.' + #13#10#13#10 +
-           'Para corregir los datos: volvé a ejecutar este instalador y elegí ' +
-           '"Volver a configurar" cuando lo ofrezca.',
-           mbError, MB_OK);
+    ShowDiagnosticReport('SAVI quedó instalado, pero la verificación encontró problemas y ' +
+                         'no va a funcionar hasta corregirlos. Abajo está qué falló y qué ' +
+                         'hacer (las líneas [FALLA]). Para corregir los datos, volvé a ' +
+                         'ejecutar este instalador y elegí "Volver a configurar".');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
