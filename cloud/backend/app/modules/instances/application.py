@@ -31,6 +31,9 @@ from app.shared.sync_v1 import (
     Policy,
 )
 from app.shared.sync_v1 import (
+    AccessPolicy as WireAccessPolicy,
+)
+from app.shared.sync_v1 import (
     AiPolicy as WireAiPolicy,
 )
 from app.shared.tokens import INSTANCE_SECRET_PREFIX, generate_secret, hash_secret
@@ -50,6 +53,12 @@ def _wire_ai(client: Client | None) -> WireAiPolicy | None:
     return WireAiPolicy.model_validate(client.ai_policy.to_json())
 
 
+def _wire_access(client: Client | None) -> WireAccessPolicy | None:
+    if client is None or client.access_policy.is_empty:
+        return None
+    return WireAccessPolicy.model_validate(client.access_policy.to_json())
+
+
 def policy_for(status: InstanceStatus, client: Client | None = None) -> Policy:
     """Política vigente de una instancia: la general más la de su cliente."""
     return Policy(
@@ -60,6 +69,7 @@ def policy_for(status: InstanceStatus, client: Client | None = None) -> Policy:
         config_locked=client.config_locked if client else False,
         allow_local_cli=client.allow_local_cli if client else False,
         ai=_wire_ai(client),
+        access=_wire_access(client),
         identity_mode=client.identity_mode.value if client else "pseudonym",
     )
 

@@ -20,6 +20,29 @@
         "sync_enabled": { "type": "boolean" },
         "config_locked": { "type": "boolean" },
         "allow_local_cli": { "type": "boolean" },
+        "access": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "default_databases": {
+              "type": ["array", "null"],
+              "maxItems": 200,
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" }
+            },
+            "user_databases": {
+              "type": "object",
+              "maxProperties": 500,
+              "propertyNames": { "pattern": "^[0-9a-f]{32}$" },
+              "additionalProperties": {
+                "type": "array",
+                "maxItems": 200,
+                "uniqueItems": true,
+                "items": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" }
+              }
+            }
+          }
+        },
         "ai": {
           "type": ["object", "null"],
           "additionalProperties": false,

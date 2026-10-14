@@ -20,6 +20,7 @@ from app.modules.audit.application import AuditRecorder
 from app.modules.audit.domain import AuditEntry
 from app.modules.audit.infrastructure import SqlAlchemyAuditRepository
 from app.modules.clients.domain import (
+    AccessPolicy,
     AiPolicy,
     ClientNotFound,
     ClientStatus,
@@ -78,6 +79,7 @@ class ClientOut(BaseModel):
     config_locked: bool
     allow_local_cli: bool
     ai_policy: dict[str, Any]
+    access_policy: dict[str, Any]
 
     @classmethod
     def of(cls, summary: ClientSummary) -> ClientOut:
@@ -98,6 +100,7 @@ class ClientOut(BaseModel):
             config_locked=c.config_locked,
             allow_local_cli=c.allow_local_cli,
             ai_policy=c.ai_policy.to_json(),
+            access_policy=c.access_policy.to_json(),
         )
 
 
@@ -284,6 +287,13 @@ class AiPolicyBody(_Body):
     user_monthly_usd: _Usd | None = None
     provider_monthly_usd: dict[_Provider, _Usd] = Field(default_factory=dict[_Provider, _Usd])
     user_overrides: dict[str, _Usd] = Field(default_factory=dict[str, _Usd], max_length=500)
+
+
+class AccessPolicyBody(_Body):
+    default_databases: list[str] | None = Field(default=None, max_length=200)
+    user_databases: dict[str, list[str]] = Field(
+        default_factory=dict[str, list[str]], max_length=500
+    )
 
 
 class ClientPolicyPatch(_Body):
@@ -486,6 +496,24 @@ async def set_client_ai_policy(
     )
     async with transaction(request) as session:
         await _client_actions(request, session).set_ai_policy(
+            client_id, policy, ctx=request_context(request, principal)
+        )
+        return await _client_out(request, session, client_id)
+
+
+@router.put("/clients/{client_id}/access-policy", response_model=ClientOut)
+async def set_client_access_policy(
+    client_id: UUID,
+    body: AccessPolicyBody,
+    request: Request,
+    principal: Principal = Depends(RequirePermission(Permission.CLIENTS_POLICY)),
+) -> ClientOut:
+    policy = AccessPolicy.build(
+        default_databases=body.default_databases,
+        user_databases=body.user_databases,
+    )
+    async with transaction(request) as session:
+        await _client_actions(request, session).set_access_policy(
             client_id, policy, ctx=request_context(request, principal)
         )
         return await _client_out(request, session, client_id)

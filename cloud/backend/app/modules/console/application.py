@@ -13,6 +13,7 @@ from app.modules.audit.application import AuditRecorder
 from app.modules.audit.domain import RequestContext
 from app.modules.clients.application import CreateClientUseCase
 from app.modules.clients.domain import (
+    AccessPolicy,
     AiPolicy,
     Client,
     ClientNotFound,
@@ -181,6 +182,23 @@ class ClientActions:
             target_id=str(client_id),
             before=client.ai_policy.to_json(),
             after=updated.ai_policy.to_json(),
+        )
+        return updated
+
+    async def set_access_policy(
+        self, client_id: UUID, policy: AccessPolicy, *, ctx: RequestContext
+    ) -> Client:
+        """Reemplaza qué bases puede consultar cada persona (solo restringe lo que da el ERP)."""
+        client = await self._get(client_id)
+        updated = replace(client, access_policy=policy, updated_at=self.clock())
+        await self.clients.save(updated)
+        await self.audit.record(
+            ctx,
+            "client.access_policy",
+            target_type="client",
+            target_id=str(client_id),
+            before=client.access_policy.to_json(),
+            after=updated.access_policy.to_json(),
         )
         return updated
 

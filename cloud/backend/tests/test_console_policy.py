@@ -369,3 +369,118 @@ async def test_ai_policy_changes_are_audited_with_before_and_after(fx: Fixture) 
     assert entry["before"]["user_monthly_usd"] is None
     assert entry["after"]["user_monthly_usd"] == "5"
     assert entry["after"]["provider_monthly_usd"] == {"gemini": "50"}
+
+
+# ------------------------------------------------------------------ bases por persona (M4)
+DB_1 = "7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d"
+DB_2 = "11111111-2222-4333-8444-555555555555"
+ACCESS_BODY: dict[str, Any] = {
+    "default_databases": [DB_1],
+    "user_databases": {USER_A: [DB_1, DB_2], USER_B: []},
+}
+
+
+async def test_access_policy_is_empty_by_default_and_not_sent(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    body = (await heartbeat(fx, linked)).json()
+
+    assert body["policy"]["access"] is None
+    client = (await fx.console.http.get(f"{API}/clients/{client_id}", headers=fx.admin.auth)).json()
+    assert client["access_policy"] == {"default_databases": None, "user_databases": {}}
+
+
+async def test_access_policy_travels_in_the_heartbeat_and_matches_the_contract(
+    fx: Fixture,
+) -> None:
+    from tests.test_api import assert_matches_schema
+
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    res = await fx.console.http.put(
+        f"{API}/clients/{client_id}/access-policy", json=ACCESS_BODY, headers=fx.admin.auth
+    )
+
+    assert res.status_code == 200, res.text
+    beat = (await heartbeat(fx, linked)).json()
+    assert beat["policy"]["access"] == {
+        "default_databases": [DB_1],
+        "user_databases": {USER_A: [DB_1, DB_2], USER_B: []},
+    }
+    assert_matches_schema("heartbeat.response", beat)
+
+
+async def test_an_empty_user_list_is_kept_it_means_no_databases(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+    await fx.console.http.put(
+        f"{API}/clients/{client_id}/access-policy",
+        json={"user_databases": {USER_B: []}},
+        headers=fx.admin.auth,
+    )
+
+    access = (await heartbeat(fx, linked)).json()["policy"]["access"]
+
+    assert access == {"default_databases": None, "user_databases": {USER_B: []}}
+
+
+async def test_access_policy_can_be_cleared(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+    await fx.console.http.put(
+        f"{API}/clients/{client_id}/access-policy", json=ACCESS_BODY, headers=fx.admin.auth
+    )
+
+    await fx.console.http.put(
+        f"{API}/clients/{client_id}/access-policy", json={}, headers=fx.admin.auth
+    )
+
+    assert (await heartbeat(fx, linked)).json()["policy"]["access"] is None
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"default_databases": ["no-es-un-uuid"]},
+        {"user_databases": {"no-es-un-user-ref": [DB_1]}},
+        {"user_databases": {USER_A: ["no-es-un-uuid"]}},
+        {"default_databases": [DB_1], "campo_extra": 1},
+    ],
+)
+async def test_invalid_access_policy_is_rejected(fx: Fixture, body: dict[str, Any]) -> None:
+    client_id = await make_client(fx)
+
+    res = await fx.console.http.put(
+        f"{API}/clients/{client_id}/access-policy", json=body, headers=fx.admin.auth
+    )
+
+    assert res.status_code == 422, res.text
+
+
+async def test_only_admin_can_change_the_access_policy(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    for who in (fx.soporte, fx.comercial):
+        res = await fx.console.http.put(
+            f"{API}/clients/{client_id}/access-policy", json=ACCESS_BODY, headers=who.auth
+        )
+        assert res.status_code == 403
+
+
+async def test_access_policy_changes_are_audited(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    await fx.console.http.put(
+        f"{API}/clients/{client_id}/access-policy", json=ACCESS_BODY, headers=fx.admin.auth
+    )
+
+    audit = (
+        await fx.console.http.get(
+            f"{API}/audit?action=client.access_policy", headers=fx.admin.auth
+        )
+    ).json()
+
+    entry = audit["items"][0]
+    assert entry["before"]["default_databases"] is None
+    assert entry["after"]["default_databases"] == [DB_1]
+

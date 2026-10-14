@@ -1,0 +1,21 @@
+{
+  "server_time": "2026-10-14T12:00:00Z",
+  "instance_status": "active",
+  "policy": {
+    "heartbeat_seconds": 300,
+    "ingest_seconds": 300,
+    "max_batch_events": 500,
+    "sync_enabled": true,
+    "access": {
+      "default_databases": ["7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d"],
+      "user_databases": {
+        "0123456789abcdef0123456789abcdef": [
+          "7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d",
+          "11111111-2222-4333-8444-555555555555"
+        ],
+        "fedcba9876543210fedcba9876543210": []
+      }
+    }
+  },
+  "notices": []
+}

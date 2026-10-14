@@ -40,6 +40,10 @@ JSON Schema draft 2020-12. Todo viaja en JSON UTF-8; las fechas son ISO-8601 con
   `user_monthly_usd` (tope mensual por persona), `user_overrides` (`user_ref` → tope) y
   `provider_monthly_usd` (tope mensual de la instalación por proveedor). Montos como texto
   decimal. La instancia mide y bloquea antes de abrir el chat; Cloud solo decide.
+- **`policy.access`** (aditivo, ausente = lo que permita el ERP): restringe las bases que
+  una persona puede consultar. `default_databases` (`null` = sin restricción) y
+  `user_databases` (`user_ref` → bases; una lista vacía la deja sin ninguna). Las bases se
+  nombran por `database_ref`. Solo **restringe**: nunca otorga lo que el ERP no da.
 - **`policy.allow_local_cli`** (aditivo, `false` por defecto): la instalación local puede
   ofrecer el CLI de Claude con la cuenta de la persona. Solo aplica a SAVI local; el Master
   nunca lo ofrece.

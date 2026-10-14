@@ -138,6 +138,82 @@ def _fmt(amount: Decimal | None) -> str | None:
     return text if "." not in text else text.rstrip("0").rstrip(".")
 
 
+_DATABASE_REF = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+MAX_DATABASES_PER_RULE = 200
+
+
+class InvalidAccessPolicy(DomainError):
+    code = "invalid_access_policy"
+
+
+def _databases(refs: Sequence[str]) -> tuple[str, ...]:
+    cleaned = tuple(dict.fromkeys(r.strip().lower() for r in refs))
+    if len(cleaned) > MAX_DATABASES_PER_RULE:
+        raise InvalidAccessPolicy(f"Máximo {MAX_DATABASES_PER_RULE} bases por regla.")
+    for ref in cleaned:
+        if not _DATABASE_REF.fullmatch(ref):
+            raise InvalidAccessPolicy("Identificador de base inválido.")
+    return cleaned
+
+
+@dataclass(frozen=True)
+class AccessPolicy:
+    """Qué bases del ERP puede consultar cada persona de las instalaciones del cliente.
+
+    Solo **restringe**: la instancia sigue exigiendo que el ERP le dé acceso a la persona.
+    Vacía = sin restricción.
+    """
+
+    # Bases (`database_ref`) para toda persona sin regla propia. `None` = las que permita el ERP.
+    default_databases: tuple[str, ...] | None = None
+    # Regla propia de una persona (`user_ref`). Reemplaza a la general; vacía = sin ninguna base.
+    user_databases: dict[str, tuple[str, ...]] = field(default_factory=dict[str, tuple[str, ...]])
+
+    @property
+    def is_empty(self) -> bool:
+        return self.default_databases is None and not self.user_databases
+
+    @classmethod
+    def build(
+        cls,
+        *,
+        default_databases: Sequence[str] | None,
+        user_databases: Mapping[str, Sequence[str]],
+    ) -> AccessPolicy:
+        if len(user_databases) > MAX_USER_OVERRIDES:
+            raise InvalidAccessPolicy(f"Máximo {MAX_USER_OVERRIDES} personas con regla propia.")
+        for ref in user_databases:
+            if not _USER_REF.fullmatch(ref):
+                raise InvalidAccessPolicy("Identificador de persona inválido.")
+        return cls(
+            default_databases=_databases(default_databases)
+            if default_databases is not None
+            else None,
+            user_databases={k: _databases(v) for k, v in user_databases.items()},
+        )
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "default_databases": list(self.default_databases)
+            if self.default_databases is not None
+            else None,
+            "user_databases": {k: list(v) for k, v in self.user_databases.items()},
+        }
+
+    @classmethod
+    def from_json(cls, raw: dict[str, object] | None) -> AccessPolicy:
+        if not raw:
+            return cls()
+        default = raw.get("default_databases")
+        users = raw.get("user_databases")
+        return cls.build(
+            default_databases=list(default) if isinstance(default, list) else None,  # pyright: ignore[reportUnknownArgumentType]
+            user_databases={str(k): list(v) for k, v in users.items()}  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
+            if isinstance(users, dict)
+            else {},
+        )
+
+
 @dataclass(frozen=True)
 class Client:
     id: UUID
@@ -154,6 +230,8 @@ class Client:
     allow_local_cli: bool = False
     # Proveedores permitidos y topes de IA (M3). Vacía = sin límites.
     ai_policy: AiPolicy = field(default_factory=AiPolicy)
+    # Bases que puede consultar cada persona (M4). Vacía = lo que permita el ERP.
+    access_policy: AccessPolicy = field(default_factory=AccessPolicy)
 
 
 class InvalidClientCode(DomainError):

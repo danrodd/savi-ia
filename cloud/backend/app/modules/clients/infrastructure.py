@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
 from app.modules.clients.domain import (
+    AccessPolicy,
     AiPolicy,
     Client,
     ClientCodeAlreadyExists,
@@ -46,6 +47,7 @@ class ClientModel(Base):
         Boolean, nullable=False, default=False, server_default=sa_false()
     )
     ai_policy: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    access_policy: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 
 
 def to_entity(model: ClientModel) -> Client:
@@ -61,6 +63,7 @@ def to_entity(model: ClientModel) -> Client:
         config_locked=model.config_locked,
         allow_local_cli=model.allow_local_cli,
         ai_policy=AiPolicy.from_json(model.ai_policy),
+        access_policy=AccessPolicy.from_json(model.access_policy),
     )
 
 
@@ -81,6 +84,9 @@ class SqlAlchemyClientRepository:
             config_locked=client.config_locked,
             allow_local_cli=client.allow_local_cli,
             ai_policy=client.ai_policy.to_json() if not client.ai_policy.is_empty else None,
+            access_policy=(
+                client.access_policy.to_json() if not client.access_policy.is_empty else None
+            ),
         )
         try:
             async with self._session.begin_nested():
@@ -110,6 +116,9 @@ class SqlAlchemyClientRepository:
         model.config_locked = client.config_locked
         model.allow_local_cli = client.allow_local_cli
         model.ai_policy = client.ai_policy.to_json() if not client.ai_policy.is_empty else None
+        model.access_policy = (
+            client.access_policy.to_json() if not client.access_policy.is_empty else None
+        )
         model.updated_at = client.updated_at
         await self._session.flush()
 

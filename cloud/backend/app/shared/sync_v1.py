@@ -84,6 +84,21 @@ class AiPolicy(_Envelope):
     )
 
 
+DatabaseRef = Annotated[
+    str,
+    _text(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"),
+]
+
+
+class AccessPolicy(_Envelope):
+    """Bases que puede consultar cada persona (aditivo dentro de v1)."""
+
+    default_databases: list[DatabaseRef] | None = Field(default=None, max_length=200)
+    user_databases: dict[
+        Annotated[str, _text(pattern=r"^[0-9a-f]{32}$")], list[DatabaseRef]
+    ] = Field(default_factory=dict[str, list[DatabaseRef]], max_length=500)
+
+
 class Policy(_Envelope):
     heartbeat_seconds: Annotated[StrictInt, Field(ge=1)]
     ingest_seconds: Annotated[StrictInt, Field(ge=1)]
@@ -93,6 +108,7 @@ class Policy(_Envelope):
     config_locked: StrictBool = False
     allow_local_cli: StrictBool = False
     ai: AiPolicy | None = None
+    access: AccessPolicy | None = None
     identity_mode: Literal["pseudonym", "named"] = "pseudonym"
 
 
