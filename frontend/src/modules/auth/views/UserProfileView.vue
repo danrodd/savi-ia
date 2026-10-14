@@ -13,6 +13,7 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import Button from '@/components/ui/Button.vue'
+import { toTitleCase } from '@/lib/personName'
 import { MODULE_LABELS, type ModuleCode, usePermisosStore } from '@/modules/permisos'
 import { MyUsagePanel, UsageFilterBar } from '@/modules/usage'
 import { useAuthStore } from '../stores/authStore'
@@ -28,6 +29,7 @@ const refreshError = ref<string | null>(null)
 const loggingOut = ref(false)
 
 const user = computed(() => authStore.user)
+const displayName = computed(() => toTitleCase(user.value?.full_name) || user.value?.login || '')
 
 const initial = computed(() => {
   const name = user.value?.full_name ?? user.value?.login ?? ''
@@ -108,7 +110,7 @@ onMounted(() => {
 
       <div v-if="user" class="profile__body">
         <div class="profile__avatar" aria-hidden="true">{{ initial }}</div>
-        <h1 class="profile__name">{{ user.full_name }}</h1>
+        <h1 class="profile__name">{{ displayName }}</h1>
         <span class="profile__role" :class="{ 'profile__role--admin': user.is_admin }">
           {{ roleLabel }}
         </span>
@@ -118,13 +120,12 @@ onMounted(() => {
             <dt class="profile__fact-label">Usuario</dt>
             <dd class="profile__fact-value profile__fact-value--mono">{{ user.login }}</dd>
           </div>
-          <div class="profile__fact">
-            <dt class="profile__fact-label">ID</dt>
-            <dd class="profile__fact-value profile__fact-value--mono">#{{ user.id }}</dd>
-          </div>
-          <div class="profile__fact">
-            <dt class="profile__fact-label">Origen de identidad</dt>
-            <dd class="profile__fact-value">Seguridad.Usuario (ERP)</dd>
+          <div v-if="user.erp_database" class="profile__fact">
+            <dt class="profile__fact-label">Cliente actual</dt>
+            <dd class="profile__fact-value">
+              {{ user.erp_database.name }}
+              <span class="profile__fact-code">{{ user.erp_database.code }}</span>
+            </dd>
           </div>
         </dl>
 
@@ -139,6 +140,20 @@ onMounted(() => {
             </li>
           </ul>
         </section>
+
+        <details class="profile__tech">
+          <summary class="profile__tech-summary">Ver detalles técnicos</summary>
+          <dl class="profile__facts profile__facts--tech">
+            <div class="profile__fact">
+              <dt class="profile__fact-label">ID</dt>
+              <dd class="profile__fact-value profile__fact-value--mono">#{{ user.id }}</dd>
+            </div>
+            <div class="profile__fact">
+              <dt class="profile__fact-label">Origen de identidad</dt>
+              <dd class="profile__fact-value">Seguridad.Usuario (ERP)</dd>
+            </div>
+          </dl>
+        </details>
 
         <p v-if="refreshError" class="profile__error" role="alert">{{ refreshError }}</p>
 
@@ -326,6 +341,44 @@ onMounted(() => {
   font-family: var(--font-mono, monospace);
   font-size: 12px;
   letter-spacing: 0.02em;
+}
+
+.profile__fact-code {
+  margin-left: var(--space-2);
+  padding: 1px 6px;
+  background: var(--surface-subtle);
+  border-radius: 999px;
+  color: var(--text-subtle);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+}
+
+.profile__tech {
+  width: 100%;
+  margin: 0 0 var(--space-5);
+}
+
+.profile__tech-summary {
+  width: fit-content;
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-subtle);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+
+.profile__tech-summary:hover {
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+}
+
+.profile__tech[open] .profile__tech-summary {
+  margin-bottom: var(--space-3);
+}
+
+.profile__facts--tech {
+  margin-bottom: 0;
 }
 
 .profile__modules {

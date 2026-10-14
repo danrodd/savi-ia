@@ -66,7 +66,7 @@ export const STEPS: Step[] = [
     body: 'SAVI corre en un servidor de tu empresa, en tu red. Tus usuarios entran desde el navegador.',
   },
   {
-    title: 'Respeta los permisos que ya tienes',
+    title: 'Respeta los permisos que ya tenés',
     body: 'Cada persona ve solo lo que el ERP le permite: mismos módulos, mismas empresas, mismos límites.',
   },
   {
@@ -126,18 +126,18 @@ export const PLANS: Plan[] = [
   {
     icon: KeyRound,
     title: 'Con tu propia clave',
-    body: 'Conectas tu cuenta de Claude, OpenAI o Gemini y pagas directamente al proveedor.',
+    body: 'Conectás tu cuenta de Claude, OpenAI o Gemini y le pagás directamente al proveedor.',
     points: [
-      'Eliges el proveedor y el modelo',
+      'Elegís el proveedor y el modelo',
       'Consumo visible por usuario y por empresa',
-      'Cambias de proveedor cuando quieras',
+      'Cambiás de proveedor cuando quieras',
     ],
   },
   {
     icon: Sparkles,
     title: 'Créditos gestionados por SEO',
     badge: 'Próximamente',
-    body: 'Sin cuentas ni claves: SEO pone la IA y tú consumes créditos desde un panel.',
+    body: 'Sin cuentas ni claves: SEO pone la IA y vos consumís créditos desde un panel.',
     points: [
       'Un solo proveedor de facturación',
       'Límites y alertas de consumo',

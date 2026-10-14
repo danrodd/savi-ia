@@ -73,6 +73,8 @@ onUnmounted(() => {
   animationToken++
 })
 
+const optionsLabel = computed(() => `Opciones de «${props.conversation.title}»`)
+
 const time = computed(() => {
   const d = new Date(props.conversation.updated_at)
   const now = new Date()
@@ -186,7 +188,7 @@ function toggleMenu(e: Event): void {
           type="button"
           class="item__more"
           :class="{ 'item__more--open': menuOpen }"
-          aria-label="Más opciones"
+          :aria-label="optionsLabel"
           :aria-expanded="menuOpen"
           @click="toggleMenu"
         >
@@ -202,7 +204,7 @@ function toggleMenu(e: Event): void {
         ref="moreBtn"
         type="button"
         class="item__more item__more--open"
-        aria-label="Más opciones"
+        :aria-label="optionsLabel"
         :aria-expanded="menuOpen"
         @click="toggleMenu"
       >
@@ -408,12 +410,14 @@ function toggleMenu(e: Event): void {
 }
 
 .item-wrap:hover:not(.item-wrap--animating) .item__more,
+.item__more:focus-visible,
 .item__more--open {
   opacity: 1;
   transform: scale(1);
 }
 
 .item-wrap:hover:not(.item-wrap--animating) .item__time,
+.item-wrap:has(.item__more:focus-visible) .item__time,
 .item-wrap--menu-open .item__time {
   opacity: 0;
 }

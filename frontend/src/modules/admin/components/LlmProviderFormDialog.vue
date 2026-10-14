@@ -35,6 +35,14 @@ const CREDENTIAL_KIND_LABELS: Record<LlmCredentialKind, string> = {
   local_session: 'Sesión de Claude en este equipo',
 }
 
+// Una línea bajo la opción elegida: el administrador no tiene por qué saber
+// qué es un "token OAuth" ni de dónde sale.
+const CREDENTIAL_KIND_HELP: Record<LlmCredentialKind, string> = {
+  api_key: 'La forma más simple: pegá la clave que te dio el proveedor.',
+  oauth_token: "Token generado con 'claude setup-token' (cuenta de Claude).",
+  local_session: 'Usa la sesión de Claude iniciada en esta PC.',
+}
+
 const credentialKind = ref<LlmCredentialKind>('api_key')
 const credential = ref('')
 const chatModel = ref('')
@@ -45,6 +53,12 @@ const pricing = ref<Record<string, ModelPricing>>({})
 const models = ref<ProviderModel[]>([])
 const modelSearch = ref('')
 const testDetail = ref<string | null>(null)
+// Los avisos de validación aparecen recién cuando la persona intenta guardar:
+// abrir el diálogo no debería mostrar errores de algo que todavía no tocó.
+const attempted = ref(false)
+// La prueba que se lanza sola al abrir o al pegar la clave trae el catálogo en
+// silencio; su mensaje solo se muestra si la persona apretó "Probar".
+const showTestDetail = ref(false)
 
 const isLocalSession = computed(
   () => props.provider?.provider === 'claude' && credentialKind.value === 'local_session',
@@ -84,12 +98,12 @@ const modelSuggestions = computed<string[]>(() => {
 
 const modelFallbackHint = computed(() => {
   if (props.provider?.provider === 'claude' && credentialKind.value === 'local_session') {
-    return 'La sesión de Claude de este equipo no expone un catálogo de modelos. Escribe el identificador o elegí una de las sugerencias del campo.'
+    return 'La sesión de Claude de este equipo no expone un catálogo de modelos. Escribí el identificador o elegí una de las sugerencias del campo.'
   }
   if (props.provider?.provider === 'claude' && props.provider.supports_model_listing) {
-    return 'No se pudieron obtener los modelos de Anthropic. Puedes escribir sus identificadores manualmente.'
+    return 'No se pudieron obtener los modelos de Anthropic. Podés escribir sus identificadores a mano.'
   }
-  return 'Este proveedor no lista modelos. Escribe sus identificadores manualmente.'
+  return 'Este proveedor no lista modelos. Escribí sus identificadores a mano.'
 })
 // El proveedor puede haber dado de baja el modelo que ya estaba guardado
 // (nos pasó con Gemini 2.5): si el catálogo nuevo no lo trae, lo agregamos
@@ -129,6 +143,8 @@ function reset(provider: LlmProvider | null): void {
   models.value = []
   modelSearch.value = ''
   testDetail.value = null
+  attempted.value = false
+  showTestDetail.value = false
 }
 
 watch(
@@ -144,9 +160,13 @@ watch(
       props.provider.supports_model_listing &&
       credentialKind.value !== 'local_session'
     ) {
-      handleTest()
+      handleTest(false)
     }
   },
+  // El diálogo se monta ya abierto (la vista lo crea al tocar "Editar"): sin
+  // `immediate`, la primera vez los campos quedaban vacíos aunque hubiera
+  // modelos guardados.
+  { immediate: true },
 )
 watch(
   () => props.testResult,
@@ -172,7 +192,7 @@ watch(credential, (value) => {
   // 20 caracteres: una API key de cualquiera de los tres es mucho más larga,
   // así que no se prueba un valor a medio escribir.
   if (!canList || value.trim().length < 20) return
-  credentialDebounce = setTimeout(() => handleTest(), 600)
+  credentialDebounce = setTimeout(() => handleTest(false), 600)
 })
 
 onBeforeUnmount(() => {
@@ -192,11 +212,25 @@ function request(): SaveLlmProviderRequest {
   return body
 }
 
-function handleTest(): void {
+function handleTest(userInitiated = true): void {
   testDetail.value = null
+  showTestDetail.value = userInitiated
   emit('test', request())
 }
+
+const needsCredential = computed(
+  () => !isLocalSession.value && !props.provider?.has_credential && !credential.value.trim(),
+)
+const errors = computed(() => ({
+  credential: needsCredential.value ? 'Pegá la clave del proveedor para poder guardar.' : '',
+  chatModel: chatModel.value.trim() ? '' : 'Elegí el modelo que usará el chat.',
+  titleModel: titleModel.value.trim() ? '' : 'Elegí el modelo para nombrar las conversaciones.',
+}))
+const hasErrors = computed(() => Object.values(errors.value).some(Boolean))
+
 function handleSave(): void {
+  attempted.value = true
+  if (hasErrors.value) return
   emit('save', request())
 }
 function applyTestResult(result: { ok: boolean; detail: string; models: ProviderModel[] }): void {
@@ -217,40 +251,56 @@ defineExpose({ applyTestResult })
     <template #leading>
       <ProviderIcon v-if="provider" :kind="provider.provider" :size="24" />
     </template>
-    <form class="form" @submit.prevent="handleSave">
-      <label>Tipo de credencial<select v-model="credentialKind"><option v-for="kind in provider?.credential_kinds" :key="kind" :value="kind">{{ CREDENTIAL_KIND_LABELS[kind] ?? kind }}</option></select></label>
-      <div v-if="isLocalSession" class="form__note">Claude usará el login local de este equipo. No necesitas introducir una credencial aquí.</div>
-      <label v-else>Credencial<input v-model="credential" type="password" autocomplete="new-password" :placeholder="provider?.has_credential ? 'Ya hay una guardada — dejala vacía para conservarla' : 'Pegá la API key'" /></label>
+    <form class="form" novalidate @submit.prevent="handleSave">
+      <div class="form__field">
+        <label>Tipo de credencial<select v-model="credentialKind"><option v-for="kind in provider?.credential_kinds" :key="kind" :value="kind">{{ CREDENTIAL_KIND_LABELS[kind] ?? kind }}</option></select></label>
+        <p class="form__help">{{ CREDENTIAL_KIND_HELP[credentialKind] }}</p>
+      </div>
+      <div v-if="isLocalSession" class="form__note">Claude usará la sesión iniciada en esta PC. No hace falta cargar una credencial acá.</div>
+      <div v-else class="form__field">
+        <label>Credencial<input v-model="credential" type="password" autocomplete="new-password" :aria-invalid="attempted && !!errors.credential" :placeholder="provider?.has_credential ? 'Ya hay una guardada — dejala vacía para conservarla' : 'Pegá la API key'" /></label>
+        <p v-if="attempted && errors.credential" class="form__error" role="alert">{{ errors.credential }}</p>
+      </div>
       <p v-if="provider?.has_credential && !credential" class="form__note">🔒 Ya hay una credencial guardada. Podés cambiar solo el modelo sin volver a pegarla.</p>
-       <div class="form__test"><Button type="button" variant="secondary" :loading="testing" :disabled="!provider?.implemented" @click="handleTest"><FlaskConical :size="15" aria-hidden="true" /> Probar credencial</Button><span v-if="testDetail" data-testid="provider-test-detail" :class="{ 'form__ok': testResult?.ok }">{{ testDetail }}</span></div>
+       <div class="form__test"><Button type="button" variant="secondary" :loading="testing" :disabled="!provider?.implemented" @click="handleTest()"><FlaskConical :size="15" aria-hidden="true" /> Probar conexión</Button><span v-if="testDetail && showTestDetail" data-testid="provider-test-detail" :class="{ 'form__ok': testResult?.ok }">{{ testDetail }}</span></div>
       <div v-if="models.length > 0" class="form__models">
         <div class="form__catalog-head">
           <div><strong>Catálogo de modelos</strong><span>{{ models.length }} disponibles</span></div>
           <input v-model="modelSearch" class="form__search" type="search" placeholder="Buscar modelo…" aria-label="Buscar modelo" />
         </div>
-        <p v-if="recommendedModel" class="form__recommendation">Recomendado: <strong>{{ recommendedModel.display_name }}</strong> ({{ recommendedModel.id }}). Puedes cambiarlo manualmente.</p>
+        <p v-if="recommendedModel" class="form__recommendation">Recomendado: <strong>{{ recommendedModel.display_name }}</strong> ({{ recommendedModel.id }}). Podés cambiarlo a mano.</p>
         <label>Modelo de chat<select v-model="chatModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
-        <label>Modelo de títulos<select v-model="titleModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
-        <label>Modelo de lectura de documentos<select v-model="documentModel"><option value="">El mismo del chat</option><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }} ({{ model.id }})</option></select></label>
+        <label>Modelo para nombres de conversación<select v-model="titleModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
+        <label>Modelo para leer PDF<select v-model="documentModel"><option value="">El mismo del chat</option><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }} ({{ model.id }})</option></select></label>
         <p class="form__hint">{{ DOCUMENT_MODEL_HINT }}</p>
         <p v-if="filteredModels.length === 0" class="form__hint">No hay modelos que coincidan con la búsqueda.</p>
       </div>
       <div v-else class="form__models">
-        <label>Modelo de chat<input v-model="chatModel" list="savi-model-suggestions" placeholder="ID del modelo" required /></label>
-        <label>Modelo de títulos<input v-model="titleModel" list="savi-model-suggestions" placeholder="ID del modelo" required /></label>
-        <label>Modelo de lectura de documentos<input v-model="documentModel" list="savi-model-suggestions" placeholder="Vacío: el mismo del chat" /></label>
+        <div class="form__field">
+          <label>Modelo de chat<input v-model="chatModel" list="savi-model-suggestions" placeholder="ID del modelo" :aria-invalid="attempted && !!errors.chatModel" /></label>
+          <p v-if="attempted && errors.chatModel" class="form__error" role="alert">{{ errors.chatModel }}</p>
+        </div>
+        <div class="form__field">
+          <label>Modelo para nombres de conversación<input v-model="titleModel" list="savi-model-suggestions" placeholder="ID del modelo" :aria-invalid="attempted && !!errors.titleModel" /></label>
+          <p v-if="attempted && errors.titleModel" class="form__error" role="alert">{{ errors.titleModel }}</p>
+        </div>
+        <label>Modelo para leer PDF<input v-model="documentModel" list="savi-model-suggestions" placeholder="Vacío: el mismo del chat" /></label>
         <p class="form__hint">{{ DOCUMENT_MODEL_HINT }}</p>
         <datalist id="savi-model-suggestions">
           <option v-for="id in modelSuggestions" :key="id" :value="id" />
         </datalist>
         <p class="form__hint">{{ modelFallbackHint }}</p>
       </div>
-      <ModelPricingTable :models="selectedModels" :pricing="pricing" />
+      <p v-if="attempted && models.length > 0 && (errors.chatModel || errors.titleModel)" class="form__error" role="alert">{{ errors.chatModel || errors.titleModel }}</p>
+      <details class="form__advanced">
+        <summary>Avanzado: precios por modelo</summary>
+        <ModelPricingTable :models="selectedModels" :pricing="pricing" />
+      </details>
       <footer class="form__footer"><Button type="button" variant="ghost" @click="emit('update:open', false)">Cancelar</Button><Button type="submit" :loading="saving">Guardar</Button></footer>
     </form>
   </Dialog>
 </template>
 
 <style scoped>
-.form { display: grid; gap: var(--space-5); } label { display: grid; gap: var(--space-2); color: var(--text-muted); font-size: 12px; font-weight: var(--fw-medium); } input, select { width: 100%; min-height: 38px; padding: 0 var(--space-3); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); font: inherit; } input:focus-visible, select:focus-visible { outline: 2px solid var(--brand-ring); outline-offset: 1px; border-color: var(--brand); } .form__note, .form__hint { margin: 0; padding: var(--space-3); color: var(--text-muted); background: var(--surface-subtle); border-radius: var(--r-sm); font-size: 12px; }.form__hint { grid-column: 1 / -1; } .form__test { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }.form__test span { color: var(--danger); font-size: 12px; }.form__test .form__ok { color: var(--success); }.form__models { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); padding: var(--space-4); background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--r-md); }.form__catalog-head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }.form__catalog-head div { display: flex; flex-direction: column; gap: 2px; color: var(--text); }.form__catalog-head span { color: var(--text-subtle); font-size: 11px; font-weight: var(--fw-regular); }.form__search { max-width: 220px; min-height: 34px; }.form__recommendation { grid-column: 1 / -1; margin: calc(-1 * var(--space-2)) 0 0; color: var(--text-muted); font-size: 12px; }.form__footer { display: flex; justify-content: flex-end; gap: var(--space-3); } @media (max-width: 600px) { .form__models { grid-template-columns: 1fr; } .form__catalog-head { align-items: stretch; flex-direction: column; } .form__search { max-width: none; } }
+.form { display: grid; gap: var(--space-5); } label { display: grid; gap: var(--space-2); color: var(--text-muted); font-size: 12px; font-weight: var(--fw-medium); } input, select { width: 100%; min-height: 38px; padding: 0 var(--space-3); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); font: inherit; } input:focus-visible, select:focus-visible { outline: 2px solid var(--brand-ring); outline-offset: 1px; border-color: var(--brand); } .form__note, .form__hint { margin: 0; padding: var(--space-3); color: var(--text-muted); background: var(--surface-subtle); border-radius: var(--r-sm); font-size: 12px; }.form__hint { grid-column: 1 / -1; } .form__test { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }.form__test span { color: var(--danger); font-size: 12px; }.form__test .form__ok { color: var(--success); }.form__models { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); padding: var(--space-4); background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--r-md); }.form__catalog-head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }.form__catalog-head div { display: flex; flex-direction: column; gap: 2px; color: var(--text); }.form__catalog-head span { color: var(--text-subtle); font-size: 11px; font-weight: var(--fw-regular); }.form__search { max-width: 220px; min-height: 34px; }.form__recommendation { grid-column: 1 / -1; margin: calc(-1 * var(--space-2)) 0 0; color: var(--text-muted); font-size: 12px; }.form__field { display: grid; gap: var(--space-2); }.form__help { margin: 0; color: var(--text-subtle); font-size: 12px; }.form__error { margin: 0; color: var(--danger); font-size: 12px; font-weight: var(--fw-medium); } input[aria-invalid='true'] { border-color: var(--danger); }.form__advanced { padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--r-md); }.form__advanced summary { color: var(--text-muted); font-size: 12px; font-weight: var(--fw-medium); cursor: pointer; }.form__advanced[open] summary { margin-bottom: var(--space-4); }.form__footer { display: flex; justify-content: flex-end; gap: var(--space-3); } @media (max-width: 600px) { .form__models { grid-template-columns: 1fr; } .form__catalog-head { align-items: stretch; flex-direction: column; } .form__search { max-width: none; } }
 </style>

@@ -39,16 +39,16 @@ async function save(perHour: number | null): Promise<void> {
     perHour !== null &&
     (!Number.isInteger(perHour) || perHour < 1 || perHour > current.maximum)
   ) {
-    error.value = `Elige un número entre 1 y ${current.maximum}.`
+    error.value = `Elegí un número entre 1 y ${current.maximum}.`
     return
   }
   error.value = null
   saving.value = true
   try {
     const saved = await store.setUploadLimit(perHour)
-    toast.success(`Cupo de cargas: ${saved.effective} por hora`)
+    toast.success(`Límite de subidas: ${saved.effective} por hora`)
   } catch (e) {
-    error.value = (e as Error).message || 'No se pudo guardar el cupo.'
+    error.value = (e as Error).message || 'No se pudo guardar el límite.'
   } finally {
     saving.value = false
   }
@@ -57,12 +57,12 @@ async function save(perHour: number | null): Promise<void> {
 
 <template>
   <section class="ulimit" aria-labelledby="ulimit-title">
-    <p id="ulimit-title" class="ulimit__title">Cupo de cargas</p>
+    <p id="ulimit-title" class="ulimit__title">Límite de subidas por hora</p>
     <p v-if="!limit" class="ulimit__hint">Cargando…</p>
     <template v-else>
       <p class="ulimit__hint">
-        Cuántas veces por hora puede cada usuario subir o reemplazar un documento, agregar un sitio
-        o pedir que se lea de nuevo. Frena cargas masivas por error o por un script.
+        Cuántas veces por hora puede cada persona subir o reemplazar un documento, agregar un sitio
+        o pedir que se lea de nuevo. Frena cargas masivas hechas por error.
       </p>
       <form class="ulimit__row" novalidate @submit.prevent="save(value)">
         <input
@@ -71,7 +71,7 @@ async function save(perHour: number | null): Promise<void> {
           type="number"
           min="1"
           :max="limit.maximum"
-          aria-label="Cargas por hora por usuario"
+          aria-label="Subidas por hora por usuario"
           :disabled="saving"
         />
         <span class="ulimit__unit">por hora</span>

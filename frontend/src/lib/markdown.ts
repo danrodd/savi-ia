@@ -45,3 +45,25 @@ export function renderMarkdown(source: string): string {
     ADD_ATTR: ['target', 'rel'],
   })
 }
+
+/**
+ * Formato en línea (negrita, cursiva, código, enlaces) sin envolver en un
+ * párrafo. Es lo que necesita una celda de tabla: `**Total**` se ve en negrita
+ * en lugar de mostrar los asteriscos.
+ */
+export function renderInlineMarkdown(source: string): string {
+  return DOMPurify.sanitize(md.renderInline(source), {
+    ADD_ATTR: ['target', 'rel'],
+  })
+}
+
+/** Texto de una celda sin las marcas de formato, para exportar a CSV/Excel. */
+export function inlineMarkdownToText(source: string): string {
+  const [inline] = md.parseInline(source, {})
+  const parts = (inline?.children ?? []).map((t) => {
+    if (t.type === 'text' || t.type === 'code_inline') return t.content
+    if (t.type === 'softbreak' || t.type === 'hardbreak') return ' '
+    return ''
+  })
+  return parts.join('')
+}

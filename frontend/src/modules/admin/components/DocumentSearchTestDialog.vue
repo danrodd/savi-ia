@@ -35,7 +35,7 @@ watch(
 
 async function onSubmit(): Promise<void> {
   if (!query.value.trim() || !databaseId.value) {
-    error.value = 'Escribe una consulta y elige una base.'
+    error.value = 'Escribí una consulta y elegí una base.'
     return
   }
   running.value = true
@@ -55,14 +55,14 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <Dialog :open="open" title="Probar búsqueda" :max-width="680" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" title="Probar qué encuentra SAVI" :max-width="680" @update:open="emit('update:open', $event)">
     <form id="document-search-test" class="doctest" novalidate @submit.prevent="onSubmit">
       <label class="doctest__field doctest__field--wide">
         <span class="doctest__label">Consulta</span>
         <input v-model="query" class="doctest__input" maxlength="500" placeholder="¿Cuál es el tope de descuento?" />
       </label>
       <label class="doctest__field">
-        <span class="doctest__label">Base</span>
+        <span class="doctest__label">Cliente</span>
         <select v-model="databaseId" class="doctest__input">
           <option v-for="db in databases" :key="db.id" :value="db.id">{{ db.name }}</option>
         </select>
@@ -87,7 +87,7 @@ async function onSubmit(): Promise<void> {
 
         <h3 class="doctest__heading">Encontraría</h3>
         <p v-if="result.results.length === 0" class="doctest__empty">
-          Nada relevante. Prueba con otras palabras.
+          Nada relevante. Probá con otras palabras.
         </p>
         <ul v-else class="doctest__list">
           <li v-for="(hit, i) in result.results" :key="`${hit.document_id}-${i}`" class="doctest__hit">
@@ -97,9 +97,6 @@ async function onSubmit(): Promise<void> {
               · {{ hit.heading }}</span
             >
             <p class="doctest__snippet">{{ hit.snippet }}</p>
-            <p class="doctest__scores">
-              similitud {{ hit.vector_score.toFixed(2) }} · coincidencia {{ hit.bm25_score.toFixed(2) }}
-            </p>
           </li>
         </ul>
 
@@ -201,12 +198,6 @@ async function onSubmit(): Promise<void> {
   font-size: 12px;
   color: var(--text);
   white-space: pre-line;
-}
-
-.doctest__scores {
-  margin: var(--space-1) 0 0;
-  font-size: 11px;
-  color: var(--text-subtle);
 }
 
 .doctest__excluded {

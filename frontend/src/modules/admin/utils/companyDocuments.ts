@@ -29,10 +29,10 @@ export const permissionsSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.visibility === 'modules' && value.modules.length === 0) {
-      ctx.addIssue({ code: 'custom', path: ['modules'], message: 'Elige al menos un módulo.' })
+      ctx.addIssue({ code: 'custom', path: ['modules'], message: 'Elegí al menos un módulo.' })
     }
     if (!value.all_databases && value.database_ids.length === 0) {
-      ctx.addIssue({ code: 'custom', path: ['database_ids'], message: 'Elige al menos una base.' })
+      ctx.addIssue({ code: 'custom', path: ['database_ids'], message: 'Elegí al menos una base.' })
     }
   })
 
@@ -104,15 +104,77 @@ export function titleFromFilename(filename: string): string {
   return filename.replace(/\.[^.]+$/, '')
 }
 
-export const STATUS_LABELS: Record<
-  DocumentStatus,
-  { label: string; tone: 'muted' | 'info' | 'ok' | 'warn' | 'danger' }
-> = {
+type StatusTone = 'muted' | 'info' | 'ok' | 'warn' | 'danger'
+
+// "Sin texto" y "Error" son dos jergas para lo mismo desde el punto de vista de
+// quien sube el documento: no se pudo leer. La causa va en la pista de la fila.
+export const STATUS_LABELS: Record<DocumentStatus, { label: string; tone: StatusTone }> = {
   pending: { label: 'En cola', tone: 'muted' },
   processing: { label: 'Procesando…', tone: 'info' },
   ready: { label: 'Listo', tone: 'ok' },
-  no_text: { label: 'Sin texto', tone: 'warn' },
-  failed: { label: 'Error', tone: 'danger' },
+  no_text: { label: 'No se pudo leer', tone: 'warn' },
+  failed: { label: 'No se pudo leer', tone: 'danger' },
+}
+
+/** Motivos (`status_code`) en los que la lectura con IA falló por el proveedor. */
+const AI_PROVIDER_FAILURE_CODES = new Set(['ai_failed', 'ai_no_credits', 'ai_daily_quota'])
+
+/** `true` si el documento no se leyó porque el proveedor de IA no respondió. */
+export function isAiProviderFailure(
+  document: Pick<CompanyDocument, 'status' | 'status_code'>,
+): boolean {
+  return (
+    (document.status === 'no_text' || document.status === 'failed') &&
+    document.status_code !== null &&
+    AI_PROVIDER_FAILURE_CODES.has(document.status_code)
+  )
+}
+
+// Una línea que dice qué hacer, no qué pasó por dentro. El mensaje largo del
+// backend queda como tooltip para soporte.
+const FAILURE_HINTS: Record<string, string> = {
+  ai_failed: 'Revisá el proveedor de IA.',
+  ai_no_credits: 'Revisá el proveedor de IA.',
+  ai_daily_quota: 'Revisá el proveedor de IA.',
+  ai_unreadable: 'La IA no pudo leer las páginas. Probá con un escaneo más nítido.',
+  pdf_encrypted: 'Quitale la contraseña al PDF y subilo de nuevo.',
+  pdf_unreadable: 'El PDF parece dañado. Probá subirlo de nuevo.',
+  encoding_unsupported: 'Guardalo como texto UTF-8 y subilo de nuevo.',
+  too_many_pages: 'Es demasiado largo. Dividilo en partes más chicas.',
+  too_many_chunks: 'Es demasiado largo. Dividilo en partes más chicas.',
+  index_limit_reached: 'Se llenó el espacio de búsqueda. Eliminá documentos que ya no uses.',
+}
+
+export interface DocumentStatusView {
+  label: string
+  tone: StatusTone
+  /** Qué hacer si no se pudo leer; `null` si no hace falta. */
+  hint: string | null
+}
+
+export function documentStatusView(
+  document: Pick<CompanyDocument, 'status' | 'status_code' | 'reading_method'>,
+  context: { aiReadingAvailable: boolean },
+): DocumentStatusView {
+  const base = STATUS_LABELS[document.status]
+  if (document.status === 'ready') {
+    const withAi = document.reading_method === 'ai' || document.reading_method === 'mixed'
+    return { ...base, label: withAi ? 'Listo (leído con IA)' : base.label, hint: null }
+  }
+  if (document.status !== 'no_text' && document.status !== 'failed') {
+    return { ...base, hint: null }
+  }
+  const known = document.status_code ? FAILURE_HINTS[document.status_code] : undefined
+  if (known) return { ...base, hint: known }
+  if (document.status === 'no_text') {
+    return {
+      ...base,
+      hint: context.aiReadingAvailable
+        ? 'Probá «Leer con IA» desde el menú ⋯.'
+        : 'Probá activar la lectura con IA en Configuración.',
+    }
+  }
+  return { ...base, hint: 'Probá reprocesarlo desde el menú ⋯.' }
 }
 
 export function isInProgress(status: DocumentStatus): boolean {
@@ -138,6 +200,7 @@ export const EXCLUSION_LABELS: Record<ExclusionReason, string> = {
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB'] as const
 
+/** "1,5 KB", "6,7 MB": con coma decimal, como se lee en español. */
 export function formatBytes(bytes: number): string {
   let value = bytes
   let unit = 0
@@ -146,5 +209,15 @@ export function formatBytes(bytes: number): string {
     unit++
   }
   const digits = unit === 0 || value >= 10 ? 0 : 1
-  return `${value.toFixed(digits)} ${BYTE_UNITS[unit]}`
+  const text = value.toLocaleString('es-CO', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })
+  return `${text} ${BYTE_UNITS[unit]}`
+}
+
+/** "77 documentos · 6,7 MB": lo que importa del espacio usado. */
+export function usageSummary(usage: { total: number; bytes_stored: number }): string {
+  const documents = usage.total === 1 ? '1 documento' : `${usage.total} documentos`
+  return `${documents} · ${formatBytes(usage.bytes_stored)}`
 }

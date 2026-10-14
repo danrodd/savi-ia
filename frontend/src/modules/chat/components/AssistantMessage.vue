@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { formatFullDateTime, formatMessageTime } from '@/lib/dateTime'
 import type { MessageVersion, UIMessage } from '../types'
 import { linkCitations } from '../utils/citations'
 import { groupToolCalls } from '../utils/groupToolCalls'
@@ -30,6 +31,15 @@ const emit = defineEmits<{ regenerate: [] }>()
 const showCaret = computed(() => !props.message.done)
 const showPlaceholder = computed(() => !props.message.done && props.message.text === '')
 const copied = ref(false)
+
+// Hora del mensaje: relativa y local ("Hoy 14:32"). Sin fecha todavía (se está
+// generando y aún no llegó del servidor) se muestra "Ahora".
+const timeLabel = computed(() =>
+  props.message.createdAt ? formatMessageTime(props.message.createdAt) || 'Ahora' : 'Ahora',
+)
+const fullTime = computed(() =>
+  props.message.createdAt ? formatFullDateTime(props.message.createdAt) : '',
+)
 const versionIdx = ref<number | null>(null)
 // Ref al nodo que contiene el markdown renderizado — lo necesita
 // ShareMenu para exportar a HTML/PDF preservando tablas y listas.
@@ -94,17 +104,24 @@ function next(): void {
     <div class="assistant-message__body">
       <div class="assistant-message__meta">
         <span class="assistant-message__name">SAVI</span>
-        <span v-if="message.done && !message.error" class="assistant-message__time">
-          {{ isViewingHistorical ? 'Versión anterior' : 'Ahora' }}
+        <span
+          v-if="message.done && !message.error"
+          class="assistant-message__time"
+          :title="!isViewingHistorical && fullTime ? fullTime : undefined"
+        >
+          {{ isViewingHistorical ? 'Versión anterior' : timeLabel }}
         </span>
       </div>
 
       <div v-if="displayedToolGroups.length > 0" class="assistant-message__tools">
-        <ToolPill v-for="group in displayedToolGroups" :key="group.label" :group="group" />
+        <ToolPill v-for="group in displayedToolGroups" :key="group.kind" :group="group" />
       </div>
 
       <div ref="contentEl" class="assistant-message__content">
-        <span v-if="showPlaceholder" class="caret" aria-hidden="true" />
+        <p v-if="showPlaceholder" class="thinking" role="status">
+          SAVI está pensando
+          <span class="thinking__dots" aria-hidden="true"><i /><i /><i /></span>
+        </p>
         <template v-else>
           <MarkdownRenderer :source="displayedText" />
           <span v-if="showCaret && !isViewingHistorical" class="caret" aria-hidden="true" />
@@ -257,6 +274,57 @@ function next(): void {
   vertical-align: text-bottom;
   margin-left: 2px;
   animation: blink 1s step-end infinite;
+}
+
+.thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.thinking__dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.thinking__dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand);
+  opacity: 0.35;
+  animation: thinking-dot 1.2s ease-in-out infinite;
+}
+
+.thinking__dots i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.thinking__dots i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes thinking-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking__dots i {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 .assistant-message__error {

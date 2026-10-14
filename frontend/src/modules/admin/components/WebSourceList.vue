@@ -6,7 +6,8 @@ import { visibilityLabel } from '../utils/companyDocuments'
 import {
   hostOf,
   isWebInProgress,
-  pagesSummary,
+  pagesReadLabel,
+  pagesSkippedLabel,
   REFRESH_LABELS,
   WEB_STATUS_LABELS,
 } from '../utils/webSources'
@@ -57,7 +58,7 @@ function onAction(id: SourceAction, source: WebSource): void {
 }
 
 function lastRead(source: WebSource): string {
-  if (!source.last_crawl_finished_at) return 'Aún no se ha leído'
+  if (!source.last_crawl_finished_at) return 'Todavía no se leyó'
   return `Leído ${dateFormatter.format(new Date(source.last_crawl_finished_at))}`
 }
 </script>
@@ -71,7 +72,19 @@ function lastRead(source: WebSource): string {
           {{ source.mode === 'site' ? hostOf(source.url) : source.url }}
         </a>
         <div class="wlist__meta">
-          <span>{{ pagesSummary(source) }}</span>
+          <span>{{ pagesReadLabel(source) }}</span>
+          <template v-if="pagesSkippedLabel(source)">
+            <span aria-hidden="true">·</span>
+            <!-- Para ver cuáles: el detalle muestra qué se leyó y explica las que no. -->
+            <button
+              type="button"
+              class="wlist__skipped"
+              title="Ver el detalle de las páginas"
+              @click="emit('detail', source)"
+            >
+              {{ pagesSkippedLabel(source) }}
+            </button>
+          </template>
           <span aria-hidden="true">·</span>
           <span>{{ REFRESH_LABELS[source.refresh] }}</span>
           <span aria-hidden="true">·</span>
@@ -87,8 +100,11 @@ function lastRead(source: WebSource): string {
           :message="source.status_message"
         />
         <div class="wlist__sub">{{ lastRead(source) }}</div>
+        <!-- Con el sitio listo, el mensaje del servidor repite el conteo de
+             páginas ("41 nuevas o cambiadas, 4 descartadas") que ya se ve
+             a la izquierda con palabras más simples. -->
         <div
-          v-if="source.status_message"
+          v-if="source.status_message && source.status !== 'ready'"
           class="wlist__sub"
           :class="{ 'wlist__sub--danger': source.status === 'failed' }"
         >
@@ -150,6 +166,16 @@ function lastRead(source: WebSource): string {
   margin-top: var(--space-1);
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.wlist__skipped {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-warning, #b45309);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .wlist__state {

@@ -12,13 +12,13 @@ import { useRoute, useRouter } from 'vue-router'
 
 import AppVersion from '@/components/AppVersion.vue'
 import Button from '@/components/ui/Button.vue'
-import { AuthRequestError } from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
 import {
   loginSuggestions,
   readRememberedCodes,
   rememberCodeFromLogin,
 } from '../utils/loginDatabaseCodes'
+import { loginErrorMessage, MISSING_CREDENTIALS_MESSAGE } from '../utils/loginErrors'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +26,7 @@ const authStore = useAuthStore()
 
 const login = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref<string | null>(null)
 
@@ -35,7 +36,7 @@ const suggestions = computed(() => loginSuggestions(login.value, rememberedCodes
 async function onSubmit(): Promise<void> {
   errorMessage.value = null
   if (!login.value.trim() || !password.value) {
-    errorMessage.value = 'Ingresa usuario y contraseña.'
+    errorMessage.value = MISSING_CREDENTIALS_MESSAGE
     return
   }
   isSubmitting.value = true
@@ -45,13 +46,7 @@ async function onSubmit(): Promise<void> {
     const next = (route.query.next as string | undefined) ?? '/'
     await router.replace(next)
   } catch (err) {
-    if (err instanceof AuthRequestError) {
-      errorMessage.value = err.message
-    } else if (err instanceof Error) {
-      errorMessage.value = err.message
-    } else {
-      errorMessage.value = 'No se pudo iniciar sesión.'
-    }
+    errorMessage.value = loginErrorMessage(err)
   } finally {
     isSubmitting.value = false
   }
@@ -95,21 +90,42 @@ async function onSubmit(): Promise<void> {
           </datalist>
         </label>
         <p v-if="rememberedCodes.length === 0" id="login-code-hint" class="login__hint">
-          Si atiendes varios clientes, agrega su código: <code>USUARIO@CODIGO</code>.
+          Si atendés varios clientes, agregá su código: <code>USUARIO@CODIGO</code>
         </p>
-        <label class="login__field">
-          <span class="login__label">Contraseña</span>
-          <input
-            v-model="password"
-            class="login__input"
-            type="password"
-            autocomplete="current-password"
-            :disabled="isSubmitting"
-            :aria-invalid="errorMessage ? 'true' : undefined"
-            :aria-describedby="errorMessage ? 'login-error' : undefined"
-            placeholder="••••••••"
-          />
-        </label>
+        <div class="login__field">
+          <label class="login__label" for="login-password">Contraseña</label>
+          <span class="login__password">
+            <input
+              id="login-password"
+              v-model="password"
+              class="login__input login__input--password"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              :disabled="isSubmitting"
+              :aria-invalid="errorMessage ? 'true' : undefined"
+              :aria-describedby="errorMessage ? 'login-error' : undefined"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              class="login__eye"
+              :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              :aria-pressed="showPassword"
+              :title="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              @click="showPassword = !showPassword"
+            >
+              <svg v-if="!showPassword" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 8 10 8a17.6 17.6 0 0 1-3.2 4.4M6.6 6.6A17.7 17.7 0 0 0 2 12s3.5 8 10 8a9.7 9.7 0 0 0 5.4-1.6" />
+                <path d="M14.1 14.1a3 3 0 1 1-4.2-4.2" />
+                <path d="m2 2 20 20" />
+              </svg>
+            </button>
+          </span>
+        </div>
         <p v-if="errorMessage" id="login-error" class="login__error" role="alert">
           {{ errorMessage }}
         </p>
@@ -229,6 +245,36 @@ async function onSubmit(): Promise<void> {
 }
 
 .login__input::placeholder { color: var(--text-subtle); }
+
+.login__password {
+  position: relative;
+  display: flex;
+}
+
+.login__input--password {
+  flex: 1;
+  min-width: 0;
+  padding-right: 42px;
+}
+
+.login__eye {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.login__eye:hover { background: var(--surface-subtle); color: var(--text); }
+.login__eye:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 
 .login__input:disabled {
   opacity: 0.6;

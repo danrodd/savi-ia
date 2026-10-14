@@ -105,7 +105,12 @@ function toggleDatabase(id: string): void {
       </label>
     </div>
 
-    <div class="ufb__providers" role="group" aria-label="Filtrar por proveedor">
+    <div
+      v-if="authStore.user?.is_admin"
+      class="ufb__providers"
+      role="group"
+      aria-label="Filtrar por proveedor"
+    >
       <button
         v-for="provider in USAGE_PROVIDERS"
         :key="provider"

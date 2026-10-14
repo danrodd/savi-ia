@@ -28,11 +28,11 @@ describe('validatePermissions', () => {
   })
 
   it('exige al menos un módulo con visibilidad por módulos', () => {
-    expect(validatePermissions(perms({ visibility: 'modules' }))).toBe('Elige al menos un módulo.')
+    expect(validatePermissions(perms({ visibility: 'modules' }))).toBe('Elegí al menos un módulo.')
   })
 
   it('exige al menos una base cuando no aplica a todas', () => {
-    expect(validatePermissions(perms({ all_databases: false }))).toBe('Elige al menos una base.')
+    expect(validatePermissions(perms({ all_databases: false }))).toBe('Elegí al menos una base.')
   })
 })
 
@@ -102,7 +102,7 @@ describe('checkFile', () => {
 describe('etiquetas', () => {
   it('formatea bytes y visibilidad legible', () => {
     expect(formatBytes(512)).toBe('512 B')
-    expect(formatBytes(1536)).toBe('1.5 KB')
+    expect(formatBytes(1536)).toBe('1,5 KB')
     expect(formatBytes(20 * 1024 * 1024)).toBe('20 MB')
     expect(visibilityLabel({ visibility: 'modules', modules: ['NÓMINA', 'CUENTACOBRAR'] })).toBe(
       'Nómina, Cuentas por cobrar',

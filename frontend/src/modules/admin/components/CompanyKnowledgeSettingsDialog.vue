@@ -194,7 +194,17 @@ async function acceptAndEnable(): Promise<void> {
         IA desde la tabla, con "Leer con IA".
       </p>
 
-      <UploadLimitSection />
+      <details class="kset__advanced">
+        <summary>Avanzado</summary>
+        <div class="kset__advanced-body">
+          <p v-if="store.usage" class="kset__hint">
+            Espacio de búsqueda usado: {{ store.usage.chunks.toLocaleString('es-CO') }} de
+            {{ store.usage.chunk_limit.toLocaleString('es-CO') }} fragmentos (cada documento se
+            divide en fragmentos para poder buscar).
+          </p>
+          <UploadLimitSection />
+        </div>
+      </details>
     </div>
 
     <template #footer>
@@ -350,6 +360,25 @@ async function acceptAndEnable(): Promise<void> {
   font-size: 13px;
   color: var(--text);
   cursor: pointer;
+}
+
+.kset__advanced {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.kset__advanced summary {
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.kset__advanced-body {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
 .kset__consent-actions {

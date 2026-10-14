@@ -35,7 +35,7 @@ function onSubmit(): void {
     <div class="lp-container demo__inner">
       <div class="demo__copy">
         <p class="lp-eyebrow">Solicitar demo</p>
-        <h2 class="lp-title">Mira SAVI con los datos de tu empresa</h2>
+        <h2 class="lp-title">Mirá SAVI con los datos de tu empresa</h2>
         <p class="lp-lead">
           Te mostramos cómo responde sobre tu ERP, tus documentos y tu sitio web. Sin compromiso.
         </p>

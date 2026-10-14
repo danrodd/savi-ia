@@ -8,7 +8,7 @@ import { STEPS } from '../content'
       <p class="lp-eyebrow">Cómo funciona</p>
       <h2 class="lp-title">SAVI vive al lado de tu ERP, no en la nube de otro</h2>
       <p class="lp-lead">
-        Se instala en un servidor de tu empresa y se conecta a la base del ERP que ya usas. SAVI Cloud
+        Se instala en un servidor de tu empresa y se conecta a la base del ERP que ya usás. SAVI Cloud
         (próximamente) solo administra licencias y mide el consumo: nunca ve tus datos.
       </p>
 

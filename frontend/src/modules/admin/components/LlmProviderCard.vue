@@ -14,6 +14,8 @@ import {
 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import Button from '@/components/ui/Button.vue'
+import { formatMessageTime } from '@/lib/dateTime'
+import { friendlyModelName } from '../lib/modelNames'
 import type { LlmProvider } from '../types'
 import ProviderIcon from './ProviderIcon.vue'
 
@@ -21,16 +23,35 @@ const props = defineProps<{
   provider: LlmProvider
   canActivate: boolean
   activateReason?: string
+  /** Hay una prueba de conexión en curso para este proveedor. */
+  testing?: boolean
+  /** Resultado de la última prueba hecha desde la tarjeta. */
+  testOutcome?: { ok: boolean; detail: string } | null
 }>()
-const emit = defineEmits<{ configure: []; activate: [] }>()
+const emit = defineEmits<{ configure: []; activate: []; test: [] }>()
+
+// Hay algo que probar si el proveedor quedó configurado y tiene con qué
+// autenticarse (credencial guardada o la sesión local de Claude).
+const canTest = computed(
+  () =>
+    props.provider.implemented &&
+    props.provider.configured &&
+    !props.provider.credentials_unreadable &&
+    (props.provider.has_credential || props.provider.credential_kind === 'local_session'),
+)
+
+/** Nombre legible del modelo; el id original se ve al pasar el mouse. */
+function modelLabel(id: string | null): string {
+  return id ? friendlyModelName(id) : 'No definido'
+}
 
 const status = computed(() => {
   const p = props.provider
-  if (p.is_active) return { label: 'Activo', icon: CircleCheck, tone: 'active' }
+  if (p.is_active) return { label: 'En uso', icon: CircleCheck, tone: 'active' }
   if (p.credentials_unreadable) {
     return { label: 'Credencial ilegible', icon: TriangleAlert, tone: 'warning' }
   }
-  if (p.configured) return { label: 'Configurado', icon: Settings2, tone: 'neutral' }
+  if (p.configured) return { label: 'Disponible', icon: Settings2, tone: 'neutral' }
   if (p.implemented) return { label: 'Sin configurar', icon: CircleDashed, tone: 'neutral' }
   return { label: 'Próximamente', icon: Clock, tone: 'neutral' }
 })
@@ -68,15 +89,15 @@ const missingPrice = computed(
         <span class="provider-card__group-label">Modelos</span>
         <div class="provider-card__model-row">
           <span class="provider-card__model-tag"><MessageSquare :size="12" aria-hidden="true" /> Chat</span>
-          <code class="provider-card__model-id">{{ provider.chat_model ?? 'No definido' }}</code>
+          <span class="provider-card__model-id" :title="provider.chat_model ?? undefined">{{ modelLabel(provider.chat_model) }}</span>
         </div>
         <div class="provider-card__model-row">
-          <span class="provider-card__model-tag"><Type :size="12" aria-hidden="true" /> Títulos</span>
-          <code class="provider-card__model-id">{{ provider.title_model ?? 'No definido' }}</code>
+          <span class="provider-card__model-tag"><Type :size="12" aria-hidden="true" /> Nombres de conversación</span>
+          <span class="provider-card__model-id" :title="provider.title_model ?? undefined">{{ modelLabel(provider.title_model) }}</span>
         </div>
         <div class="provider-card__model-row">
-          <span class="provider-card__model-tag"><FileText :size="12" aria-hidden="true" /> Documentos</span>
-          <code class="provider-card__model-id">{{ provider.document_model ?? provider.chat_model ?? 'No definido' }}</code>
+          <span class="provider-card__model-tag"><FileText :size="12" aria-hidden="true" /> Lectura de PDF</span>
+          <span class="provider-card__model-id" :title="provider.document_model ?? provider.chat_model ?? undefined">{{ modelLabel(provider.document_model ?? provider.chat_model) }}</span>
         </div>
       </div>
       <div class="provider-card__status-row">
@@ -91,9 +112,12 @@ const missingPrice = computed(
           <FlaskConical :size="13" aria-hidden="true" />
           {{
             provider.last_test_ok_at
-              ? `Probado el ${new Date(provider.last_test_ok_at).toLocaleString()}`
-              : 'Sin probar'
+              ? `Conexión probada: ${formatMessageTime(provider.last_test_ok_at)}`
+              : 'Conexión sin probar'
           }}
+          <button v-if="canTest" type="button" class="provider-card__test-btn" :disabled="testing" @click="emit('test')">
+            {{ testing ? 'Probando…' : 'Probar conexión' }}
+          </button>
         </span>
         <span v-if="provider.reports_cost" class="provider-card__status-item">
           <CircleDollarSign :size="13" aria-hidden="true" />
@@ -101,6 +125,14 @@ const missingPrice = computed(
         </span>
       </div>
     </div>
+    <p
+      v-if="testOutcome"
+      class="provider-card__test"
+      :class="testOutcome.ok ? 'provider-card__test--ok' : 'provider-card__test--fail'"
+      role="status"
+    >
+      {{ testOutcome.ok ? 'La conexión funciona.' : testOutcome.detail }}
+    </p>
     <p v-if="missingPrice" class="provider-card__price-warning">
       Falta el precio de {{ provider.chat_model }}: las respuestas se van a guardar sin costo.
     </p>
@@ -125,14 +157,18 @@ h2 { margin: 0; font-family: var(--font-display); font-size: 18px; }
 .status--warning { color: var(--warning); }
 .provider-card__body { margin: var(--space-6) 0; }
 .provider-card__group-label { display: block; margin-bottom: var(--space-3); color: var(--text-subtle); font-size: 10px; font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: .06em; }
-.provider-card__model-row { display: flex; align-items: center; gap: var(--space-3); }
+.provider-card__model-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .provider-card__model-row + .provider-card__model-row { margin-top: var(--space-2); }
-.provider-card__model-tag { display: inline-flex; flex-shrink: 0; align-items: center; gap: var(--space-2); width: 62px; color: var(--text-muted); font-size: 12px; }
-.provider-card__model-id { overflow: hidden; padding: 2px 8px; color: var(--text); background: var(--surface-subtle); border-radius: var(--r-sm); font-family: var(--font-mono); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.provider-card__model-tag { display: inline-flex; flex: 1 1 auto; align-items: center; gap: var(--space-2); min-width: 0; color: var(--text-muted); font-size: 12px; }
+.provider-card__test-btn { margin-left: auto; white-space: nowrap; padding: 3px var(--space-3); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); font: inherit; font-size: 12px; font-weight: var(--fw-medium); cursor: pointer; } .provider-card__test-btn:hover:not(:disabled) { background: var(--surface-hover); } .provider-card__test-btn:disabled { opacity: .6; cursor: wait; }
+.provider-card__model-id { flex-shrink: 0; max-width: 58%; overflow: hidden; padding: 2px 8px; color: var(--text); background: var(--surface-subtle); border-radius: var(--r-sm); font-size: 12px; font-weight: var(--fw-medium); text-overflow: ellipsis; white-space: nowrap; }
 .provider-card__status-row { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border); }
-.provider-card__status-item { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: 12px; }
+.provider-card__status-item { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); color: var(--text-muted); font-size: 12px; }
 .provider-card__status-item--warning { color: var(--warning); font-weight: var(--fw-medium); }
 .provider-card__muted, .provider-card__price-warning { margin: var(--space-5) 0; color: var(--text-muted); font-size: 13px; }
 .provider-card__price-warning { padding: var(--space-3); color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); border-radius: var(--r-sm); }
-.provider-card__actions { justify-content: flex-end; }
+.provider-card__actions { flex-wrap: wrap; justify-content: flex-end; }
+.provider-card__test { margin: 0 0 var(--space-4); padding: var(--space-3); border-radius: var(--r-sm); font-size: 12px; }
+.provider-card__test--ok { color: var(--success); background: var(--success-soft); }
+.provider-card__test--fail { color: var(--danger); background: var(--brand-soft); }
 </style>

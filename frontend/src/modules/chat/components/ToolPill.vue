@@ -5,11 +5,10 @@ defineProps<{ group: ToolCallGroup }>()
 </script>
 
 <template>
-  <div class="pill" :class="`pill--${group.status}`">
+  <div class="pill" :class="`pill--${group.status}`" role="status">
     <span class="pill__dot">
-      <svg v-if="group.status === 'running'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="7" />
-        <path d="m21 21-4.3-4.3" />
+      <svg v-if="group.status === 'running'" class="pill__spinner" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+        <path d="M12 3a9 9 0 1 0 9 9" />
       </svg>
       <svg v-else-if="group.status === 'success'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12" />
@@ -85,6 +84,22 @@ defineProps<{ group: ToolCallGroup }>()
 
 .pill--error .pill__count {
   color: var(--brand);
+}
+
+.pill__spinner {
+  animation: pill-spin 0.9s linear infinite;
+}
+
+@keyframes pill-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill__spinner {
+    animation-duration: 2.4s;
+  }
 }
 
 @keyframes pill-pulse {

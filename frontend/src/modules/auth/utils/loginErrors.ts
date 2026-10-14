@@ -1,0 +1,43 @@
+/**
+ * Mensajes del formulario de inicio de sesión.
+ *
+ * El texto técnico del backend ("Usuario o contraseña inválidos", "HTTP 401
+ * Unauthorized") no le dice a quien atiende clientes qué revisar. Acá se
+ * traduce a qué dato corregir.
+ */
+import { AuthRequestError } from '../services/authService'
+
+export const MISSING_CREDENTIALS_MESSAGE = 'Ingresá usuario y contraseña.'
+
+export const UNKNOWN_DATABASE_MESSAGE =
+  'No encontramos ese cliente. Revisá el código después de la @.'
+
+export const DATABASE_DISABLED_MESSAGE =
+  'Ese cliente está desactivado en SAVI. Avisale a tu administrador.'
+
+export const DATABASE_UNREACHABLE_MESSAGE =
+  'No pudimos conectar con la base de ese cliente. Probá de nuevo en unos minutos o avisale a tu administrador.'
+
+export const GENERIC_LOGIN_MESSAGE =
+  'No pudimos entrar. Revisá el usuario, la contraseña y el código del cliente.'
+
+export const NETWORK_LOGIN_MESSAGE =
+  'No pudimos conectarnos con SAVI. Revisá tu conexión e intentá de nuevo.'
+
+export function loginErrorMessage(err: unknown): string {
+  if (err instanceof AuthRequestError) {
+    // Por `errorCode` y antes que el status: el de "sin conexión" es un 503 y
+    // no debe caer en el aviso genérico de "SAVI no está respondiendo".
+    if (err.errorCode === 'unknown_database') return UNKNOWN_DATABASE_MESSAGE
+    if (err.errorCode === 'database_disabled') return DATABASE_DISABLED_MESSAGE
+    if (err.errorCode === 'database_unreachable') return DATABASE_UNREACHABLE_MESSAGE
+    // Cuenta deshabilitada o demasiados intentos: el backend ya explica el
+    // motivo (con la espera, si corresponde) y no hay un dato que corregir.
+    if (err.status === 403 || err.status === 429) return err.message
+    if (err.status >= 500)
+      return 'SAVI no está respondiendo en este momento. Probá de nuevo en unos minutos.'
+    return GENERIC_LOGIN_MESSAGE
+  }
+  if (err instanceof TypeError) return NETWORK_LOGIN_MESSAGE
+  return GENERIC_LOGIN_MESSAGE
+}

@@ -64,7 +64,7 @@ async function open(source: MessageSource): Promise<void> {
   } catch (error) {
     if (error instanceof HttpRequestError && error.status === 404) {
       lostAccess.value = new Set([...lostAccess.value, source.document_id])
-      toast.error('Este documento ya no está disponible para ti.')
+      toast.error('Este documento ya no está disponible para vos.')
     } else {
       toast.error('No se pudo abrir el documento.')
     }

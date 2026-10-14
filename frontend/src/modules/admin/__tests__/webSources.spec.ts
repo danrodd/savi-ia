@@ -71,9 +71,9 @@ describe('estimatePages', () => {
 })
 
 describe('pagesSummary y hostOf', () => {
-  it('resume páginas y omitidas', () => {
+  it('resume páginas leídas y las que no se pudieron leer', () => {
     expect(pagesSummary({ mode: 'site', page_count: 17, skipped_count: 3 })).toBe(
-      '17 páginas · 3 omitidas',
+      '17 páginas leídas · 3 no se pudieron leer',
     )
     expect(pagesSummary({ mode: 'page', page_count: 1, skipped_count: 0 })).toBe('Una página')
   })

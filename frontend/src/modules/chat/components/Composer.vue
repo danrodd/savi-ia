@@ -150,7 +150,7 @@ const { dragging } = useFileDrop(
         v-model="text"
         class="composer__input"
         rows="1"
-        placeholder="Pregúntale a SAVI…"
+        placeholder="Preguntale a SAVI…"
         :disabled="disabled"
         @keydown="onKeydown"
         @paste="onPaste"
@@ -166,7 +166,7 @@ const { dragging } = useFileDrop(
         @change="onPick"
       />
       <div class="composer__row">
-        <Tooltip text="Adjuntar imagen">
+        <Tooltip text="Adjuntar imagen · También podés pegar una captura con Ctrl+V">
           <button
             type="button"
             class="composer__btn composer__btn--attach"
@@ -181,6 +181,9 @@ const { dragging } = useFileDrop(
         </Tooltip>
         <span class="composer__hint">
           <kbd>Enter</kbd> para enviar · <kbd>Shift</kbd>+<kbd>Enter</kbd> para nueva línea
+          <span class="composer__hint-paste">
+            · También podés pegar una captura con <kbd>Ctrl</kbd>+<kbd>V</kbd>
+          </span>
         </span>
         <Tooltip v-if="streaming" text="Detener">
           <button
@@ -300,6 +303,13 @@ const { dragging } = useFileDrop(
 
 @media (max-width: 767px) {
   .composer__hint {
+    display: none;
+  }
+}
+
+/* En anchos medios no entra la tercera pista: queda en el tooltip del clip. */
+@media (max-width: 1100px) {
+  .composer__hint-paste {
     display: none;
   }
 }

@@ -5,9 +5,9 @@ import { useTheme } from '@/composables/useTheme'
 const { mode, cycleTheme } = useTheme()
 
 const label = computed(() => {
-  if (mode.value === 'light') return 'Tema: claro'
-  if (mode.value === 'dark') return 'Tema: oscuro'
-  return 'Tema: sistema'
+  if (mode.value === 'light') return 'Apariencia: clara'
+  if (mode.value === 'dark') return 'Apariencia: oscura'
+  return 'Apariencia: automática'
 })
 </script>
 

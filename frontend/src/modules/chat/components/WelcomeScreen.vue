@@ -74,18 +74,24 @@ const { greeting, subtitle, suggestions, reshuffle } = useWelcome()
 </template>
 
 <style scoped>
+/* Flex + `margin: auto` en lugar de `place-items: center`: centra cuando hay
+   lugar y, cuando no entra (pantallas angostas o bajas), deja de centrar y la
+   pantalla se desplaza completa sin que el cuadro de escribir tape las
+   sugerencias. */
 .welcome {
   flex: 1;
   min-height: 0;
-  display: grid;
-  place-items: center;
-  padding: var(--space-7) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-7) var(--space-5) var(--space-8, 40px);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .welcome__inner {
   max-width: 720px;
   width: 100%;
+  margin: auto;
   text-align: center;
 }
 

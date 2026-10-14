@@ -58,6 +58,7 @@ const permissions = ref<DocumentPermissions>(defaultPermissions())
 const formError = ref<string | null>(null)
 const uploading = ref(false)
 const dragging = ref(false)
+const noticeOpen = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const finished = computed(
@@ -159,7 +160,7 @@ async function onSubmit(): Promise<void> {
   formError.value = validatePermissions(permissions.value)
   if (formError.value) return
   if (pendingCount.value === 0) {
-    formError.value = 'Agrega al menos un archivo válido.'
+    formError.value = 'Elegí al menos un archivo válido.'
     return
   }
   uploading.value = true
@@ -217,7 +218,7 @@ const STATE_LABELS: Record<ItemState, string> = {
       @drop.prevent="onDrop"
     >
       <div class="docup__drop" :class="{ 'docup__drop--active': dragging }">
-        <p class="docup__drop-text">Arrastra los archivos acá o</p>
+        <p class="docup__drop-text">Arrastrá los archivos hasta acá o</p>
         <Button variant="secondary" size="sm" :disabled="uploading" @click="fileInput?.click()">
           Elegir archivos
         </Button>
@@ -267,16 +268,36 @@ const STATE_LABELS: Record<ItemState, string> = {
 
       <CompanyDocumentPermissionsFields v-model="permissions" :databases="databases" />
 
-      <p v-if="readsWithAi && store.aiReading" class="docup__notice">
-        {{ store.aiReading.privacy_notice }}
-        <template v-if="store.aiReading.uses_subscription">
-          La lectura consume el límite de tu suscripción de Claude.
-        </template>
-      </p>
-      <p v-else class="docup__notice">
-        Cuando un documento sirve para responder, los fragmentos relevantes se envían al proveedor de
-        IA configurado, igual que los datos del ERP.
-      </p>
+      <div class="docup__notice">
+        <p class="docup__notice-line">
+          <template v-if="readsWithAi">
+            Los PDF escaneados se envían al proveedor de IA activo para leerlos.
+          </template>
+          <template v-else>
+            Los fragmentos que sirven para responder se envían al proveedor de IA activo.
+          </template>
+          <button
+            type="button"
+            class="docup__more"
+            :aria-expanded="noticeOpen"
+            @click="noticeOpen = !noticeOpen"
+          >
+            {{ noticeOpen ? 'Ver menos' : 'Ver más' }}
+          </button>
+        </p>
+        <p v-if="noticeOpen" class="docup__notice-full">
+          <template v-if="readsWithAi && store.aiReading">
+            {{ store.aiReading.privacy_notice }}
+            <template v-if="store.aiReading.uses_subscription">
+              La lectura consume el límite de tu suscripción de Claude.
+            </template>
+          </template>
+          <template v-else>
+            Cuando un documento sirve para responder, los fragmentos relevantes se envían al
+            proveedor de IA configurado, igual que los datos del ERP.
+          </template>
+        </p>
+      </div>
 
       <p v-if="formError" class="docup__error" role="alert">{{ formError }}</p>
     </form>
@@ -285,6 +306,9 @@ const STATE_LABELS: Record<ItemState, string> = {
       <Button variant="ghost" :disabled="uploading" @click="close">
         {{ finished ? 'Cerrar' : 'Cancelar' }}
       </Button>
+      <span v-if="pendingCount === 0 && !finished" class="docup__why">
+        Elegí al menos un archivo
+      </span>
       <Button
         type="submit"
         form="company-document-upload"
@@ -430,10 +454,33 @@ const STATE_LABELS: Record<ItemState, string> = {
 }
 
 .docup__notice {
-  margin: 0;
-  font-size: 11px;
+  display: grid;
+  gap: var(--space-1);
+  font-size: 12px;
   color: var(--text-subtle);
   line-height: 1.4;
+}
+
+.docup__notice p {
+  margin: 0;
+}
+
+.docup__more {
+  margin-left: var(--space-2);
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--brand);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.docup__why {
+  align-self: center;
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .docup__error {

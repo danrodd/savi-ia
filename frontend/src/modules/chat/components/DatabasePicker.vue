@@ -136,7 +136,9 @@ function labelOf(value: string): string {
         </ComboboxContent>
       </ComboboxPortal>
     </ComboboxRoot>
-    <span class="dbpicker__hint">Se fija al enviar el primer mensaje.</span>
+    <span class="dbpicker__hint">
+      Cada conversación usa un solo cliente. Elegilo antes de enviar el primer mensaje.
+    </span>
   </div>
 </template>
 

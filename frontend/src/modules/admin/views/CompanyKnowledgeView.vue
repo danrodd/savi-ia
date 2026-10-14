@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { Settings2 } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import Button from '@/components/ui/Button.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
@@ -16,7 +18,12 @@ import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 import { useErpDatabaseStore } from '../stores/erpDatabaseStore'
 import type { CompanyDocument } from '../types'
 import { approxUsd, estimateCost, willReadWithAi } from '../utils/aiReading'
-import { ACCEPT_ATTRIBUTE, checkFile, formatBytes } from '../utils/companyDocuments'
+import {
+  ACCEPT_ATTRIBUTE,
+  checkFile,
+  isAiProviderFailure,
+  usageSummary,
+} from '../utils/companyDocuments'
 
 const store = useCompanyDocumentStore()
 const databaseStore = useErpDatabaseStore()
@@ -52,10 +59,48 @@ const usagePercent = computed(() => {
 })
 
 /**
- * La barra solo aparece cuando el número empieza a significar algo. Con 258
- * de 50.000 fragmentos se veía una barra vacía que no decía nada.
+ * El resumen habla de documentos y espacio, que es lo que se entiende. Los
+ * fragmentos del índice son un detalle interno: solo aparecen (en
+ * Configuración) cuando el espacio de búsqueda se está llenando.
  */
-const showUsageBar = computed(() => usagePercent.value >= 10)
+const nearIndexLimit = computed(() => usagePercent.value >= 80)
+
+// Documentos que no se leyeron porque el proveedor de IA no respondió: son una
+// sola causa con muchos síntomas, así que se avisa una vez arriba de la tabla.
+const aiFailures = computed(() => store.documents.filter(isAiProviderFailure))
+const retryAllOpen = ref(false)
+const retryingAll = ref(false)
+
+const retryAllDescription = computed(() => {
+  const count = aiFailures.value.length
+  const provider = store.aiReading?.provider_name ?? 'IA'
+  const pages = aiFailures.value.reduce((sum, d) => sum + (d.page_count ?? 0), 0)
+  const cost = estimateCost(pages > 0 ? pages : null, store.aiReading)
+  const price = cost === null ? '' : ` Costo estimado: ${approxUsd(cost)}.`
+  return `Se vuelven a leer ${count} documentos con ${provider}.${price}`
+})
+
+async function onConfirmRetryAll(): Promise<void> {
+  const targets = [...aiFailures.value]
+  retryingAll.value = true
+  let queued = 0
+  let failed = 0
+  try {
+    // De a uno: el servidor los procesa en fila y así un error no frena al resto.
+    for (const document of targets) {
+      try {
+        await store.readWithAi(document.id)
+        queued++
+      } catch {
+        failed++
+      }
+    }
+  } finally {
+    retryingAll.value = false
+  }
+  if (queued > 0) toast.success(`${queued} documentos se están leyendo con IA`)
+  if (failed > 0) toast.error(`No se pudieron reintentar ${failed} documentos.`)
+}
 
 // Filtros del listado, en el cliente: la lista ya viene entera (hasta 200) y
 // filtrar acá responde en cada tecla sin volver a pedir nada al servidor.
@@ -212,9 +257,11 @@ onUnmounted(() => store.stopPolling())
         </p>
       </div>
       <div v-if="tab === 'documents'" class="kview__actions">
-        <Button variant="ghost" @click="settingsOpen = true">Configuración</Button>
+        <Button variant="secondary" @click="settingsOpen = true">
+          <Settings2 :size="15" aria-hidden="true" /> Configuración
+        </Button>
         <Button variant="secondary" :disabled="store.documents.length === 0" @click="searchOpen = true">
-          Probar búsqueda
+          Probar qué encuentra SAVI
         </Button>
         <Button @click="uploadOpen = true">Subir documentos</Button>
       </div>
@@ -247,21 +294,34 @@ onUnmounted(() => store.stopPolling())
 
     <template v-else>
       <div v-if="store.usage" class="kview__usage" aria-label="Uso">
-        <span>{{ store.usage.total }} documentos</span>
-        <span class="kview__dot">·</span>
-        <span>{{ store.usage.chunks.toLocaleString('es-CO') }} de {{ store.usage.chunk_limit.toLocaleString('es-CO') }} fragmentos</span>
-        <span
-          v-if="showUsageBar"
-          class="kview__bar"
-          role="progressbar"
-          :aria-valuenow="usagePercent"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <span class="kview__bar-fill" :style="{ width: `${usagePercent}%` }" />
-        </span>
-        <span class="kview__dot">·</span>
-        <span>{{ formatBytes(store.usage.bytes_stored) }}</span>
+        <span>{{ usageSummary(store.usage) }}</span>
+        <template v-if="nearIndexLimit">
+          <span class="kview__dot">·</span>
+          <span class="kview__warn">
+            Queda poco espacio de búsqueda ({{ usagePercent }}% usado)
+          </span>
+        </template>
+      </div>
+
+      <div v-if="aiFailures.length > 1" class="kview__banner" role="status">
+        <p class="kview__banner-text">
+          <strong>{{ aiFailures.length }} documentos no se pudieron leer con IA.</strong>
+          Revisá el proveedor de IA.
+        </p>
+        <div class="kview__banner-actions">
+          <RouterLink class="kview__banner-link" :to="{ name: 'admin-llm-providers' }">
+            Ir a Proveedores de IA
+          </RouterLink>
+          <Button
+            v-if="aiReadingAvailable"
+            variant="secondary"
+            size="sm"
+            :loading="retryingAll"
+            @click="retryAllOpen = true"
+          >
+            Reintentar todos
+          </Button>
+        </div>
       </div>
 
       <p v-if="store.error" class="kview__error" role="alert">
@@ -270,7 +330,7 @@ onUnmounted(() => store.stopPolling())
       </p>
       <p v-else-if="store.loading && store.documents.length === 0" class="kview__hint">Cargando…</p>
       <div v-else-if="store.documents.length === 0" class="kview__empty">
-        <p>Aún no hay documentos. Sube el primero para que SAVI pueda consultarlo.</p>
+        <p>Aún no hay documentos. Subí el primero para que SAVI pueda consultarlo.</p>
         <!-- El botón acá y no solo arriba: quien llega a una pantalla vacía
              busca la acción en la pantalla vacía.
              Texto distinto al del encabezado a propósito: dos botones con el
@@ -337,6 +397,13 @@ onUnmounted(() => store.stopPolling())
       :description="readWithAiDescription"
       confirm-label="Leer con IA"
       :on-confirm="onConfirmReadWithAi"
+    />
+    <ConfirmDialog
+      v-model:open="retryAllOpen"
+      title="Reintentar la lectura con IA"
+      :description="retryAllDescription"
+      confirm-label="Reintentar todos"
+      :on-confirm="onConfirmRetryAll"
     />
     <ConfirmDialog
       v-model:open="removeOpen"
@@ -429,19 +496,40 @@ onUnmounted(() => store.stopPolling())
   color: var(--text-subtle);
 }
 
-.kview__bar {
-  display: inline-block;
-  width: 96px;
-  height: 6px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--surface-subtle);
+.kview__warn {
+  color: var(--text-warning, #b45309);
 }
 
-.kview__bar-fill {
-  display: block;
-  height: 100%;
-  background: var(--brand);
+.kview__banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-warning, rgba(217, 119, 6, 0.1));
+  border: 1px solid color-mix(in srgb, var(--warning, #b45309) 35%, transparent);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.kview__banner-text {
+  margin: 0;
+}
+
+.kview__banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.kview__banner-link {
+  color: var(--brand);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
 }
 
 .kview__hint {

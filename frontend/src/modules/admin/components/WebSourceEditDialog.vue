@@ -189,7 +189,7 @@ async function onSubmit(): Promise<void> {
 
       <p v-if="confirmingNarrowing" class="wedit__warning" role="alert">
         Este cambio puede dejar sin acceso a algunos usuarios. Las respuestas que ya citaron este
-        sitio se les mostrarán como no disponibles. Presiona Guardar otra vez para confirmar.
+        sitio se les mostrarán como no disponibles. Presioná Guardar otra vez para confirmar.
       </p>
       <p v-if="formError" class="wedit__error" role="alert">{{ formError }}</p>
     </form>

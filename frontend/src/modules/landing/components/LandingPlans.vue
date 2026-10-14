@@ -8,9 +8,9 @@ import { PLANS } from '../content'
   <section id="planes" class="lp-section plans">
     <div class="lp-container">
       <p class="lp-eyebrow">Modelos de IA</p>
-      <h2 class="lp-title">Elige cómo pagar la inteligencia artificial</h2>
+      <h2 class="lp-title">Elegí cómo pagar la inteligencia artificial</h2>
       <p class="lp-lead">
-        SAVI funciona con Claude, OpenAI o Gemini. Cambias de proveedor desde la administración, sin
+        SAVI funciona con Claude, OpenAI o Gemini. Cambiás de proveedor desde la administración, sin
         reinstalar nada.
       </p>
       <ul class="plans__grid">

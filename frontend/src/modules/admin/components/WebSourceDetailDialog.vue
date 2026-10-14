@@ -135,13 +135,13 @@ function pathOf(url: string): string {
         </span>
       </div>
       <p
-        v-if="detail.status_message"
+        v-if="detail.status_message && detail.status !== 'ready'"
         :class="detail.status === 'failed' ? 'wdetail__error' : 'wdetail__meta'"
       >{{ detail.status_message }}</p>
       <!-- Las omitidas no quedan en la lista: no tienen documento propio. -->
       <p v-if="detail.skipped_count" class="wdetail__meta">
-        {{ detail.skipped_count === 1 ? 'Se omitió 1 página' : `Se omitieron ${detail.skipped_count} páginas` }}
-        sin texto útil o iguales a otra página del sitio.
+        {{ detail.skipped_count === 1 ? '1 página no se pudo leer' : `${detail.skipped_count} páginas no se pudieron leer` }}:
+        no tenían texto útil o eran iguales a otra página del sitio. No aparecen en la lista.
       </p>
       <p v-if="detail.excluded_sections.length" class="wdetail__meta">
         Secciones excluidas: {{ detail.excluded_sections.map(sectionLabel).join(', ') }}

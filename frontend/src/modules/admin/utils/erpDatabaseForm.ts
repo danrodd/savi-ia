@@ -52,7 +52,7 @@ export function validateFormValues(
     return 'El código debe tener entre 2 y 32 caracteres: letras, números, guion o guion bajo.'
   }
   if (requireName && !values.name.trim()) return 'El nombre es obligatorio.'
-  if (!values.host.trim()) return 'El host es obligatorio.'
+  if (!values.host.trim()) return 'El servidor es obligatorio.'
   const port = Number(values.port)
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     return 'El puerto debe ser un número entre 1 y 65535.'

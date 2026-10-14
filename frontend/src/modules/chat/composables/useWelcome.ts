@@ -11,6 +11,7 @@
  */
 import { computed, ref, type ComputedRef } from 'vue'
 
+import { firstNameOf } from '@/lib/personName'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { MODULE_LABELS, type ModuleCode, usePermisosStore } from '@/modules/permisos'
 import { SUGGESTIONS, type ChatSuggestion } from '../suggestions'
@@ -37,16 +38,6 @@ function pickGreetingByHour(): string {
   if (h >= 5 && h < 12) return 'Buenos días'
   if (h >= 12 && h < 19) return 'Buenas tardes'
   return 'Buenas noches'
-}
-
-function firstNameOf(fullName: string | undefined, fallback: string): string {
-  if (!fullName) return fallback
-  const trimmed = fullName.trim()
-  if (!trimmed) return fallback
-  const first = trimmed.split(/\s+/)[0]
-  if (!first) return fallback
-  // Title case: "JUAN" → "Juan", "carolina" → "Carolina".
-  return first.charAt(0).toLocaleUpperCase('es') + first.slice(1).toLocaleLowerCase('es')
 }
 
 function shuffle<T>(arr: readonly T[]): T[] {
@@ -129,7 +120,7 @@ export function useWelcome(visibleCount: number = DEFAULT_VISIBLE): WelcomeState
 
     return picked.map((s) => ({
       module: s.module,
-      moduleLabel: s.module ? MODULE_LABELS[s.module] ?? s.module : null,
+      moduleLabel: s.module ? (MODULE_LABELS[s.module] ?? s.module) : null,
       prompt: s.prompt,
       label: s.label ?? s.prompt,
     }))

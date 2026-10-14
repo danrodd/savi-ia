@@ -61,7 +61,7 @@ async function onExport(): Promise<void> {
   <Dialog
     :open="open"
     title="Exportar bases de datos"
-    description="Descarga un archivo con las bases activas para cargarlo en otra instalación de SAVI (por ejemplo, la de otro agente)."
+    description="Descargá un archivo con las bases activas para cargarlo en otra instalación de SAVI (por ejemplo, la de otro agente)."
     :max-width="440"
     @update:open="open = $event"
   >

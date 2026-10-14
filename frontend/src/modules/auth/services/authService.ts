@@ -14,13 +14,15 @@ import type { AuthUser, LoginPayload, TokenResponse } from '../types'
 async function asJsonOrThrow<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `HTTP ${res.status} ${res.statusText}`
+    let errorCode: string | undefined
     try {
-      const body = (await res.json()) as { detail?: string }
+      const body = (await res.json()) as { detail?: string; errorCode?: string }
       if (body.detail) detail = body.detail
+      errorCode = body.errorCode
     } catch {
       /* body no JSON */
     }
-    throw new AuthRequestError(detail, res.status)
+    throw new AuthRequestError(detail, res.status, errorCode)
   }
   if (res.status === 204) return undefined as T
   return (await res.json()) as T
@@ -30,6 +32,8 @@ export class AuthRequestError extends Error {
   constructor(
     message: string,
     public readonly status: number,
+    /** Código estructurado del backend (p.ej. `unknown_database`, `database_disabled`, `database_unreachable`), si lo hay. */
+    public readonly errorCode?: string,
   ) {
     super(message)
     this.name = 'AuthRequestError'

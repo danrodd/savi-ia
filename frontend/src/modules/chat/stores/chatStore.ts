@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { HttpRequestError } from '@/lib/HttpClient'
 import { type AvailableErpDatabase, erpDatabaseService } from '@/modules/admin'
+import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { peekAttachmentUrl, seedAttachmentUrl } from '../lib/attachmentBlobCache'
 import { agentService } from '../services/agentService'
 import { conversationService } from '../services/conversationService'
@@ -17,11 +18,12 @@ import type {
   UIAttachment,
   UIMessage,
 } from '../types'
+import { resolveChatErrorMessage } from '../utils/errorMessages'
 
 function mapStoredToolCall(t: ToolInvocation): ToolCall {
   const status: ToolCall['status'] =
     t.status === 'ok' ? 'success' : t.status === 'error' ? 'error' : 'success'
-  return { id: t.id, name: t.name, status }
+  return { id: t.id, name: t.name, status, input: t.input }
 }
 
 function mapStoredAttachments(list: ChatAttachment[] | undefined): UIAttachment[] {
@@ -52,6 +54,7 @@ function storedToUI(m: StoredMessage): UIMessage {
     role,
     text: m.content,
     toolCalls: m.tool_invocations.map(mapStoredToolCall),
+    createdAt: m.created_at,
     done: true,
     interrupted: m.finish_reason === 'interrupted',
     error: m.finish_reason === 'error' ? 'La respuesta falló.' : undefined,
@@ -115,6 +118,7 @@ function placeholderAssistant(): UIMessage {
     role: 'assistant',
     text: '',
     toolCalls: [],
+    createdAt: new Date().toISOString(),
     done: false,
   }
 }
@@ -171,7 +175,7 @@ function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
       next[next.length - 1] = { ...last, text: last.text + ev.text }
       break
     case 'tool_use': {
-      const call: ToolCall = { id: ev.id, name: ev.name, status: 'running' }
+      const call: ToolCall = { id: ev.id, name: ev.name, status: 'running', input: ev.input }
       next[next.length - 1] = { ...last, toolCalls: [...last.toolCalls, call] }
       break
     }
@@ -234,6 +238,10 @@ function busyMessage(e: unknown): string {
   return typeof e.body.detail === 'string'
     ? e.body.detail
     : 'Demasiadas consultas seguidas. Probá en unos segundos.'
+}
+
+function isAdminUser(): boolean {
+  return useAuthStore().user?.is_admin === true
 }
 
 function findLastIndex<T>(arr: T[], predicate: (item: T) => boolean): number {
@@ -430,6 +438,7 @@ export const useChatStore = defineStore('chat', () => {
             if (local.id === null) {
               local.id = remote.id
               if (remote.role === 'user') adoptServerAttachments(local, remote)
+              else local.createdAt = remote.createdAt
             }
           }
           return
@@ -534,7 +543,13 @@ export const useChatStore = defineStore('chat', () => {
     const convIdx = conversations.value.findIndex((c) => c.id === convId)
     const existing = convIdx !== -1 ? conversations.value[convIdx] : undefined
     if (!existing) return
-    const updated = { ...existing, updated_at: new Date().toISOString() }
+    // Con un mensaje enviado ya no está vacía: sin esto, al cambiar de
+    // conversación la barra la ocultaría hasta el próximo refresco del listado.
+    const messageCount =
+      existing.message_count === undefined
+        ? {}
+        : { message_count: Math.max(existing.message_count, 1) }
+    const updated = { ...existing, ...messageCount, updated_at: new Date().toISOString() }
     conversations.value = [updated, ...conversations.value.filter((_, i) => i !== convIdx)]
   }
 
@@ -571,7 +586,10 @@ export const useChatStore = defineStore('chat', () => {
           applySuperseded(ev.message_ids)
           continue
         }
-        messages.value = applyEvent(messages.value, ev)
+        messages.value = applyEvent(
+          messages.value,
+          ev.type === 'error' ? { ...ev, message: resolveChatErrorMessage(ev, isAdminUser()) } : ev,
+        )
       }
       const last = messages.value[messages.value.length - 1]
       if (last && last.role === 'assistant' && !last.done) {

@@ -119,10 +119,10 @@ async function onSubmit(): Promise<void> {
           Se escribe después de la @ al iniciar sesión (ej. USUARIO@{{ values.code.toUpperCase() || 'CODIGO' }}).
         </p>
         <p :id="`${uid}-name`" class="dbform__hint">
-          Si lo dejas vacío, se propone la razón social al probar la conexión.
+          Si lo dejás vacío, se propone la razón social al probar la conexión.
         </p>
         <label class="dbform__field dbform__field--wide">
-          <span class="dbform__label">Host</span>
+          <span class="dbform__label">Servidor</span>
           <input v-model="values.host" class="dbform__input dbform__input--mono" autocomplete="off" required />
         </label>
         <label class="dbform__field">
@@ -144,7 +144,7 @@ async function onSubmit(): Promise<void> {
             type="password"
             class="dbform__input"
             autocomplete="new-password"
-            :placeholder="isEdit ? 'Déjala vacía para conservar la actual' : ''"
+            :placeholder="isEdit ? 'Dejala vacía para conservar la actual' : ''"
           />
         </label>
         <label class="dbform__field">
@@ -171,7 +171,8 @@ async function onSubmit(): Promise<void> {
           </span>
         </template>
         <template v-else>
-          <strong>No se pudo conectar.</strong> {{ testResult.detail }}
+          <!-- El backend manda una oración completa: no se le antepone nada. -->
+          {{ testResult.detail }}
           <span v-if="testResult.missing_tables.length > 0" class="dbform__missing">
             Tablas faltantes: {{ testResult.missing_tables.join(', ') }}
           </span>

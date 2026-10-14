@@ -1,19 +1,34 @@
 <script setup lang="ts">
 /**
- * Panel "Mi consumo" — total + costo por respuesta + desglose por
- * proveedor (expandible a modelo) + serie diaria apilada por proveedor.
+ * Panel "Mi consumo".
+ *
+ * Una persona de soporte sólo necesita saber cuántas consultas hizo: ve ese
+ * número y su evolución por día. Tokens, caché, costos en USD/COP y el
+ * desglose por proveedor son datos de administración y quedan para quien es
+ * admin: total + costo por respuesta + desglose por proveedor (expandible a
+ * modelo) + serie diaria apilada por proveedor.
  * Se carga solo (con guarda) al montarse, o sea cuando su tab se activa
  * por primera vez.
  */
 import { computed, onMounted } from 'vue'
 
+import { useAuthStore } from '@/modules/auth/stores/authStore'
 import { useUsageStore } from '../stores/usageStore'
-import { formatCop, formatTokens, formatUsd } from '../utils/format'
+import { formatCop, formatDay, formatTokens, formatUsd } from '../utils/format'
+import { dailyQueryBars, periodDescription } from '../utils/simpleUsage'
 import ProviderBreakdown from './ProviderBreakdown.vue'
 import ProviderDailyChart from './ProviderDailyChart.vue'
 
 const store = useUsageStore()
+const authStore = useAuthStore()
+const isAdmin = computed(() => authStore.user?.is_admin === true)
 const rate = computed(() => store.usdToCopRate)
+
+const queryCount = computed(() => store.mine?.totals.message_count ?? 0)
+const bars = computed(() => dailyQueryBars(store.mine?.daily ?? []))
+// Con pocos días cada barra lleva su número y su fecha; con muchos, solo el
+// recorrido y las fechas de los extremos.
+const dense = computed(() => bars.value.length > 14)
 
 const costPerResponseUsd = computed(() => {
   const t = store.mine?.totals
@@ -30,6 +45,40 @@ onMounted(() => {
   <section class="mu" aria-label="Mi consumo">
     <p v-if="store.loadingMine && !store.mine" class="mu__hint">Cargando…</p>
     <p v-else-if="store.errorMine" class="mu__error" role="alert">{{ store.errorMine }}</p>
+    <template v-else-if="store.mine && !isAdmin">
+      <div class="mu__cards">
+        <article class="mu__card mu__card--primary">
+          <p class="mu__card-label">Consultas realizadas</p>
+          <p class="mu__card-value">{{ formatTokens(queryCount) }}</p>
+          <p class="mu__card-foot">{{ periodDescription(store.preset) }}</p>
+        </article>
+      </div>
+
+      <p v-if="queryCount === 0" class="mu__hint">
+        Todavía no hiciste consultas en este período.
+      </p>
+      <section v-else-if="bars.length > 1" class="mu__section" aria-label="Consultas por día">
+        <h2 class="mu__section-title">Consultas por día</h2>
+        <ul class="mu__bars" :class="{ 'mu__bars--dense': dense }">
+          <li
+            v-for="b in bars"
+            :key="b.day"
+            class="mu__bar"
+            :title="`${formatDay(b.day)}: ${b.count} ${b.count === 1 ? 'consulta' : 'consultas'}`"
+          >
+            <span v-if="!dense" class="mu__bar-count">{{ b.count }}</span>
+            <span class="mu__bar-track">
+              <span class="mu__bar-fill" :style="{ height: `${b.percent}%` }" />
+            </span>
+            <span v-if="!dense" class="mu__bar-day">{{ formatDay(b.day) }}</span>
+          </li>
+        </ul>
+        <div v-if="dense" class="mu__bars-axis">
+          <span>{{ formatDay(bars[0]?.day ?? '') }}</span>
+          <span>{{ formatDay(bars[bars.length - 1]?.day ?? '') }}</span>
+        </div>
+      </section>
+    </template>
     <template v-else-if="store.mine">
       <div class="mu__cards">
         <article class="mu__card mu__card--primary">
@@ -130,6 +179,77 @@ onMounted(() => {
   margin: var(--space-2) 0 0;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.mu__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  list-style: none;
+  overflow-x: auto;
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.mu__bars--dense {
+  gap: 3px;
+}
+
+.mu__bar {
+  flex: 0 1 64px;
+  min-width: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.mu__bars--dense .mu__bar {
+  flex: 1 1 0;
+}
+
+.mu__bar-track {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 72px;
+}
+
+.mu__bars:not(.mu__bars--dense) .mu__bar-track {
+  width: 32px;
+}
+
+.mu__bar-fill {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  background: var(--brand);
+  border-radius: 3px 3px 0 0;
+  opacity: 0.85;
+}
+
+.mu__bar-count {
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.mu__bar-day {
+  font-size: 11px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.mu__bars-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  font-size: 11px;
+  color: var(--text-subtle);
 }
 
 .mu__tokens {

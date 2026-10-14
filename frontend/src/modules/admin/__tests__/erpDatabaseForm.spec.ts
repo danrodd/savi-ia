@@ -54,6 +54,14 @@ describe('erp database form', () => {
     expect(validateFormValues(values, { requirePassword: false, requireName: false })).toBeNull()
   })
 
+  it('calls the host field "servidor" in the validation message', () => {
+    const values = { ...formValuesFrom(saved), host: '  ' }
+
+    expect(validateFormValues(values, { requirePassword: false })).toBe(
+      'El servidor es obligatorio.',
+    )
+  })
+
   it('requires a password only when creating', () => {
     const values = formValuesFrom(saved)
 

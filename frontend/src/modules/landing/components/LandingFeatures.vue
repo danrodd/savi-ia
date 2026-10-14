@@ -8,8 +8,8 @@ import { FEATURES, VERTICALS } from '../content'
       <p class="lp-eyebrow">Qué hace</p>
       <h2 class="lp-title">Todo lo que tu empresa sabe, en una conversación</h2>
       <p class="lp-lead">
-        Tu equipo deja de buscar entre reportes, carpetas y páginas. Pregunta como le preguntaría a un
-        compañero y recibe la respuesta con su fuente.
+        Tu equipo deja de buscar entre reportes, carpetas y páginas. Preguntá como le preguntarías a un
+        compañero y recibí la respuesta con su fuente.
       </p>
 
       <ul class="features__grid">

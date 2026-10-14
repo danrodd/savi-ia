@@ -6,6 +6,11 @@ export interface Conversation {
   title_locked: boolean
   created_at: string
   updated_at: string
+  /**
+   * Mensajes activos (no superseded). Un backend anterior no lo manda: sin el
+   * dato no se asume que la conversación está vacía.
+   */
+  message_count?: number
 }
 
 export type MessageRole = 'user' | 'assistant' | 'system' | 'tool'
@@ -107,14 +112,19 @@ export type ChatEvent =
       cost_usd: number | null
       finish_reason: string
     }
-  | { type: 'error'; message: string }
+  | { type: 'error'; message: string; code?: string | null }
 
 export type ToolCallStatus = 'running' | 'success' | 'error'
+
+/** Tipo de consulta que el usuario ve en la pastilla de progreso. */
+export type ToolKind = 'erp' | 'documents' | 'knowledge' | 'company' | 'other'
 
 export interface ToolCall {
   id: string
   name: string
   status: ToolCallStatus
+  /** Argumentos de la llamada: solo sirven para elegir el texto amigable. */
+  input?: Record<string, unknown>
 }
 
 /**
@@ -123,6 +133,8 @@ export interface ToolCall {
  * al mismo texto amigable se fusionen en una sola pill con `×N`.
  */
 export interface ToolCallGroup {
+  /** Tipo de consulta (clave de agrupación). */
+  kind: ToolKind
   label: string
   status: ToolCallStatus
   count: number
@@ -136,6 +148,8 @@ export interface UIMessage {
   role: 'user' | 'assistant'
   text: string
   toolCalls: ToolCall[]
+  /** ISO: cuándo se creó el mensaje. En los que se están generando es la hora local. */
+  createdAt?: string
   done: boolean
   interrupted?: boolean
   error?: string

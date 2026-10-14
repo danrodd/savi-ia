@@ -3,18 +3,21 @@ import { computed, ref, useTemplateRef } from 'vue'
 import Popover from '@/components/ui/Popover.vue'
 import { toCsv } from '@/lib/csv'
 import { triggerDownload } from '@/lib/download'
+import { inlineMarkdownToText, renderInlineMarkdown } from '@/lib/markdown'
 
 const props = defineProps<{ rows: string[][] }>()
 
 const header = computed(() => props.rows[0] ?? [])
 const body = computed(() => props.rows.slice(1))
+// Lo que se descarga es el dato, sin las marcas de formato (`**Total**`).
+const exportRows = computed(() => props.rows.map((row) => row.map(inlineMarkdownToText)))
 
 const trigger = useTemplateRef<HTMLButtonElement>('trigger')
 const open = ref(false)
 
 function downloadCsv(): void {
   // BOM (﻿) para que Excel reconozca UTF-8 y no rompa los acentos.
-  const blob = new Blob([`﻿${toCsv(props.rows)}`], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([`﻿${toCsv(exportRows.value)}`], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   triggerDownload(url, 'datos.csv')
   setTimeout(() => URL.revokeObjectURL(url), 0)
@@ -24,7 +27,7 @@ async function downloadXlsx(): Promise<void> {
   // Lazy: SheetJS solo entra al bundle al exportar a Excel. Se usa únicamente
   // para ESCRIBIR (aoa_to_sheet trata los strings como texto, no fórmulas).
   const XLSX = await import('xlsx')
-  const ws = XLSX.utils.aoa_to_sheet(props.rows)
+  const ws = XLSX.utils.aoa_to_sheet(exportRows.value)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Datos')
   XLSX.writeFile(wb, 'datos.xlsx')
@@ -67,19 +70,19 @@ function pick(format: 'csv' | 'xlsx'): void {
       </button>
 
       <Popover v-model:open="open" :anchor="trigger" side="bottom" align="end" :min-width="150">
-        <button type="button" class="menu__item" role="menuitem" @click="pick('csv')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
-          CSV
-        </button>
         <button type="button" class="menu__item" role="menuitem" @click="pick('xlsx')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
           </svg>
-          Excel
+          Excel (.xlsx)
+        </button>
+        <button type="button" class="menu__item" role="menuitem" @click="pick('csv')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          CSV (para otros programas)
         </button>
       </Popover>
     </div>
@@ -88,12 +91,12 @@ function pick(format: 'csv' | 'xlsx'): void {
       <table>
         <thead>
           <tr>
-            <th v-for="(cell, c) in header" :key="c">{{ cell }}</th>
+            <th v-for="(cell, c) in header" :key="c" v-html="renderInlineMarkdown(cell)" />
           </tr>
         </thead>
         <tbody>
           <tr v-for="(row, r) in body" :key="r">
-            <td v-for="(cell, c) in row" :key="c">{{ cell }}</td>
+            <td v-for="(cell, c) in row" :key="c" v-html="renderInlineMarkdown(cell)" />
           </tr>
         </tbody>
       </table>

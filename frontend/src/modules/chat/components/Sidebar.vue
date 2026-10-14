@@ -5,13 +5,19 @@ import { useRouter } from 'vue-router'
 
 import AppVersion from '@/components/AppVersion.vue'
 import Tooltip from '@/components/ui/Tooltip.vue'
+import { toTitleCase } from '@/lib/personName'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import type { Conversation } from '../types'
+import {
+  filterConversations,
+  groupConversations,
+  visibleConversations,
+} from '../utils/conversationGroups'
 import BrandMark from './BrandMark.vue'
 import ConversationItem from './ConversationItem.vue'
 import ThemeToggle from './ThemeToggle.vue'
 
-defineProps<{
+const props = defineProps<{
   conversations: Conversation[]
   activeId: string | null
   loading: boolean
@@ -34,13 +40,23 @@ const authStore = useAuthStore()
 const router = useRouter()
 const isLoggingOut = ref(false)
 
+const search = ref('')
+const hasSearch = computed(() => search.value.trim() !== '')
+// Sin las conversaciones vacías (salvo la abierta), filtradas y agrupadas por fecha.
+const usableConversations = computed(() =>
+  visibleConversations(props.conversations, props.activeId),
+)
+const groups = computed(() =>
+  groupConversations(filterConversations(usableConversations.value, search.value)),
+)
+
 const userInitial = computed(() => {
   const fullName = authStore.user?.full_name ?? authStore.user?.login ?? ''
   return fullName.trim().charAt(0).toUpperCase() || 'U'
 })
 
 const userDisplayName = computed(() => {
-  return authStore.user?.full_name ?? authStore.user?.login ?? 'Invitado'
+  return toTitleCase(authStore.user?.full_name) || authStore.user?.login || 'Invitado'
 })
 
 const userSubtitle = computed(() => {
@@ -111,23 +127,47 @@ function goToAdmin(): void {
       </button>
     </div>
 
+    <div v-if="usableConversations.length > 0" class="sidebar__search">
+      <div class="sidebar__search-field">
+        <svg class="sidebar__search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+        <input
+          v-model="search"
+          type="search"
+          class="sidebar__search-input"
+          placeholder="Buscar conversaciones"
+          aria-label="Buscar conversaciones"
+          autocomplete="off"
+          @keydown.esc="search = ''"
+        />
+      </div>
+    </div>
+
     <nav class="sidebar__list" aria-label="Conversaciones">
-      <p class="sidebar__section">Conversaciones</p>
       <p v-if="loading" class="sidebar__hint">Cargando…</p>
-      <p v-else-if="conversations.length === 0" class="sidebar__hint">
-        Aún no hay conversaciones.
+      <p v-else-if="usableConversations.length === 0" class="sidebar__hint">
+        Aún no hay conversaciones. Escribile algo a SAVI para empezar.
       </p>
-      <ConversationItem
-        v-for="c in conversations"
-        :key="c.id"
-        :conversation="c"
-        :database-label="databaseLabels?.[c.id] ?? null"
-        :active="c.id === activeId"
-        @select="emit('select', c.id)"
-        @rename="(title) => emit('rename', c.id, title)"
-        @share="emit('share', c.id)"
-        @delete="emit('delete', c.id)"
-      />
+      <p v-else-if="groups.length === 0 && hasSearch" class="sidebar__hint">
+        No encontramos conversaciones con «{{ search.trim() }}».
+        <button type="button" class="sidebar__clear" @click="search = ''">Ver todas</button>
+      </p>
+      <section v-for="g in groups" :key="g.key" class="sidebar__group" :aria-label="g.label">
+        <p class="sidebar__section">{{ g.label }}</p>
+        <ConversationItem
+          v-for="c in g.items"
+          :key="c.id"
+          :conversation="c"
+          :database-label="databaseLabels?.[c.id] ?? null"
+          :active="c.id === activeId"
+          @select="emit('select', c.id)"
+          @rename="(title) => emit('rename', c.id, title)"
+          @share="emit('share', c.id)"
+          @delete="emit('delete', c.id)"
+        />
+      </section>
     </nav>
 
     <footer class="sidebar__footer">
@@ -317,6 +357,63 @@ function goToAdmin(): void {
   border-color: var(--border-strong);
   transform: translateY(-0.5px);
   box-shadow: var(--shadow-sm);
+}
+
+.sidebar__search {
+  padding: 0 var(--space-4) var(--space-3);
+  flex-shrink: 0;
+}
+
+.sidebar__search-field {
+  position: relative;
+}
+
+.sidebar__search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.sidebar__search-input {
+  width: 100%;
+  padding: 7px var(--space-3) 7px 30px;
+  background: var(--surface-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+}
+
+.sidebar__search-input::placeholder {
+  color: var(--text-subtle);
+}
+
+.sidebar__search-input:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-ring);
+}
+
+.sidebar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar__clear {
+  display: block;
+  margin-top: var(--space-2);
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--brand);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .sidebar__list {

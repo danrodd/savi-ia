@@ -28,7 +28,7 @@
  *   `.value` en `undefined` en runtime — exportar a HTML y a PDF fallaban
  *   siempre con "No pude leer el contenido".
  */
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { toast } from '@/lib/toast'
 import {
@@ -58,7 +58,17 @@ const props = withDefaults(
 )
 
 const open = ref(false)
+const moreOpen = ref(false)
 const rootRef = ref<HTMLDivElement | null>(null)
+
+const triggerHint = computed(() =>
+  props.kind === 'conversation' ? 'Compartir conversación' : 'Copiar o enviar esta respuesta',
+)
+
+// Al cerrar el menú, "Más formatos" vuelve a quedar plegado.
+watch(open, (isOpen) => {
+  if (!isOpen) moreOpen.value = false
+})
 
 const isWebShareSupported = typeof navigator !== 'undefined' && 'share' in navigator
 
@@ -161,7 +171,8 @@ function handleDownloadMd(): void {
       class="share-menu__trigger"
       :aria-haspopup="'menu'"
       :aria-expanded="open"
-      :title="kind === 'conversation' ? 'Compartir conversación' : 'Compartir'"
+      :title="triggerHint"
+      :aria-label="triggerHint"
       @click="open = !open"
     >
       <slot name="trigger">
@@ -213,20 +224,6 @@ function handleDownloadMd(): void {
         type="button"
         role="menuitem"
         class="share-menu__item"
-        @click="handleDownloadHtml"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-        <span>Descargar como HTML</span>
-      </button>
-
-      <button
-        type="button"
-        role="menuitem"
-        class="share-menu__item"
         @click="handlePrintPdf"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -237,18 +234,60 @@ function handleDownloadMd(): void {
         <span>Imprimir / Guardar como PDF</span>
       </button>
 
+      <!-- Formatos para quien los necesita: a la vista quedan sólo las dos
+           acciones que usa casi todo el mundo (enlace y PDF). -->
       <button
         type="button"
-        role="menuitem"
-        class="share-menu__item"
-        @click="handleDownloadMd"
+        class="share-menu__item share-menu__more"
+        :aria-expanded="moreOpen"
+        @click="moreOpen = !moreOpen"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
+        <svg
+          class="share-menu__chevron"
+          :class="{ 'share-menu__chevron--open': moreOpen }"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="9 18 15 12 9 6" />
         </svg>
-        <span>Descargar como .md</span>
+        <span>Más formatos</span>
       </button>
+
+      <template v-if="moreOpen">
+        <button
+          type="button"
+          role="menuitem"
+          class="share-menu__item share-menu__item--nested"
+          @click="handleDownloadHtml"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+          <span>Página web (.html)</span>
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          class="share-menu__item share-menu__item--nested"
+          @click="handleDownloadMd"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <span>Texto con formato (.md)</span>
+        </button>
+      </template>
     </div>
   </div>
 </template>
@@ -354,6 +393,22 @@ function handleDownloadMd(): void {
 
 .share-menu__item span:nth-of-type(1) {
   flex: 1;
+}
+
+.share-menu__more {
+  color: var(--text-muted);
+}
+
+.share-menu__chevron {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.share-menu__chevron--open {
+  transform: rotate(90deg);
+}
+
+.share-menu__item--nested {
+  padding-left: var(--space-6);
 }
 
 .share-menu__hint {

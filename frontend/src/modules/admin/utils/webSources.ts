@@ -9,15 +9,15 @@ export const WEB_STATUS_LABELS: Record<WebSourceStatus, { label: string; tone: T
   pending: { label: 'En cola', tone: 'muted' },
   crawling: { label: 'Leyendo el sitio…', tone: 'info' },
   ready: { label: 'Listo', tone: 'ok' },
-  failed: { label: 'Error', tone: 'danger' },
+  failed: { label: 'No se pudo leer', tone: 'danger' },
 }
 
 export const PAGE_STATUS_LABELS: Record<WebPageStatus, { label: string; tone: Tone }> = {
-  imported: { label: 'Importada', tone: 'ok' },
+  imported: { label: 'Leída', tone: 'ok' },
   unchanged: { label: 'Sin cambios', tone: 'ok' },
-  skipped: { label: 'Omitida', tone: 'muted' },
-  failed: { label: 'Error', tone: 'danger' },
-  removed: { label: 'Dada de baja', tone: 'warn' },
+  skipped: { label: 'No se pudo leer', tone: 'muted' },
+  failed: { label: 'No se pudo leer', tone: 'danger' },
+  removed: { label: 'Ya no existe', tone: 'warn' },
 }
 
 export const REFRESH_LABELS: Record<RefreshFrequency, string> = {
@@ -39,12 +39,27 @@ export function hostOf(url: string): string {
   }
 }
 
+/** "41 páginas leídas": lo que el sitio aportó. */
+export function pagesReadLabel(source: Pick<WebSource, 'mode' | 'page_count'>): string {
+  if (source.mode === 'page') return 'Una página'
+  return source.page_count === 1 ? '1 página leída' : `${source.page_count} páginas leídas`
+}
+
+/** "4 no se pudieron leer", o `null` si todas se leyeron. */
+export function pagesSkippedLabel(
+  source: Pick<WebSource, 'mode' | 'skipped_count'>,
+): string | null {
+  if (source.mode === 'page' || source.skipped_count <= 0) return null
+  return source.skipped_count === 1
+    ? '1 no se pudo leer'
+    : `${source.skipped_count} no se pudieron leer`
+}
+
 export function pagesSummary(
   source: Pick<WebSource, 'mode' | 'page_count' | 'skipped_count'>,
 ): string {
-  if (source.mode === 'page') return 'Una página'
-  const pages = source.page_count === 1 ? '1 página' : `${source.page_count} páginas`
-  return source.skipped_count > 0 ? `${pages} · ${source.skipped_count} omitidas` : pages
+  const skipped = pagesSkippedLabel(source)
+  return skipped ? `${pagesReadLabel(source)} · ${skipped}` : pagesReadLabel(source)
 }
 
 /** Quien escribe "www.sitio.com" espera que funcione: se completa con https. */
