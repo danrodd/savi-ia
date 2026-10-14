@@ -13,8 +13,6 @@ from app.modules.audit.application import AuditRecorder
 from app.modules.audit.domain import RequestContext
 from app.modules.clients.application import CreateClientUseCase
 from app.modules.clients.domain import (
-    AccessPolicy,
-    AiPolicy,
     Client,
     ClientNotFound,
     ClientRepository,
@@ -22,6 +20,7 @@ from app.modules.clients.domain import (
     IdentityMode,
     InvalidClientName,
 )
+from app.modules.clients.policies import AccessPolicy, AiPolicy
 from app.modules.enrollments.application import (
     CreatedEnrollmentToken,
     CreateEnrollmentTokenUseCase,

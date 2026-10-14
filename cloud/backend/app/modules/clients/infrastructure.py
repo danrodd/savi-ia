@@ -12,13 +12,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
 from app.modules.clients.domain import (
-    AccessPolicy,
-    AiPolicy,
     Client,
     ClientCodeAlreadyExists,
     ClientStatus,
     IdentityMode,
 )
+from app.modules.clients.policies import AccessPolicy, AiPolicy
 from app.shared.clock import as_utc
 
 
