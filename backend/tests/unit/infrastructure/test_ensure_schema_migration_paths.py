@@ -22,6 +22,7 @@ mismas variables de entorno y limpiar el cache antes y después de cada
 test, o un test deja el cache apuntando a un `tmp_path` que ya no
 existe y rompe el resto de la suite.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -95,9 +96,7 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
 
     llm_columns = _table_columns(db_path, "llm_provider_configs")
     assert {"provider", "credential_encrypted", "is_active"}.issubset(llm_columns)
-    assert "uq_llm_provider_configs_active" in _index_names(
-        db_path, "llm_provider_configs"
-    )
+    assert "uq_llm_provider_configs_active" in _index_names(db_path, "llm_provider_configs")
 
     document_columns = _table_columns(db_path, "company_documents")
     assert {"title", "sha256", "visibility", "all_databases"}.issubset(document_columns)
@@ -115,7 +114,7 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     finally:
         engine.dispose()
-        assert version == "b6d2f8a4c1e7"
+        assert version == "c3a7d1e9f5b2"
 
 
 def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
@@ -213,9 +212,7 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
 
     llm_columns = _table_columns(db_path, "llm_provider_configs")
     assert {"provider", "credential_encrypted", "is_active"}.issubset(llm_columns)
-    assert "uq_llm_provider_configs_active" in _index_names(
-        db_path, "llm_provider_configs"
-    )
+    assert "uq_llm_provider_configs_active" in _index_names(db_path, "llm_provider_configs")
     # La migración de la lectura con IA también corre por el camino `upgrade`.
     assert "document_model" in llm_columns
     assert {"reading_method", "ai_page_count", "ai_cost_usd"}.issubset(
@@ -243,7 +240,7 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert row.erp_database_id == queried_database_id
     # ...y la identidad se backfillea desde la base consultada.
     assert row.owner_erp_database_id == queried_database_id
-    assert version == "b6d2f8a4c1e7"
+    assert version == "c3a7d1e9f5b2"
 
 
 _CHAT_ATTACHMENT_COLUMNS = {
@@ -313,3 +310,50 @@ def test_chat_attachment_migration_downgrades_cleanly(
     finally:
         engine.dispose()
     assert not {"chat_attachments", "chat_attachment_blobs"} & tables
+
+
+_FEEDBACK_COLUMNS = {
+    "id",
+    "message_id",
+    "user_id",
+    "owner_erp_database_id",
+    "rating",
+    "reason",
+    "comment",
+    "user_login",
+    "user_name",
+    "created_at",
+    "updated_at",
+}
+
+
+def test_fresh_sqlite_includes_the_message_feedback_table(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db_path = tmp_path / "fresh_feedback.db"
+
+    ensure_schema(_settings_for(db_path, monkeypatch))
+
+    assert _table_columns(db_path, "message_feedback") == _FEEDBACK_COLUMNS
+    assert "ix_message_feedback_owner_created" in _index_names(db_path, "message_feedback")
+
+
+def test_existing_sqlite_gets_the_message_feedback_table_on_upgrade(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db_path = tmp_path / "existing_feedback.db"
+    settings = _settings_for(db_path, monkeypatch)
+    command.stamp(_alembic_config(), "b6d2f8a4c1e7")
+    get_settings.cache_clear()
+
+    ensure_schema(settings)
+
+    assert _table_columns(db_path, "message_feedback") == _FEEDBACK_COLUMNS
+
+    get_settings.cache_clear()
+    command.downgrade(_alembic_config(), "b6d2f8a4c1e7")
+    engine = create_engine(f"sqlite:///{db_path.as_posix()}")
+    try:
+        assert "message_feedback" not in set(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()

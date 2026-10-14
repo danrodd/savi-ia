@@ -108,6 +108,14 @@ def _empty_attachments() -> list[ChatAttachmentResponse]:
     return []
 
 
+class MessageFeedbackResponse(BaseModel):
+    """Calificación del propio usuario sobre una respuesta (👍/👎)."""
+
+    rating: str
+    reason: str | None = None
+    comment: str | None = None
+
+
 class MessageResponse(BaseModel):
     id: UUID
     conversation_id: UUID
@@ -115,9 +123,7 @@ class MessageResponse(BaseModel):
     content: str
     created_at: datetime
     finish_reason: str | None = None
-    tool_invocations: list[ToolInvocationResponse] = Field(
-        default_factory=_empty_tool_invocations
-    )
+    tool_invocations: list[ToolInvocationResponse] = Field(default_factory=_empty_tool_invocations)
     usage: TokenUsageResponse | None = None
     cost_usd: Decimal | None = None
     provider: str | None = None
@@ -126,6 +132,9 @@ class MessageResponse(BaseModel):
     superseded_by_id: UUID | None = None
     sources: list[MessageSourceResponse] = Field(default_factory=_empty_sources)
     attachments: list[ChatAttachmentResponse] = Field(default_factory=_empty_attachments)
+    # Calificación del usuario autenticado. La completa la ruta con el módulo
+    # `feedback`; `None` = sin calificar (aditivo).
+    feedback: MessageFeedbackResponse | None = None
 
     @classmethod
     def from_dto(cls, dto: MessageDTO) -> "MessageResponse":

@@ -27,6 +27,9 @@ from app.modules.conversations.infrastructure.persistence.models import (  # noq
 from app.modules.erp_databases.infrastructure.persistence.models import (  # noqa: F401
     ErpDatabaseModel,
 )
+from app.modules.feedback.infrastructure.persistence.models import (  # noqa: F401
+    MessageFeedbackModel,
+)
 from app.modules.free_query.infrastructure.models import AuditQueryModel  # noqa: F401
 from app.modules.llm_providers.infrastructure.persistence.models import (  # noqa: F401
     LlmProviderConfigModel,

@@ -32,6 +32,10 @@ from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableEr
 from app.modules.erp_databases.infrastructure.http.dependencies import (
     ResolveModulesForDatabaseUseCaseDep,
 )
+from app.modules.feedback.application.responses import to_message_feedback
+from app.modules.feedback.infrastructure.http.dependencies import (
+    ListFeedbackForMessagesUseCaseDep,
+)
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
@@ -51,9 +55,7 @@ def _owner(user: CurrentUserDep) -> ConversationOwner:
     garantía para el type checker.
     """
     assert user.erp_database_id is not None  # noqa: S101
-    return ConversationOwner(
-        user_id=user.id, erp_database_id=user.erp_database_id
-    )
+    return ConversationOwner(user_id=user.id, erp_database_id=user.erp_database_id)
 
 
 @router.post(
@@ -115,6 +117,7 @@ async def get_conversation(
     user: CurrentUserDep,
     documents: DocumentRepositoryDep,
     access_resolver: ResolveModulesForDatabaseUseCaseDep,
+    feedback_use_case: ListFeedbackForMessagesUseCaseDep,
     include_superseded: bool = Query(
         default=False,
         description=(
@@ -131,6 +134,15 @@ async def get_conversation(
     )
     response = ConversationWithMessagesResponse.from_dto(result)
     await _resolve_source_availability(response, user, documents, access_resolver)
+    # Calificación 👍/👎 del propio usuario sobre cada respuesta (aditivo).
+    ratings = await feedback_use_case.execute(
+        [message.id for message in response.messages if message.role == "assistant"],
+        owner=_owner(user),
+    )
+    for message in response.messages:
+        found = ratings.get(message.id)
+        if found is not None:
+            message.feedback = to_message_feedback(found)
     return response
 
 
@@ -180,9 +192,7 @@ async def rename_conversation(
     """Renombra la conversación y bloquea los autotítulos futuros
     (`title_locked=True`). Lo usa el botón de "Renombrar" del sidebar.
     """
-    result = await use_case.execute(
-        conversation_id, request.title, expected_owner=_owner(user)
-    )
+    result = await use_case.execute(conversation_id, request.title, expected_owner=_owner(user))
     return ConversationResponse.from_dto(result)
 
 

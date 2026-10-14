@@ -133,6 +133,16 @@ def enforce_chat_limits(settings: Settings, user: AuthenticatedUser) -> None:
     _enforce(f"{key}:h", RateLimitPolicy(settings.rate_limit_chat_per_hour, _HOUR))
 
 
+def enforce_feedback_limits(settings: Settings, user: AuthenticatedUser) -> None:
+    """Calificaciones de respuestas: cupo por minuto, propio del feedback."""
+    if not settings.rate_limit_enabled:
+        return
+    _enforce(
+        f"{_user_key('feedback', user)}:m",
+        RateLimitPolicy(settings.rate_limit_feedback_per_minute, _MINUTE),
+    )
+
+
 def enforce_chat_attachment_limits(settings: Settings, user: AuthenticatedUser) -> None:
     """Subida de imágenes al chat: cupo por hora, propio y separado del de
     los documentos de la empresa."""

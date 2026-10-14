@@ -40,6 +40,7 @@ from app.modules.conversations.infrastructure.persistence.models import (
 from app.modules.erp_databases.infrastructure.persistence.models import (
     ErpDatabaseModel,
 )
+from app.modules.feedback.infrastructure.persistence.models import MessageFeedbackModel
 from app.modules.free_query.infrastructure.models import AuditQueryModel
 from app.modules.llm_providers.infrastructure.persistence.models import (
     LlmProviderConfigModel,
@@ -68,6 +69,7 @@ _REGISTERED_MODELS = (
     CompanyDocumentPageModel,
     CompanyDocumentAiReadModel,
     CompanyKnowledgeSettingsModel,
+    MessageFeedbackModel,
 )
 
 

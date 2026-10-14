@@ -291,6 +291,48 @@ data: {"type":"done","usage":{...},"cost_usd":0.012,"finish_reason":"complete"}
 
 ---
 
+### Feedback por respuesta (👍/👎)
+
+El usuario califica cada respuesta del asistente. Una calificación por
+`(mensaje, usuario)`; la identidad es el par usuario + base con la que
+inició sesión.
+
+| Endpoint | Descripción |
+|---|---|
+| `PUT /conversations/{conversation_id}/messages/{message_id}/feedback` | Crea o reemplaza. Body `{ "rating": "up" \| "down", "reason"?: string, "comment"?: string }`. Devuelve `{ rating, reason, comment, message_id, created_at, updated_at }`. |
+| `DELETE /conversations/{conversation_id}/messages/{message_id}/feedback` | Quita la calificación. Idempotente: `204` aunque no hubiera. |
+
+- `reason` solo con `down`: `dato_incorrecto`, `no_entendio`, `incompleta`,
+  `muy_lenta`, `otra`. Con `up` el backend responde `422`.
+- `comment`: máximo 1000 caracteres (se recorta con trim; vacío = null).
+- `404` si el mensaje no es de una conversación del usuario (o la
+  conversación fue eliminada). `422` si el mensaje no es del asistente o
+  ya fue reemplazado (`superseded_at` no nulo). `429` si se exceden las
+  calificaciones por minuto (`RATE_LIMIT_FEEDBACK_PER_MINUTE`, 60).
+- `GET /conversations/{id}` expone en cada mensaje (aditivo)
+  `feedback: { rating, reason, comment } | null`; solo trae la
+  calificación del usuario autenticado.
+- UI: mostrar los botones solo con la respuesta terminada, ya persistida
+  (con `id` real) y en la versión vigente. 👍 guarda al instante; 👎 pide
+  el motivo. Tocar la calificación activa envía `DELETE`. Optimista con
+  rollback si el backend rechaza.
+
+#### Panel del administrador
+
+Requiere administrador de la empresa (`403` si no). Todo acotado a la base
+con la que inició sesión el administrador. Filtros comunes: `rating`,
+`reason`, `from`/`to` (AAAA-MM-DD, inclusivos, zona de reporte),
+`provider`, `model`, `user` (código, contiene), `q` (texto en el comentario).
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /admin/feedback` | Lista paginada (`limit` 1-200, `offset`): `{ items, total, limit, offset }`. Cada item: `rating`, `reason`, `comment`, `created_at`, `updated_at`, `user_id`, `user_login`, `user_name`, `conversation_id`, `message_id`, `question` (≤2000), `answer` (≤4000), `provider`, `model`, `cost_usd`, `tools` (solo nombres), `database_code`. |
+| `GET /admin/feedback/summary` | `{ total, up, down, positive_pct, daily[{day,up,down}], top_reasons[{reason,count}], by_model[{provider,model,up,down}] }`. |
+| `GET /admin/feedback/export.csv` | CSV UTF-8 con BOM y separador `;` (abre en columnas en Excel es-CO), mismos filtros, hasta 10 000 filas. |
+
+Nunca se devuelven entradas de herramientas ni SQL. La pregunta es el
+mensaje del usuario inmediatamente anterior a la respuesta.
+
 ### Imágenes adjuntas
 
 Subir y enviar son **dos pasos**: primero se sube cada imagen y se obtiene

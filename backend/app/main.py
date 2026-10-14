@@ -52,6 +52,8 @@ from app.modules.erp_databases.infrastructure.http import (
 from app.modules.erp_databases.infrastructure.persistence import (
     SqlAlchemyErpDatabaseRepository,
 )
+from app.modules.feedback.infrastructure.http import admin_router as feedback_admin_router
+from app.modules.feedback.infrastructure.http import router as feedback_router
 from app.modules.knowledge.infrastructure.catalog_provider import init_catalog
 from app.modules.llm_providers.infrastructure.active_provider_resolver import (
     init_active_provider_resolver,
@@ -82,6 +84,7 @@ _API_PREFIXES = (
     "admin/company-documents",
     "admin/company-web-sources",
     "admin/erp-databases",
+    "admin/feedback",
     "admin/llm-providers",
     "erp-databases",
     "company-documents",
@@ -120,18 +123,14 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
         old_keys=[settings.erp_credentials_key_old],
     )
     erp_repository = SqlAlchemyErpDatabaseRepository(get_agent_sessionmaker(), cipher)
-    init_connection_provider(
-        ErpConnectionProvider(erp_repository, get_engine_registry())
-    )
+    init_connection_provider(ErpConnectionProvider(erp_repository, get_engine_registry()))
     # Siembra la base default desde el `.env` la primera vez. Idempotente.
     await seed_default_database(erp_repository, settings)
     # Y recién ahí se pueden apuntar las filas anteriores al multi-BD:
     # antes de sembrar no hay base a la cual asignarlas.
     default_database = await erp_repository.get_default()
     if default_database is not None:
-        await backfill_legacy_rows(
-            get_agent_sessionmaker(), default_database.id
-        )
+        await backfill_legacy_rows(get_agent_sessionmaker(), default_database.id)
 
     # Proveedor de IA: la primera vez se siembra Claude desde el `.env`; a
     # partir de ahí se administra desde la aplicación y el chat lo resuelve
@@ -222,6 +221,8 @@ def create_app() -> FastAPI:
 
     app.include_router(auth_router)
     app.include_router(conversations_router)
+    app.include_router(feedback_router)
+    app.include_router(feedback_admin_router)
     app.include_router(chat_router)
     app.include_router(attachments_router)
     app.include_router(usage_router)
@@ -252,8 +253,7 @@ def _belongs_to_the_api(path: str) -> bool:
     """
     normalizada = path.strip("/")
     return any(
-        normalizada == prefijo or normalizada.startswith(f"{prefijo}/")
-        for prefijo in _API_PREFIXES
+        normalizada == prefijo or normalizada.startswith(f"{prefijo}/") for prefijo in _API_PREFIXES
     )
 
 
