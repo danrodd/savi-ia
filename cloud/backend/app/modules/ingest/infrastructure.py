@@ -115,6 +115,8 @@ class EvSessionModel(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     user_ref: Mapped[str] = mapped_column(String(32), nullable=False)
     database_ref: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    # Solo clientes en modo `named` (la organización interna). Nulo para el resto.
+    user_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class EvFreeQueryModel(Base):
@@ -219,6 +221,7 @@ def _row(event: AnyEvent, instance_id: UUID, client_id: UUID) -> tuple[_Target, 
             **base,
             "source_id": event.source_id,
             "user_ref": s.user_ref,
+            "user_label": s.user_label,
             "database_ref": _uuid(s.database_ref),
         }
     if isinstance(event, FreeQueryEvent):

@@ -8,7 +8,7 @@ from datetime import timedelta
 from typing import Literal
 from uuid import UUID
 
-from app.modules.clients.domain import ClientNotFound, ClientRepository
+from app.modules.clients.domain import Client, ClientNotFound, ClientRepository
 from app.modules.instances.domain import (
     FINGERPRINT_MISMATCH,
     MANUAL_REASON,
@@ -41,12 +41,15 @@ _WIRE_STATUS: dict[InstanceStatus, Literal["active", "suspended", "revoked"]] = 
 }
 
 
-def policy_for(status: InstanceStatus) -> Policy:
+def policy_for(status: InstanceStatus, client: Client | None = None) -> Policy:
+    """Política vigente de una instancia: la general más la de su cliente."""
     return Policy(
         heartbeat_seconds=HEARTBEAT_SECONDS,
         ingest_seconds=INGEST_SECONDS,
         max_batch_events=MAX_BATCH_EVENTS,
         sync_enabled=status is InstanceStatus.ACTIVE,
+        config_locked=client.config_locked if client else False,
+        identity_mode=client.identity_mode.value if client else "pseudonym",
     )
 
 
@@ -95,11 +98,16 @@ class AuthenticateInstanceUseCase:
 
 class RecordHeartbeatUseCase:
     def __init__(
-        self, instances: InstanceRepository, heartbeats: HeartbeatRepository, clock: Clock
+        self,
+        instances: InstanceRepository,
+        heartbeats: HeartbeatRepository,
+        clock: Clock,
+        clients: ClientRepository | None = None,
     ) -> None:
         self._instances = instances
         self._heartbeats = heartbeats
         self._clock = clock
+        self._clients = clients
 
     async def execute(self, instance_id: UUID, payload: HeartbeatRequest) -> HeartbeatResponse:
         now = self._clock()
@@ -148,10 +156,11 @@ class RecordHeartbeatUseCase:
                     message="Cloud pidió renovar las credenciales de esta instalación.",
                 )
             )
+        client = await self._clients.get_by_id(instance.client_id) if self._clients else None
         return HeartbeatResponse(
             server_time=now,
             instance_status=_WIRE_STATUS[status],
-            policy=policy_for(status),
+            policy=policy_for(status, client),
             notices=notices,
         )
 

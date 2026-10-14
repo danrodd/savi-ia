@@ -130,6 +130,7 @@ def test_permission_matrix_matches_spec() -> None:
     assert set(PERMISSIONS) == set(Permission)
     admin_only = {
         Permission.CLIENTS_SUSPEND,
+        Permission.CLIENTS_POLICY,
         Permission.ALERTS_CONFIGURE,
         Permission.STAFF_MANAGE,
         Permission.AUDIT_READ,

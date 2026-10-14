@@ -42,5 +42,5 @@ async def redeem(
         client=EnrollClient(
             id=str(result.client.id), code=result.client.code, name=result.client.name
         ),
-        policy=policy_for(result.instance.status),
+        policy=policy_for(result.instance.status, result.client),
     )

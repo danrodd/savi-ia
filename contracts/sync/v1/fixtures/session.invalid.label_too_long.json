@@ -1,0 +1,9 @@
+{
+  "schema": "session/1",
+  "source_id": "jti-9a2b7d",
+  "occurred_at": "2026-09-14T14:50:00Z",
+  "data": {
+    "user_ref": "0123456789abcdef0123456789abcdef",
+    "user_label": "UNA-ETIQUETA-DEMASIADO-LARGA-PARA-SER-UN-CODIGO-DE-USUARIO-DEL-ERP-123456789"
+  }
+}

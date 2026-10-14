@@ -379,7 +379,15 @@ async def test_users_ranking_is_pseudonymous(fx: Fixture) -> None:
     assert users[0]["turns"] == 2
     assert Decimal(users[0]["cost_usd"]) == Decimal("0.011000")
     assert users[0]["databases_used"] == 1
-    assert set(users[0]) == {"user_ref", "turns", "cost_usd", "last_used_at", "databases_used"}
+    assert set(users[0]) == {
+        "user_ref",
+        "label",
+        "turns",
+        "cost_usd",
+        "last_used_at",
+        "databases_used",
+    }
+    assert users[0]["label"] is None  # cliente con seudónimos: Cloud no sabe quiénes son
 
 
 async def test_databases_show_latest_snapshot(fx: Fixture) -> None:

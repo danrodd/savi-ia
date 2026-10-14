@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import ValidationError
 
 from app.dependencies import get_clock, ingest_instance, transaction
+from app.modules.clients.infrastructure import SqlAlchemyClientRepository
 from app.modules.ingest.application import IngestBatchUseCase
 from app.modules.ingest.infrastructure import SqlAlchemyIngestRepository
 from app.modules.instances.domain import Instance
@@ -84,7 +85,9 @@ async def ingest(request: Request, instance: Instance = Depends(ingest_instance)
     envelope = _parse_envelope(await _read_body(request))
     async with transaction(request) as session:
         outcome = await IngestBatchUseCase(
-            SqlAlchemyIngestRepository(session), get_clock(request)
+            SqlAlchemyIngestRepository(session),
+            get_clock(request),
+            SqlAlchemyClientRepository(session),
         ).execute(instance, envelope)
     return IngestResponse(
         accepted=outcome.accepted, duplicates=outcome.duplicates, rejected=outcome.rejected

@@ -1,0 +1,13 @@
+{
+  "server_time": "2026-09-14T15:00:01Z",
+  "instance_status": "active",
+  "policy": {
+    "heartbeat_seconds": 300,
+    "ingest_seconds": 300,
+    "max_batch_events": 500,
+    "sync_enabled": true,
+    "config_locked": true,
+    "identity_mode": "named"
+  },
+  "notices": []
+}

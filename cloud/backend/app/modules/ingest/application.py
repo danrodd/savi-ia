@@ -7,10 +7,17 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
+from app.modules.clients.domain import ClientRepository, IdentityMode
 from app.modules.ingest.domain import IngestOutcome, IngestRepository
 from app.modules.instances.domain import Instance, InstanceStatus
 from app.shared.clock import Clock
-from app.shared.sync_v1 import EVENT_MODELS, AnyEvent, IngestRequest, RejectedEvent
+from app.shared.sync_v1 import (
+    EVENT_MODELS,
+    AnyEvent,
+    IngestRequest,
+    RejectedEvent,
+    SessionEvent,
+)
 
 _MAX_SOURCE_ID = 128
 
@@ -39,10 +46,27 @@ def validate_events(
     return valid, rejected
 
 
+def _strip_labels(events: list[AnyEvent]) -> list[AnyEvent]:
+    out: list[AnyEvent] = []
+    for event in events:
+        if isinstance(event, SessionEvent) and event.data.user_label is not None:
+            event = event.model_copy(
+                update={"data": event.data.model_copy(update={"user_label": None})}
+            )
+        out.append(event)
+    return out
+
+
 class IngestBatchUseCase:
-    def __init__(self, ingest: IngestRepository, clock: Clock) -> None:
+    def __init__(
+        self,
+        ingest: IngestRepository,
+        clock: Clock,
+        clients: ClientRepository | None = None,
+    ) -> None:
         self._ingest = ingest
         self._clock = clock
+        self._clients = clients
 
     async def execute(self, instance: Instance, request: IngestRequest) -> IngestOutcome:
         if instance.status is not InstanceStatus.ACTIVE:
@@ -56,9 +80,21 @@ class IngestBatchUseCase:
             return previous
 
         valid, rejected = validate_events(request.events)
+        valid = await self._without_unauthorized_labels(instance, valid)
         inserted = await self._ingest.insert_events(instance.id, instance.client_id, valid)
         outcome = IngestOutcome(
             accepted=inserted, duplicates=len(valid) - inserted, rejected=rejected
         )
         await self._ingest.complete_batch(instance.id, batch_id, outcome)
         return outcome
+
+    async def _without_unauthorized_labels(
+        self, instance: Instance, events: list[AnyEvent]
+    ) -> list[AnyEvent]:
+        """Defensa en profundidad: una etiqueta de persona solo se guarda si el cliente
+        está en modo `named`. Una instancia mal configurada (o vieja) no puede forzar que
+        Cloud guarde códigos de usuario de un cliente que no lo autorizó."""
+        client = await self._clients.get_by_id(instance.client_id) if self._clients else None
+        if client is not None and client.identity_mode is IdentityMode.NAMED:
+            return events
+        return _strip_labels(events)

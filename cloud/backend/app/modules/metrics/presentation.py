@@ -18,6 +18,7 @@ from app.modules.alerts.infrastructure import SqlAlchemyAlertRepository
 from app.modules.clients.domain import ClientNotFound
 from app.modules.clients.infrastructure import ClientModel
 from app.modules.console.queries import is_online
+from app.modules.instances.domain import InstanceNotFound
 from app.modules.instances.infrastructure import InstanceModel, to_entity
 from app.modules.metrics.definitions import METRICS
 from app.modules.metrics.queries import (
@@ -185,10 +186,19 @@ class DatabaseOut(BaseModel):
 
 class UserOut(BaseModel):
     user_ref: str
+    # Código de usuario: solo en la organización interna (modo `named`).
+    label: str | None
     turns: int
     cost_usd: str
     last_used_at: datetime
     databases_used: int
+
+
+class PersonOut(BaseModel):
+    user_ref: str
+    label: str | None
+    sessions: int
+    last_session_at: datetime
 
 
 class CountsOut(BaseModel):
@@ -402,6 +412,28 @@ async def client_databases(
     return [DatabaseOut.of(d) for d in rows]
 
 
+@router.get("/instances/{instance_id}/people", response_model=list[PersonOut])
+async def instance_people(
+    instance_id: UUID,
+    request: Request,
+    _: Principal = Depends(RequirePermission(Permission.INSTANCES_READ)),
+) -> list[PersonOut]:
+    """Quiénes usan esta instalación. En clientes con seudónimo, solo se ven los seudónimos."""
+    async with transaction(request) as session:
+        if await session.get(InstanceModel, instance_id) is None:
+            raise InstanceNotFound("No existe la instancia.")
+        rows = await MetricsQueries(session).people_of_instance(instance_id)
+    return [
+        PersonOut(
+            user_ref=p.user_ref,
+            label=p.label,
+            sessions=p.sessions,
+            last_session_at=p.last_session_at,
+        )
+        for p in rows
+    ]
+
+
 @router.get("/clients/{client_id}/users", response_model=list[UserOut])
 async def client_users(
     client_id: UUID,
@@ -419,6 +451,7 @@ async def client_users(
     return [
         UserOut(
             user_ref=u.user_ref,
+            label=u.label,
             turns=u.turns,
             cost_usd=str(u.cost_usd),
             last_used_at=u.last_used_at,

@@ -3,13 +3,19 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, DateTime, String, Uuid, select
+from sqlalchemy import Boolean, CheckConstraint, DateTime, String, Uuid, select
+from sqlalchemy import false as sa_false
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
-from app.modules.clients.domain import Client, ClientCodeAlreadyExists, ClientStatus
+from app.modules.clients.domain import (
+    Client,
+    ClientCodeAlreadyExists,
+    ClientStatus,
+    IdentityMode,
+)
 from app.shared.clock import as_utc
 
 
@@ -18,6 +24,7 @@ class ClientModel(Base):
     __table_args__ = (
         CheckConstraint("status in ('active', 'suspended')", name="status_valid"),
         CheckConstraint("length(code) between 2 and 32", name="code_length"),
+        CheckConstraint("identity_mode in ('pseudonym', 'named')", name="identity_mode_valid"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
@@ -27,6 +34,12 @@ class ClientModel(Base):
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    identity_mode: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="pseudonym", server_default="pseudonym"
+    )
+    config_locked: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=sa_false()
+    )
 
 
 def to_entity(model: ClientModel) -> Client:
@@ -38,6 +51,8 @@ def to_entity(model: ClientModel) -> Client:
         status=ClientStatus(model.status),
         created_at=as_utc(model.created_at),
         updated_at=as_utc(model.updated_at),
+        identity_mode=IdentityMode(model.identity_mode),
+        config_locked=model.config_locked,
     )
 
 
@@ -54,6 +69,8 @@ class SqlAlchemyClientRepository:
             status=client.status.value,
             created_at=client.created_at,
             updated_at=client.updated_at,
+            identity_mode=client.identity_mode.value,
+            config_locked=client.config_locked,
         )
         try:
             async with self._session.begin_nested():
@@ -79,6 +96,8 @@ class SqlAlchemyClientRepository:
         model.name = client.name
         model.nit = client.nit
         model.status = client.status.value
+        model.identity_mode = client.identity_mode.value
+        model.config_locked = client.config_locked
         model.updated_at = client.updated_at
         await self._session.flush()
 

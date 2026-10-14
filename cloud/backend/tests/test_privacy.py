@@ -46,7 +46,7 @@ APPROVED_FIELDS: dict[str, set[str]] = {
         "tipo",
     },
     "conversation": {"conversation_ref", "database_ref", "user_ref"},
-    "session": {"user_ref", "database_ref"},
+    "session": {"user_ref", "user_label", "database_ref"},
     "free_query": {
         "conversation_ref",
         "database_ref",

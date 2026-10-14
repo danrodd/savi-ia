@@ -18,7 +18,7 @@ from app.dependencies import get_clock, transaction
 from app.modules.audit.application import AuditRecorder
 from app.modules.audit.domain import AuditEntry
 from app.modules.audit.infrastructure import SqlAlchemyAuditRepository
-from app.modules.clients.domain import ClientNotFound, ClientStatus
+from app.modules.clients.domain import ClientNotFound, ClientStatus, IdentityMode
 from app.modules.clients.infrastructure import SqlAlchemyClientRepository
 from app.modules.console.application import (
     ClientActions,
@@ -68,6 +68,8 @@ class ClientOut(BaseModel):
     instances_online: int
     last_seen_at: datetime | None
     oldest_version: str | None
+    identity_mode: str
+    config_locked: bool
 
     @classmethod
     def of(cls, summary: ClientSummary) -> ClientOut:
@@ -84,6 +86,8 @@ class ClientOut(BaseModel):
             instances_online=summary.instances_online,
             last_seen_at=summary.last_seen_at,
             oldest_version=summary.oldest_version,
+            identity_mode=c.identity_mode.value,
+            config_locked=c.config_locked,
         )
 
 
@@ -261,6 +265,11 @@ class ClientPatch(_Body):
     nit: str | None = Field(default=None, max_length=32)
 
 
+class ClientPolicyPatch(_Body):
+    identity_mode: IdentityMode | None = None
+    config_locked: bool | None = None
+
+
 class RevokeBody(_Body):
     confirm: str
 
@@ -417,6 +426,23 @@ async def update_client(
             name=body.name,
             nit=body.nit,
             nit_given="nit" in body.model_fields_set,
+            ctx=request_context(request, principal),
+        )
+        return await _client_out(request, session, client_id)
+
+
+@router.patch("/clients/{client_id}/policy", response_model=ClientOut)
+async def set_client_policy(
+    client_id: UUID,
+    body: ClientPolicyPatch,
+    request: Request,
+    principal: Principal = Depends(RequirePermission(Permission.CLIENTS_POLICY)),
+) -> ClientOut:
+    async with transaction(request) as session:
+        await _client_actions(request, session).set_policy(
+            client_id,
+            identity_mode=body.identity_mode,
+            config_locked=body.config_locked,
             ctx=request_context(request, principal),
         )
         return await _client_out(request, session, client_id)

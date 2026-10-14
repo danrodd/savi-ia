@@ -151,6 +151,18 @@ class UserUsage:
     cost_usd: Decimal
     last_used_at: datetime
     databases_used: int
+    # Solo clientes en modo `named`; `None` para el resto.
+    label: str | None = None
+
+
+@dataclass(frozen=True)
+class PersonActivity:
+    """Una persona que inició sesión en una instalación."""
+
+    user_ref: str
+    label: str | None
+    sessions: int
+    last_session_at: datetime
 
 
 @dataclass(frozen=True)
@@ -413,9 +425,41 @@ class MetricsQueries:
             .order_by(func.count().desc(), t.user_ref)
             .limit(limit)
         )
+        labels = await self._labels(client_id)
         return [
-            UserUsage(ref, int(n), _money(cost), _utc(last), int(dbs))
+            UserUsage(ref, int(n), _money(cost), _utc(last), int(dbs), labels.get(ref))
             for ref, n, cost, last, dbs in (await self._s.execute(stmt)).all()
+        ]
+
+    async def _labels(self, client_id: UUID) -> dict[str, str]:
+        """Última etiqueta conocida de cada persona (vacío si el cliente es `pseudonym`)."""
+        s = EvSessionModel
+        stmt = (
+            select(s.user_ref, s.user_label)
+            .where(s.client_id == client_id, s.user_label.is_not(None))
+            .order_by(s.occurred_at)
+        )
+        # Orden ascendente: la última sesión pisa a las anteriores.
+        return {ref: str(label) for ref, label in (await self._s.execute(stmt)).all()}
+
+    async def people_of_instance(self, instance_id: UUID) -> list[PersonActivity]:
+        """Quiénes entraron a esta instalación, con cuántas sesiones y cuándo fue la última."""
+        s = EvSessionModel
+        stmt = (
+            select(s.user_ref, func.count(), func.max(s.occurred_at))
+            .where(s.instance_id == instance_id)
+            .group_by(s.user_ref)
+            .order_by(func.max(s.occurred_at).desc())
+        )
+        labels_stmt = (
+            select(s.user_ref, s.user_label)
+            .where(s.instance_id == instance_id, s.user_label.is_not(None))
+            .order_by(s.occurred_at)
+        )
+        labels = {ref: str(lbl) for ref, lbl in (await self._s.execute(labels_stmt)).all()}
+        return [
+            PersonActivity(ref, labels.get(ref), int(n), _utc(last))
+            for ref, n, last in (await self._s.execute(stmt)).all()
         ]
 
     # ------------------------------------------------------------ inventario

@@ -17,6 +17,7 @@ from app.modules.clients.domain import (
     ClientNotFound,
     ClientRepository,
     ClientStatus,
+    IdentityMode,
     InvalidClientName,
 )
 from app.modules.enrollments.application import (
@@ -115,6 +116,43 @@ class ClientActions:
             target_id=str(client_id),
             before=_client_state(client),
             after=_client_state(updated),
+        )
+        return updated
+
+    async def set_policy(
+        self,
+        client_id: UUID,
+        *,
+        identity_mode: IdentityMode | None,
+        config_locked: bool | None,
+        ctx: RequestContext,
+    ) -> Client:
+        """Cambia la política que baja a las instalaciones del cliente (heartbeat).
+
+        `named` guarda el código de usuario de cada persona: solo corresponde a la organización
+        interna. Por eso es una acción propia, de administrador y auditada.
+        """
+        client = await self._get(client_id)
+        updated = replace(
+            client,
+            identity_mode=identity_mode or client.identity_mode,
+            config_locked=client.config_locked if config_locked is None else config_locked,
+            updated_at=self.clock(),
+        )
+        await self.clients.save(updated)
+        await self.audit.record(
+            ctx,
+            "client.policy",
+            target_type="client",
+            target_id=str(client_id),
+            before={
+                "identity_mode": client.identity_mode.value,
+                "config_locked": client.config_locked,
+            },
+            after={
+                "identity_mode": updated.identity_mode.value,
+                "config_locked": updated.config_locked,
+            },
         )
         return updated
 

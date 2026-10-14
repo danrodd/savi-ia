@@ -17,6 +17,16 @@ class ClientStatus(StrEnum):
     SUSPENDED = "suspended"
 
 
+class IdentityMode(StrEnum):
+    """Cómo se identifica a las personas de un cliente en Cloud."""
+
+    # Seudónimo (HMAC): Cloud cuenta usuarios sin saber quiénes son. Es el modo de los clientes.
+    PSEUDONYM = "pseudonym"
+    # Código de usuario del ERP. Solo para la organización interna (SEO Group): ahí
+    # "5 SAVI funcionando" tiene que poder decir de quiénes son.
+    NAMED = "named"
+
+
 @dataclass(frozen=True)
 class Client:
     id: UUID
@@ -26,6 +36,9 @@ class Client:
     status: ClientStatus
     created_at: datetime
     updated_at: datetime
+    identity_mode: IdentityMode = IdentityMode.PSEUDONYM
+    # Las instalaciones de este cliente quedan solo con el chat (sin Administración).
+    config_locked: bool = False
 
 
 class InvalidClientCode(DomainError):

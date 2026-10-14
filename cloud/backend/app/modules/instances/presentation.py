@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 
 from app.dependencies import authenticated_instance, get_clock, heartbeat_instance, transaction
+from app.modules.clients.infrastructure import SqlAlchemyClientRepository
 from app.modules.instances.application import RecordHeartbeatUseCase, RotateCredentialsUseCase
 from app.modules.instances.domain import Instance
 from app.modules.instances.infrastructure import (
@@ -25,6 +26,7 @@ async def heartbeat(
             SqlAlchemyInstanceRepository(session),
             SqlAlchemyHeartbeatRepository(session),
             get_clock(request),
+            SqlAlchemyClientRepository(session),
         ).execute(instance.id, body)
 
 

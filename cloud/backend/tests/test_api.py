@@ -183,6 +183,8 @@ async def test_redeem_creates_instance_and_matches_contract(env: Env) -> None:
         "ingest_seconds": 300,
         "max_batch_events": 500,
         "sync_enabled": True,
+        "config_locked": False,
+        "identity_mode": "pseudonym",
     }
     stored = await env.instance(body["instance_id"])
     assert stored.status == "active"

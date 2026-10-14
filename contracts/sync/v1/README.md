@@ -33,6 +33,12 @@ JSON Schema draft 2020-12. Todo viaja en JSON UTF-8; las fechas son ISO-8601 con
   agregar un campo a un evento, aunque sea opcional, es un cambio de contrato y debe pasar
   por revisión de privacidad. Nunca viaja contenido: ni preguntas, ni respuestas, ni SQL,
   ni credenciales, ni datos del ERP (RNF-04).
+- **Política por cliente (aditivo):** `policy.config_locked` (la instalación queda solo
+  con el chat) y `policy.identity_mode` (`pseudonym` por defecto, `named` solo para la
+  organización interna). Una instancia que no los conoce los ignora.
+- **`session/1.user_label`** (opcional) viaja **solo** con `identity_mode = named`: el
+  código de usuario del ERP, nunca el nombre completo ni el correo. Cloud lo descarta si el
+  cliente no está en modo `named`.
 - Un evento inválido no falla el lote: se informa en `rejected`. El lote solo falla con
   `422` si el **sobre** es inválido (`ingest.request.schema.json`).
 - Los modelos Pydantic de cada lado se escriben a mano. El test de contrato valida todos
