@@ -9,7 +9,7 @@
  * que recibe como parámetro.
  */
 import { ENV } from '@/lib/env'
-import type { AuthUser, LoginPayload, TokenResponse } from '../types'
+import type { AuthUser, LoginPayload, LoginResult, MfaSetup, TokenResponse } from '../types'
 
 async function asJsonOrThrow<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -45,13 +45,40 @@ class AuthService {
     return `${ENV.API_BASE_URL.replace(/\/+$/, '')}${path}`
   }
 
-  async login(payload: LoginPayload): Promise<TokenResponse> {
+  async login(payload: LoginPayload): Promise<LoginResult> {
     const res = await fetch(this.url('/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-    return asJsonOrThrow<TokenResponse>(res)
+    return asJsonOrThrow<LoginResult>(res)
+  }
+
+  private async postJson<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(this.url(path), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    return asJsonOrThrow<T>(res)
+  }
+
+  /** Genera el secreto del segundo factor (queda pendiente hasta confirmar un código). */
+  mfaSetup(mfaToken: string): Promise<MfaSetup> {
+    return this.postJson<MfaSetup>('/auth/mfa/setup', { mfa_token: mfaToken })
+  }
+
+  /** Confirma el primer código: activa el segundo factor y abre la sesión. */
+  mfaConfirm(mfaToken: string, code: string): Promise<TokenResponse> {
+    return this.postJson<TokenResponse>('/auth/mfa/setup/confirm', {
+      mfa_token: mfaToken,
+      code,
+    })
+  }
+
+  /** Verifica el código del segundo factor y abre la sesión. */
+  mfaVerify(mfaToken: string, code: string): Promise<TokenResponse> {
+    return this.postJson<TokenResponse>('/auth/mfa/verify', { mfa_token: mfaToken, code })
   }
 
   async refresh(refreshToken: string): Promise<TokenResponse> {

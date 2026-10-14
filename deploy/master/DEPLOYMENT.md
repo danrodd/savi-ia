@@ -46,6 +46,8 @@ Ver el mapa de archivos en [`README.md`](README.md).
 | `TZ` | `America/Bogota` | |
 | `SAVI_DB_USER/NAME`, `CLOUD_DB_USER/NAME` | Nombres | Cada app tiene su propio rol y base |
 | `SAVI_ADMIN_LOGINS` | Códigos separados por coma | Administradores de SAVI además de los del ERP |
+| `SAVI_MFA_ENFORCEMENT` | `admins` / `all` / `off` | Segundo factor (TOTP). Ver §5 |
+| `SAVI_MFA_ISSUER` | Texto | Nombre que muestra la aplicación de autenticación |
 | `SAVI_CLOUD_URL` | `https://<CLOUD_DOMAIN>` | Opcional: vincula este SAVI con el Cloud del servidor |
 | `CLOUD_LATEST_VERSION[_PUBLISHED_AT]` | Versión y fecha | Habilita la alerta de instancias desactualizadas |
 | `SAVI_VERSION/COMMIT/BUILT_AT` | **Generadas** | `setup.sh` las escribe desde el tag de git |
@@ -106,6 +108,17 @@ docker compose up -d --build              # aplicar cambios del repositorio
   y copiar `backups/` **fuera del servidor**. Conservar al menos 7 días.
 - **Espacio en disco:** `data/postgres`, los respaldos y, con el uso, `data/savi/home` (el CLI de
   Claude guarda sesiones). `docker system df` y `docker image prune` tras actualizar.
+- **Segundo factor (TOTP) de los administradores de SAVI.** Con `SAVI_MFA_ENFORCEMENT=admins`,
+  quien administra SAVI escribe usuario y contraseña (la del ERP) y después un código de 6
+  dígitos de su aplicación. En el primer ingreso ve un QR (y la clave para cargar a mano) y
+  confirma con el primer código. El secreto se guarda cifrado con `erp_credentials_key`.
+  - **Perdió el celular:** otro administrador entra a Administración → Seguridad y lo
+    restablece (cierra sus sesiones; configura de nuevo en el próximo ingreso).
+  - **No queda ningún administrador que pueda entrar** (salida de emergencia, en el servidor):
+    `docker compose exec savi /app/docker-entrypoint.sh python -m app.mfa_cli reset USUARIO@CLIENTE`
+  - Si cambia `erp_credentials_key`, los secretos del segundo factor quedan ilegibles y esas
+    cuentas piden un restablecimiento (no se degradan a «configurar de nuevo»: eso permitiría
+    saltear el factor con solo la contraseña).
 - **Flujo de cambios:** `git pull` + `./setup.sh` + `docker compose up -d --build`. No se copian
   archivos sueltos al servidor.
 
@@ -131,14 +144,15 @@ docker compose up -d --build              # aplicar cambios del repositorio
 - [ ] `.env`, `secrets/`, `backups/` con permisos `600`/`700` y fuera de git.
 - [ ] Solo 80 y 443 publicados; la base no tiene puerto publicado.
 - [ ] La documentación del API (`/docs`) responde 404.
-- [ ] Administradores de Cloud con TOTP activo.
+- [ ] Administradores de Cloud y de SAVI con TOTP activo (`SAVI_MFA_ENFORCEMENT=admins`).
 - [ ] Respaldos copiados fuera del servidor y restauración probada.
 - [ ] Servidor con actualizaciones de seguridad del sistema operativo.
 - [ ] SSH solo con llaves; sin acceso root por contraseña.
 
 ## 9. Pendientes
 
-- Doble factor para los administradores de **SAVI** (hoy lo tienen los de Cloud).
+- Códigos de recuperación de un solo uso para el segundo factor (hoy se restablece por un
+  administrador o por línea de comandos).
 - `read_only` para el contenedor de SAVI (requiere probar el CLI de Claude bajo carga).
 - Respaldo automático programado desde el propio compose y envío fuera del servidor.
 - Prueba de restauración periódica automatizada.

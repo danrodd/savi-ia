@@ -12,7 +12,9 @@ import { useRoute, useRouter } from 'vue-router'
 
 import AppVersion from '@/components/AppVersion.vue'
 import Button from '@/components/ui/Button.vue'
+import MfaPanel from '../components/MfaPanel.vue'
 import { useAuthStore } from '../stores/authStore'
+import type { MfaChallenge } from '../types'
 import {
   loginSuggestions,
   readRememberedCodes,
@@ -30,8 +32,23 @@ const showPassword = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref<string | null>(null)
 
+// Segundo factor: si el login devolvió un desafío, se muestra el panel del código en lugar
+// del formulario. La contraseña ya se verificó y se descarta de memoria.
+const challenge = ref<MfaChallenge | null>(null)
+
 const rememberedCodes = readRememberedCodes()
 const suggestions = computed(() => loginSuggestions(login.value, rememberedCodes))
+
+async function enter(): Promise<void> {
+  const next = (route.query.next as string | undefined) ?? '/'
+  await router.replace(next)
+}
+
+function onMfaCancel(message?: string): void {
+  challenge.value = null
+  password.value = ''
+  errorMessage.value = message ?? null
+}
 
 async function onSubmit(): Promise<void> {
   errorMessage.value = null
@@ -41,10 +58,17 @@ async function onSubmit(): Promise<void> {
   }
   isSubmitting.value = true
   try {
-    await authStore.login({ login: login.value.trim(), password: password.value })
+    const pending = await authStore.login({
+      login: login.value.trim(),
+      password: password.value,
+    })
     rememberCodeFromLogin(login.value)
-    const next = (route.query.next as string | undefined) ?? '/'
-    await router.replace(next)
+    if (pending) {
+      challenge.value = pending
+      password.value = ''
+      return
+    }
+    await enter()
   } catch (err) {
     errorMessage.value = loginErrorMessage(err)
   } finally {
@@ -70,7 +94,13 @@ async function onSubmit(): Promise<void> {
           Asistente del ERP de SEO Group
         </p>
       </div>
-      <form class="login__form" @submit.prevent="onSubmit">
+      <MfaPanel
+        v-if="challenge"
+        :challenge="challenge"
+        @done="enter"
+        @cancel="onMfaCancel"
+      />
+      <form v-else class="login__form" @submit.prevent="onSubmit">
         <label class="login__field">
           <span class="login__label">Usuario</span>
           <input

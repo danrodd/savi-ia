@@ -18,11 +18,26 @@ export const DATABASE_DISABLED_MESSAGE =
 export const DATABASE_UNREACHABLE_MESSAGE =
   'No pudimos conectar con la base de ese cliente. Probá de nuevo en unos minutos o avisale a tu administrador.'
 
+export const INVALID_MFA_CODE_MESSAGE =
+  'El código no es válido. Revisá el de tu aplicación e intentá de nuevo.'
+
+export const MFA_EXPIRED_MESSAGE = 'La verificación venció. Volvé a iniciar sesión.'
+
 export const GENERIC_LOGIN_MESSAGE =
   'No pudimos entrar. Revisá el usuario, la contraseña y el código del cliente.'
 
 export const NETWORK_LOGIN_MESSAGE =
   'No pudimos conectarnos con SAVI. Revisá tu conexión e intentá de nuevo.'
+
+/**
+ * ¿El error del segundo factor es que el desafío venció (o ya no sirve)? Entonces la persona
+ * tiene que volver a empezar: reintentar el código no sirve de nada.
+ */
+export function isMfaExpired(err: unknown): boolean {
+  return (
+    err instanceof AuthRequestError && err.status === 401 && err.errorCode !== 'invalid_mfa_code'
+  )
+}
 
 export function loginErrorMessage(err: unknown): string {
   if (err instanceof AuthRequestError) {
@@ -31,6 +46,7 @@ export function loginErrorMessage(err: unknown): string {
     if (err.errorCode === 'unknown_database') return UNKNOWN_DATABASE_MESSAGE
     if (err.errorCode === 'database_disabled') return DATABASE_DISABLED_MESSAGE
     if (err.errorCode === 'database_unreachable') return DATABASE_UNREACHABLE_MESSAGE
+    if (err.errorCode === 'invalid_mfa_code') return INVALID_MFA_CODE_MESSAGE
     // Cuenta deshabilitada o demasiados intentos: el backend ya explica el
     // motivo (con la espera, si corresponde) y no hay un dato que corregir.
     if (err.status === 403 || err.status === 429) return err.message

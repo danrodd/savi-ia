@@ -19,11 +19,36 @@ export interface AuthUser {
 }
 
 export interface TokenResponse {
+  /** Ausente en respuestas anteriores al segundo factor. */
+  status?: 'authenticated'
   access_token: string
   refresh_token: string
   token_type: 'Bearer'
   expires_in: number
   user: AuthUser
+}
+
+/**
+ * El login verificó la contraseña pero falta el segundo factor: no hay sesión todavía.
+ * `mfa_setup_required` = primer ingreso (hay que configurar la aplicación de autenticación).
+ */
+export interface MfaChallenge {
+  status: 'mfa_required' | 'mfa_setup_required'
+  mfa_token: string
+  expires_in: number
+}
+
+export interface MfaSetup {
+  /** Clave en base32 para cargar a mano. */
+  secret: string
+  /** URI `otpauth://` que codifica el QR. */
+  otpauth_uri: string
+}
+
+export type LoginResult = TokenResponse | MfaChallenge
+
+export function isMfaChallenge(result: LoginResult): result is MfaChallenge {
+  return result.status === 'mfa_required' || result.status === 'mfa_setup_required'
 }
 
 export interface LoginPayload {

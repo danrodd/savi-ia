@@ -157,7 +157,7 @@ pestaña del ERP E6) **se difiere** hasta que haya un cliente real.
 | M1.1 Imagen de SAVI (`backend/Dockerfile`: frontend + backend + modelo, usuario sin privilegios) | Hecho; sin construir (sin Docker en el equipo de desarrollo) |
 | M1.2 Stack `deploy/master` con la guía de despliegue: compose, `.env`, secretos por archivo, Caddy con Let's Encrypt, `setup.sh`, `backup.sh`, `rollback.sh`, documentación de traspaso | Hecho; verificado de forma estática y por comportamiento (56 comprobaciones) |
 | M1.3 OpenAPI oculto en producción | Hecho |
-| M1.4 Doble factor (TOTP) para administradores de SAVI | Pendiente (D5) |
+| M1.4 Doble factor (TOTP) para administradores de SAVI: QR y clave manual, configuración obligatoria en el primer ingreso, restablecimiento desde Administración → Seguridad y por línea de comandos | Hecho; recorrido real en navegador (12/12) |
 | M1.5 Validar en un servidor Linux real: build de las imágenes, certificados, CLI de Claude y primer chat | Pendiente: requiere el servidor y el dominio (D4) |
 
 > **Hallazgo:** el endurecimiento de red que la Fase 1 daba por inexistente (límite de intentos

@@ -11,13 +11,14 @@
  *
  * El logout limpia el store + storage y avisa al backend (idempotente).
  */
-import { computed, ref } from 'vue'
 
 import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
 
 import { STORAGE_KEYS } from '@/lib/storageKeys'
-import { authService, AuthRequestError } from '../services/authService'
-import type { AuthUser, LoginPayload, TokenResponse } from '../types'
+import { AuthRequestError, authService } from '../services/authService'
+import type { AuthUser, LoginPayload, MfaChallenge, MfaSetup, TokenResponse } from '../types'
+import { isMfaChallenge } from '../types'
 
 function readString(key: string): string | null {
   if (typeof window === 'undefined') return null
@@ -74,8 +75,8 @@ export const useAuthStore = defineStore('auth', () => {
     void import('@/modules/chat/lib/attachmentBlobCache').then((m) => m.clearAttachmentCache())
   }
 
-  async function login(payload: LoginPayload): Promise<void> {
-    const tokens = await authService.login(payload)
+  /** Abre la sesión y carga los permisos (compartido por todos los caminos de acceso). */
+  async function openSession(tokens: TokenResponse): Promise<void> {
     persist(tokens)
     // Carga del bootstrap de permisos justo tras el login — evita que
     // el primer render post-login muestre la UI con set vacío (fail-closed).
@@ -83,6 +84,29 @@ export const useAuthStore = defineStore('auth', () => {
     const { usePermisosStore } = await import('@/modules/permisos')
     const permisos = usePermisosStore()
     await permisos.cargarBootstrap()
+  }
+
+  /**
+   * Inicia sesión. Devuelve `null` si quedó abierta, o el desafío del segundo factor si
+   * todavía falta: en ese caso NO hay sesión y la pantalla pide el código.
+   */
+  async function login(payload: LoginPayload): Promise<MfaChallenge | null> {
+    const result = await authService.login(payload)
+    if (isMfaChallenge(result)) return result
+    await openSession(result)
+    return null
+  }
+
+  function beginMfaSetup(mfaToken: string): Promise<MfaSetup> {
+    return authService.mfaSetup(mfaToken)
+  }
+
+  async function confirmMfaSetup(mfaToken: string, code: string): Promise<void> {
+    await openSession(await authService.mfaConfirm(mfaToken, code))
+  }
+
+  async function verifyMfa(mfaToken: string, code: string): Promise<void> {
+    await openSession(await authService.mfaVerify(mfaToken, code))
   }
 
   async function logout(): Promise<void> {
@@ -136,6 +160,9 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isAuthenticated,
     login,
+    beginMfaSetup,
+    confirmMfaSetup,
+    verifyMfa,
     logout,
     clearSession,
     ensureFreshAccessToken,

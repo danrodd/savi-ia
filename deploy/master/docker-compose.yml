@@ -89,6 +89,10 @@ services:
       # Mismo origen: sin CORS.
       CORS_ALLOWED_ORIGINS: ""
       SAVI_ADMIN_LOGINS: ${SAVI_ADMIN_LOGINS:-}
+      # Segundo factor (TOTP): `admins` lo exige a los administradores de SAVI; `all` a todos;
+      # `off` lo apaga. Expuesto a internet, `off` no es una opción razonable.
+      MFA_ENFORCEMENT: ${SAVI_MFA_ENFORCEMENT:-admins}
+      MFA_ISSUER: ${SAVI_MFA_ISSUER:-SAVI}
       SAVI_CLOUD_URL: ${SAVI_CLOUD_URL:-}
     secrets:
       - savi_db_password
