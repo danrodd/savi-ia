@@ -139,9 +139,12 @@ uv run cloud-admin staff create --email vos@empresa.com --name "Tu Nombre" --rol
 | `metrics` | Definiciones únicas, resumen, uso por cliente, sucursales y usuarios (seudónimos) |
 | `alerts` | 10 reglas configurables, motor cada 5 minutos con estado abierta / reconocida / resuelta |
 
-Pendiente: particionado de las tablas de eventos y retención de heartbeats (30 días), la
+La interfaz web está en [`frontend/`](frontend/README.md) y la sirve el mismo proceso del API
+(`CLOUD_CONSOLE_STATIC_DIR`, que la imagen de Docker ya define).
+
+Pendiente: particionado de las tablas de eventos y retención de heartbeats (30 días) y la
 tabla agregada `daily_client_metrics` (hoy se calcula al consultar, con el índice
-`(client_id, occurred_at)`) y el frontend de la consola.
+`(client_id, occurred_at)`).
 
 ## Despliegue
 

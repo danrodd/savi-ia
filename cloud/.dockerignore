@@ -1,0 +1,14 @@
+# Contexto de build: cloud/
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.pyright
+**/node_modules
+**/dist
+backend/tests
+deploy
+**/.env
+**/.env.*
+**/*.db

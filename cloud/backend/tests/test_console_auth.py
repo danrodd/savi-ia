@@ -212,6 +212,7 @@ async def test_first_login_requires_mfa_setup_and_new_password(console: ConsoleE
     assert login.status_code == 200
     body = login.json()
     assert body["status"] == "mfa_setup_required"
+    assert body["must_change_password"] is True  # la pantalla pide la contraseña nueva
     assert "access_token" not in body  # sin TOTP no hay tokens de acceso
     assert "set-cookie" not in login.headers
 

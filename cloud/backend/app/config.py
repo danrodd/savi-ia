@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     latest_version_published_at: datetime | None = None
     # Cada cuántos segundos se evalúan las alertas (0 = apagado).
     alerts_interval_seconds: float = Field(default=300, ge=0)
+    # Carpeta con la consola web compilada. Vacía = solo API (desarrollo y tests).
+    console_static_dir: str = ""
 
     @model_validator(mode="after")
     def _validate(self) -> Settings:

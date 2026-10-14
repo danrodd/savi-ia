@@ -48,6 +48,7 @@ Otros comandos:
 
 ```bash
 docker compose exec api cloud-admin client list
+# La consola web queda en https://<tu-dominio>/ (la sirve la propia API).
 # Primer usuario de la consola (imprime una contraseña temporal una sola vez):
 docker compose exec api cloud-admin staff create --email vos@empresa.com --name "Tu Nombre" --role admin
 docker compose exec api cloud-admin token list --client FARMX

@@ -55,6 +55,7 @@ class LoginRequest(_Body):
 class LoginResponse(BaseModel):
     status: Literal["mfa_required", "mfa_setup_required"]
     token: str
+    must_change_password: bool = False
 
 
 class MfaRequest(_Body):
@@ -156,7 +157,11 @@ async def login(body: LoginRequest, request: Request) -> LoginResponse:
         )
     if isinstance(result, AuthFailure):
         raise _fail(result)
-    return LoginResponse(status=result.next_step, token=result.token)
+    return LoginResponse(
+        status=result.next_step,
+        token=result.token,
+        must_change_password=result.must_change_password,
+    )
 
 
 @auth_router.post("/mfa", response_model=TokenResponse)

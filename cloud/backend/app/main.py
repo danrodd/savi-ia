@@ -5,6 +5,7 @@ import time
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +28,7 @@ from app.modules.staff.presentation import console_router
 from app.modules.staff.security import StaffSecurity
 from app.shared.clock import Clock, utc_now
 from app.shared.http_errors import install_error_handlers
+from app.spa import mount_console
 
 logger = logging.getLogger("savi_cloud.access")
 
@@ -123,4 +125,7 @@ def create_app(
     app.include_router(console_api_router)
     app.include_router(metrics_router)
     app.include_router(alerts_router)
+    # Siempre al final: es un comodín y las rutas del API deben ganar.
+    if settings.console_static_dir:
+        mount_console(app, Path(settings.console_static_dir))
     return app

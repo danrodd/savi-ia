@@ -83,6 +83,8 @@ class LoginStep:
 
     next_step: Literal["mfa_required", "mfa_setup_required"]
     token: str
+    # Solo informativo para la pantalla: la contraseña nueva se exige en la confirmación.
+    must_change_password: bool = False
 
 
 @dataclass(frozen=True)
@@ -177,7 +179,7 @@ class LoginUseCase:
             token = d.security.issue("mfa", user.id, MFA_TTL)
             return LoginStep("mfa_required", token)
         token = d.security.issue("mfa_setup", user.id, MFA_SETUP_TTL)
-        return LoginStep("mfa_setup_required", token)
+        return LoginStep("mfa_setup_required", token, user.must_change_password)
 
 
 class VerifyMfaUseCase:
