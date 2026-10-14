@@ -139,6 +139,7 @@ def build_runtime(settings: Settings) -> CompanyKnowledgeRuntime:
         settings.company_docs_embedding_model,
         models_root(settings.company_docs_model_dir),
         threads,
+        settings.company_docs_embedding_model_file,
     )
     ingest_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="company-docs-ingest")
     search_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="company-docs-search")

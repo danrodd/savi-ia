@@ -148,7 +148,13 @@ class Settings(BaseSettings):
     company_docs_chunk_overlap: int = Field(default=120)
     # Modelo de embeddings. e5 usa prefijos `query:`/`passage:`; el
     # embedder los aplica solo cuando el nombre del modelo contiene `e5`.
-    company_docs_embedding_model: str = Field(default="intfloat/multilingual-e5-small")
+    # Por defecto, la variante int8 (118 MB; la fp32 pesa 465 MB). El nombre
+    # del modelo es también la etiqueta con que se guardan los vectores: al
+    # cambiarlo, los documentos ya indexados se reencolan solos.
+    company_docs_embedding_model: str = Field(default="Xenova/multilingual-e5-small")
+    # Archivo ONNX dentro del repo del modelo. Vacío = el del registro de
+    # `fastembed_embedder._CUSTOM_MODELS` (`onnx/model_quantized.onnx`).
+    company_docs_embedding_model_file: str = Field(default="")
     # Vacío = ubicación por entorno (modelo empaquetado en la app, o
     # `backend/.models/` en desarrollo). Ver `resolve_model_dir`.
     company_docs_model_dir: str = Field(default="")
@@ -244,6 +250,9 @@ class Settings(BaseSettings):
     rate_limit_chat_per_minute: int = Field(default=20)
     rate_limit_chat_per_hour: int = Field(default=200)
     rate_limit_upload_per_hour: int = Field(default=30)
+    # Calificaciones 👍/👎 de las respuestas: por usuario y por minuto. Holgado
+    # (cambiar de opinión es legítimo), pero frena un script.
+    rate_limit_feedback_per_minute: int = Field(default=60)
     # Imágenes adjuntas al chat: por usuario y por hora.
     rate_limit_chat_attachments_per_hour: int = Field(default=60)
     # Techo del cupo que un administrador puede fijar desde la pantalla de

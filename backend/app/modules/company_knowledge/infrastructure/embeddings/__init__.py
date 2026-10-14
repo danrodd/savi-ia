@@ -1,5 +1,6 @@
 from app.modules.company_knowledge.infrastructure.embeddings.fastembed_embedder import (
     FastEmbedEmbedder,
+    default_model_file,
     download_embedding_model,
 )
 from app.modules.company_knowledge.infrastructure.embeddings.model_paths import (
@@ -14,6 +15,7 @@ from app.modules.company_knowledge.infrastructure.embeddings.vector_codec import
 __all__ = [
     "FastEmbedEmbedder",
     "bytes_to_vector",
+    "default_model_file",
     "download_embedding_model",
     "l2_normalize",
     "models_root",

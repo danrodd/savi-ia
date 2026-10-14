@@ -301,6 +301,16 @@ configurado (actualización de SAVI con un modelo nuevo), el documento
 reprocesar automáticamente. `/usage` informa cuántos documentos quedan
 pendientes por ese motivo.
 
+**Paso a int8 (`Xenova/multilingual-e5-small`).** Desde esta versión el
+modelo por defecto es la variante cuantizada a int8 (118 MB en lugar de
+465 MB). Como el nombre del modelo es la etiqueta de los vectores, los
+documentos indexados con `intfloat/multilingual-e5-small` (fp32) se
+reencolan solos al arrancar y se reindexan en segundo plano; mientras
+tanto no aparecen en las búsquedas. Medido sobre 46 textos y 12
+consultas en español de ERP: coseno medio fp32↔int8 0,9965, solapamiento
+top-5 medio 0,90. Archivo ONNX configurable con
+`COMPANY_DOCS_EMBEDDING_MODEL_FILE` (vacío = el del registro).
+
 ### 7.4 Validación de módulos
 
 `modules` acepta cualquier `ModuleCode`, incluidos los CORE y

@@ -697,7 +697,10 @@ def _embedding_model_check(settings: Settings) -> CheckResult:
     model_dir = models_root(settings.company_docs_model_dir)
     log.info("diagnostico_modelo_documentos_inicio dir=%s", model_dir)
     embedder = FastEmbedEmbedder(
-        settings.company_docs_embedding_model, model_dir, max(1, (os.cpu_count() or 2) // 2)
+        settings.company_docs_embedding_model,
+        model_dir,
+        max(1, (os.cpu_count() or 2) // 2),
+        settings.company_docs_embedding_model_file,
     )
     available = embedder.is_available()
     log.info("diagnostico_modelo_documentos_fin disponible=%s", available)

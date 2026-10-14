@@ -31,7 +31,11 @@ FRONTEND_BUILD = BACKEND / "frontend"
 EMBEDDING_MODELS = BACKEND / ".models"
 # Modelo realmente usado. Debe coincidir con `company_docs_embedding_model`
 # de `settings.py`: si cambia allá, cambiarlo acá.
-EMBEDDING_MODEL_ID = "intfloat/multilingual-e5-small"
+EMBEDDING_MODEL_ID = "Xenova/multilingual-e5-small"
+# Variante int8 (118 MB; la fp32 pesa 465 MB y era el 65 % del bundle).
+# Debe coincidir con el registro de `fastembed_embedder._CUSTOM_MODELS` o
+# con `company_docs_embedding_model_file`.
+EMBEDDING_MODEL_FILE = "onnx/model_quantized.onnx"
 
 
 def _require(path: Path, explanation: str) -> Path:
@@ -63,7 +67,24 @@ def _embedding_model_datas():
         f"Es el modelo de embeddings '{EMBEDDING_MODEL_ID}' que usa el\n"
         "conocimiento de la empresa. Lo descarga build.ps1.",
     )
-    datas = [(str(model_dir), f"models/{folder}")]
+    snapshots = list((model_dir / "snapshots").glob("*"))
+    if not any((snap / EMBEDDING_MODEL_FILE).is_file() for snap in snapshots):
+        raise SystemExit(
+            f"\n[BUILD ABORTADO] Falta {EMBEDDING_MODEL_FILE} en {model_dir}\n"
+            "Es el ONNX cuantizado del modelo de embeddings.\n"
+            "Bajalo con: cd backend && uv run download-embedding-model\n"
+        )
+    # Solo lo que fastembed necesita: el ONNX elegido + tokenizer/config.
+    # Cualquier otro .onnx que haya quedado en la cache no viaja.
+    datas = []
+    for file in model_dir.rglob("*"):
+        if not file.is_file():
+            continue
+        if file.suffix == ".onnx" and not file.as_posix().endswith("/" + EMBEDDING_MODEL_FILE):
+            continue
+        relative_parent = file.parent.relative_to(model_dir).as_posix()
+        target = f"models/{folder}" + ("" if relative_parent == "." else f"/{relative_parent}")
+        datas.append((str(file), target))
     # `CACHEDIR.TAG` marca la carpeta como caché de HuggingFace; va junto
     # al modelo para que la resolución desde el bundle no cambie.
     tag = EMBEDDING_MODELS / "CACHEDIR.TAG"
@@ -196,7 +217,11 @@ analysis = Analysis(  # noqa: F821
     # `fastembed` importa PIL al cargarse (`fastembed/common/types.py`) aunque
     # SAVI solo vectoriza texto. `main.py` importa ese modulo al arrancar:
     # excluirlos rompia el arranque del .exe entero, no solo los documentos.
-    excludes=["tkinter", "pytest", "ruff", "pyright", "matplotlib"],
+    #
+    # `hf_xet` (9 MB) solo lo usa huggingface_hub para DESCARGAR; SAVI carga
+    # el modelo con `local_files_only=True`, sin red. `babel` NO se excluye:
+    # `courlan` (importacion web) lo importa al cargarse.
+    excludes=["tkinter", "pytest", "ruff", "pyright", "matplotlib", "hf_xet"],
     noarchive=False,
 )
 

@@ -53,5 +53,5 @@ def download_embedding_model() -> None:
     target = models_root(settings.company_docs_model_dir)
     name = settings.company_docs_embedding_model
     print(f"Descargando {name} en {target} ...")
-    _download(name, target)
+    _download(name, target, settings.company_docs_embedding_model_file)
     print("Modelo listo.")

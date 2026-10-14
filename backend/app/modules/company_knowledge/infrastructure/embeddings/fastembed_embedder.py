@@ -26,8 +26,10 @@ _CUSTOM_MODELS: dict[str, dict[str, Any]] = {
         "normalization": True,
         "model_file": "onnx/model.onnx",
     },
-    # Mismo modelo cuantizado a int8: 129 MB en lugar de 465 MB y ~25% más
-    # rápido en CPU; coseno 0,996 contra la versión fp32 (spike).
+    # Mismo modelo cuantizado a int8: 118 MB en lugar de 465 MB y ~25% más
+    # rápido en CPU; coseno medio 0,996 y solapamiento top-5 0,90 contra
+    # la versión fp32 (medido sobre texto ERP en español). Es el que se
+    # empaqueta en el instalador.
     "Xenova/multilingual-e5-small": {
         "dim": 384,
         "pooling": PoolingType.MEAN,
@@ -42,7 +44,13 @@ _RETRY_UNAVAILABLE_S = 60.0
 _register_lock = threading.Lock()
 
 
-def _register_custom_if_needed(model_name: str) -> None:
+def default_model_file(model_name: str) -> str | None:
+    """Archivo ONNX que usa el registro para ese modelo (None si no es custom)."""
+    spec = _CUSTOM_MODELS.get(model_name)
+    return None if spec is None else str(spec["model_file"])
+
+
+def _register_custom_if_needed(model_name: str, model_file: str = "") -> None:
     spec = _CUSTOM_MODELS.get(model_name)
     if spec is None:
         return
@@ -55,7 +63,7 @@ def _register_custom_if_needed(model_name: str) -> None:
             normalization=spec["normalization"],
             sources=ModelSource(hf=model_name),
             dim=spec["dim"],
-            model_file=spec["model_file"],
+            model_file=model_file.strip() or spec["model_file"],
             description="Multilingual E5 small (384 dims)",
             license="MIT",
         )
@@ -65,8 +73,11 @@ def _register_custom_if_needed(model_name: str) -> None:
 class FastEmbedEmbedder(Embedder):
     """Embeddings ONNX locales. Carga diferida y única por proceso."""
 
-    def __init__(self, model_name: str, model_dir: Path, threads: int) -> None:
+    def __init__(
+        self, model_name: str, model_dir: Path, threads: int, model_file: str = ""
+    ) -> None:
         self._model_name = model_name
+        self._model_file = model_file
         self._model_dir = model_dir
         self._threads = threads
         self._model: TextEmbedding | None = None
@@ -111,7 +122,7 @@ class FastEmbedEmbedder(Embedder):
             if self._available is not None and not self._should_retry():
                 return self._available
             try:
-                _register_custom_if_needed(self._model_name)
+                _register_custom_if_needed(self._model_name, self._model_file)
                 model = TextEmbedding(
                     model_name=self._model_name,
                     cache_dir=str(self._model_dir),
@@ -138,10 +149,10 @@ class FastEmbedEmbedder(Embedder):
         )
 
 
-def download_embedding_model(model_name: str, model_dir: Path) -> None:
+def download_embedding_model(model_name: str, model_dir: Path, model_file: str = "") -> None:
     """Descarga (o verifica) el modelo en `model_dir`. Solo para CLI/dev."""
     model_dir.mkdir(parents=True, exist_ok=True)
-    _register_custom_if_needed(model_name)
+    _register_custom_if_needed(model_name, model_file)
     model = TextEmbedding(
         model_name=model_name,
         cache_dir=str(model_dir),

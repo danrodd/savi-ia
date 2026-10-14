@@ -358,6 +358,20 @@ SAVI.exe --no-browser     # arranca sin abrir el navegador
   instalación. El generador pseudoaleatorio de Inno no sirve para una
   clave de firma.
 
+- **Modelo de embeddings int8.** El bundle lleva
+  `Xenova/multilingual-e5-small` (`onnx/model_quantized.onnx`, 118 MB)
+  y no el fp32 de `intfloat` (465 MB, 65 % del bundle). Calidad medida
+  contra fp32: coseno medio 0,9965 y solapamiento top-5 0,90. Se baja con
+  `cd backend && uv run download-embedding-model` (lo hace `build.ps1`);
+  `savi.spec` empaqueta solo ese `.onnx` más tokenizer/config y aborta si
+  falta. El archivo se puede cambiar con `COMPANY_DOCS_EMBEDDING_MODEL_FILE`.
+  Los documentos ya indexados con fp32 se reindexan solos tras actualizar.
+- **Exclusiones del bundle**: `hf_xet` (solo sirve para descargar; el
+  modelo se carga con `local_files_only`). `babel` se queda: lo importa
+  `courlan` (importar desde la web). tcl/tk se queda por el splash.
+- **Tamaños** (v1.2.x, antes → después): bundle 689 MB → 345 MB;
+  instalador 310 MB → 170 MB.
+
 ## Pendiente
 
 - Firma de código (Authenticode). Sin firmar, Windows SmartScreen
