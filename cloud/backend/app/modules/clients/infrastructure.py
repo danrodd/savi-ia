@@ -29,7 +29,7 @@ class ClientModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
-def _to_entity(model: ClientModel) -> Client:
+def to_entity(model: ClientModel) -> Client:
     return Client(
         id=model.id,
         code=model.code,
@@ -65,13 +65,23 @@ class SqlAlchemyClientRepository:
 
     async def get_by_id(self, client_id: UUID) -> Client | None:
         model = await self._session.get(ClientModel, client_id)
-        return _to_entity(model) if model else None
+        return to_entity(model) if model else None
 
     async def get_by_code(self, code: str) -> Client | None:
         result = await self._session.execute(select(ClientModel).where(ClientModel.code == code))
         model = result.scalar_one_or_none()
-        return _to_entity(model) if model else None
+        return to_entity(model) if model else None
+
+    async def save(self, client: Client) -> None:
+        model = await self._session.get(ClientModel, client.id)
+        if model is None:
+            raise LookupError(f"Cliente {client.id} no existe")
+        model.name = client.name
+        model.nit = client.nit
+        model.status = client.status.value
+        model.updated_at = client.updated_at
+        await self._session.flush()
 
     async def list_all(self) -> list[Client]:
         result = await self._session.execute(select(ClientModel).order_by(ClientModel.code))
-        return [_to_entity(m) for m in result.scalars()]
+        return [to_entity(m) for m in result.scalars()]

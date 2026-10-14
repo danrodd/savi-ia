@@ -15,6 +15,21 @@ _DOMAIN_STATUS: dict[str, int] = {
     "client_suspended": 403,
     "instance_unauthorized": 401,
     "instance_revoked": 401,
+    "invalid_credentials": 401,
+    "invalid_mfa_code": 401,
+    "invalid_session_token": 401,
+    "weak_password": 422,
+    "invalid_staff_data": 422,
+    "staff_email_already_exists": 409,
+    "staff_not_found": 404,
+    "last_admin_protected": 409,
+    "client_not_found": 404,
+    "instance_not_found": 404,
+    "enrollment_token_not_found": 404,
+    "alert_not_found": 404,
+    "alert_rule_not_found": 404,
+    "alert_already_resolved": 409,
+    "invalid_alert_rule": 422,
 }
 
 

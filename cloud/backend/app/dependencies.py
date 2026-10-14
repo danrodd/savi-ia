@@ -20,6 +20,8 @@ REDEEM_LIMIT = 10  # intentos por IP...
 REDEEM_WINDOW_SECONDS = 15 * 60  # ...cada 15 minutos
 HEARTBEAT_LIMIT_PER_MINUTE = 60
 INGEST_LIMIT_PER_MINUTE = 30
+CONSOLE_AUTH_LIMIT = 30  # pasos de autenticación por IP...
+CONSOLE_AUTH_WINDOW_SECONDS = 15 * 60  # ...cada 15 minutos
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,7 @@ class RateLimiters:
     redeem: SlidingWindowLimiter
     heartbeat: SlidingWindowLimiter
     ingest: SlidingWindowLimiter
+    console_auth: SlidingWindowLimiter
 
     @classmethod
     def create(cls, clock: Clock) -> RateLimiters:
@@ -37,6 +40,7 @@ class RateLimiters:
             redeem=SlidingWindowLimiter(REDEEM_LIMIT, REDEEM_WINDOW_SECONDS, now),
             heartbeat=SlidingWindowLimiter(HEARTBEAT_LIMIT_PER_MINUTE, 60, now),
             ingest=SlidingWindowLimiter(INGEST_LIMIT_PER_MINUTE, 60, now),
+            console_auth=SlidingWindowLimiter(CONSOLE_AUTH_LIMIT, CONSOLE_AUTH_WINDOW_SECONDS, now),
         )
 
 

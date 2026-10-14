@@ -140,6 +140,14 @@ class RecordHeartbeatUseCase:
                     message="La huella de la instancia cambió; un administrador debe confirmarla.",
                 )
             )
+        if status is InstanceStatus.ACTIVE and instance.rotation_requested_at is not None:
+            notices.append(
+                Notice(
+                    code="rotate_credentials",
+                    severity="info",
+                    message="Cloud pidió renovar las credenciales de esta instalación.",
+                )
+            )
         return HeartbeatResponse(
             server_time=now,
             instance_status=_WIRE_STATUS[status],
@@ -169,6 +177,7 @@ class RotateCredentialsUseCase:
                 secret_hash=hash_secret(secret),
                 previous_secret_hash=instance.secret_hash,
                 previous_secret_expires_at=now + PREVIOUS_SECRET_GRACE,
+                rotation_requested_at=None,
                 updated_at=now,
             )
         )
@@ -188,7 +197,7 @@ class _ChangeStatusUseCase:
 
 
 class SuspendInstanceUseCase(_ChangeStatusUseCase):
-    async def execute(self, instance_id: UUID) -> Instance:
+    async def execute(self, instance_id: UUID, reason: str = MANUAL_REASON) -> Instance:
         instance = await self._load(instance_id)
         if instance.status is InstanceStatus.REVOKED:
             raise InstanceRevoked("La instancia está revocada; no se puede suspender.")
@@ -197,7 +206,7 @@ class SuspendInstanceUseCase(_ChangeStatusUseCase):
         updated = replace(
             instance,
             status=InstanceStatus.SUSPENDED,
-            status_reason=MANUAL_REASON,
+            status_reason=reason,
             updated_at=self._clock(),
         )
         await self._instances.save(updated)
@@ -245,6 +254,40 @@ class RevokeInstanceUseCase(_ChangeStatusUseCase):
             status_reason=MANUAL_REASON,
             previous_secret_hash=None,
             previous_secret_expires_at=None,
+            updated_at=self._clock(),
+        )
+        await self._instances.save(updated)
+        return updated
+
+
+class RequestRotationUseCase(_ChangeStatusUseCase):
+    """Marca la instancia para que el próximo heartbeat le pida rotar su secreto."""
+
+    async def execute(self, instance_id: UUID) -> Instance:
+        instance = await self._load(instance_id)
+        if instance.status is InstanceStatus.REVOKED:
+            raise InstanceRevoked("La instancia está revocada; no hay secreto que rotar.")
+        now = self._clock()
+        updated = replace(instance, rotation_requested_at=now, updated_at=now)
+        await self._instances.save(updated)
+        return updated
+
+
+class ConfirmFingerprintUseCase(_ChangeStatusUseCase):
+    """Acepta la huella nueva ("es la misma máquina") y reactiva la instancia."""
+
+    async def execute(self, instance_id: UUID) -> Instance:
+        instance = await self._load(instance_id)
+        if instance.status is InstanceStatus.REVOKED:
+            raise InstanceRevoked("La instancia está revocada; la revocación es definitiva.")
+        reported = (instance.last_heartbeat or {}).get("fingerprint")
+        if not isinstance(reported, str) or not reported:
+            raise InstanceNotFound("La instancia todavía no informó ninguna huella.")
+        updated = replace(
+            instance,
+            status=InstanceStatus.ACTIVE,
+            status_reason=None,
+            fingerprint=reported,
             updated_at=self._clock(),
         )
         await self._instances.save(updated)

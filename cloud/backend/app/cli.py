@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import secrets
 import sys
 from collections.abc import Sequence
 from datetime import datetime
@@ -17,6 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
 from app.db import create_engine, create_sessionmaker
+from app.modules.audit.application import AuditRecorder
+from app.modules.audit.domain import RequestContext
+from app.modules.audit.infrastructure import SqlAlchemyAuditRepository
 from app.modules.clients.application import CreateClientUseCase, ListClientsUseCase
 from app.modules.clients.infrastructure import SqlAlchemyClientRepository
 from app.modules.enrollments.application import (
@@ -32,6 +36,10 @@ from app.modules.instances.application import (
     SuspendInstanceUseCase,
 )
 from app.modules.instances.infrastructure import SqlAlchemyInstanceRepository
+from app.modules.staff.application import AuthDeps, CreateStaffUseCase
+from app.modules.staff.domain import Role
+from app.modules.staff.infrastructure import SqlAlchemySessionRepository, SqlAlchemyStaffRepository
+from app.modules.staff.security import StaffSecurity
 from app.shared.clock import utc_now
 from app.shared.errors import DomainError
 
@@ -84,6 +92,17 @@ def _build_parser() -> argparse.ArgumentParser:
         ("revoke", "revocar de forma definitiva"),
     ):
         instance.add_parser(action, help=help_text).add_argument("instance_id", type=UUID)
+
+    staff = sub.add_parser("staff", help="usuarios de la consola").add_subparsers(
+        dest="action", required=True
+    )
+    screate = staff.add_parser(
+        "create", help="crear un usuario (imprime una contraseña temporal una sola vez)"
+    )
+    screate.add_argument("--email", required=True)
+    screate.add_argument("--name", required=True, help="nombre completo")
+    screate.add_argument("--role", required=True, choices=[r.value for r in Role])
+    staff.add_parser("list", help="listar usuarios del staff")
     return parser
 
 
@@ -96,6 +115,18 @@ async def _run(args: argparse.Namespace, settings: Settings) -> None:
             await _dispatch(args, session, settings)
     finally:
         await engine.dispose()
+
+
+def _auth_deps(session: AsyncSession, settings: Settings) -> AuthDeps:
+    # El CLI no emite sesiones: sin semilla configurada basta una efímera (solo hashea).
+    security = StaffSecurity(settings.console_secret or secrets.token_hex(32), utc_now)
+    return AuthDeps(
+        users=SqlAlchemyStaffRepository(session),
+        sessions=SqlAlchemySessionRepository(session),
+        audit=AuditRecorder(SqlAlchemyAuditRepository(session), utc_now),
+        security=security,
+        clock=utc_now,
+    )
 
 
 async def _dispatch(args: argparse.Namespace, session: AsyncSession, settings: Settings) -> None:
@@ -172,6 +203,37 @@ async def _dispatch(args: argparse.Namespace, session: AsyncSession, settings: S
     elif key == ("instance", "revoke"):
         changed = await RevokeInstanceUseCase(instances, utc_now).execute(args.instance_id)
         print(f"Instancia {changed.id} ({changed.name}): {changed.status.value}.")
+    elif key == ("staff", "create"):
+        deps = _auth_deps(session, settings)
+        created_staff = await CreateStaffUseCase(deps).execute(
+            email=str(args.email),
+            full_name=str(args.name),
+            role=Role(str(args.role)),
+            ctx=RequestContext(actor_email="cloud-admin (CLI)"),
+        )
+        print(
+            f"Usuario creado: {created_staff.user.email} ({created_staff.user.role.value}). "
+            "Contraseña temporal (se muestra UNA sola vez; deberá cambiarla y configurar "
+            "el TOTP al ingresar):",
+            file=sys.stderr,
+        )
+        print(created_staff.temporary_password)
+    elif key == ("staff", "list"):
+        staff_rows = await SqlAlchemyStaffRepository(session).list_all()
+        _table(
+            ["EMAIL", "NAME", "ROLE", "ACTIVE", "MFA", "LAST_LOGIN"],
+            [
+                [
+                    u.email,
+                    u.full_name,
+                    u.role.value,
+                    "yes" if u.is_active else "no",
+                    "yes" if u.totp_enabled else "no",
+                    _fmt(u.last_login_at),
+                ]
+                for u in staff_rows
+            ],
+        )
     else:  # pragma: no cover - argparse ya lo impide
         raise SystemExit(f"Comando no soportado: {key}")
 

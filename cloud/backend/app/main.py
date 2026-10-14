@@ -14,10 +14,17 @@ from app.config import Settings, get_settings
 from app.db import create_engine, create_sessionmaker
 from app.dependencies import RateLimiters
 from app.logging_config import configure_logging
+from app.modules.alerts.presentation import router as alerts_router
+from app.modules.alerts.runner import start_alert_task, stop_alert_task
+from app.modules.console.presentation import router as console_api_router
 from app.modules.enrollments.presentation import router as enrollments_router
 from app.modules.health.presentation import router as health_router
 from app.modules.ingest.presentation import router as ingest_router
 from app.modules.instances.presentation import router as instances_router
+from app.modules.metrics.presentation import router as metrics_router
+from app.modules.staff.presentation import auth_router as console_auth_router
+from app.modules.staff.presentation import console_router
+from app.modules.staff.security import StaffSecurity
 from app.shared.clock import Clock, utc_now
 from app.shared.http_errors import install_error_handlers
 
@@ -45,7 +52,11 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
-        yield
+        alert_task = start_alert_task(app.state.sessionmaker, settings, clock)
+        try:
+            yield
+        finally:
+            await stop_alert_task(alert_task)
         if owns_engine:
             await engine.dispose()
 
@@ -63,6 +74,9 @@ def create_app(
     app.state.clock = clock
     # Límites de tasa en memoria (una réplica). Se reinician con el proceso.
     app.state.limiters = RateLimiters.create(clock)
+    app.state.staff_security = (
+        StaffSecurity(settings.console_secret, clock) if settings.console_secret else None
+    )
     install_error_handlers(app)
 
     if settings.cors_origins:
@@ -104,4 +118,9 @@ def create_app(
     app.include_router(enrollments_router)
     app.include_router(instances_router)
     app.include_router(ingest_router)
+    app.include_router(console_auth_router)
+    app.include_router(console_router)
+    app.include_router(console_api_router)
+    app.include_router(metrics_router)
+    app.include_router(alerts_router)
     return app

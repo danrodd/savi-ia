@@ -10,6 +10,7 @@ from app.shared.errors import DomainError
 
 FINGERPRINT_MISMATCH = "fingerprint_mismatch"
 MANUAL_REASON = "manual"
+CLIENT_SUSPENDED_REASON = "client_suspended"
 
 
 class InstanceStatus(StrEnum):
@@ -40,6 +41,8 @@ class Instance:
     last_seen_at: datetime | None = None
     last_heartbeat: dict[str, Any] | None = None
     clock_skew_seconds: int | None = None
+    # La consola pidió rotar el secreto: se avisa en cada heartbeat hasta que la instancia rote.
+    rotation_requested_at: datetime | None = None
 
 
 class InstanceNotFound(DomainError):

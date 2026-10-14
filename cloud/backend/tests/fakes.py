@@ -39,6 +39,9 @@ class FakeClientRepository:
     async def list_all(self) -> list[Client]:
         return sorted(self.items.values(), key=lambda c: c.code)
 
+    async def save(self, client: Client) -> None:
+        self.items[client.id] = client
+
 
 class FakeEnrollmentTokenRepository:
     def __init__(self) -> None:

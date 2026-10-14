@@ -44,6 +44,11 @@ TABLES = {
     "ev_sessions",
     "ev_free_queries",
     "instance_databases",
+    "staff_users",
+    "staff_sessions",
+    "audit_log",
+    "alerts",
+    "alert_rules",
 }
 
 
@@ -260,3 +265,41 @@ def test_http_concurrent_redeem_and_concurrent_batches(pg_url: str) -> None:
             await app.state.engine.dispose()
 
     asyncio.run(run())
+
+
+def test_audit_log_is_append_only(pg_url: str) -> None:
+    """El trigger de 0003 rechaza UPDATE, DELETE y TRUNCATE aunque se use el dueño."""
+    command.upgrade(_alembic(pg_url), "head")
+
+    async def run() -> list[str]:
+        engine = create_engine(pg_url)
+        errors: list[str] = []
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(
+                    text(
+                        "INSERT INTO audit_log (id, occurred_at, action) "
+                        "VALUES (:id, now(), 'test.insert')"
+                    ),
+                    {"id": uuid4()},
+                )
+            for statement in (
+                "UPDATE audit_log SET action = 'x'",
+                "DELETE FROM audit_log",
+                "TRUNCATE audit_log",
+            ):
+                try:
+                    async with engine.begin() as conn:
+                        await conn.execute(text(statement))
+                except Exception as exc:  # noqa: BLE001
+                    errors.append(str(exc))
+            async with engine.connect() as conn:
+                count = (await conn.execute(text("SELECT count(*) FROM audit_log"))).scalar_one()
+            assert count == 1
+        finally:
+            await engine.dispose()
+        return errors
+
+    errors = asyncio.run(run())
+    assert len(errors) == 3
+    assert all("solo inserción" in e for e in errors)

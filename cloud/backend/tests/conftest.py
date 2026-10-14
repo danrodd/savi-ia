@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import os
-from collections.abc import Callable, Generator
+from collections.abc import AsyncGenerator, Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import quote
 from uuid import uuid4
 
+import httpx
 import pytest
 from sqlalchemy import create_engine as create_sync_engine
 from sqlalchemy import text
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.models import Base
+from tests.console_helpers import ConsoleEnv, make_settings
 
 
 def _pg_settings() -> dict[str, str]:
@@ -94,3 +96,17 @@ def clear_settings_cache() -> Callable[[], None]:
     from app.config import get_settings
 
     return get_settings.cache_clear
+
+
+@pytest.fixture
+async def console(sqlite_url: str) -> AsyncGenerator[ConsoleEnv]:
+    """App de Cloud con la consola habilitada, reloj controlado y cookies sin `Secure`."""
+    from app.main import create_app
+    from tests.fakes import FakeClock
+
+    clock = FakeClock()
+    app = create_app(make_settings(sqlite_url), clock=clock)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as http:
+        yield ConsoleEnv(http, app, clock)
+    await app.state.engine.dispose()

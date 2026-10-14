@@ -58,6 +58,9 @@ class InstanceModel(Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_heartbeat: Mapped[dict[str, Any] | None] = mapped_column(JsonType, nullable=True)
     clock_skew_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rotation_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -66,7 +69,7 @@ def _opt(value: datetime | None) -> datetime | None:
     return as_utc(value) if value else None
 
 
-def _to_entity(m: InstanceModel) -> Instance:
+def to_entity(m: InstanceModel) -> Instance:
     return Instance(
         id=m.id,
         client_id=m.client_id,
@@ -86,6 +89,7 @@ def _to_entity(m: InstanceModel) -> Instance:
         last_seen_at=_opt(m.last_seen_at),
         last_heartbeat=m.last_heartbeat,
         clock_skew_seconds=m.clock_skew_seconds,
+        rotation_requested_at=_opt(m.rotation_requested_at),
         created_at=as_utc(m.created_at),
         updated_at=as_utc(m.updated_at),
     )
@@ -116,6 +120,7 @@ class SqlAlchemyInstanceRepository:
                 last_seen_at=instance.last_seen_at,
                 last_heartbeat=instance.last_heartbeat,
                 clock_skew_seconds=instance.clock_skew_seconds,
+                rotation_requested_at=instance.rotation_requested_at,
                 created_at=instance.created_at,
                 updated_at=instance.updated_at,
             )
@@ -124,7 +129,7 @@ class SqlAlchemyInstanceRepository:
 
     async def get_by_id(self, instance_id: UUID) -> Instance | None:
         model = await self._session.get(InstanceModel, instance_id)
-        return _to_entity(model) if model else None
+        return to_entity(model) if model else None
 
     async def get_for_update(self, instance_id: UUID) -> Instance | None:
         result = await self._session.execute(
@@ -134,7 +139,7 @@ class SqlAlchemyInstanceRepository:
             .execution_options(populate_existing=True)
         )
         model = result.scalar_one_or_none()
-        return _to_entity(model) if model else None
+        return to_entity(model) if model else None
 
     async def get_by_secret_hash(self, secret_hash: bytes) -> Instance | None:
         result = await self._session.execute(
@@ -146,7 +151,7 @@ class SqlAlchemyInstanceRepository:
             )
         )
         model = result.scalars().first()
-        return _to_entity(model) if model else None
+        return to_entity(model) if model else None
 
     async def list_by_client(self, client_id: UUID) -> list[Instance]:
         result = await self._session.execute(
@@ -154,7 +159,7 @@ class SqlAlchemyInstanceRepository:
             .where(InstanceModel.client_id == client_id)
             .order_by(InstanceModel.enrolled_at)
         )
-        return [_to_entity(m) for m in result.scalars()]
+        return [to_entity(m) for m in result.scalars()]
 
     async def save(self, instance: Instance) -> None:
         model = await self._session.get(InstanceModel, instance.id)
@@ -172,6 +177,7 @@ class SqlAlchemyInstanceRepository:
         model.last_seen_at = instance.last_seen_at
         model.last_heartbeat = instance.last_heartbeat
         model.clock_skew_seconds = instance.clock_skew_seconds
+        model.rotation_requested_at = instance.rotation_requested_at
         model.updated_at = instance.updated_at
         await self._session.flush()
 
