@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { consoleApi } from '@/lib/api'
-import type { AccessPolicy, ClientDatabase, ClientUser } from '@/lib/types'
+import type { AccessGroup, AccessPolicy, ClientDatabase, ClientUser } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
 const props = defineProps<{ clientId: string; policy: AccessPolicy }>()
@@ -15,6 +15,8 @@ const people = ref<ClientUser[]>([])
 const limitDefault = ref(false)
 const defaultDbs = ref<string[]>([])
 const rules = ref<{ user_ref: string; databases: string[] }[]>([])
+const groups = ref<AccessGroup[]>([])
+const newGroupName = ref('')
 
 const newRef = ref('')
 const confirming = ref(false)
@@ -27,6 +29,12 @@ function hydrate(policy: AccessPolicy): void {
   rules.value = Object.entries(policy.user_databases).map(([user_ref, dbs]) => ({
     user_ref,
     databases: [...dbs],
+  }))
+  groups.value = policy.groups.map((g) => ({
+    id: g.id,
+    name: g.name,
+    members: [...g.members],
+    databases: [...g.databases],
   }))
 }
 
@@ -55,6 +63,22 @@ function addRule(): void {
   newRef.value = ''
 }
 
+function addGroup(): void {
+  const name = newGroupName.value.trim()
+  if (!name) return
+  if (groups.value.some((g) => g.name.toLowerCase() === name.toLowerCase())) {
+    error.value = 'Ya hay un grupo con ese nombre.'
+    return
+  }
+  error.value = null
+  groups.value.push({ id: null, name, members: [], databases: [] })
+  newGroupName.value = ''
+}
+
+function removeGroup(index: number): void {
+  groups.value.splice(index, 1)
+}
+
 function removeRule(ref: string): void {
   rules.value = rules.value.filter((r) => r.user_ref !== ref)
 }
@@ -67,6 +91,12 @@ function buildBody(): AccessPolicy {
   return {
     default_databases: limitDefault.value ? [...defaultDbs.value] : null,
     user_databases: Object.fromEntries(rules.value.map((r) => [r.user_ref, [...r.databases]])),
+    groups: groups.value.map((g) => ({
+      id: g.id,
+      name: g.name,
+      members: [...g.members],
+      databases: [...g.databases],
+    })),
   }
 }
 
@@ -118,6 +148,57 @@ async function save(): Promise<void> {
       <p v-if="defaultIsEmpty" class="warn-text" data-test="access-default-empty">
         Sin ninguna base marcada, nadie sin regla propia podrá consultar.
       </p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Grupos</legend>
+      <p class="muted">
+        Un grupo reúne personas que comparten las mismas bases. Quien está en varios grupos recibe
+        la unión de sus bases; una regla propia de la persona manda sobre los grupos.
+      </p>
+      <div v-for="(g, index) in groups" :key="g.id ?? g.name" class="rule" data-test="access-group">
+        <div class="rule__head">
+          <strong>{{ g.name }}</strong>
+          <button class="btn btn-small" type="button" @click="removeGroup(index)">Quitar</button>
+        </div>
+        <details>
+          <summary>Personas ({{ g.members.length }})</summary>
+          <label v-for="p in people" :key="p.user_ref" class="check">
+            <input
+              type="checkbox"
+              :checked="g.members.includes(p.user_ref)"
+              :data-test="`access-group-${g.name}-person-${p.user_ref}`"
+              @change="g.members = toggle(g.members, p.user_ref)"
+            />
+            {{ p.label ?? `${p.user_ref.slice(0, 8)}…` }}
+          </label>
+          <p v-if="!people.length" class="muted">Todavía no hay personas con consumo registrado.</p>
+        </details>
+        <details open>
+          <summary>Bases ({{ g.databases.length }})</summary>
+          <label v-for="d in databases" :key="d.database_ref" class="check">
+            <input
+              type="checkbox"
+              :checked="g.databases.includes(d.database_ref)"
+              :data-test="`access-group-${g.name}-db-${d.database_ref}`"
+              @change="g.databases = toggle(g.databases, d.database_ref)"
+            />
+            {{ d.name }} <span class="muted">({{ d.code }})</span>
+          </label>
+        </details>
+      </div>
+      <div class="row">
+        <input
+          v-model="newGroupName"
+          placeholder="Nombre del grupo"
+          aria-label="Nombre del grupo"
+          data-test="access-group-name"
+          @keydown.enter.prevent="addGroup"
+        />
+        <button class="btn btn-small" type="button" data-test="access-group-add" @click="addGroup">
+          Agregar grupo
+        </button>
+      </div>
     </fieldset>
 
     <fieldset>

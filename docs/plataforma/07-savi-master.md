@@ -219,7 +219,12 @@ Notas:
 - El conocimiento (documentos) ya tiene visibilidad por base y módulo: queda acotado por las bases
   asignadas sin agregar un mecanismo nuevo.
 - Una referencia ilegible en la política **nunca amplía** el acceso (se descarta esa base).
-- Pendiente a propósito: grupos con nombre (B) y reglas para conocimiento fuera de las bases.
+- **Grupos (B)**: un grupo con nombre reúne personas y bases. Cloud los **compila a reglas por
+  persona** antes de bajarlos, así el contrato y la instancia no cambian. Quien está en varios
+  grupos recibe la **unión** de sus bases; una regla propia de la persona manda sobre los grupos;
+  un grupo sin bases deja a sus miembros sin ninguna. Máximo 50 grupos y 500 personas con regla
+  (ya compiladas), nombres únicos sin distinguir mayúsculas.
+- Pendiente a propósito: topes de IA por grupo y reglas para conocimiento fuera de las bases.
 
 ### Orden recomendado y por qué
 

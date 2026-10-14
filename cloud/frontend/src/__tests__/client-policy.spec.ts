@@ -49,7 +49,7 @@ const CLIENT: Client = {
     provider_monthly_usd: {},
     user_overrides: {},
   },
-  access_policy: { default_databases: null, user_databases: {} },
+  access_policy: { default_databases: null, user_databases: {}, groups: [] },
 }
 
 async function mountView(permissions: string[]) {
@@ -325,6 +325,7 @@ describe('bases por persona', () => {
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
       default_databases: null,
       user_databases: {},
+      groups: [],
     })
   })
 
@@ -338,6 +339,7 @@ describe('bases por persona', () => {
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
       default_databases: [DB_1],
       user_databases: {},
+      groups: [],
     })
   })
 
@@ -354,6 +356,7 @@ describe('bases por persona', () => {
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
       default_databases: null,
       user_databases: { [ref]: [DB_2] },
+      groups: [],
     })
   })
 
@@ -364,5 +367,35 @@ describe('bases por persona', () => {
     await wrapper.get('[data-test="access-rule-add"]').trigger('click')
 
     expect(wrapper.get('[data-test="access-rule-empty"]').text()).toContain('no podrán consultar')
+  })
+
+  it('arma un grupo con personas y bases', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+    const ref = 'a'.repeat(32)
+
+    await wrapper.get('[data-test="access-group-name"]').setValue('Soporte norte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('click')
+    expect(wrapper.get('[data-test="access-group"]').text()).toContain('Soporte norte')
+    await wrapper.get(`[data-test="access-group-Soporte norte-person-${ref}"]`).setValue(true)
+    await wrapper.get(`[data-test="access-group-Soporte norte-db-${DB_1}"]`).setValue(true)
+    await save(wrapper)
+
+    expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
+      default_databases: null,
+      user_databases: {},
+      groups: [{ id: null, name: 'Soporte norte', members: [ref], databases: [DB_1] }],
+    })
+  })
+
+  it('no permite dos grupos con el mismo nombre', async () => {
+    const wrapper = await mountView(['clients.read', 'clients.policy'])
+
+    await wrapper.get('[data-test="access-group-name"]').setValue('Norte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('click')
+    await wrapper.get('[data-test="access-group-name"]').setValue('norte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('click')
+
+    expect(wrapper.findAll('[data-test="access-group"]')).toHaveLength(1)
+    expect(wrapper.get('[data-test="access-error"]').text()).toContain('ese nombre')
   })
 })

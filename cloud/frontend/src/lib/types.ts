@@ -264,11 +264,22 @@ export interface ClientDatabase {
 }
 
 /** Bases (`database_ref`) que puede consultar cada persona; solo restringe lo que da el ERP. */
+/** Grupo con nombre: personas que comparten las mismas bases. */
+export interface AccessGroup {
+  /** `null` al crear: Cloud le asigna uno. */
+  id: string | null
+  name: string
+  members: string[]
+  databases: string[]
+}
+
 export interface AccessPolicy {
   /** `null` = sin restricción general (manda el ERP). */
   default_databases: string[] | null
   /** Regla propia por `user_ref`; una lista vacía deja a la persona sin ninguna base. */
   user_databases: Record<string, string[]>
+  /** Se compilan a reglas por persona al bajar a las instalaciones. */
+  groups: AccessGroup[]
 }
 
 /** Proveedores y topes de IA de un cliente (montos en USD como texto). */
