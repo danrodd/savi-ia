@@ -4,8 +4,10 @@ Backend de la plataforma SAVI Cloud: vincula instancias de SAVI con un cliente y
 etapas siguientes) recibe heartbeats y eventos. Diseño en `docs/plataforma/`
 (PRD, Fase 2 §7 y Fase 3).
 
-Estado: **esqueleto desplegable (E2)**. Modelo de datos, lógica de vinculación, CLI de
-administración y despliegue. Los endpoints `redeem`/`heartbeat`/`ingest` llegan en E3.
+Estado: **E3a (lado Cloud + contrato)**. Vinculación, heartbeat, ingest de eventos y
+rotación de credenciales por HTTP (`/api/v1`), CLI de administración y despliegue. El contrato
+vive en [`contracts/sync/v1/`](../contracts/sync/v1/README.md). El sincronizador de la
+instancia llega en E3b; agregados diarios y particionado, en E4.
 
 ## Estructura
 
@@ -22,7 +24,8 @@ cloud/
 │   │   └── modules/
 │   │       ├── clients/      # domain.py · application.py · infrastructure.py
 │   │       ├── enrollments/  # tokens de vinculación (crear, revocar, listar, canjear)
-│   │       ├── instances/    # modelo y listado (el resto llega en E3)
+│   │       ├── instances/    # auth Bearer, heartbeat, rotación, suspender/activar/revocar
+│   │       ├── ingest/       # lotes y eventos tipados (idempotentes)
 │   │       └── health/       # /health y /ready
 │   ├── alembic/              # migraciones (async)
 │   ├── tests/
@@ -57,7 +60,26 @@ uv run cloud-admin token create --client FARMX --expires-hours 72   # imprime el
 uv run cloud-admin token list --client FARMX
 uv run cloud-admin token revoke <token_id>
 uv run cloud-admin instance list --client FARMX
+uv run cloud-admin instance suspend <instance_id>     # ingest responde accepted=0, sin guardar
+uv run cloud-admin instance activate <instance_id>    # si estaba por huella, acepta la nueva
+uv run cloud-admin instance revoke <instance_id>      # definitivo
 ```
+
+### API (`/api/v1`)
+
+| Método y ruta | Auth | Notas |
+|---|---|---|
+| `POST /enrollments/redeem` | token en el cuerpo | 201 · 404 `enrollment_token_invalid` · 403 `client_suspended` · 429 (10 / 15 min por IP) |
+| `POST /instances/heartbeat` | Bearer | 60/min por instancia; huella distinta suspende (`fingerprint_mismatch`) |
+| `POST /instances/ingest` | Bearer | gzip opcional · máx. 500 eventos y 5 MB descomprimido · 30/min por instancia |
+| `POST /instances/credentials/rotate` | Bearer | el secreto anterior vale 24 h |
+
+Errores: `{"errorCode", "message"}`. 401 `instance_unauthorized` / `instance_revoked`; 429
+con `Retry-After`. Los límites de tasa son **en memoria** (una réplica); con más réplicas hay
+que moverlos a un almacén compartido.
+
+Pendiente para E4: particionado mensual y retención de las tablas `ev_*`,
+`ingest_batches` y `heartbeats` (hoy son tablas planas con las PK de idempotencia).
 
 `token create` escribe el token solo en stdout (y los metadatos en stderr), para poder
 capturarlo en un script.
@@ -72,7 +94,7 @@ uv run pytest -q
 
 - La mayoría de los tests corren sobre SQLite (sin servidor) y repositorios en memoria.
 - `tests/test_postgres.py` (migraciones arriba/abajo, deriva de esquema, `/ready`, canje
-  concurrente) usa una base **desechable** que crea y borra el propio test. Se activa con:
+  concurrente y lotes concurrentes por HTTP) usa una base **desechable** que crea y borra el propio test. Se activa con:
 
   ```bash
   export CLOUD_TEST_PG_PASSWORD=...        # obligatoria; sin ella los tests se saltan

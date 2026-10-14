@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON,
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     String,
     Uuid,
+    or_,
     select,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -30,6 +32,8 @@ class InstanceModel(Base):
     __tablename__ = "instances"
     __table_args__ = (
         CheckConstraint("status in ('active', 'suspended', 'revoked')", name="status_valid"),
+        # La autenticación también busca por el secreto anterior (vale 24 h tras rotar).
+        Index("ix_instances_previous_secret_hash", "previous_secret_hash"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
@@ -118,6 +122,32 @@ class SqlAlchemyInstanceRepository:
         )
         await self._session.flush()
 
+    async def get_by_id(self, instance_id: UUID) -> Instance | None:
+        model = await self._session.get(InstanceModel, instance_id)
+        return _to_entity(model) if model else None
+
+    async def get_for_update(self, instance_id: UUID) -> Instance | None:
+        result = await self._session.execute(
+            select(InstanceModel)
+            .where(InstanceModel.id == instance_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        model = result.scalar_one_or_none()
+        return _to_entity(model) if model else None
+
+    async def get_by_secret_hash(self, secret_hash: bytes) -> Instance | None:
+        result = await self._session.execute(
+            select(InstanceModel).where(
+                or_(
+                    InstanceModel.secret_hash == secret_hash,
+                    InstanceModel.previous_secret_hash == secret_hash,
+                )
+            )
+        )
+        model = result.scalars().first()
+        return _to_entity(model) if model else None
+
     async def list_by_client(self, client_id: UUID) -> list[Instance]:
         result = await self._session.execute(
             select(InstanceModel)
@@ -125,3 +155,47 @@ class SqlAlchemyInstanceRepository:
             .order_by(InstanceModel.enrolled_at)
         )
         return [_to_entity(m) for m in result.scalars()]
+
+    async def save(self, instance: Instance) -> None:
+        model = await self._session.get(InstanceModel, instance.id)
+        if model is None:
+            raise LookupError(f"Instancia {instance.id} no existe")
+        model.deployment_mode = instance.deployment_mode
+        model.version = instance.version
+        model.commit = instance.commit
+        model.status = instance.status.value
+        model.status_reason = instance.status_reason
+        model.secret_hash = instance.secret_hash
+        model.previous_secret_hash = instance.previous_secret_hash
+        model.previous_secret_expires_at = instance.previous_secret_expires_at
+        model.fingerprint = instance.fingerprint
+        model.last_seen_at = instance.last_seen_at
+        model.last_heartbeat = instance.last_heartbeat
+        model.clock_skew_seconds = instance.clock_skew_seconds
+        model.updated_at = instance.updated_at
+        await self._session.flush()
+
+
+class HeartbeatModel(Base):
+    __tablename__ = "heartbeats"
+    __table_args__ = (Index("ix_heartbeats_instance_id_received_at", "instance_id", "received_at"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    instance_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("instances.id", ondelete="CASCADE"), nullable=False
+    )
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JsonType, nullable=False)
+
+
+class SqlAlchemyHeartbeatRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, instance_id: UUID, received_at: datetime, payload: dict[str, Any]) -> None:
+        self._session.add(
+            HeartbeatModel(
+                id=uuid4(), instance_id=instance_id, received_at=received_at, payload=payload
+            )
+        )
+        await self._session.flush()

@@ -1,0 +1,10 @@
+{
+  "schema": "free_query/1",
+  "source_id": "a91e5b2c-3d4f-4a60-8b7c-9d0e1f2a3b4c",
+  "occurred_at": "2026-09-14T14:57:00Z",
+  "data": {
+    "conversation_ref": "5d0f4f0e-6f5b-4d0b-8f0e-6a4f3c2b1a09",
+    "result": "ok",
+    "sql": "SELECT * FROM clientes WHERE nit = '900123456'"
+  }
+}

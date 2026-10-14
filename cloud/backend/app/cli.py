@@ -25,7 +25,12 @@ from app.modules.enrollments.application import (
     RevokeEnrollmentTokenUseCase,
 )
 from app.modules.enrollments.infrastructure import SqlAlchemyEnrollmentTokenRepository
-from app.modules.instances.application import ListInstancesUseCase
+from app.modules.instances.application import (
+    ActivateInstanceUseCase,
+    ListInstancesUseCase,
+    RevokeInstanceUseCase,
+    SuspendInstanceUseCase,
+)
 from app.modules.instances.infrastructure import SqlAlchemyInstanceRepository
 from app.shared.clock import utc_now
 from app.shared.errors import DomainError
@@ -73,6 +78,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ilist = instance.add_parser("list", help="listar instancias de un cliente")
     ilist.add_argument("--client", required=True)
+    for action, help_text in (
+        ("suspend", "suspender: la instancia sigue enviando heartbeats pero no se guardan eventos"),
+        ("activate", "reactivar una instancia suspendida (con huella distinta, la acepta)"),
+        ("revoke", "revocar de forma definitiva"),
+    ):
+        instance.add_parser(action, help=help_text).add_argument("instance_id", type=UUID)
     return parser
 
 
@@ -152,6 +163,15 @@ async def _dispatch(args: argparse.Namespace, session: AsyncSession, settings: S
                 for i in rows_i
             ],
         )
+    elif key == ("instance", "suspend"):
+        changed = await SuspendInstanceUseCase(instances, utc_now).execute(args.instance_id)
+        print(f"Instancia {changed.id} ({changed.name}): {changed.status.value}.")
+    elif key == ("instance", "activate"):
+        changed = await ActivateInstanceUseCase(instances, utc_now).execute(args.instance_id)
+        print(f"Instancia {changed.id} ({changed.name}): {changed.status.value}.")
+    elif key == ("instance", "revoke"):
+        changed = await RevokeInstanceUseCase(instances, utc_now).execute(args.instance_id)
+        print(f"Instancia {changed.id} ({changed.name}): {changed.status.value}.")
     else:  # pragma: no cover - argparse ya lo impide
         raise SystemExit(f"Comando no soportado: {key}")
 

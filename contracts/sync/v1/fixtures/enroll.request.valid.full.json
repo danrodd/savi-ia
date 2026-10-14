@@ -1,0 +1,12 @@
+{
+  "token": "svk_enr_0000000000000000000000000000000000000000000",
+  "instance": {
+    "name": "SRV-FARMX",
+    "deployment_mode": "server",
+    "version": "v1.2.0",
+    "commit": "2ce0b85",
+    "os": "Windows Server 2022 10.0.20348",
+    "agent_db_engine": "postgresql",
+    "fingerprint": "Zm9vYmFyLWZpbmdlcnByaW50LWV4YW1wbGU"
+  }
+}

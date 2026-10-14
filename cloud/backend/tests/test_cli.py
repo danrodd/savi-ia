@@ -78,3 +78,77 @@ def test_missing_database_url_is_a_config_error(
     monkeypatch.chdir(str(tmp_path))  # sin .env cercano
     assert main(["client", "list"]) == 2
     assert "CLOUD_DATABASE_URL" in capsys.readouterr().err
+
+
+async def _seed_instance(url: str) -> str:
+    """Cliente + token + canje directo en la BD: devuelve el id de la instancia."""
+    from app.db import create_engine, create_sessionmaker
+    from app.modules.clients.application import CreateClientUseCase
+    from app.modules.clients.infrastructure import SqlAlchemyClientRepository
+    from app.modules.enrollments.application import (
+        CreateEnrollmentTokenUseCase,
+        RedeemEnrollmentTokenUseCase,
+    )
+    from app.modules.enrollments.domain import InstanceInfo
+    from app.modules.enrollments.infrastructure import SqlAlchemyEnrollmentTokenRepository
+    from app.modules.instances.infrastructure import SqlAlchemyInstanceRepository
+    from app.shared.clock import utc_now
+
+    engine = create_engine(url)
+    try:
+        async with create_sessionmaker(engine)() as s, s.begin():
+            clients = SqlAlchemyClientRepository(s)
+            tokens = SqlAlchemyEnrollmentTokenRepository(s)
+            await CreateClientUseCase(clients, utc_now).execute(code="FARMX", name="Farmacias X")
+            created = await CreateEnrollmentTokenUseCase(clients, tokens, utc_now).execute(
+                client_code="FARMX"
+            )
+            result = await RedeemEnrollmentTokenUseCase(
+                clients, tokens, SqlAlchemyInstanceRepository(s), utc_now
+            ).execute(
+                token=created.plaintext,
+                info=InstanceInfo(
+                    name="SRV-FARMX",
+                    deployment_mode="server",
+                    version=None,
+                    commit=None,
+                    os="Linux",
+                    agent_db_engine="postgresql",
+                    fingerprint="fp",
+                ),
+            )
+            return str(result.instance.id)
+    finally:
+        await engine.dispose()
+
+
+def test_instance_suspend_activate_revoke(
+    sqlite_url: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import asyncio
+
+    instance_id = asyncio.run(_seed_instance(sqlite_url))
+
+    assert main(["instance", "suspend", instance_id]) == 0
+    assert "suspended" in capsys.readouterr().out
+    main(["instance", "list", "--client", "FARMX"])
+    assert "suspended" in capsys.readouterr().out
+
+    assert main(["instance", "suspend", instance_id]) == 0  # idempotente
+    capsys.readouterr()
+    assert main(["instance", "activate", instance_id]) == 0
+    assert "active" in capsys.readouterr().out
+
+    assert main(["instance", "revoke", instance_id]) == 0
+    assert "revoked" in capsys.readouterr().out
+
+    # La revocación es definitiva.
+    assert main(["instance", "activate", instance_id]) == 1
+    assert "instance_revoked" in capsys.readouterr().err
+    assert main(["instance", "suspend", instance_id]) == 1
+    capsys.readouterr()
+
+
+def test_instance_status_change_unknown_id(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["instance", "revoke", "00000000-0000-0000-0000-000000000000"]) == 1
+    assert "instance_not_found" in capsys.readouterr().err

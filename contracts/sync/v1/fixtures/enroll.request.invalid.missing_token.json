@@ -1,0 +1,11 @@
+{
+  "instance": {
+    "name": "SRV-FARMX",
+    "deployment_mode": "server",
+    "version": "v1.2.0",
+    "commit": "2ce0b85",
+    "os": "Windows Server 2022 10.0.20348",
+    "agent_db_engine": "postgresql",
+    "fingerprint": "Zm9vYmFy"
+  }
+}

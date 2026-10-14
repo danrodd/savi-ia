@@ -67,5 +67,24 @@ class FakeInstanceRepository:
     async def add(self, instance: Instance) -> None:
         self.items[instance.id] = instance
 
+    async def get_by_id(self, instance_id: UUID) -> Instance | None:
+        return self.items.get(instance_id)
+
+    async def get_for_update(self, instance_id: UUID) -> Instance | None:
+        return self.items.get(instance_id)
+
+    async def get_by_secret_hash(self, secret_hash: bytes) -> Instance | None:
+        return next(
+            (
+                i
+                for i in self.items.values()
+                if i.secret_hash == secret_hash or i.previous_secret_hash == secret_hash
+            ),
+            None,
+        )
+
     async def list_by_client(self, client_id: UUID) -> list[Instance]:
         return [i for i in self.items.values() if i.client_id == client_id]
+
+    async def save(self, instance: Instance) -> None:
+        self.items[instance.id] = instance

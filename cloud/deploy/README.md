@@ -50,6 +50,9 @@ docker compose exec api cloud-admin client list
 docker compose exec api cloud-admin token list --client FARMX
 docker compose exec api cloud-admin token revoke <id-del-token>
 docker compose exec api cloud-admin instance list --client FARMX
+docker compose exec api cloud-admin instance suspend <id-de-la-instancia>
+docker compose exec api cloud-admin instance activate <id-de-la-instancia>
+docker compose exec api cloud-admin instance revoke <id-de-la-instancia>   # definitivo
 ```
 
 ## Actualizar

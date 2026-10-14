@@ -1,0 +1,27 @@
+{
+  "sent_at": "2026-09-14T15:00:00Z",
+  "fingerprint": "Zm9vYmFyLWZpbmdlcnByaW50LWV4YW1wbGU",
+  "version": "v1.2.0",
+  "commit": "2ce0b85",
+  "deployment_mode": "server",
+  "started_at": "2026-09-14T08:00:00Z",
+  "tls": true,
+  "llm": {
+    "provider": "claude",
+    "model": "claude-sonnet-4-6",
+    "credential_kind": "api_key",
+    "usable": true
+  },
+  "erp_databases": { "total": 3, "usable": 3, "credentials_unreadable": 0 },
+  "active_sessions": 12,
+  "sync": {
+    "streams": {
+      "turn": {
+        "watermark_at": "2026-09-14T14:58:10Z",
+        "last_ok_at": "2026-09-14T14:58:20Z"
+      }
+    },
+    "last_error": null
+  },
+  "warnings": ["http_without_tls"]
+}

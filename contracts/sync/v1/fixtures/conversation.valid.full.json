@@ -1,0 +1,10 @@
+{
+  "schema": "conversation/1",
+  "source_id": "5d0f4f0e-6f5b-4d0b-8f0e-6a4f3c2b1a09",
+  "occurred_at": "2026-09-14T14:50:00Z",
+  "data": {
+    "conversation_ref": "5d0f4f0e-6f5b-4d0b-8f0e-6a4f3c2b1a09",
+    "database_ref": "7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d",
+    "user_ref": "0123456789abcdef0123456789abcdef"
+  }
+}

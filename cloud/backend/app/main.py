@@ -11,9 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.config import Settings, get_settings
-from app.db import create_engine
+from app.db import create_engine, create_sessionmaker
+from app.dependencies import RateLimiters
 from app.logging_config import configure_logging
+from app.modules.enrollments.presentation import router as enrollments_router
 from app.modules.health.presentation import router as health_router
+from app.modules.ingest.presentation import router as ingest_router
+from app.modules.instances.presentation import router as instances_router
+from app.shared.clock import Clock, utc_now
+from app.shared.http_errors import install_error_handlers
 
 logger = logging.getLogger("savi_cloud.access")
 
@@ -27,7 +33,11 @@ SECURITY_HEADERS = {
 }
 
 
-def create_app(settings: Settings | None = None, engine: AsyncEngine | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    engine: AsyncEngine | None = None,
+    clock: Clock = utc_now,
+) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings.log_level)
     owns_engine = engine is None
@@ -49,6 +59,11 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
     )
     app.state.engine = engine
     app.state.settings = settings
+    app.state.sessionmaker = create_sessionmaker(engine)
+    app.state.clock = clock
+    # Límites de tasa en memoria (una réplica). Se reinician con el proceso.
+    app.state.limiters = RateLimiters.create(clock)
+    install_error_handlers(app)
 
     if settings.cors_origins:
         app.add_middleware(
@@ -86,4 +101,7 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
         return response
 
     app.include_router(health_router)
+    app.include_router(enrollments_router)
+    app.include_router(instances_router)
+    app.include_router(ingest_router)
     return app

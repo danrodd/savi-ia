@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://savi.seo/contracts/sync/v1/ingest.request.schema.json",
+  "title": "POST /api/v1/instances/ingest - request (sobre)",
+  "description": "Valida solo el sobre. Cada evento se valida despues contra su esquema en events/; un evento invalido se informa en `rejected` sin fallar el lote.",
+  "type": "object",
+  "required": ["batch_id", "sent_at", "events"],
+  "properties": {
+    "batch_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "sent_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 500,
+      "items": { "type": "object" }
+    }
+  }
+}

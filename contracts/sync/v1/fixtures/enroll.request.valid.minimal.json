@@ -1,0 +1,12 @@
+{
+  "token": "svk_enr_0000000000000000000000000000000000000000000",
+  "instance": {
+    "name": "PC-CAJA-1",
+    "deployment_mode": "desktop",
+    "version": null,
+    "commit": null,
+    "os": "Windows 11",
+    "agent_db_engine": "sqlite",
+    "fingerprint": "ZmluZ2VycHJpbnQ"
+  }
+}

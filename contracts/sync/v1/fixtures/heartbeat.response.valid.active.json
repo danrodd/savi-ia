@@ -1,0 +1,18 @@
+{
+  "server_time": "2026-09-14T15:00:01Z",
+  "instance_status": "active",
+  "policy": {
+    "heartbeat_seconds": 300,
+    "ingest_seconds": 300,
+    "max_batch_events": 500,
+    "sync_enabled": true
+  },
+  "notices": [
+    {
+      "code": "update_available",
+      "severity": "info",
+      "message": "Hay una versión nueva de SAVI: v1.3.0."
+    }
+  ],
+  "ai": null
+}

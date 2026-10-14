@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://savi.seo/contracts/sync/v1/enroll.request.schema.json",
+  "title": "POST /api/v1/enrollments/redeem - request",
+  "type": "object",
+  "required": ["token", "instance"],
+  "properties": {
+    "token": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "instance": {
+      "type": "object",
+      "required": ["name", "deployment_mode", "os", "agent_db_engine", "fingerprint"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "deployment_mode": { "enum": ["server", "desktop"] },
+        "version": { "type": ["string", "null"], "maxLength": 64 },
+        "commit": { "type": ["string", "null"], "maxLength": 64 },
+        "os": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "agent_db_engine": { "enum": ["postgresql", "sqlite"] },
+        "fingerprint": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    }
+  }
+}

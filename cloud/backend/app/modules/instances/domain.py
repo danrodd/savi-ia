@@ -6,6 +6,11 @@ from enum import StrEnum
 from typing import Any, Protocol
 from uuid import UUID
 
+from app.shared.errors import DomainError
+
+FINGERPRINT_MISMATCH = "fingerprint_mismatch"
+MANUAL_REASON = "manual"
+
 
 class InstanceStatus(StrEnum):
     ACTIVE = "active"
@@ -37,7 +42,41 @@ class Instance:
     clock_skew_seconds: int | None = None
 
 
+class InstanceNotFound(DomainError):
+    code = "instance_not_found"
+
+
+class InstanceUnauthorized(DomainError):
+    """Secreto inexistente, vencido o mal formado: un solo código, sin pistas."""
+
+    code = "instance_unauthorized"
+
+
+class InstanceRevoked(DomainError):
+    code = "instance_revoked"
+
+
 class InstanceRepository(Protocol):
     async def add(self, instance: Instance) -> None: ...
 
+    async def get_by_id(self, instance_id: UUID) -> Instance | None: ...
+
+    async def get_for_update(self, instance_id: UUID) -> Instance | None:
+        """Como `get_by_id`, bloqueando la fila (`SELECT ... FOR UPDATE`)."""
+        ...
+
+    async def get_by_secret_hash(self, secret_hash: bytes) -> Instance | None:
+        """Instancia cuyo secreto actual **o** anterior tiene ese hash (sin validar vigencia)."""
+        ...
+
     async def list_by_client(self, client_id: UUID) -> list[Instance]: ...
+
+    async def save(self, instance: Instance) -> None:
+        """Persiste los campos mutables (estado, secretos, huella y último heartbeat)."""
+        ...
+
+
+class HeartbeatRepository(Protocol):
+    async def add(self, instance_id: UUID, received_at: datetime, payload: dict[str, Any]) -> None:
+        """Guarda el heartbeat completo. Retención de 30 días: job diario pendiente (E4)."""
+        ...

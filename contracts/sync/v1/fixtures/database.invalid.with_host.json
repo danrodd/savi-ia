@@ -1,0 +1,14 @@
+{
+  "schema": "database/1",
+  "source_id": "7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d:2026-09-14",
+  "occurred_at": "2026-09-14T06:00:00Z",
+  "data": {
+    "database_ref": "7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d",
+    "code": "NORTE",
+    "name": "Sede Norte",
+    "is_active": true,
+    "is_usable": true,
+    "credentials_unreadable": false,
+    "host": "10.0.0.5"
+  }
+}

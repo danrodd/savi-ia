@@ -1,0 +1,13 @@
+{
+  "schema": "free_query/1",
+  "source_id": "a91e5b2c-3d4f-4a60-8b7c-9d0e1f2a3b4c",
+  "occurred_at": "2026-09-14T14:57:00Z",
+  "data": {
+    "conversation_ref": "5d0f4f0e-6f5b-4d0b-8f0e-6a4f3c2b1a09",
+    "database_ref": "7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d",
+    "result": "ok",
+    "estimated_rows": 1200,
+    "returned_rows": 200,
+    "duration_ms": 87
+  }
+}

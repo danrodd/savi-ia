@@ -1,0 +1,14 @@
+{
+  "schema": "turn/1",
+  "source_id": "c1f0a7de-6a3b-4a0e-b6a1-0f6f3d6a1c04",
+  "occurred_at": "2026-09-14T14:57:02Z",
+  "data": {
+    "conversation_ref": "5d0f4f0e-6f5b-4d0b-8f0e-6a4f3c2b1a09",
+    "user_ref": "0123456789abcdef0123456789abcdef",
+    "input_tokens": 1,
+    "output_tokens": 1,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "sql": "SELECT 1"
+  }
+}
