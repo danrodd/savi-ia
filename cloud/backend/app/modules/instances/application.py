@@ -56,7 +56,7 @@ def _wire_ai(client: Client | None) -> WireAiPolicy | None:
 def _wire_access(client: Client | None) -> WireAccessPolicy | None:
     if client is None or client.access_policy.is_empty:
         return None
-    return WireAccessPolicy.model_validate(client.access_policy.to_json())
+    return WireAccessPolicy.model_validate(client.access_policy.to_wire())
 
 
 def policy_for(status: InstanceStatus, client: Client | None = None) -> Policy:

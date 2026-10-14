@@ -289,11 +289,20 @@ class AiPolicyBody(_Body):
     user_overrides: dict[str, _Usd] = Field(default_factory=dict[str, _Usd], max_length=500)
 
 
+class AccessGroupBody(_Body):
+    # Vacío al crear: Cloud le asigna uno. Al editar se conserva.
+    id: str | None = None
+    name: str = Field(min_length=1, max_length=80)
+    members: list[str] = Field(default_factory=list[str], max_length=500)
+    databases: list[str] = Field(default_factory=list[str], max_length=200)
+
+
 class AccessPolicyBody(_Body):
     default_databases: list[str] | None = Field(default=None, max_length=200)
     user_databases: dict[str, list[str]] = Field(
         default_factory=dict[str, list[str]], max_length=500
     )
+    groups: list[AccessGroupBody] = Field(default_factory=list[AccessGroupBody], max_length=50)
 
 
 class ClientPolicyPatch(_Body):
@@ -511,6 +520,7 @@ async def set_client_access_policy(
     policy = AccessPolicy.build(
         default_databases=body.default_databases,
         user_databases=body.user_databases,
+        groups=[g.model_dump() for g in body.groups],
     )
     async with transaction(request) as session:
         await _client_actions(request, session).set_access_policy(

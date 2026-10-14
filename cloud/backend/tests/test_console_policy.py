@@ -388,7 +388,11 @@ async def test_access_policy_is_empty_by_default_and_not_sent(fx: Fixture) -> No
 
     assert body["policy"]["access"] is None
     client = (await fx.console.http.get(f"{API}/clients/{client_id}", headers=fx.admin.auth)).json()
-    assert client["access_policy"] == {"default_databases": None, "user_databases": {}}
+    assert client["access_policy"] == {
+        "default_databases": None,
+        "user_databases": {},
+        "groups": [],
+    }
 
 
 async def test_access_policy_travels_in_the_heartbeat_and_matches_the_contract(
@@ -483,4 +487,137 @@ async def test_access_policy_changes_are_audited(fx: Fixture) -> None:
     entry = audit["items"][0]
     assert entry["before"]["default_databases"] is None
     assert entry["after"]["default_databases"] == [DB_1]
+
+
+# ------------------------------------------------------------------ grupos (compilan a reglas)
+USER_C = "c" * 32
+
+
+def _group(name: str, members: list[str], databases: list[str]) -> dict[str, Any]:
+    return {"name": name, "members": members, "databases": databases}
+
+
+async def _put_access(fx: Fixture, client_id: str, body: dict[str, Any]) -> Any:
+    return await fx.console.http.put(
+        f"{API}/clients/{client_id}/access-policy", json=body, headers=fx.admin.auth
+    )
+
+
+async def test_a_group_is_compiled_into_per_person_rules(fx: Fixture) -> None:
+    from tests.test_api import assert_matches_schema
+
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    res = await _put_access(
+        fx, client_id, {"groups": [_group("Soporte norte", [USER_A, USER_B], [DB_1])]}
+    )
+
+    assert res.status_code == 200, res.text
+    beat = (await heartbeat(fx, linked)).json()
+    assert beat["policy"]["access"] == {
+        "default_databases": None,
+        "user_databases": {USER_A: [DB_1], USER_B: [DB_1]},
+    }
+    assert_matches_schema("heartbeat.response", beat)
+
+
+async def test_a_person_in_two_groups_gets_the_union(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_access(
+        fx,
+        client_id,
+        {
+            "groups": [
+                _group("Norte", [USER_A], [DB_1]),
+                _group("Sur", [USER_A, USER_B], [DB_2]),
+            ]
+        },
+    )
+
+    rules = (await heartbeat(fx, linked)).json()["policy"]["access"]["user_databases"]
+    assert sorted(rules[USER_A]) == sorted([DB_1, DB_2])
+    assert rules[USER_B] == [DB_2]
+
+
+async def test_a_personal_rule_wins_over_the_groups(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_access(
+        fx,
+        client_id,
+        {
+            "groups": [_group("Norte", [USER_A, USER_B], [DB_1])],
+            "user_databases": {USER_A: [DB_2]},
+        },
+    )
+
+    rules = (await heartbeat(fx, linked)).json()["policy"]["access"]["user_databases"]
+    assert rules[USER_A] == [DB_2]
+    assert rules[USER_B] == [DB_1]
+
+
+async def test_a_group_without_databases_leaves_its_members_without_any(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_access(fx, client_id, {"groups": [_group("Sin bases", [USER_A], [])]})
+
+    rules = (await heartbeat(fx, linked)).json()["policy"]["access"]["user_databases"]
+    assert rules == {USER_A: []}
+
+
+async def test_groups_keep_their_id_and_members_in_the_console(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    await _put_access(fx, client_id, {"groups": [_group("Norte", [USER_A], [DB_1])]})
+
+    got = await fx.console.http.get(f"{API}/clients/{client_id}", headers=fx.admin.auth)
+    group = got.json()["access_policy"]["groups"][0]
+    assert group["name"] == "Norte"
+    assert group["members"] == [USER_A]
+    assert len(group["id"]) == 32
+
+    # Al reenviar con el id, se conserva.
+    await _put_access(
+        fx,
+        client_id,
+        {"groups": [{**_group("Norte", [USER_A, USER_C], [DB_1]), "id": group["id"]}]},
+    )
+    again = await fx.console.http.get(f"{API}/clients/{client_id}", headers=fx.admin.auth)
+    saved = again.json()["access_policy"]["groups"][0]
+    assert saved["id"] == group["id"]
+    assert saved["members"] == [USER_A, USER_C]
+
+
+@pytest.mark.parametrize(
+    "groups",
+    [
+        [_group("", [USER_A], [DB_1])],
+        [_group("Norte", ["no-es-un-user-ref"], [DB_1])],
+        [_group("Norte", [USER_A], ["no-es-un-uuid"])],
+        [_group("Norte", [USER_A], [DB_1]), _group("norte", [USER_B], [DB_2])],
+    ],
+)
+async def test_invalid_groups_are_rejected(fx: Fixture, groups: list[dict[str, Any]]) -> None:
+    client_id = await make_client(fx)
+
+    res = await _put_access(fx, client_id, {"groups": groups})
+
+    assert res.status_code == 422, res.text
+
+
+async def test_groups_are_audited(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    await _put_access(fx, client_id, {"groups": [_group("Norte", [USER_A], [DB_1])]})
+
+    audit = (
+        await fx.console.http.get(
+            f"{API}/audit?action=client.access_policy", headers=fx.admin.auth
+        )
+    ).json()
+
+    assert audit["items"][0]["after"]["groups"][0]["name"] == "Norte"
 
