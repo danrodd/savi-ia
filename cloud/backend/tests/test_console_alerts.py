@@ -370,7 +370,7 @@ async def test_rule_validation(fx: Fixture) -> None:
     rules = await fx.console.http.get(f"{API}/alert-rules", headers=admin.auth)
     codes = {r["code"] for r in rules.json()}
     assert {"instance_offline", "cost_spike", "no_usage"} <= codes
-    assert len(codes) == 10
+    assert len(codes) == 11
 
 
 async def test_rule_and_alert_changes_are_audited(fx: Fixture) -> None:

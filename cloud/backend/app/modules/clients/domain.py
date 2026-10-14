@@ -8,6 +8,7 @@ from typing import Protocol
 from uuid import UUID
 
 from app.modules.clients.policies import AccessPolicy, AiPolicy
+from app.modules.clients.subscription import Subscription
 from app.shared.errors import DomainError
 
 CLIENT_CODE_PATTERN = re.compile(r"^[A-Z0-9_]{2,32}$")
@@ -46,6 +47,8 @@ class Client:
     ai_policy: AiPolicy = field(default_factory=AiPolicy)
     # Bases que puede consultar cada persona (M4). Vacía = lo que permita el ERP.
     access_policy: AccessPolicy = field(default_factory=AccessPolicy)
+    # Plan contratado y vigencia (M5-A). Vacía = sin plan cargado.
+    subscription: Subscription = field(default_factory=Subscription)
 
 
 class InvalidClientCode(DomainError):

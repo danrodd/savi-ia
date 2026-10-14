@@ -6,8 +6,9 @@ No abren transacciones: lo hace la ruta HTTP. Si la auditoría falla, falla la a
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from datetime import date
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.modules.audit.application import AuditRecorder
 from app.modules.audit.domain import RequestContext
@@ -21,6 +22,12 @@ from app.modules.clients.domain import (
     InvalidClientName,
 )
 from app.modules.clients.policies import AccessPolicy, AiPolicy, ensure_caps_fit
+from app.modules.clients.subscription import (
+    LedgerEntry,
+    LedgerKind,
+    LedgerRepository,
+    Subscription,
+)
 from app.modules.enrollments.application import (
     CreatedEnrollmentToken,
     CreateEnrollmentTokenUseCase,
@@ -70,6 +77,7 @@ class ClientActions:
     instances: InstanceRepository
     audit: AuditRecorder
     clock: Clock
+    ledger: LedgerRepository
 
     async def create(self, *, code: str, name: str, nit: str | None, ctx: RequestContext) -> Client:
         client = await CreateClientUseCase(self.clients, self.clock).execute(
@@ -202,6 +210,67 @@ class ClientActions:
             after=updated.access_policy.to_json(),
         )
         return updated
+
+    async def set_subscription(
+        self, client_id: UUID, subscription: Subscription, *, ctx: RequestContext
+    ) -> Client:
+        """Reemplaza el plan y la vigencia del cliente."""
+        client = await self._get(client_id)
+        updated = replace(client, subscription=subscription, updated_at=self.clock())
+        await self.clients.save(updated)
+        await self.audit.record(
+            ctx,
+            "client.subscription",
+            target_type="client",
+            target_id=str(client_id),
+            before=client.subscription.to_json(),
+            after=updated.subscription.to_json(),
+        )
+        return updated
+
+    async def record_ledger_entry(
+        self,
+        client_id: UUID,
+        *,
+        kind: LedgerKind,
+        amount_usd: object,
+        note: str,
+        extends_until: date | None,
+        ctx: RequestContext,
+    ) -> LedgerEntry:
+        """Registra un pago o un ajuste; si trae vigencia, la extiende (nunca la acorta)."""
+        client = await self._get(client_id)
+        entry = LedgerEntry.build(
+            id=uuid4(),
+            client_id=client_id,
+            kind=kind,
+            amount_usd=amount_usd,
+            note=note,
+            extends_until=extends_until,
+            created_by=ctx.actor_email or "desconocido",
+            created_at=self.clock(),
+        )
+        await self.ledger.add(entry)
+        current = client.subscription.valid_until
+        if extends_until is not None and (current is None or extends_until > current):
+            updated = replace(
+                client,
+                subscription=client.subscription.extended_to(extends_until),
+                updated_at=self.clock(),
+            )
+            await self.clients.save(updated)
+        await self.audit.record(
+            ctx,
+            "client.ledger_entry",
+            target_type="client",
+            target_id=str(client_id),
+            after={
+                "kind": entry.kind.value,
+                "amount_usd": str(entry.amount_usd),
+                "extends_until": extends_until.isoformat() if extends_until else None,
+            },
+        )
+        return entry
 
     async def suspend(self, client_id: UUID, ctx: RequestContext) -> Client:
         """Suspende al cliente y a **todas** sus instancias (motivo `client_suspended`)."""

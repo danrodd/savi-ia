@@ -32,6 +32,7 @@ _DOMAIN_STATUS: dict[str, int] = {
     "invalid_alert_rule": 422,
     "invalid_ai_policy": 422,
     "invalid_access_policy": 422,
+    "invalid_subscription": 422,
 }
 
 

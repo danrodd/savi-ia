@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
@@ -298,3 +298,38 @@ class StaffCreate(_Body):
 class StaffPatch(_Body):
     full_name: str | None = Field(default=None, max_length=200)
     role: Role | None = None
+
+
+class SubscriptionBody(BaseModel):
+    plan_name: str | None = Field(default=None, max_length=80)
+    monthly_fee_usd: Decimal | None = Field(default=None, ge=0, le=99999999, decimal_places=2)
+    max_users: int | None = Field(default=None, ge=1, le=100000)
+    valid_until: date | None = None
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class SubscriptionOut(BaseModel):
+    plan_name: str | None
+    monthly_fee_usd: str | None
+    max_users: int | None
+    valid_until: date | None
+    notes: str | None
+    status: str
+    days_left: int | None
+
+
+class LedgerEntryBody(BaseModel):
+    kind: Literal["payment", "adjustment"]
+    amount_usd: Decimal = Field(ge=-99999999, le=99999999, decimal_places=2)
+    note: str = Field(min_length=1, max_length=500)
+    extends_until: date | None = None
+
+
+class LedgerEntryOut(BaseModel):
+    id: str
+    kind: str
+    amount_usd: str
+    note: str
+    extends_until: date | None
+    created_by: str
+    created_at: datetime

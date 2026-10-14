@@ -10,7 +10,7 @@ from typing import Any
 from uuid import UUID
 
 from app.modules.alerts.domain import Finding, RuleConfig, RuleDefinition, Severity
-from app.modules.clients.domain import Client, ClientStatus
+from app.modules.clients.domain import Client, ClientStatus, IdentityMode
 from app.modules.console.queries import is_online, is_outdated
 from app.modules.instances.domain import FINGERPRINT_MISMATCH, Instance, InstanceStatus
 from app.shared.clock import as_utc
@@ -102,6 +102,16 @@ RULES: tuple[RuleDefinition, ...] = (
         "Su versión es menor que la última publicada hace más de 30 días.",
         Severity.INFO,
         30,
+        "días",
+        True,
+    ),
+    RuleDefinition(
+        "subscription_due",
+        "Suscripción por vencer",
+        "La vigencia del plan de un cliente vence dentro del umbral o ya venció (crítica). "
+        "Se resuelve sola al registrar un pago que la extienda.",
+        Severity.WARNING,
+        7,
         "días",
         True,
     ),
@@ -365,6 +375,32 @@ def no_usage(ctx: EvalContext, cfg: RuleConfig) -> list[Finding]:
     return out
 
 
+def subscription_due(ctx: EvalContext, cfg: RuleConfig) -> list[Finding]:
+    window = int(cfg.threshold if cfg.threshold is not None else 7)
+    out: list[Finding] = []
+    for client_id, client in ctx.clients.items():
+        # La organización propia (identidad nombrada) no se factura a sí misma.
+        if client.status is not ClientStatus.ACTIVE or client.identity_mode is IdentityMode.NAMED:
+            continue
+        until = client.subscription.valid_until
+        if until is None:
+            continue
+        remaining = (until - ctx.today).days
+        if remaining > window:
+            continue
+        severity = Severity.CRITICAL if remaining < 0 else cfg.severity
+        out.append(
+            Finding(
+                cfg.code,
+                severity,
+                client_id,
+                None,
+                {"valid_until": until.isoformat(), "days_left": remaining},
+            )
+        )
+    return out
+
+
 EVALUATORS = {
     "instance_offline": instance_offline,
     "instance_fingerprint_mismatch": instance_fingerprint_mismatch,
@@ -375,5 +411,6 @@ EVALUATORS = {
     "cost_spike": cost_spike,
     "instance_warning": instance_warning,
     "instance_outdated": instance_outdated,
+    "subscription_due": subscription_due,
     "no_usage": no_usage,
 }

@@ -25,6 +25,8 @@ class Permission(StrEnum):
     # Identidad de las personas y bloqueo de configuración: decisiones de privacidad y de
     # seguridad de un cliente, solo del administrador.
     CLIENTS_POLICY = "clients.policy"
+    # Plan, vigencia y movimientos de un cliente: lo gestiona quien lo atiende comercialmente.
+    CLIENTS_BILLING = "clients.billing"
     INSTANCES_READ = "instances.read"
     INSTANCES_READ_TECHNICAL = "instances.read_technical"
     INSTANCES_MANAGE = "instances.manage"
@@ -48,6 +50,7 @@ PERMISSIONS: dict[Permission, frozenset[Role]] = {
     Permission.CLIENTS_WRITE: _ADMIN_COMERCIAL,
     Permission.CLIENTS_SUSPEND: _ADMIN,
     Permission.CLIENTS_POLICY: _ADMIN,
+    Permission.CLIENTS_BILLING: _ADMIN_COMERCIAL,
     Permission.INSTANCES_READ: _ALL,
     Permission.INSTANCES_READ_TECHNICAL: _ADMIN_SOPORTE,
     Permission.INSTANCES_MANAGE: _ADMIN_SOPORTE,

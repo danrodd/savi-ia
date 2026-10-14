@@ -14,7 +14,10 @@ from app.modules.audit.infrastructure import SqlAlchemyAuditRepository
 from app.modules.clients.domain import (
     ClientNotFound,
 )
-from app.modules.clients.infrastructure import SqlAlchemyClientRepository
+from app.modules.clients.infrastructure import (
+    SqlAlchemyClientRepository,
+    SqlAlchemyLedgerRepository,
+)
 from app.modules.console.application import (
     ClientActions,
     InstanceActions,
@@ -54,6 +57,7 @@ def make_client_actions(request: Request, session: AsyncSession) -> ClientAction
         instances=SqlAlchemyInstanceRepository(session),
         audit=make_audit(request, session),
         clock=clock,
+        ledger=SqlAlchemyLedgerRepository(session),
     )
 
 
