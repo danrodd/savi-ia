@@ -9,6 +9,7 @@ from typing import Literal
 from uuid import UUID
 
 from app.modules.clients.domain import Client, ClientNotFound, ClientRepository
+from app.modules.clients.policies import effective_user_caps
 from app.modules.instances.domain import (
     FINGERPRINT_MISMATCH,
     MANUAL_REASON,
@@ -48,9 +49,12 @@ _WIRE_STATUS: dict[InstanceStatus, Literal["active", "suspended", "revoked"]] = 
 
 
 def _wire_ai(client: Client | None) -> WireAiPolicy | None:
-    if client is None or client.ai_policy.is_empty:
+    if client is None:
         return None
-    return WireAiPolicy.model_validate(client.ai_policy.to_json())
+    caps = effective_user_caps(client.ai_policy, client.access_policy)
+    if client.ai_policy.is_empty and not caps:
+        return None
+    return WireAiPolicy.model_validate(client.ai_policy.to_wire(caps))
 
 
 def _wire_access(client: Client | None) -> WireAccessPolicy | None:

@@ -621,3 +621,113 @@ async def test_groups_are_audited(fx: Fixture) -> None:
 
     assert audit["items"][0]["after"]["groups"][0]["name"] == "Norte"
 
+
+# ------------------------------------------------------------------ topes de IA por grupo
+def _capped(name: str, members: list[str], cap: str | None) -> dict[str, Any]:
+    return {"name": name, "members": members, "databases": [DB_1], "user_monthly_usd": cap}
+
+
+async def _put_ai(fx: Fixture, client_id: str, body: dict[str, Any]) -> Any:
+    return await fx.console.http.put(
+        f"{API}/clients/{client_id}/ai-policy", json=body, headers=fx.admin.auth
+    )
+
+
+async def test_a_group_cap_travels_as_a_personal_cap_of_its_members(fx: Fixture) -> None:
+    from tests.test_api import assert_matches_schema
+
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_access(fx, client_id, {"groups": [_capped("Soporte", [USER_A, USER_B], "7.5")]})
+
+    beat = (await heartbeat(fx, linked)).json()
+    assert beat["policy"]["ai"]["user_overrides"] == {USER_A: "7.5", USER_B: "7.5"}
+    assert_matches_schema("heartbeat.response", beat)
+
+
+async def test_the_highest_group_cap_wins_for_a_person_in_two_groups(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_access(
+        fx,
+        client_id,
+        {
+            "groups": [
+                _capped("Chico", [USER_A, USER_B], "5"),
+                _capped("Grande", [USER_A], "20"),
+            ]
+        },
+    )
+
+    caps = (await heartbeat(fx, linked)).json()["policy"]["ai"]["user_overrides"]
+    assert caps == {USER_A: "20", USER_B: "5"}
+
+
+async def test_a_personal_cap_wins_over_the_group_cap(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_access(fx, client_id, {"groups": [_capped("Soporte", [USER_A, USER_B], "5")]})
+    await _put_ai(fx, client_id, {"user_overrides": {USER_A: "1"}})
+
+    ai = (await heartbeat(fx, linked)).json()["policy"]["ai"]
+    assert ai["user_overrides"] == {USER_A: "1", USER_B: "5"}
+
+
+async def test_group_caps_keep_the_rest_of_the_ai_policy(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_ai(fx, client_id, {"user_monthly_usd": "3", "allowed_providers": ["claude"]})
+    await _put_access(fx, client_id, {"groups": [_capped("Soporte", [USER_A], "9")]})
+
+    ai = (await heartbeat(fx, linked)).json()["policy"]["ai"]
+    assert ai["user_monthly_usd"] == "3"
+    assert ai["allowed_providers"] == ["claude"]
+    assert ai["user_overrides"] == {USER_A: "9"}
+
+
+async def test_a_group_without_cap_adds_nothing(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    linked = await link_instance(fx, client_id)
+
+    await _put_access(fx, client_id, {"groups": [_capped("Sin tope", [USER_A], None)]})
+
+    assert (await heartbeat(fx, linked)).json()["policy"]["ai"] is None
+
+
+async def test_the_group_cap_is_stored_and_audited(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    await _put_access(fx, client_id, {"groups": [_capped("Soporte", [USER_A], "7.5")]})
+
+    got = await fx.console.http.get(f"{API}/clients/{client_id}", headers=fx.admin.auth)
+    assert got.json()["access_policy"]["groups"][0]["user_monthly_usd"] == "7.5"
+    audit = (
+        await fx.console.http.get(
+            f"{API}/audit?action=client.access_policy", headers=fx.admin.auth
+        )
+    ).json()
+    assert audit["items"][0]["after"]["groups"][0]["user_monthly_usd"] == "7.5"
+
+
+async def test_an_invalid_group_cap_is_rejected(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+
+    res = await _put_access(fx, client_id, {"groups": [_capped("Soporte", [USER_A], "-3")]})
+
+    assert res.status_code == 422, res.text
+
+
+async def test_group_and_personal_caps_cannot_exceed_the_contract_limit(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    members = [f"{i:032x}" for i in range(1, 501)]
+    ok = await _put_access(fx, client_id, {"groups": [_capped("Todos", members, "5")]})
+    assert ok.status_code == 200, ok.text
+
+    # Una persona más con tope propio: 501 excepciones compiladas.
+    res = await _put_ai(fx, client_id, {"user_overrides": {"f" * 32: "1"}})
+
+    assert res.status_code == 422, res.text
+

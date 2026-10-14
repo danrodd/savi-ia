@@ -263,6 +263,8 @@ class AccessGroupBody(_Body):
     name: str = Field(min_length=1, max_length=80)
     members: list[str] = Field(default_factory=list[str], max_length=500)
     databases: list[str] = Field(default_factory=list[str], max_length=200)
+    # Tope mensual de IA (USD) por miembro; vacío = el grupo no fija tope.
+    user_monthly_usd: Decimal | None = Field(default=None, ge=0, le=99999999, decimal_places=4)
 
 
 class AccessPolicyBody(_Body):

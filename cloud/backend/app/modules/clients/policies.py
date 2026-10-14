@@ -91,13 +91,17 @@ class AiPolicy:
 
     def to_json(self) -> dict[str, object]:
         """Forma de almacenamiento y de la API: los montos van como texto."""
+        return self.to_wire(self.user_overrides)
+
+    def to_wire(self, user_overrides: Mapping[str, Decimal]) -> dict[str, object]:
+        """Lo que baja a la instancia: con las excepciones ya compiladas (propias y de grupos)."""
         return {
             "allowed_providers": list(self.allowed_providers)
             if self.allowed_providers is not None
             else None,
             "user_monthly_usd": _fmt(self.user_monthly_usd),
             "provider_monthly_usd": {k: _fmt(v) for k, v in self.provider_monthly_usd.items()},
-            "user_overrides": {k: _fmt(v) for k, v in self.user_overrides.items()},
+            "user_overrides": {k: _fmt(v) for k, v in user_overrides.items()},
         }
 
     @classmethod
@@ -154,6 +158,8 @@ class AccessGroup:
     name: str
     members: tuple[str, ...]
     databases: tuple[str, ...]
+    # Tope mensual de IA (USD) de cada miembro. `None` = el grupo no fija tope.
+    user_monthly_usd: Decimal | None = None
 
 
 def _group(raw: Mapping[str, object]) -> AccessGroup:
@@ -183,7 +189,15 @@ def _group(raw: Mapping[str, object]) -> AccessGroup:
         else []
     )
     databases = _databases(refs)
-    return AccessGroup(id=given or uuid4().hex, name=name, members=members, databases=databases)
+    cap_raw = raw.get("user_monthly_usd")
+    cap = _usd(cap_raw) if cap_raw not in (None, "") else None
+    return AccessGroup(
+        id=given or uuid4().hex,
+        name=name,
+        members=members,
+        databases=databases,
+        user_monthly_usd=cap,
+    )
 
 
 @dataclass(frozen=True)
@@ -273,6 +287,7 @@ class AccessPolicy:
                     "name": g.name,
                     "members": list(g.members),
                     "databases": list(g.databases),
+                    "user_monthly_usd": _fmt(g.user_monthly_usd),
                 }
                 for g in self.groups
             ],
@@ -297,4 +312,32 @@ class AccessPolicy:
             user_databases={str(k): list(v) for k, v in users.items()}  # pyright: ignore[reportUnknownVariableType,reportUnknownArgumentType]
             if isinstance(users, dict)
             else {},
+        )
+
+
+def effective_user_caps(ai: AiPolicy, access: AccessPolicy) -> dict[str, Decimal]:
+    """Tope mensual efectivo por persona que baja a la instancia como `user_overrides`.
+
+    - El tope de un grupo aplica a sus miembros; quien está en varios grupos recibe el **mayor**
+      (misma lógica que la unión de bases: pertenecer a más grupos nunca quita acceso).
+    - La excepción propia de la persona manda sobre los grupos.
+    """
+    caps: dict[str, Decimal] = {}
+    for group in access.groups:
+        cap = group.user_monthly_usd
+        if cap is None:
+            continue
+        for member in group.members:
+            current = caps.get(member)
+            if current is None or cap > current:
+                caps[member] = cap
+    caps.update(ai.user_overrides)
+    return caps
+
+
+def ensure_caps_fit(ai: AiPolicy, access: AccessPolicy) -> None:
+    """El contrato admite hasta 500 excepciones: se valida ya compilado, al guardar."""
+    if len(effective_user_caps(ai, access)) > MAX_USER_OVERRIDES:
+        raise InvalidAiPolicy(
+            f"Los topes propios y los de grupos alcanzan a más de {MAX_USER_OVERRIDES} personas."
         )

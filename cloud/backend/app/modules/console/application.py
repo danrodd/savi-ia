@@ -20,7 +20,7 @@ from app.modules.clients.domain import (
     IdentityMode,
     InvalidClientName,
 )
-from app.modules.clients.policies import AccessPolicy, AiPolicy
+from app.modules.clients.policies import AccessPolicy, AiPolicy, ensure_caps_fit
 from app.modules.enrollments.application import (
     CreatedEnrollmentToken,
     CreateEnrollmentTokenUseCase,
@@ -172,6 +172,7 @@ class ClientActions:
         dinero y de acceso: de administrador y auditada con el antes y el después.
         """
         client = await self._get(client_id)
+        ensure_caps_fit(policy, client.access_policy)
         updated = replace(client, ai_policy=policy, updated_at=self.clock())
         await self.clients.save(updated)
         await self.audit.record(
@@ -189,6 +190,7 @@ class ClientActions:
     ) -> Client:
         """Reemplaza qué bases puede consultar cada persona (solo restringe lo que da el ERP)."""
         client = await self._get(client_id)
+        ensure_caps_fit(client.ai_policy, policy)
         updated = replace(client, access_policy=policy, updated_at=self.clock())
         await self.clients.save(updated)
         await self.audit.record(
