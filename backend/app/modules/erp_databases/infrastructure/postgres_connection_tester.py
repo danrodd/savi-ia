@@ -11,6 +11,7 @@ soporte no tiene cómo interpretar.
 from __future__ import annotations
 
 import logging
+import socket
 from dataclasses import replace
 
 from sqlalchemy import text
@@ -48,7 +49,17 @@ WHERE NOT EXISTS (
 )
 """
 
-_RAZON_SOCIAL_SQL = 'SELECT "razonSocial" FROM "Empresa"."Empresa" ORDER BY "idEmpresa" LIMIT 1'
+# Fragmentos (en minúsculas) con que cada sistema operativo informa que el
+# nombre del servidor no resuelve.
+_UNKNOWN_HOST_MARKERS: tuple[str, ...] = (
+    "getaddrinfo failed",
+    "name or service not known",
+    "nodename nor servname provided",
+    "temporary failure in name resolution",
+    "no address associated with hostname",
+)
+
+_RAZON_SOCIAL_SQL ='SELECT "razonSocial" FROM "Empresa"."Empresa" ORDER BY "idEmpresa" LIMIT 1'
 
 
 class PostgresConnectionTester(ConnectionTester):
@@ -162,14 +173,22 @@ def _explain(error: Exception) -> str | None:
     """
     # `orig` es la excepción del driver cuando SQLAlchemy la envolvió;
     # si no la envolvió (fallo en la fase de conexión), es la propia.
+    #
+    # Cada texto es UNA oración completa y autosuficiente: la interfaz lo
+    # muestra tal cual, sin anteponerle nada.
     message = str(getattr(error, "orig", None) or error).lower()
+    if isinstance(error, socket.gaierror) or any(m in message for m in _UNKNOWN_HOST_MARKERS):
+        return (
+            "No encontramos ese servidor. Revisá que el nombre o la dirección "
+            "estén bien escritos."
+        )
     if "password authentication failed" in message:
         return "Usuario o contraseña incorrectos para esa base de datos."
     if "does not exist" in message:
         return "La base de datos no existe en ese servidor. Revisá el nombre."
     if "timeout" in message or "timed out" in message:
         return (
-            "El servidor no respondió a tiempo. Revisá el host, el puerto y "
+            "El servidor no respondió a tiempo. Revisá el servidor, el puerto y "
             "que el firewall permita la conexión."
         )
     if "closed in the middle of operation" in message:
@@ -179,7 +198,7 @@ def _explain(error: Exception) -> str | None:
         return None
     if "refused" in message or "connect" in message:
         return (
-            "No se pudo conectar al servidor. Revisá el host y el puerto, y "
+            "No se pudo conectar al servidor. Revisá el servidor y el puerto, y "
             "que PostgreSQL esté aceptando conexiones."
         )
     return "No se pudo conectar. Revisá los datos de conexión."
