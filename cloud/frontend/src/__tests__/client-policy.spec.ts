@@ -13,6 +13,7 @@ const api = vi.hoisted(() => ({
   tokens: vi.fn(),
   alerts: vi.fn(),
   setClientPolicy: vi.fn(),
+  setClientAiPolicy: vi.fn(),
   suspendClient: vi.fn(),
   activateClient: vi.fn(),
   definitions: vi.fn(),
@@ -38,6 +39,12 @@ const CLIENT: Client = {
   identity_mode: 'pseudonym',
   config_locked: false,
   allow_local_cli: false,
+  ai_policy: {
+    allowed_providers: null,
+    user_monthly_usd: null,
+    provider_monthly_usd: {},
+    user_overrides: {},
+  },
 }
 
 async function mountView(permissions: string[]) {
@@ -94,6 +101,17 @@ beforeEach(() => {
   })
   api.definitions.mockResolvedValue([])
   api.setClientPolicy.mockResolvedValue({ ...CLIENT, config_locked: true })
+  api.setClientAiPolicy.mockResolvedValue({ ...CLIENT })
+  api.clientUsers.mockResolvedValue([
+    {
+      user_ref: 'a'.repeat(32),
+      label: 'JPEREZ',
+      turns: 3,
+      cost_usd: '1.2',
+      last_used_at: '2026-10-01T00:00:00Z',
+      databases_used: 1,
+    },
+  ])
 })
 
 describe('política de las instalaciones del cliente', () => {
@@ -158,5 +176,100 @@ describe('política de las instalaciones del cliente', () => {
 
     expect(wrapper.get('[data-test="toggle-lock"]').text()).toBe('Permitir configuración')
     expect(wrapper.text()).toContain('Bloqueada')
+  })
+})
+
+describe('IA: proveedores y topes del cliente', () => {
+  async function open() {
+    return mountView(['clients.read', 'clients.policy'])
+  }
+
+  async function save(wrapper: Awaited<ReturnType<typeof open>>) {
+    await wrapper.get('[data-test="ai-save"]').trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Guardar límites')
+      ?.trigger('click')
+    await flushPromises()
+  }
+
+  it('solo la ve quien tiene el permiso', async () => {
+    const without = await mountView(['clients.read'])
+    expect(without.find('[data-test="ai-policy"]').exists()).toBe(false)
+  })
+
+  it('guarda el tope por persona y manda todos los proveedores como null', async () => {
+    const wrapper = await open()
+
+    await wrapper.get('[data-test="ai-user-cap"]').setValue('5')
+    await save(wrapper)
+
+    expect(api.setClientAiPolicy).toHaveBeenCalledWith('c1', {
+      allowed_providers: null,
+      user_monthly_usd: '5',
+      provider_monthly_usd: {},
+      user_overrides: {},
+    })
+  })
+
+  it('desmarcar un proveedor y fijar su tope viaja en el cuerpo', async () => {
+    const wrapper = await open()
+
+    await wrapper.get('[data-test="ai-provider-openai"]').setValue(false)
+    await wrapper.get('[data-test="ai-provider-cap-gemini"]').setValue('50')
+    await save(wrapper)
+
+    expect(api.setClientAiPolicy).toHaveBeenCalledWith('c1', {
+      allowed_providers: ['claude', 'gemini'],
+      user_monthly_usd: null,
+      provider_monthly_usd: { gemini: '50' },
+      user_overrides: {},
+    })
+  })
+
+  it('agrega una excepción por persona usando su código de usuario', async () => {
+    const wrapper = await open()
+
+    await wrapper.get('[data-test="ai-override-person"]').setValue('a'.repeat(32))
+    await wrapper.get('[data-test="ai-override-amount"]').setValue('20')
+    await wrapper.get('[data-test="ai-override-add"]').trigger('click')
+
+    expect(wrapper.get('[data-test="ai-override"]').text()).toContain('JPEREZ')
+    await save(wrapper)
+    expect(api.setClientAiPolicy).toHaveBeenCalledWith(
+      'c1',
+      expect.objectContaining({ user_overrides: { ['a'.repeat(32)]: '20' } }),
+    )
+  })
+
+  it('rechaza montos inválidos sin llamar al API', async () => {
+    const wrapper = await open()
+
+    await wrapper.get('[data-test="ai-user-cap"]').setValue('-5')
+    await wrapper.get('[data-test="ai-save"]').trigger('click')
+
+    expect(wrapper.get('[data-test="ai-error"]').text()).toContain('USD')
+    expect(api.setClientAiPolicy).not.toHaveBeenCalled()
+  })
+
+  it('no deja guardar sin ningún proveedor habilitado', async () => {
+    const wrapper = await open()
+
+    for (const key of ['claude', 'gemini', 'openai']) {
+      await wrapper.get(`[data-test="ai-provider-${key}"]`).setValue(false)
+    }
+    await wrapper.get('[data-test="ai-save"]').trigger('click')
+
+    expect(wrapper.get('[data-test="ai-error"]').text()).toContain('al menos un proveedor')
+    expect(api.setClientAiPolicy).not.toHaveBeenCalled()
+  })
+
+  it('avisa que Gemini y OpenAI necesitan precios cuando hay un tope', async () => {
+    const wrapper = await open()
+    expect(wrapper.find('[data-test="ai-price-warning"]').exists()).toBe(false)
+
+    await wrapper.get('[data-test="ai-user-cap"]').setValue('5')
+
+    expect(wrapper.get('[data-test="ai-price-warning"]').text()).toContain('precios')
   })
 })

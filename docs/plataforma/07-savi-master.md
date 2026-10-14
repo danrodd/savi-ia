@@ -179,6 +179,28 @@ pestaña del ERP E6) **se difiere** hasta que haya un cliente real.
 > El bloqueo es de interfaz y de API, no una defensa contra quien administra el equipo. Lo que
 > protege las claves es que no estén en el equipo (gateway de M3).
 
+### Avance de M3 (sin gateway)
+
+Decisión: los topes y proveedores se **deciden en SAVI Cloud** y la instancia **mide y bloquea**
+con su propio consumo. El spike del gateway queda diferido: solo haría falta para equipos
+locales que no deban tener ninguna clave.
+
+| Paso | Estado |
+|---|---|
+| M3.1 Contrato aditivo `policy.ai`: proveedores permitidos, tope por persona, excepciones por `user_ref` y tope por proveedor para la instalación | Hecho |
+| M3.2 Cloud: política por cliente (`PUT /console/api/clients/{id}/ai-policy`, permiso `clients.policy`, auditada con antes y después), viaja por heartbeat y enroll | Hecho; 312 tests |
+| M3.3 Instancia: guard antes del chat (403 con `errorCode`: `ai_provider_not_allowed`, `ai_budget_exceeded`, `ai_price_missing`); mes calendario en la zona de reporte | Hecho; tests del guard y de persistencia |
+| M3.4 Consola: tarjeta "IA: proveedores y topes" con excepciones por persona y aviso de precios | Hecho; 43 tests |
+| M3.5 SAVI web: el motivo del rechazo vuelve al composer con el texto escrito | Hecho |
+
+Límites conocidos (por diseño):
+
+- Gemini y OpenAI no informan su costo: con un tope en USD, si el modelo no tiene precio cargado
+  el turno se **bloquea** con un aviso (`ai_price_missing`) en vez de dejar pasar sin medir.
+- El tope se mide **por instalación**: si una persona usa dos instalaciones, cada una cuenta aparte.
+- El costo se conoce al terminar el turno: una persona puede pasarse por una respuesta.
+- Un cambio en Cloud aplica en el próximo heartbeat (hasta ~5 min).
+
 ### Orden recomendado y por qué
 
 1. **M1 primero**, porque sin servidor no hay nada que probar con

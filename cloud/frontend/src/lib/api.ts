@@ -2,6 +2,7 @@
 
 import { http, request } from './http'
 import type {
+  AiPolicy,
   Alert,
   AlertRule,
   AuditEntry,
@@ -82,6 +83,8 @@ export const consoleApi = {
       allow_local_cli?: boolean
     },
   ) => http.patch<Client>(`${API}/clients/${id}/policy`, body),
+  setClientAiPolicy: (id: string, body: AiPolicy) =>
+    http.put<Client>(`${API}/clients/${id}/ai-policy`, body),
   suspendClient: (id: string) => http.post<Client>(`${API}/clients/${id}/suspend`),
   activateClient: (id: string) => http.post<Client>(`${API}/clients/${id}/activate`),
   clientMetrics: (id: string, period: Period = {}) =>

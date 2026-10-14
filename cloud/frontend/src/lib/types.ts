@@ -62,6 +62,7 @@ export interface Client {
   config_locked: boolean
   /** La instalación local puede ofrecer el CLI de Claude con la cuenta de la persona. */
   allow_local_cli: boolean
+  ai_policy: AiPolicy
 }
 
 export interface Page<T> {
@@ -259,6 +260,15 @@ export interface ClientDatabase {
   credentials_unreadable: boolean
   last_connection_ok_at: string | null
   snapshot_date: string
+}
+
+/** Proveedores y topes de IA de un cliente (montos en USD como texto). */
+export interface AiPolicy {
+  /** `null` = todos los proveedores. */
+  allowed_providers: string[] | null
+  user_monthly_usd: string | null
+  provider_monthly_usd: Record<string, string>
+  user_overrides: Record<string, string>
 }
 
 export interface Person {

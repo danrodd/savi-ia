@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import AiPolicyCard from '@/components/AiPolicyCard.vue'
 import BarChart from '@/components/BarChart.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import FreshnessChip from '@/components/FreshnessChip.vue'
@@ -309,6 +310,13 @@ const TOKEN_STATE: Record<string, { label: string; tone: 'ok' | 'muted' | 'warn'
           </button>
         </div>
       </section>
+
+      <AiPolicyCard
+        v-if="auth.can('clients.policy')"
+        :client-id="id"
+        :policy="client.data.value.ai_policy"
+        @saved="client.reload()"
+      />
 
       <div class="tabs" role="tablist">
         <button
