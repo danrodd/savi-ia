@@ -26,6 +26,18 @@ class InvalidExportPassphraseError(ValidationError):
     de SAVI. → 422."""
 
 
+class DatabaseNotAssignedError(DomainError):
+    """SEO Group no le asignó esta base a la persona (política de Cloud).
+
+    Se mapea a **403** con `errorCode: database_not_assigned`. Es una restricción: el ERP
+    puede darle acceso y aun así no alcanza.
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
+
+
 class ErpDatabaseUnavailableError(DomainError):
     """La base existe pero no se puede usar: desactivada, eliminada o con
     credenciales ilegibles.

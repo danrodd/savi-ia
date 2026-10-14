@@ -223,11 +223,12 @@ function isLlmProviderUnavailable(e: unknown): boolean {
   return e instanceof HttpRequestError && e.body.errorCode === 'llm_provider_unavailable'
 }
 
-/** Rechazos de la política de IA de SEO Group: tope mensual o proveedor no habilitado. */
+/** Rechazos de la política de SEO Group: tope mensual, proveedor no habilitado o base no asignada. */
 const AI_POLICY_CODES = new Set([
   'ai_budget_exceeded',
   'ai_provider_not_allowed',
   'ai_price_missing',
+  'database_not_assigned',
 ])
 
 /**

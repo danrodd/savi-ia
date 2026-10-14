@@ -41,6 +41,7 @@ from app.modules.conversations.domain.interfaces import ConversationRepository
 from app.modules.conversations.domain.value_objects import ConversationOwner
 from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
 from app.modules.erp_databases.infrastructure.http.dependencies import (
+    DatabaseAccessPolicyDep,
     ResolveModulesForDatabaseUseCaseDep,
 )
 from app.shared.exceptions import NotFoundError
@@ -83,6 +84,7 @@ async def chat(
     modules_resolver: ResolveModulesForDatabaseUseCaseDep,
     provider_resolver: ActiveProviderResolverDep,
     budget_guard: AiBudgetGuardDep,
+    database_access: DatabaseAccessPolicyDep,
 ) -> StreamingResponse:
     # Primero el límite por usuario: cada turno cuesta dinero de verdad, así
     # que no conviene pagar ni las validaciones de un pedido que va a 429.
@@ -100,6 +102,13 @@ async def chat(
             erp_database_id=_require_database(user),
         ),
         attachment_ids=request.attachment_ids,
+    )
+
+    # Bases asignadas por SEO Group: restringe, nunca amplía lo que da el ERP.
+    await database_access.ensure(
+        user_id=user.id,
+        identity_database_id=_require_database(user),
+        database_id=_require(conversation_database_id),
     )
 
     # La base de la conversación tiene que seguir disponible: si la

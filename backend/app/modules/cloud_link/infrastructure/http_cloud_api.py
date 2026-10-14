@@ -34,7 +34,7 @@ from app.modules.cloud_link.domain.interfaces import (
     JsonObject,
     RejectedEvent,
 )
-from app.modules.cloud_link.domain.value_objects import AiLimits, SyncPolicy
+from app.modules.cloud_link.domain.value_objects import AccessRules, AiLimits, SyncPolicy
 from app.modules.cloud_link.infrastructure import contract_v1 as contract
 
 logger = logging.getLogger(__name__)
@@ -94,6 +94,21 @@ def _ai_limits(model: contract.AiPolicy | None) -> AiLimits | None:
     )
 
 
+def _access_rules(model: contract.AccessPolicy | None) -> AccessRules | None:
+    if model is None:
+        return None
+    return AccessRules(
+        default_databases=(
+            frozenset(UUID(r) for r in model.default_databases)
+            if model.default_databases is not None
+            else None
+        ),
+        user_databases={
+            k: frozenset(UUID(r) for r in refs) for k, refs in model.user_databases.items()
+        },
+    )
+
+
 def _policy(model: contract.Policy) -> SyncPolicy:
     return SyncPolicy(
         heartbeat_seconds=model.heartbeat_seconds,
@@ -103,6 +118,7 @@ def _policy(model: contract.Policy) -> SyncPolicy:
         config_locked=model.config_locked,
         allow_local_cli=model.allow_local_cli,
         ai=_ai_limits(model.ai),
+        access=_access_rules(model.access),
         identity_mode=model.identity_mode,
     )
 

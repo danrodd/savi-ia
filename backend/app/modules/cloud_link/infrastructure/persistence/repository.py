@@ -7,7 +7,7 @@ from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, cast
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -15,7 +15,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.modules.cloud_link.domain.entities import CloudLinkState, CloudNotice, StreamWatermark
 from app.modules.cloud_link.domain.interfaces import CloudLinkRepository
-from app.modules.cloud_link.domain.value_objects import AiLimits, LinkStatus, SyncPolicy
+from app.modules.cloud_link.domain.value_objects import (
+    AccessRules,
+    AiLimits,
+    LinkStatus,
+    SyncPolicy,
+)
 from app.modules.cloud_link.infrastructure.persistence.models import (
     CloudLinkModel,
     CloudSyncWatermarkModel,
@@ -43,6 +48,7 @@ def _policy_to_json(policy: SyncPolicy | None) -> dict[str, Any] | None:
         "config_locked": policy.config_locked,
         "allow_local_cli": policy.allow_local_cli,
         "ai": _ai_to_json(policy.ai),
+        "access": _access_to_json(policy.access),
         "identity_mode": policy.identity_mode,
     }
 
@@ -58,6 +64,47 @@ def _ai_to_json(ai: AiLimits | None) -> dict[str, Any] | None:
         "provider_monthly_usd": {k: str(v) for k, v in ai.provider_monthly_usd.items()},
         "user_overrides": {k: str(v) for k, v in ai.user_overrides.items()},
     }
+
+
+def _access_to_json(access: AccessRules | None) -> dict[str, Any] | None:
+    if access is None:
+        return None
+    return {
+        "default_databases": sorted(str(d) for d in access.default_databases)
+        if access.default_databases is not None
+        else None,
+        "user_databases": {
+            k: sorted(str(d) for d in v) for k, v in access.user_databases.items()
+        },
+    }
+
+
+def _uuids(values: Any) -> frozenset[UUID]:
+    found: set[UUID] = set()
+    if isinstance(values, list):
+        for value in cast("list[Any]", values):
+            try:
+                found.add(UUID(str(value)))
+            except ValueError:
+                continue  # un identificador ilegible simplemente no autoriza esa base
+    return frozenset(found)
+
+
+def _access_from_json(raw: object) -> AccessRules | None:
+    """Tolerante: un identificador ilegible no autoriza nada; nunca amplía el acceso."""
+    if not isinstance(raw, dict):
+        return None
+    data = cast("dict[str, Any]", raw)
+    default = data.get("default_databases")
+    users = data.get("user_databases")
+    return AccessRules(
+        default_databases=_uuids(default) if isinstance(default, list) else None,
+        user_databases={
+            str(k): _uuids(v) for k, v in cast("dict[Any, Any]", users).items()
+        }
+        if isinstance(users, dict)
+        else {},
+    )
 
 
 def _amount(value: object) -> Decimal | None:
@@ -121,6 +168,7 @@ def _policy_from_json(raw: dict[str, Any] | None) -> SyncPolicy | None:
         sync_enabled=enabled if isinstance(enabled, bool) else defaults.sync_enabled,
         config_locked=locked if isinstance(locked, bool) else defaults.config_locked,
         ai=_ai_from_json(raw.get("ai")),
+        access=_access_from_json(raw.get("access")),
         allow_local_cli=(
             local_cli if isinstance(local_cli, bool) else defaults.allow_local_cli
         ),

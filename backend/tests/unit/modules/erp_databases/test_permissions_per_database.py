@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
+import pytest
+
 from app.modules.auth.application.use_cases import ResolveModulesForDatabaseUseCase
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.interfaces import (
@@ -30,7 +32,12 @@ from app.modules.erp_databases.application.use_cases import (
     ListAvailableDatabasesUseCase,
 )
 from app.modules.erp_databases.domain.entities import ErpDatabase
-from app.modules.erp_databases.domain.interfaces import ErpDatabaseRepository
+from app.modules.erp_databases.domain.exceptions import DatabaseNotAssignedError
+from app.modules.erp_databases.domain.interfaces import (
+    DatabaseAccessPolicy,
+    ErpDatabaseRepository,
+    UnrestrictedDatabases,
+)
 
 _DB_A = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 _DB_B = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
@@ -387,3 +394,82 @@ async def test_platform_admin_uses_their_real_permissions_where_their_code_exist
     assert access.has_access is True
     assert access.user_id_in_database == 7
     assert access.is_admin_in_database is False
+
+
+# ── Bases asignadas por SEO Group (M4) ───────────────────────────────
+#
+# Cloud solo restringe: la persona tiene que tener acceso en el ERP Y estar asignada.
+
+
+class _Assigned(DatabaseAccessPolicy):
+    def __init__(self, allowed: frozenset[UUID] | None) -> None:
+        self._allowed = allowed
+
+    async def allowed_databases(
+        self, *, user_id: int, identity_database_id: UUID
+    ) -> frozenset[UUID] | None:
+        return self._allowed
+
+
+async def test_selector_hides_a_base_the_person_was_not_assigned() -> None:
+    resolver = _resolver_con_politica(
+        {
+            _DB_A: _FakeUserRepo(user_id=1, is_admin=True),
+            _DB_B: _FakeUserRepo(user_id=1, is_admin=True),
+        }
+    )
+    bases = _FakeDatabaseRepo([_db(_DB_A, "A"), _db(_DB_B, "B")])
+
+    visibles = await ListAvailableDatabasesUseCase(
+        bases, resolver, _Assigned(frozenset({_DB_B}))
+    ).execute("ADMIN", identity=_SOPORTE)
+
+    assert {d.code for d in visibles} == {"B"}
+
+
+async def test_assignment_never_grants_what_the_erp_does_not() -> None:
+    """Asignada la base B, pero el usuario no existe en B: no aparece."""
+    resolver = _resolver_con_politica(
+        {_DB_A: _FakeUserRepo(user_id=5, is_admin=False), _DB_B: _AbsentUserRepo()}
+    )
+    bases = _FakeDatabaseRepo([_db(_DB_A, "A"), _db(_DB_B, "B")])
+    identity = AuthenticatedUser(
+        id=5, erp_database_id=_DB_A, login="JPEREZ", full_name="J", is_admin=False, is_active=True
+    )
+
+    visibles = await ListAvailableDatabasesUseCase(
+        bases, resolver, _Assigned(frozenset({_DB_B}))
+    ).execute("JPEREZ", identity=identity)
+
+    assert visibles == []
+
+
+async def test_an_empty_assignment_leaves_the_person_without_bases() -> None:
+    resolver = _resolver_con_politica({_DB_A: _FakeUserRepo(user_id=1, is_admin=True)})
+    bases = _FakeDatabaseRepo([_db(_DB_A, "A")])
+
+    visibles = await ListAvailableDatabasesUseCase(
+        bases, resolver, _Assigned(frozenset())
+    ).execute("ADMIN", identity=_SOPORTE)
+
+    assert visibles == []
+
+
+async def test_no_restriction_lists_what_the_erp_allows() -> None:
+    resolver = _resolver_con_politica({_DB_A: _FakeUserRepo(user_id=1, is_admin=True)})
+    bases = _FakeDatabaseRepo([_db(_DB_A, "A")])
+
+    visibles = await ListAvailableDatabasesUseCase(
+        bases, resolver, UnrestrictedDatabases()
+    ).execute("ADMIN", identity=_SOPORTE)
+
+    assert {d.code for d in visibles} == {"A"}
+
+
+async def test_ensure_rejects_a_base_outside_the_assignment() -> None:
+    policy = _Assigned(frozenset({_DB_A}))
+
+    await policy.ensure(user_id=1, identity_database_id=_DB_A, database_id=_DB_A)
+    with pytest.raises(DatabaseNotAssignedError):
+        await policy.ensure(user_id=1, identity_database_id=_DB_A, database_id=_DB_B)
+

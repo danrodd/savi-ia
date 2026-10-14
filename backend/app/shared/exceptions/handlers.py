@@ -147,6 +147,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         LlmProviderUnavailableError,
     )
     from app.modules.erp_databases.domain.exceptions import (
+        DatabaseNotAssignedError,
         ErpDatabaseUnavailableError,
     )
 
@@ -169,6 +170,14 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=409,
             content={"errorCode": "llm_provider_unavailable", "detail": exc.reason},
+        )
+
+    @app.exception_handler(DatabaseNotAssignedError)
+    async def _database_not_assigned(_: Request, exc: DatabaseNotAssignedError) -> JSONResponse:
+        # 403 con `errorCode`: SEO Group restringió las bases de esta persona.
+        return JSONResponse(
+            status_code=403,
+            content={"errorCode": "database_not_assigned", "detail": exc.reason},
         )
 
     @app.exception_handler(ErpDatabaseUnavailableError)

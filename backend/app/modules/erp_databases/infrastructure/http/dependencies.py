@@ -21,7 +21,9 @@ from app.modules.erp_databases.application.use_cases import (
 )
 from app.modules.erp_databases.domain.interfaces import (
     ConnectionTester,
+    DatabaseAccessPolicy,
     ErpDatabaseRepository,
+    UnrestrictedDatabases,
 )
 from app.modules.erp_databases.infrastructure import get_connection_provider
 from app.modules.erp_databases.infrastructure.engine_registry import (
@@ -109,11 +111,33 @@ async def _is_platform_admin(user: AuthenticatedUser) -> bool:
     return await is_platform_admin(user, get_settings())
 
 
+def get_database_access_policy() -> DatabaseAccessPolicy:
+    """Bases que SEO Group asignó a cada persona (Cloud). Import adentro: `cloud_link`
+    importa modelos de otros módulos."""
+    from app.modules.cloud_link.application.pseudonymizer import PseudonymizerProvider
+    from app.modules.cloud_link.infrastructure.composition import get_cloud_link_services
+    from app.modules.cloud_link.infrastructure.database_access_policy import (
+        CloudDatabaseAccessPolicy,
+    )
+
+    try:
+        services = get_cloud_link_services()
+    except RuntimeError:
+        return UnrestrictedDatabases()
+    return CloudDatabaseAccessPolicy(
+        services.repository, PseudonymizerProvider(services.repository)
+    )
+
+
+DatabaseAccessPolicyDep = Annotated[DatabaseAccessPolicy, Depends(get_database_access_policy)]
+
+
 def get_list_available_use_case(
     repository: ErpDatabaseRepositoryDep,
+    access_policy: DatabaseAccessPolicyDep,
 ) -> ListAvailableDatabasesUseCase:
     return ListAvailableDatabasesUseCase(
-        repository, get_resolve_modules_for_database_use_case()
+        repository, get_resolve_modules_for_database_use_case(), access_policy
     )
 
 

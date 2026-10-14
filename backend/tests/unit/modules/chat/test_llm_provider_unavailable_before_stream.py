@@ -23,6 +23,7 @@ from app.modules.chat.application.use_cases import ChatTurnUseCase
 from app.modules.chat.domain.exceptions import LlmProviderUnavailableError
 from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver, AiBudgetGuard
 from app.modules.chat.infrastructure.http.routes import chat
+from app.modules.erp_databases.domain.interfaces import UnrestrictedDatabases
 
 _CONVERSATION_ID = uuid4()
 _DATABASE_ID = uuid4()
@@ -78,4 +79,4 @@ async def test_raises_409_before_returning_the_streaming_response() -> None:
     provider_resolver = cast(ActiveProviderResolver, _UnavailableProviderResolver())
 
     with pytest.raises(LlmProviderUnavailableError):
-        await chat(_request(), use_case, _user(), modules_resolver, provider_resolver, _AllowAll())
+        await chat(_request(), use_case, _user(), modules_resolver, provider_resolver, _AllowAll(), UnrestrictedDatabases())

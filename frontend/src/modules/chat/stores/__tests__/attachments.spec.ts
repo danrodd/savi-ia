@@ -251,4 +251,28 @@ describe('chatStore · imágenes adjuntas', () => {
     expect(store.error).toBe(reason)
     expect(store.messages).toHaveLength(0)
   })
+
+  it('si SEO Group no le asignó la base, el texto vuelve y se muestra el motivo', async () => {
+    const { HttpRequestError } = await import('@/lib/HttpClient')
+    const reason = 'SEO Group no te asignó esta base de datos.'
+    agentMock.stream.mockImplementation(() => ({
+      [Symbol.asyncIterator]() {
+        return {
+          next: () =>
+            Promise.reject(
+              new HttpRequestError(reason, 403, {
+                errorCode: 'database_not_assigned',
+                detail: reason,
+              }),
+            ),
+        }
+      },
+    }))
+    const store = await activeStore()
+
+    await store.sendMessage('hola', [])
+
+    expect(store.rejectedText).toBe('hola')
+    expect(store.error).toBe(reason)
+  })
 })

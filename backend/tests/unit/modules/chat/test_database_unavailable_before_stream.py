@@ -29,6 +29,7 @@ from app.modules.chat.application.use_cases import ChatTurnUseCase
 from app.modules.chat.domain.interfaces import ActiveProvider, ActiveProviderResolver, AiBudgetGuard
 from app.modules.chat.infrastructure.http.routes import chat
 from app.modules.erp_databases.domain.exceptions import ErpDatabaseUnavailableError
+from app.modules.erp_databases.domain.interfaces import UnrestrictedDatabases
 
 _CONVERSATION_ID = uuid4()
 _DATABASE_ID = uuid4()
@@ -108,7 +109,7 @@ async def test_raises_409_before_returning_the_streaming_response() -> None:
     provider_resolver = cast(ActiveProviderResolver, _StubProviderResolver())
 
     with pytest.raises(ErpDatabaseUnavailableError) as excinfo:
-        await chat(_request(), use_case, _user(), resolver, provider_resolver, _AllowAll())
+        await chat(_request(), use_case, _user(), resolver, provider_resolver, _AllowAll(), UnrestrictedDatabases())
 
     assert str(_DATABASE_ID) == excinfo.value.database_id
 
@@ -125,6 +126,6 @@ async def test_streams_when_the_database_is_available() -> None:
 
     provider_resolver = cast(ActiveProviderResolver, _StubProviderResolver())
 
-    response = await chat(_request(), use_case, _user(), resolver, provider_resolver, _AllowAll())
+    response = await chat(_request(), use_case, _user(), resolver, provider_resolver, _AllowAll(), UnrestrictedDatabases())
 
     assert response.media_type == "text/event-stream"

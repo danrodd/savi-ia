@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import StrEnum
+from uuid import UUID
 
 # Tope duro del contrato `sync/v1` (eventos por lote) y piso del reintento
 # cuando Cloud responde 413.
@@ -68,6 +69,29 @@ class AiLimits:
         return self.user_overrides.get(user_ref, self.user_monthly_usd)
 
 
+def _no_rules() -> dict[str, frozenset[UUID]]:
+    return {}
+
+
+@dataclass(frozen=True, slots=True)
+class AccessRules:
+    """Qué bases puede consultar cada persona, según Cloud.
+
+    Solo **restringe**: además hay que tener acceso en el ERP. Sin reglas, manda el ERP.
+    """
+
+    # Bases para toda persona sin regla propia. `None` = las que permita el ERP.
+    default_databases: frozenset[UUID] | None = None
+    # Regla propia de una persona (`user_ref`). Vacía = sin ninguna base.
+    user_databases: dict[str, frozenset[UUID]] = field(default_factory=_no_rules)
+
+    def allowed_for(self, user_ref: str) -> frozenset[UUID] | None:
+        """`None` = sin restricción de Cloud para esta persona."""
+        if user_ref in self.user_databases:
+            return self.user_databases[user_ref]
+        return self.default_databases
+
+
 @dataclass(frozen=True, slots=True)
 class SyncPolicy:
     """Política que Cloud informa en el enroll y en cada heartbeat."""
@@ -86,3 +110,5 @@ class SyncPolicy:
     identity_mode: str = "pseudonym"
     # Proveedores y topes de IA. `None` = sin límites.
     ai: AiLimits | None = None
+    # Bases por persona. `None` = lo que permita el ERP.
+    access: AccessRules | None = None
