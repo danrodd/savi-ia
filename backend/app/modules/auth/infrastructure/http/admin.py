@@ -34,7 +34,32 @@ from app.infrastructure.config import Settings, get_settings
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http.dependencies import CurrentUserDep
 from app.modules.erp_databases.domain.interfaces import ErpDatabaseRepository
-from app.shared.exceptions import ForbiddenError
+from app.shared.exceptions import ConfigLockedError, ForbiddenError
+
+CONFIG_LOCKED_MESSAGE = (
+    "Esta instalación la administra SEO Group: la configuración está bloqueada. "
+    "Si necesitás un cambio, pedíselo a soporte."
+)
+
+
+async def config_is_locked() -> bool:
+    """¿SEO Group dejó esta instalación solo con el chat?
+
+    La política llega por el heartbeat y se conserva: sin conexión sigue bloqueada. Sin
+    vinculación a Cloud (o con el servicio de sincronización sin arrancar, como en los
+    tests) no hay nadie que la bloquee. Es un bloqueo de la interfaz y del API, no una
+    defensa contra quien administra el equipo: lo que protege las claves es que no estén
+    en él.
+    """
+    # Import adentro: `cloud_link` importa modelos de `auth`.
+    from app.modules.cloud_link.infrastructure.composition import get_cloud_link_services
+
+    try:
+        services = get_cloud_link_services()
+    except RuntimeError:
+        return False
+    state = await services.repository.get()
+    return state.effective_policy.config_locked
 
 
 def is_savi_admin(user: AuthenticatedUser, settings: Settings) -> bool:
@@ -87,6 +112,8 @@ async def require_platform_admin(
     ahí el rol lo dan `SAVI_ADMIN_LOGINS` o ser administrador de la base por
     defecto.
     """
+    if await config_is_locked():
+        raise ConfigLockedError(CONFIG_LOCKED_MESSAGE)
     if not await is_platform_admin(user, settings):
         raise ForbiddenError(
             "Administrar las bases de datos, los proveedores de IA y el consumo "
@@ -105,8 +132,23 @@ def require_company_admin(
     return user
 
 
+async def require_unlocked_company_admin(
+    user: CurrentUserDep,
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> AuthenticatedUser:
+    """`require_company_admin` más el bloqueo de configuración de Cloud.
+
+    Es el que usan las rutas. Se mantiene separado del gate de rol (que es puro y síncrono) para
+    que la regla de "quién es administrador" siga siendo testeable sin tocar el estado de la
+    vinculación.
+    """
+    if await config_is_locked():
+        raise ConfigLockedError(CONFIG_LOCKED_MESSAGE)
+    return require_company_admin(user, settings)
+
+
 # Alias histórico: el gate de empresa es el que aplica a la mayoría de las
 # rutas `/admin`. Las de instalación usan `PlatformAdminDep`.
-SaviAdminDep = Annotated[AuthenticatedUser, Depends(require_company_admin)]
+SaviAdminDep = Annotated[AuthenticatedUser, Depends(require_unlocked_company_admin)]
 PlatformAdminDep = Annotated[AuthenticatedUser, Depends(require_platform_admin)]
-CompanyAdminDep = Annotated[AuthenticatedUser, Depends(require_company_admin)]
+CompanyAdminDep = Annotated[AuthenticatedUser, Depends(require_unlocked_company_admin)]

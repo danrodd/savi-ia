@@ -35,6 +35,14 @@ class ConversationBusyError(DomainError):
         super().__init__("Ya hay una respuesta en curso en esta conversación.")
 
 
+class ConfigLockedError(DomainError):
+    """La instalación está administrada por SEO Group: la configuración local está bloqueada.
+
+    El handler global la mapea a HTTP 403 con `errorCode: config_locked`, para que la
+    interfaz explique el motivo en vez de mostrar un "sin permiso" genérico.
+    """
+
+
 class ForbiddenError(DomainError):
     """El usuario está autenticado pero no tiene permiso para esta acción.
 

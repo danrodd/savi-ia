@@ -143,10 +143,13 @@ def build_cloud_link_services(
     local = telemetry or SqlAlchemyLocalTelemetry(sessionmaker, now)
     pseudonymizers = PseudonymizerProvider(repository)
 
+    async def identity_mode() -> str:
+        return (await repository.get()).effective_policy.identity_mode
+
     sources = [
         TurnSource(sessionmaker, pseudonymizers),
         ConversationSource(sessionmaker, pseudonymizers),
-        SessionSource(sessionmaker, pseudonymizers),
+        SessionSource(sessionmaker, pseudonymizers, identity_mode),
         FreeQuerySource(sessionmaker),
     ]
     snapshots = [DatabaseSource(sessionmaker)]

@@ -45,6 +45,9 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(readString(STORAGE_KEYS.ACCESS_TOKEN))
   const refreshToken = ref<string | null>(readString(STORAGE_KEYS.REFRESH_TOKEN))
   const user = ref<AuthUser | null>(readUser())
+  // SEO Group dejó esta instalación solo con el chat (Cloud). No es un secreto ni una defensa:
+  // el API igual rechaza la configuración. Sirve para no mostrar lo que no va a funcionar.
+  const configLocked = ref(false)
 
   // Promesa compartida del refresh en curso (si la hay). Cuando una
   // request recibe 401, llama a `ensureFreshAccessToken()`: si ya hay un
@@ -63,7 +66,28 @@ export const useAuthStore = defineStore('auth', () => {
     writeString(STORAGE_KEYS.AUTH_USER, JSON.stringify(tokens.user))
   }
 
+  /**
+   * Consulta la política de la instalación. Con la configuración bloqueada, la interfaz trata
+   * a la persona como usuario común: sin Administración ni accesos a proveedores.
+   *
+   * Falla en silencio: sin política, no se bloquea (el backend es quien decide de verdad).
+   */
+  async function loadPolicy(): Promise<void> {
+    const at = accessToken.value
+    if (!at) return
+    try {
+      configLocked.value = (await authService.policy(at)).config_locked
+    } catch {
+      return
+    }
+    if (configLocked.value && user.value?.is_admin) {
+      user.value = { ...user.value, is_admin: false }
+      writeString(STORAGE_KEYS.AUTH_USER, JSON.stringify(user.value))
+    }
+  }
+
   function clearSession(): void {
+    configLocked.value = false
     accessToken.value = null
     refreshToken.value = null
     user.value = null
@@ -78,6 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
   /** Abre la sesión y carga los permisos (compartido por todos los caminos de acceso). */
   async function openSession(tokens: TokenResponse): Promise<void> {
     persist(tokens)
+    await loadPolicy()
     // Carga del bootstrap de permisos justo tras el login — evita que
     // el primer render post-login muestre la UI con set vacío (fail-closed).
     // Importamos perezosamente para no introducir un ciclo al import-time.
@@ -128,6 +153,8 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const tokens = await authService.refresh(rt)
         persist(tokens)
+        // La política puede haber cambiado desde el último heartbeat de Cloud.
+        void loadPolicy()
         return tokens.access_token
       } catch (err) {
         clearSession()
@@ -158,6 +185,7 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken,
     refreshToken,
     user,
+    configLocked,
     isAuthenticated,
     login,
     beginMfaSetup,
@@ -167,5 +195,6 @@ export const useAuthStore = defineStore('auth', () => {
     clearSession,
     ensureFreshAccessToken,
     fetchMe,
+    loadPolicy,
   }
 })

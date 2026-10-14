@@ -24,6 +24,7 @@ from app.modules.auth.application.requests import (
 from app.modules.auth.application.responses import (
     AuthenticatedUserResponse,
     BootstrapResponse,
+    InstallationPolicyResponse,
     MfaChallengeResponse,
     MfaSetupResponse,
     ModulesVersionResponse,
@@ -225,6 +226,15 @@ async def me(
     """Devuelve el usuario del access token actual. Lo usa el frontend
     para hidratar la sesión al recargar la página."""
     return AuthenticatedUserResponse.from_domain(user, await _session_database(user, databases))
+
+
+@router.get("/me/policy", response_model=InstallationPolicyResponse)
+async def installation_policy(_: CurrentUserDep) -> InstallationPolicyResponse:
+    """Si SEO Group dejó esta instalación solo con el chat. La interfaz lo usa para ocultar
+    Administración (el API igual lo rechaza: esto solo evita mostrar lo que no funciona)."""
+    from app.modules.auth.infrastructure.http.admin import config_is_locked
+
+    return InstallationPolicyResponse(config_locked=await config_is_locked())
 
 
 @router.get("/me/bootstrap", response_model=BootstrapResponse)

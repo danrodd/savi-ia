@@ -74,6 +74,8 @@ class Policy(_Envelope):
     ingest_seconds: Annotated[StrictInt, Field(ge=1)]
     max_batch_events: Annotated[StrictInt, Field(ge=1, le=MAX_BATCH_EVENTS)]
     sync_enabled: StrictBool
+    config_locked: StrictBool = False
+    identity_mode: Literal["pseudonym", "named"] = "pseudonym"
 
 
 # --- enroll -----------------------------------------------------------------------------
@@ -222,6 +224,7 @@ class ConversationData(_Strict):
 
 class SessionData(_Strict):
     user_ref: Annotated[str, _text(pattern=r"^[0-9a-f]{32}$")]
+    user_label: Annotated[str, _text(min_length=1, max_length=64)] | None = None
     database_ref: UuidStr | None = None
 
 

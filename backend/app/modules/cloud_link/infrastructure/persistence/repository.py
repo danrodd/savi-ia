@@ -39,6 +39,8 @@ def _policy_to_json(policy: SyncPolicy | None) -> dict[str, Any] | None:
         "ingest_seconds": policy.ingest_seconds,
         "max_batch_events": policy.max_batch_events,
         "sync_enabled": policy.sync_enabled,
+        "config_locked": policy.config_locked,
+        "identity_mode": policy.identity_mode,
     }
 
 
@@ -52,11 +54,15 @@ def _policy_from_json(raw: dict[str, Any] | None) -> SyncPolicy | None:
         return value if isinstance(value, int) and not isinstance(value, bool) else default
 
     enabled = raw.get("sync_enabled")
+    locked = raw.get("config_locked")
+    identity = raw.get("identity_mode")
     return SyncPolicy(
         heartbeat_seconds=_int("heartbeat_seconds", defaults.heartbeat_seconds),
         ingest_seconds=_int("ingest_seconds", defaults.ingest_seconds),
         max_batch_events=_int("max_batch_events", defaults.max_batch_events),
         sync_enabled=enabled if isinstance(enabled, bool) else defaults.sync_enabled,
+        config_locked=locked if isinstance(locked, bool) else defaults.config_locked,
+        identity_mode=identity if identity in ("pseudonym", "named") else defaults.identity_mode,
     )
 
 

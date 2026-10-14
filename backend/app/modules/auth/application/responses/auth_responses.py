@@ -41,6 +41,12 @@ class TokenResponse(BaseModel):
         )
 
 
+class InstallationPolicyResponse(BaseModel):
+    """Política de la instalación que la interfaz necesita saber (hoy: si está bloqueada)."""
+
+    config_locked: bool
+
+
 class MfaChallengeResponse(BaseModel):
     """El login verificó la contraseña pero falta el segundo factor. No hay sesión."""
 

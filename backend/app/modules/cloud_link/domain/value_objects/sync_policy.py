@@ -28,6 +28,12 @@ INCREMENTAL_STREAMS: tuple[SyncStream, ...] = (
 )
 
 
+# Valores de `identity_mode` que esta instalación entiende. Uno desconocido se trata como
+# `pseudonym`: ante la duda, lo más privado.
+IDENTITY_PSEUDONYM = "pseudonym"
+IDENTITY_NAMED = "named"
+
+
 @dataclass(frozen=True, slots=True)
 class SyncPolicy:
     """Política que Cloud informa en el enroll y en cada heartbeat."""
@@ -36,3 +42,8 @@ class SyncPolicy:
     ingest_seconds: int = 300
     max_batch_events: int = CONTRACT_MAX_BATCH_EVENTS
     sync_enabled: bool = True
+    # Esta instalación queda solo con el chat: SEO Group la administra desde Cloud.
+    config_locked: bool = False
+    # `named`: las sesiones llevan el código de usuario (organización interna). Por defecto,
+    # solo seudónimos.
+    identity_mode: str = "pseudonym"

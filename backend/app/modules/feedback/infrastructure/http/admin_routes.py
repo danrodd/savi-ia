@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Query, Response
 
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.infrastructure.http.admin import require_company_admin
+from app.modules.auth.infrastructure.http.admin import require_unlocked_company_admin
 from app.modules.feedback.application.csv_export import build_feedback_csv
 from app.modules.feedback.application.responses import (
     AdminFeedbackPageResponse,
@@ -33,7 +33,7 @@ from app.shared.exceptions import ValidationError
 
 router = APIRouter(prefix="/admin/feedback", tags=["feedback-admin"])
 
-CompanyAdminDep = Annotated[AuthenticatedUser, Depends(require_company_admin)]
+CompanyAdminDep = Annotated[AuthenticatedUser, Depends(require_unlocked_company_admin)]
 
 _LIMIT_DEFAULT = 25
 _LIMIT_MAX = 200

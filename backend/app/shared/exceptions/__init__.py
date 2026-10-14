@@ -1,4 +1,5 @@
 from app.shared.exceptions.base import (
+    ConfigLockedError,
     ConversationBusyError,
     DomainError,
     ForbiddenError,
@@ -9,6 +10,7 @@ from app.shared.exceptions.base import (
 from app.shared.exceptions.handlers import register_exception_handlers
 
 __all__ = [
+    "ConfigLockedError",
     "ConversationBusyError",
     "DomainError",
     "ForbiddenError",

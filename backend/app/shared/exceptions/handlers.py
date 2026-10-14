@@ -12,6 +12,7 @@ from app.modules.auth.domain.exceptions import (
     UserDisabledError,
 )
 from app.shared.exceptions.base import (
+    ConfigLockedError,
     ConversationBusyError,
     DomainError,
     ForbiddenError,
@@ -38,6 +39,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(NotFoundError)
     async def _not_found(_: Request, exc: NotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    @app.exception_handler(ConfigLockedError)
+    async def _config_locked(_: Request, exc: ConfigLockedError) -> JSONResponse:
+        # 403 + `errorCode`: la interfaz explica que la administra SEO Group, no un permiso.
+        return JSONResponse(
+            status_code=403,
+            content={"errorCode": "config_locked", "detail": str(exc)},
+        )
 
     @app.exception_handler(ForbiddenError)
     async def _forbidden(_: Request, exc: ForbiddenError) -> JSONResponse:

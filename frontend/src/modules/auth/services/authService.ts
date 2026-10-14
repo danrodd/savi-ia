@@ -105,6 +105,14 @@ class AuthService {
     }
   }
 
+  /** Política de la instalación (hoy: si SEO Group la dejó solo con el chat). */
+  async policy(accessToken: string): Promise<{ config_locked: boolean }> {
+    const res = await fetch(this.url('/auth/me/policy'), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    return asJsonOrThrow<{ config_locked: boolean }>(res)
+  }
+
   async me(accessToken: string): Promise<AuthUser> {
     const res = await fetch(this.url('/auth/me'), {
       headers: { Authorization: `Bearer ${accessToken}` },

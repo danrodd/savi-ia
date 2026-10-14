@@ -1,5 +1,6 @@
 from app.modules.auth.application.responses.auth_responses import (
     AuthenticatedUserResponse,
+    InstallationPolicyResponse,
     MfaChallengeResponse,
     MfaSetupResponse,
     SessionDatabaseResponse,
@@ -13,6 +14,7 @@ from app.modules.auth.application.responses.modules_responses import (
 __all__ = [
     "AuthenticatedUserResponse",
     "BootstrapResponse",
+    "InstallationPolicyResponse",
     "MfaChallengeResponse",
     "MfaSetupResponse",
     "ModulesVersionResponse",

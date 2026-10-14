@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 import app.main as main_module
 from app.infrastructure.config import get_settings
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.infrastructure.http.admin import require_company_admin
+from app.modules.auth.infrastructure.http.admin import require_unlocked_company_admin
 from app.modules.company_knowledge.application.responses import AiReadingSettingsResponse
 from app.modules.company_knowledge.application.use_cases import (
     GetAiReadingSettingsUseCase,
@@ -357,7 +357,7 @@ def client(
     documents, pages, settings = repos
     get_settings.cache_clear()
     app = main_module.create_app()
-    app.dependency_overrides[require_company_admin] = lambda: ADMIN
+    app.dependency_overrides[require_unlocked_company_admin] = lambda: ADMIN
     app.dependency_overrides[get_document_repository] = lambda: documents
     app.dependency_overrides[get_page_repository] = lambda: pages
     app.dependency_overrides[get_knowledge_settings_repository] = lambda: settings
