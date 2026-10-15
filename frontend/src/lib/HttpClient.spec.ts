@@ -50,3 +50,19 @@ describe('HttpClient query serialization', () => {
     expect(url.searchParams.get('limit')).toBe('10')
   })
 })
+
+describe('HttpClient respuesta que no es JSON', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('un 200 con HTML da un error legible, no el de JSON.parse', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('<!DOCTYPE html><html></html>', { status: 200 }),
+    )
+
+    const error = await new HttpClient('/admin').get('/cloud-link').catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(Error)
+    expect((error as Error).message).not.toContain('Unexpected token')
+    expect((error as Error).message).toContain('inesperado')
+  })
+})

@@ -63,6 +63,19 @@ async function readErrorBody(res: Response): Promise<ErrorBody> {
   }
 }
 
+async function readJson<T>(res: Response): Promise<T> {
+  try {
+    return (await res.json()) as T
+  } catch {
+    // Un proxy o un backend desactualizado pueden contestar HTML con 200: sin
+    // esto el usuario veía "Unexpected token '<'..." en lugar de un mensaje útil.
+    throw new HttpRequestError(
+      'El servidor respondió algo inesperado. Probá de nuevo en un momento.',
+      res.status,
+    )
+  }
+}
+
 function errorMessage(body: ErrorBody, res: Response): string {
   if (Array.isArray(body.detail)) {
     const messages = body.detail.map((issue) => issue.msg).filter(Boolean)
@@ -169,7 +182,7 @@ export class HttpClient {
       throw new HttpRequestError(errorMessage(errBody, res), res.status, errBody)
     }
     if (res.status === 204) return undefined as T
-    return (await res.json()) as T
+    return readJson<T>(res)
   }
 
   get<T>(endpoint: string, opts?: RequestOptions): Promise<T> {
@@ -208,7 +221,7 @@ export class HttpClient {
       const errBody = await readErrorBody(res)
       throw new HttpRequestError(errorMessage(errBody, res), res.status, errBody)
     }
-    return (await res.json()) as T
+    return readJson<T>(res)
   }
 
   /** Descarga binaria con la misma autenticación. Lanza `HttpRequestError` si no es OK. */
