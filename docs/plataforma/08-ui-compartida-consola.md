@@ -1,7 +1,7 @@
 # 08 · UI compartida y rediseño de la consola de SAVI Cloud
 
-> Estado: **plan aprobado en concepto, sin implementar**. Cada fase se ejecuta y se
-> commitea por separado, con aprobación explícita.
+> Estado: **implementado (fases 0 a 8)**. Ver §8 "Avance" para el resultado de las
+> validaciones, los desvíos respecto del plan y lo pendiente.
 
 ## 1. Problema
 
@@ -314,3 +314,55 @@ de los tokens.
 | Dockerfiles no verificables en esta máquina | Revisión cuidadosa y verificación pendiente en el servidor o en una máquina con Docker |
 | Lock único con muchos cambios | Fase 0 aislada, sin cambios de código, para que el diff sea solo de dependencias |
 | Dependencias "fantasma" por el `node_modules` compartido | Cada app declara lo que importa; `vue-tsc` y el build lo detectan |
+
+## 8. Avance
+
+Implementado en un commit por fase (`dc9adbd` workspaces · `9bbcc83` kit de SAVI al paquete ·
+`2ee6e09` componentes nuevos · `7850de3` layout de Cloud · `a9bae86` ingreso por pasos ·
+`0f9be33` formularios del cliente · `eee2850` detalle con pestañas · `63850fd` resto de vistas
+· `fdd07be` correcciones de las validaciones).
+
+### Validaciones
+
+1. **Automatizada.** Paquete 44 tests, SAVI 338, consola 106, backend de Cloud 357 (6
+   omitidos). `vue-tsc` limpio en los tres y builds de producción OK. Los Dockerfiles se
+   simularon sin Docker: en una carpeta limpia con solo lo que copian, `npm ci` y el build de
+   cada app funcionan. La consola compilada solo carga scripts y fuentes propios (CSP).
+2. **SAVI no cambió.** SAVI compilado antes de la fase 1 (commit `dc9adbd`) contra el actual:
+   44 capturas (claro/oscuro × escritorio/móvil, login, chat, perfil, siete pantallas de
+   administración y 404). Idénticas píxel a píxel salvo las sugerencias aleatorias de la
+   pantalla de inicio. Sin errores de consola en desarrollo.
+3. **Consola completa.** 68 vistas (17 pantallas × 4 combinaciones) con login real y TOTP:
+   sin errores de consola, sin scroll horizontal, un `<main>` y un `h1` por vista y el tema
+   aplicado en todas. Lighthouse de accesibilidad: 100 en resumen, reglas, IA y suscripción;
+   96 en equipo por el botón primario de SAVI (ver pendientes). El primer ingreso se probó
+   de punta a punta: la contraseña se pide antes del código y el código se envía solo.
+
+### Desvíos respecto del plan
+
+- `ConfirmDialog` y `SecretDialog` de Cloud no se eliminaron: quedaron como composiciones
+  finas sobre `Dialog`, `CopyField` y `TextField` porque tienen comportamiento propio (palabra
+  a escribir, secreto que se muestra una vez). Igual `StatusBadge`, `FreshnessChip` y
+  `KpiCard`.
+- Los formularios que viven en las vistas (alta y edición de cliente, equipo, reglas) se
+  hicieron en las fases 6 y 7, al rehacer esas vistas, para no tocarlas dos veces.
+- `useTheme` recibe la clave de almacenamiento por parámetro; SAVI conserva la suya
+  (`savi-agent-theme-mode`) y Cloud usa `savi-cloud-theme-mode`.
+- Se corrigió de paso un defecto de M5-A: `http.put` no existía en la consola y guardar el
+  plan fallaba (`61ca30a`).
+
+### Pendiente
+
+- **Docker real**: verificar las imágenes de SAVI y de Cloud con el contexto en la raíz del
+  repo en el servidor (M1.5).
+- **Hallazgos preexistentes de SAVI, sin tocar** (no eran parte de este trabajo):
+  - `frontend/public/theme-init.js` hace `JSON.parse` de un valor que VueUse guarda como
+    texto plano (`dark`): falla en silencio y quien usa el modo oscuro ve un destello claro
+    al cargar. Cloud ya tiene la versión corregida.
+  - El token `--text-subtle` no llega a 4.5:1 de contraste (2.8:1 en claro, 3.6:1 en
+    oscuro) y el botón primario en oscuro queda en 4.09:1. Los componentes nuevos usan
+    `--text-muted`; cambiar los tokens alteraría SAVI y conviene decidirlo aparte.
+  - Biome marca imports sin ordenar en archivos de `permisos` y `chat` y `frontend/pnpm-lock.yaml`
+    quedó versionado de una etapa anterior.
+- Migrar pantallas de SAVI a los componentes nuevos (§6), de a una.
+
