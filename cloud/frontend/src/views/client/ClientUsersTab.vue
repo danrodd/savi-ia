@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Alert, Card, DataTable, EmptyState, type TableColumn } from '@savi/ui'
+import { Alert, Card, DataTable, EmptyState, type TableColumn, TextField } from '@savi/ui'
 import { Users } from 'lucide-vue-next'
-import { watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { consoleApi } from '@/lib/api'
 import { useClientContext } from '@/lib/clientContext'
 import { formatInt, formatUsd, relativeTime } from '@/lib/format'
@@ -10,6 +10,17 @@ import { useAsync } from '@/lib/useAsync'
 const { id, client } = useClientContext()
 const users = useAsync(() => consoleApi.clientUsers(id.value))
 watch(id, () => users.reload())
+
+// El ranking trae hasta 100 personas: se busca sobre lo ya cargado, por etiqueta o seudónimo.
+const search = ref('')
+const rows = computed(() => {
+  const all = users.data.value ?? []
+  const needle = search.value.trim().toLowerCase()
+  if (!needle) return all
+  return all.filter(
+    (u) => u.user_ref.toLowerCase().includes(needle) || u.label?.toLowerCase().includes(needle),
+  )
+})
 
 const COLUMNS: TableColumn[] = [
   { key: 'user_ref', label: 'Persona' },
@@ -25,16 +36,26 @@ const COLUMNS: TableColumn[] = [
     <Alert v-if="client?.identity_mode !== 'named'" tone="info">
       Las personas se identifican por un seudónimo: Cloud no recibe nombres ni correos.
     </Alert>
+    <TextField
+      v-model="search"
+      data-test="users-search"
+      type="search"
+      label="Buscar persona"
+      placeholder="Código de usuario o seudónimo"
+    />
     <Card padding="none">
       <DataTable
         :columns="COLUMNS"
-        :rows="users.data.value ?? []"
+        :rows="rows"
         row-key="user_ref"
         :loading="users.loading.value"
         caption="Personas que usaron SAVI"
       >
         <template #empty>
-          <EmptyState :icon="Users" title="Sin personas activas en el período" />
+          <EmptyState
+            :icon="Users"
+            :title="search.trim() ? 'Ninguna persona coincide con la búsqueda' : 'Sin personas activas en el período'"
+          />
         </template>
         <template #cell-user_ref="{ row }">
           <strong v-if="row.label">{{ row.label }}</strong>

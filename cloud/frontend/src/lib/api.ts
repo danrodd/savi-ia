@@ -6,8 +6,10 @@ import type {
   AiPolicy,
   Alert,
   AlertRule,
+  AlertSummary,
   AuditEntry,
   Client,
+  ClientCounts,
   ClientDatabase,
   ClientMetrics,
   ClientUser,
@@ -103,6 +105,7 @@ export const consoleApi = {
   clientMetrics: (id: string, period: Period = {}) =>
     http.get<ClientMetrics>(`${API}/clients/${id}/metrics`, { ...period }),
   clientDatabases: (id: string) => http.get<ClientDatabase[]>(`${API}/clients/${id}/databases`),
+  clientCounts: (id: string) => http.get<ClientCounts>(`${API}/clients/${id}/counts`),
   clientPeople: (id: string) => http.get<Person[]>(`${API}/clients/${id}/people`),
   clientUsers: (id: string, period: Period = {}) =>
     http.get<ClientUser[]>(`${API}/clients/${id}/users`, { ...period }),
@@ -111,6 +114,7 @@ export const consoleApi = {
     client_id?: string
     status?: string
     connectivity?: string
+    version?: string
     outdated?: boolean
   }) => http.get<Instance[]>(`${API}/instances`, query),
   instance: (id: string) => http.get<Instance>(`${API}/instances/${id}`),
@@ -132,6 +136,8 @@ export const consoleApi = {
     }),
   revokeToken: (tokenId: string) => http.delete<void>(`${API}/enrollment-tokens/${tokenId}`),
 
+  alertSummary: (query: { client_id?: string } = {}) =>
+    http.get<AlertSummary>(`${API}/alerts/summary`, query),
   alerts: (query: { status?: string; severity?: Severity; client_id?: string }) =>
     http.get<Alert[]>(`${API}/alerts`, query),
   acknowledgeAlert: (id: string) => http.post<Alert>(`${API}/alerts/${id}/ack`),
@@ -151,6 +157,6 @@ export const consoleApi = {
   staffAction: (id: string, action: 'deactivate' | 'activate' | 'reset-mfa') =>
     http.post<StaffMember>(`${API}/staff/${id}/${action}`),
 
-  audit: (query: { actor?: string; action?: string; cursor?: string }) =>
+  audit: (query: { actor?: string; action?: string; target?: string; cursor?: string }) =>
     http.get<Cursored<AuditEntry>>(`${API}/audit`, { limit: 50, ...query }),
 }

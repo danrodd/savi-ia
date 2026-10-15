@@ -13,7 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_clock, transaction
-from app.modules.alerts.domain import Severity
+from app.modules.alerts.domain import AlertStatus, Severity
 from app.modules.alerts.infrastructure import SqlAlchemyAlertRepository
 from app.modules.clients.domain import ClientNotFound
 from app.modules.clients.infrastructure import ClientModel
@@ -454,6 +454,25 @@ async def client_people(
         )
         for p in rows
     ]
+
+
+class ClientCountsOut(BaseModel):
+    people: int
+    open_alerts: int
+
+
+@router.get("/clients/{client_id}/counts", response_model=ClientCountsOut)
+async def client_counts(
+    client_id: UUID,
+    request: Request,
+    _: Principal = Depends(RequirePermission(Permission.CLIENTS_READ)),
+) -> ClientCountsOut:
+    """Contadores de las pestañas del cliente, sin traer las listas completas."""
+    async with transaction(request) as session:
+        await _require_client(session, client_id)
+        people = await MetricsQueries(session).count_people_of_client(client_id)
+        alerts = await SqlAlchemyAlertRepository(session).count_by_status(client_id=client_id)
+    return ClientCountsOut(people=people, open_alerts=alerts.get(AlertStatus.OPEN, 0))
 
 
 @router.get("/clients/{client_id}/users", response_model=list[UserOut])

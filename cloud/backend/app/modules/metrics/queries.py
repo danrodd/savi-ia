@@ -495,6 +495,18 @@ class MetricsQueries:
         ranked = sorted(found.items(), key=lambda kv: (kv[1][1], kv[0]), reverse=True)
         return [PersonActivity(ref, labels.get(ref), n, seen) for ref, (n, seen) in ranked[:limit]]
 
+    async def count_people_of_client(self, client_id: UUID) -> int:
+        """Cuántas personas distintas tiene el padrón (sesiones o turnos), sin traerlas."""
+        s = EvSessionModel
+        t = EvTurnModel
+        refs = (
+            select(s.user_ref)
+            .where(s.client_id == client_id)
+            .union(select(t.user_ref).where(t.client_id == client_id))
+            .subquery()
+        )
+        return int((await self._s.execute(select(func.count()).select_from(refs))).scalar_one())
+
     # ------------------------------------------------------------ inventario
 
     async def databases(self, client_id: UUID) -> list[DatabaseInfo]:

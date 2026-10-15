@@ -18,9 +18,20 @@ const auth = useAuthStore()
 const id = computed(() => String(route.params.id))
 
 const client = useAsync(() => consoleApi.client(id.value))
-provide(CLIENT_CONTEXT, { id, client: client.data, reload: client.reload })
+// Contadores de las pestañas: una sola petición barata, aparte del detalle.
+const counts = useAsync(() => consoleApi.clientCounts(id.value))
+provide(CLIENT_CONTEXT, {
+  id,
+  client: client.data,
+  reload: client.reload,
+  counts: counts.data,
+  reloadCounts: counts.reload,
+})
 // La vista se reutiliza al pasar de un cliente a otro: hay que recargar.
-watch(id, () => client.reload())
+watch(id, () => {
+  void client.reload()
+  void counts.reload()
+})
 
 interface ClientTab {
   key: string
@@ -42,11 +53,20 @@ const TABS: ClientTab[] = [
   { key: 'alertas', label: 'Alertas' },
 ]
 
+/** Cuántos hay en cada pestaña con contador; `undefined` (sin número) mientras no se sabe. */
+function tabCount(key: string): number | undefined {
+  if (key === 'instancias') return client.data.value?.instances_total
+  if (key === 'usuarios') return counts.data.value?.people
+  if (key === 'alertas' && auth.can('alerts.read')) return counts.data.value?.open_alerts
+  return undefined
+}
+
 const tabs = computed<TabItem[]>(() =>
   TABS.filter((tab) => !tab.permission || auth.can(tab.permission)).map((tab) => ({
     key: tab.key,
     label: tab.label,
     to: `/clientes/${id.value}/${tab.key}`,
+    count: tabCount(tab.key),
   })),
 )
 

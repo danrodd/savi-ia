@@ -98,6 +98,11 @@ class RuleOut(BaseModel):
         )
 
 
+class AlertSummaryOut(BaseModel):
+    open: int
+    acknowledged: int
+
+
 class ResolveBody(_Body):
     note: str = Field(default="", max_length=500)
 
@@ -143,6 +148,20 @@ async def list_alerts(
         )
         names = await _client_names(session, rows)
     return [AlertOut.of(a, names.get(a.client_id)) for a in rows]
+
+
+@router.get("/alerts/summary", response_model=AlertSummaryOut)
+async def alerts_summary(
+    request: Request,
+    client_id: UUID | None = None,
+    _: Principal = Depends(RequirePermission(Permission.ALERTS_READ)),
+) -> AlertSummaryOut:
+    """Conteos baratos para los contadores de la consola (menú lateral, pestañas)."""
+    async with transaction(request) as session:
+        counts = await SqlAlchemyAlertRepository(session).count_by_status(client_id=client_id)
+    return AlertSummaryOut(
+        open=counts.get(AlertStatus.OPEN, 0), acknowledged=counts.get(AlertStatus.ACKNOWLEDGED, 0)
+    )
 
 
 @router.post("/alerts/{alert_id}/ack", response_model=AlertOut)

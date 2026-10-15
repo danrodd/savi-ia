@@ -397,6 +397,45 @@ async def test_overview_counts_open_alerts(fx: Fixture) -> None:
     assert body["open_alerts"] == {"info": 0, "warning": 0, "critical": 1}
 
 
+async def test_alert_summary_counts_by_status_and_client(fx: Fixture) -> None:
+    client_id = await busy_client(fx)
+    linked = await link_instance(fx, client_id)
+    await beat(fx, linked, warnings=["cert_expired"])
+    await evaluate(fx)
+    admin = await fx.console.login("admin@seo.example")
+
+    total = (await fx.console.http.get(f"{API}/alerts/summary", headers=admin.auth)).json()
+    assert total == {"open": 1, "acknowledged": 0}
+    mine = await fx.console.http.get(
+        f"{API}/alerts/summary?client_id={client_id}", headers=admin.auth
+    )
+    assert mine.json() == {"open": 1, "acknowledged": 0}
+    other = await fx.console.http.get(
+        f"{API}/alerts/summary?client_id={uuid4()}", headers=admin.auth
+    )
+    assert other.json() == {"open": 0, "acknowledged": 0}
+
+    alert_id = (await alerts(fx))[0]["id"]
+    await fx.console.http.post(f"{API}/alerts/{alert_id}/ack", headers=admin.auth)
+    after = (await fx.console.http.get(f"{API}/alerts/summary", headers=admin.auth)).json()
+    assert after == {"open": 0, "acknowledged": 1}
+
+
+async def test_client_counts_people_and_open_alerts(fx: Fixture) -> None:
+    client_id = await busy_client(fx)  # un turno de "u1"
+    linked = await link_instance(fx, client_id)
+    await beat(fx, linked, warnings=["cert_expired"])
+    await evaluate(fx)
+    admin = await fx.console.login("admin@seo.example")
+
+    res = await fx.console.http.get(f"{API}/clients/{client_id}/counts", headers=admin.auth)
+    assert res.status_code == 200, res.text
+    assert res.json() == {"people": 1, "open_alerts": 1}
+
+    missing = await fx.console.http.get(f"{API}/clients/{uuid4()}/counts", headers=admin.auth)
+    assert missing.status_code == 404
+
+
 async def test_database_blocks_duplicate_live_alerts(fx: Fixture) -> None:
     """La unicidad de alertas vivas la garantiza la base, no solo el motor."""
     from datetime import UTC, datetime

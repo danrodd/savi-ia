@@ -10,6 +10,9 @@ const api = vi.hoisted(() => ({
   clientDatabases: vi.fn(),
   clientUsers: vi.fn(),
   clientPeople: vi.fn(),
+  clientCounts: vi.fn(),
+  acknowledgeAlert: vi.fn(),
+  resolveAlert: vi.fn(),
   instances: vi.fn(),
   tokens: vi.fn(),
   alerts: vi.fn(),
@@ -114,6 +117,7 @@ beforeEach(() => {
   api.clientDatabases.mockResolvedValue([])
   api.clientUsers.mockResolvedValue([])
   api.clientPeople.mockResolvedValue([])
+  api.clientCounts.mockResolvedValue({ people: 7, open_alerts: 3 })
   api.alerts.mockResolvedValue([])
   api.tokens.mockResolvedValue([])
   api.subscription.mockResolvedValue({
@@ -139,7 +143,7 @@ describe('detalle del cliente', () => {
 
   it('solo muestra las pestañas que permite el rol', async () => {
     const { wrapper } = await mountAt('/clientes/c1', ['clients.read'])
-    const labels = wrapper.findAll('.ui-tabs a').map((a) => a.text())
+    const labels = wrapper.findAll('.ui-tabs a').map((a) => a.text().replace(/\s*\d+$/, ''))
 
     expect(labels).toEqual(['Resumen', 'Instancias', 'Sucursales', 'Usuarios', 'Alertas'])
   })
@@ -151,7 +155,7 @@ describe('detalle del cliente', () => {
       'clients.policy',
       'tokens.manage',
     ])
-    const labels = wrapper.findAll('.ui-tabs a').map((a) => a.text())
+    const labels = wrapper.findAll('.ui-tabs a').map((a) => a.text().replace(/\s*\d+$/, ''))
 
     expect(labels).toEqual([
       'Resumen',
@@ -165,6 +169,120 @@ describe('detalle del cliente', () => {
       'Vinculación',
       'Alertas',
     ])
+  })
+
+  it('las pestañas muestran cuántas instancias, personas y alertas abiertas hay', async () => {
+    const { wrapper } = await mountAt('/clientes/c1', ['clients.read', 'alerts.read'])
+    const count = (label: string) => {
+      const tab = wrapper.findAll('.ui-tabs a').find((a) => a.text().startsWith(label))
+      const badge = tab?.find('.ui-tabs__count')
+      return badge?.exists() ? badge.text() : undefined
+    }
+
+    expect(api.clientCounts).toHaveBeenCalledWith('c1')
+    expect(count('Instancias')).toBe('2')
+    expect(count('Usuarios')).toBe('7')
+    expect(count('Alertas')).toBe('3')
+    expect(count('Resumen')).toBeUndefined()
+  })
+
+  it('sin permiso para ver alertas la pestaña no muestra su contador', async () => {
+    const { wrapper } = await mountAt('/clientes/c1', ['clients.read'])
+    const tab = wrapper.findAll('.ui-tabs a').find((a) => a.text().startsWith('Alertas'))
+
+    expect(tab?.find('.ui-tabs__count').exists()).toBe(false)
+  })
+
+  it('en la pestaña Usuarios se busca por etiqueta o seudónimo', async () => {
+    api.clientUsers.mockResolvedValue([
+      {
+        user_ref: 'aaaa1111bbbb',
+        label: 'JPEREZ',
+        turns: 3,
+        cost_usd: '1',
+        last_used_at: '2026-10-01T00:00:00Z',
+        databases_used: 1,
+      },
+      {
+        user_ref: 'cccc2222dddd',
+        label: null,
+        turns: 2,
+        cost_usd: '1',
+        last_used_at: '2026-10-01T00:00:00Z',
+        databases_used: 1,
+      },
+    ])
+    const { wrapper } = await mountAt('/clientes/c1/usuarios', ['clients.read'])
+    const input = wrapper.get('[data-test="users-search"] input')
+    const rows = () => wrapper.findAll('tbody tr').length
+
+    expect(rows()).toBe(2)
+    await input.setValue('jperez')
+    expect(rows()).toBe(1)
+    await input.setValue('cccc2222')
+    expect(wrapper.text()).toContain('cccc2222')
+    expect(wrapper.text()).not.toContain('JPEREZ')
+    await input.setValue('zzz')
+    expect(wrapper.text()).toContain('Ninguna persona coincide')
+  })
+
+  it('la pestaña Alertas permite reconocer y resolver con permiso de gestión', async () => {
+    const alert = {
+      id: 'a1',
+      rule_code: 'subscription_due',
+      severity: 'critical',
+      status: 'open',
+      client_id: 'c1',
+      instance_id: null,
+      details: {},
+      opened_at: '2026-10-01T00:00:00Z',
+      acknowledged_at: null,
+      acknowledged_by: null,
+      resolved_at: null,
+      resolved_by: null,
+      resolution_note: null,
+    }
+    api.alerts.mockResolvedValue([alert])
+    api.acknowledgeAlert.mockResolvedValue({ ...alert, status: 'acknowledged' })
+    api.resolveAlert.mockResolvedValue({ ...alert, status: 'resolved' })
+    const { wrapper } = await mountAt('/clientes/c1/alertas', ['clients.read', 'alerts.manage'])
+    const button = (text: string) => wrapper.findAll('button').find((b) => b.text() === text)
+
+    await button('Reconocer')?.trigger('click')
+    await flushPromises()
+    expect(api.acknowledgeAlert).toHaveBeenCalledWith('a1')
+    expect(api.alerts).toHaveBeenCalledTimes(2)
+    expect(api.clientCounts).toHaveBeenCalledTimes(2)
+
+    await button('Resolver')?.trigger('click')
+    await flushPromises()
+    await wrapper.get('textarea').setValue('  Listo ')
+    await wrapper.get('[data-test="resolve-confirm"]').trigger('click')
+    await flushPromises()
+    expect(api.resolveAlert).toHaveBeenCalledWith('a1', 'Listo')
+  })
+
+  it('la pestaña Alertas sin permiso de gestión no ofrece acciones', async () => {
+    api.alerts.mockResolvedValue([
+      {
+        id: 'a1',
+        rule_code: 'x',
+        severity: 'info',
+        status: 'open',
+        client_id: 'c1',
+        instance_id: null,
+        details: {},
+        opened_at: '2026-10-01T00:00:00Z',
+        acknowledged_at: null,
+        acknowledged_by: null,
+        resolved_at: null,
+        resolved_by: null,
+        resolution_note: null,
+      },
+    ])
+    const { wrapper } = await mountAt('/clientes/c1/alertas', ['clients.read'])
+
+    expect(wrapper.findAll('button').some((b) => b.text() === 'Reconocer')).toBe(false)
   })
 
   it('una pestaña sin permiso por URL directa vuelve al resumen del cliente', async () => {

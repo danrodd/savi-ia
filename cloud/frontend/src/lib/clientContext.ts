@@ -1,5 +1,5 @@
 import { type ComputedRef, type InjectionKey, inject, type Ref } from 'vue'
-import type { Client } from '@/lib/types'
+import type { Client, ClientCounts } from '@/lib/types'
 
 /**
  * Lo que el detalle del cliente comparte con sus pestañas: el cliente ya cargado (una sola
@@ -9,6 +9,9 @@ export interface ClientContext {
   id: ComputedRef<string>
   client: Ref<Client | null>
   reload: () => Promise<void>
+  /** Contadores de las pestañas (personas, alertas abiertas); `null` hasta que cargan. */
+  counts: Ref<ClientCounts | null>
+  reloadCounts: () => Promise<void>
 }
 
 export const CLIENT_CONTEXT: InjectionKey<ClientContext> = Symbol('client-context')

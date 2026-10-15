@@ -16,8 +16,9 @@ import {
   Users,
   X,
 } from 'lucide-vue-next'
-import { type Component, computed, ref, watch } from 'vue'
+import { type Component, computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+import { openAlerts, refreshOpenAlerts } from '@/composables/useOpenAlerts'
 import { roleLabel } from '@/lib/format'
 import { THEME_STORAGE_KEY } from '@/lib/theme'
 import type { Permission } from '@/lib/types'
@@ -74,6 +75,32 @@ const groups = computed(() =>
     items: group.items.filter((item) => auth.can(item.permission)),
   })).filter((group) => group.items.length > 0),
 )
+
+// Contador de alertas abiertas junto a "Alertas": solo con permiso de verlas. Se relee al
+// navegar y cada minuto, y no mientras la pestaña del navegador está oculta.
+const ALERTS_POLL_MS = 60_000
+const showAlertBadge = computed(() => auth.can('alerts.read'))
+let pollTimer: ReturnType<typeof setInterval> | undefined
+
+function pollAlerts(): void {
+  if (showAlertBadge.value && !document.hidden) void refreshOpenAlerts()
+}
+
+onMounted(() => {
+  pollAlerts()
+  pollTimer = setInterval(pollAlerts, ALERTS_POLL_MS)
+  document.addEventListener('visibilitychange', pollAlerts)
+})
+onBeforeUnmount(() => {
+  clearInterval(pollTimer)
+  document.removeEventListener('visibilitychange', pollAlerts)
+})
+watch(() => route.path, pollAlerts)
+
+function badgeFor(item: NavItem): number | null {
+  if (item.to !== '/alertas' || !showAlertBadge.value) return null
+  return openAlerts.value
+}
 
 function isActive(item: NavItem): boolean {
   if (item.exact) return route.path === item.to
@@ -151,6 +178,14 @@ async function logout(): Promise<void> {
           >
             <component :is="item.icon" :size="16" aria-hidden="true" />
             {{ item.label }}
+            <span
+              v-if="badgeFor(item)"
+              class="nav__badge"
+              :data-test="`nav-badge-${item.to.slice(1)}`"
+              :aria-label="`${badgeFor(item)} abiertas`"
+            >
+              {{ (badgeFor(item) ?? 0) > 99 ? '99+' : badgeFor(item) }}
+            </span>
           </RouterLink>
         </div>
       </nav>
@@ -275,6 +310,19 @@ async function logout(): Promise<void> {
   font-size: 13px;
   font-weight: var(--fw-medium);
   text-decoration: none;
+}
+
+.nav__badge {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  line-height: 20px;
+  text-align: center;
 }
 
 .nav__link:hover {

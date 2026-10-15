@@ -67,6 +67,12 @@ export interface Client {
   access_policy: AccessPolicy
 }
 
+/** Contadores de las pestañas del cliente que no vienen en el detalle. */
+export interface ClientCounts {
+  people: number
+  open_alerts: number
+}
+
 export interface Page<T> {
   items: T[]
   total: number
@@ -168,6 +174,12 @@ export interface Alert {
   resolved_at: string | null
   resolved_by: string | null
   resolution_note: string | null
+}
+
+/** Conteos baratos de alertas vivas (de todos los clientes o de uno). */
+export interface AlertSummary {
+  open: number
+  acknowledged: number
 }
 
 export interface AlertRule {

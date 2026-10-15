@@ -126,7 +126,16 @@ const versions = computed(() =>
               row-key="key"
               empty-text="Todavía no hay instancias vinculadas."
             >
-              <template #cell-version="{ row }">{{ row.version ?? 'Sin informar' }}</template>
+              <template #cell-version="{ row }">
+                <RouterLink
+                  v-if="row.version"
+                  :to="{ path: '/instancias', query: { version: row.version } }"
+                  data-test="version-link"
+                >
+                  {{ row.version }}
+                </RouterLink>
+                <template v-else>Sin informar</template>
+              </template>
             </DataTable>
           </Card>
         </div>

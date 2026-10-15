@@ -10,20 +10,30 @@ import {
   PageHeader,
   Select,
   type TableColumn,
+  TextField,
 } from '@savi/ui'
 import { Server } from 'lucide-vue-next'
-import { ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import StatusBadge from '@/components/StatusBadge.vue'
+import { useClientOptions } from '@/composables/useClientOptions'
+import { useQueryFlag, useQueryParam } from '@/composables/useQueryParam'
 import { consoleApi } from '@/lib/api'
 import { instanceState, relativeTime } from '@/lib/format'
 import type { Instance } from '@/lib/types'
 import { useAsync } from '@/lib/useAsync'
 
 const router = useRouter()
-const status = ref<string | null>(null)
-const connectivity = ref<string | null>(null)
-const outdated = ref(false)
+
+// Todos los filtros viven en la URL (`/instancias?version=1.4.2`): los enlaces desde el resumen
+// y desde otras pantallas funcionan, y se pueden compartir.
+const status = useQueryParam('status')
+const connectivity = useQueryParam('connectivity')
+const outdated = useQueryFlag('outdated')
+const clientId = useQueryParam('client')
+const version = useQueryParam('version')
+const search = useQueryParam('q')
+const { options: clientOptions } = useClientOptions(() => clientId.value)
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Activas' },
@@ -43,16 +53,48 @@ const COLUMNS: TableColumn[] = [
   { key: 'last_seen_at', label: 'Último contacto', width: '160px' },
 ]
 
+// Estado, conexión y desactualizadas las filtra el backend. Cliente y versión también se
+// piden al backend; la búsqueda por texto se hace acá sobre la lista ya cargada (es completa).
 const { data, loading, error, reload } = useAsync(() =>
   consoleApi.instances({
     status: status.value ?? undefined,
     connectivity: connectivity.value ?? undefined,
     outdated: outdated.value || undefined,
+    client_id: clientId.value ?? undefined,
+    version: version.value ?? undefined,
   }),
 )
-watch([status, connectivity, outdated], () => void reload())
+watch([status, connectivity, outdated, clientId, version], () => void reload())
 
-const filtered = () => status.value !== null || connectivity.value !== null || outdated.value
+const rows = computed(() => {
+  const all = data.value ?? []
+  const needle = search.value?.trim().toLowerCase()
+  if (!needle) return all
+  return all.filter((i) =>
+    [i.name, i.client_code, i.client_name, i.version ?? ''].some((text) =>
+      text.toLowerCase().includes(needle),
+    ),
+  )
+})
+
+// Las versiones se arman con lo que se ha visto en la lista (el backend no tiene un catálogo);
+// la que viene en la URL siempre está, aunque no haya coincidencias.
+const seenVersions = new Set<string>()
+const versionOptions = computed(() => {
+  for (const i of data.value ?? []) if (i.version) seenVersions.add(i.version)
+  if (version.value) seenVersions.add(version.value)
+  return [...seenVersions].sort().map((v) => ({ value: v, label: v }))
+})
+
+const filtered = computed(
+  () =>
+    status.value !== null ||
+    connectivity.value !== null ||
+    outdated.value ||
+    clientId.value !== null ||
+    version.value !== null ||
+    Boolean(search.value?.trim()),
+)
 
 function open(instance: Instance): void {
   void router.push(`/instancias/${instance.id}`)
@@ -69,7 +111,35 @@ function open(instance: Instance): void {
     <div class="stack">
       <Card padding="md">
         <div class="filters">
-          <Select v-model="status" label="Estado" placeholder="Todos" :options="STATUS_OPTIONS" />
+          <TextField
+            v-model="search"
+            data-test="instances-search"
+            type="search"
+            label="Buscar"
+            placeholder="Nombre, cliente o versión"
+          />
+          <Select
+            v-if="clientOptions.length"
+            v-model="clientId"
+            data-test="instances-client"
+            label="Cliente"
+            placeholder="Todos los clientes"
+            :options="clientOptions"
+          />
+          <Select
+            v-model="version"
+            data-test="instances-version"
+            label="Versión"
+            placeholder="Todas las versiones"
+            :options="versionOptions"
+          />
+          <Select
+            v-model="status"
+            data-test="instances-status"
+            label="Estado"
+            placeholder="Todos"
+            :options="STATUS_OPTIONS"
+          />
           <Select
             v-model="connectivity"
             label="Conexión"
@@ -90,7 +160,7 @@ function open(instance: Instance): void {
       <Card padding="none">
         <DataTable
           :columns="COLUMNS"
-          :rows="data ?? []"
+          :rows="rows"
           row-key="id"
           :loading="loading"
           clickable
@@ -100,9 +170,9 @@ function open(instance: Instance): void {
           <template #empty>
             <EmptyState
               :icon="Server"
-              :title="filtered() ? 'No hay instancias con esos filtros' : 'Todavía no hay instancias vinculadas'"
+              :title="filtered ? 'No hay instancias con esos filtros' : 'Todavía no hay instancias vinculadas'"
               :description="
-                filtered()
+                filtered
                   ? 'Probá quitando algún filtro.'
                   : 'Se vinculan desde el detalle de un cliente, en la pestaña Vinculación.'
               "
@@ -131,7 +201,7 @@ function open(instance: Instance): void {
 <style scoped>
 .filters {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   align-items: end;
   gap: var(--space-4);
 }

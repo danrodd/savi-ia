@@ -157,6 +157,13 @@ class SqlAlchemyAlertRepository:
         stmt = stmt.order_by(AlertModel.opened_at.desc(), AlertModel.id.desc()).limit(limit)
         return [to_entity(m) for m in (await self._session.execute(stmt)).scalars()]
 
+    async def count_by_status(self, *, client_id: UUID | None = None) -> dict[AlertStatus, int]:
+        """Cuántas alertas hay en cada estado, de todos los clientes o de uno."""
+        stmt = select(AlertModel.status, func.count()).group_by(AlertModel.status)
+        if client_id is not None:
+            stmt = stmt.where(AlertModel.client_id == client_id)
+        return {AlertStatus(st): int(n) for st, n in (await self._session.execute(stmt)).all()}
+
     async def count_open_by_severity(self) -> dict[Severity, int]:
         stmt = (
             select(AlertModel.severity, func.count())
