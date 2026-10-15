@@ -187,7 +187,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 **Respuesta de SAVI** (4.1 s, conversación `7eb5ff47-8569-48cd-a6e3-d59296b0a684`):
 
-> Parece una captura de un videojuego, no relacionada con el ERP ni con la empresa; envíame una captura del sistema o un documento de trabajo y te ayudo a leerlo.
+> Parece una captura de un videojuego, no relacionada con el ERP ni con la empresa; envíeme una captura del sistema o un documento de trabajo y le ayudo a leerlo.
 
 ### ✅ Pregunta fuera de alcance
 
@@ -197,7 +197,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 **Respuesta de SAVI** (5.8 s, conversación `2fccfbc9-9bec-4e0d-a5b1-f00bb415e7d9`):
 
-> Soy SAVI, el asistente del ERP de SEO Group. Solo puedo ayudarte con temas del producto y de tu empresa dentro del sistema. ¿En qué del ERP te puedo ayudar?
+> Soy SAVI, el asistente del ERP de SEO Group. Solo puedo ayudarle con temas del producto y de su empresa dentro del sistema. ¿En qué del ERP le puedo ayudar?
 
 ### ✅ Glosario
 
@@ -359,7 +359,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 **Respuesta de SAVI** (7.2 s, conversación `c5e99ab1-615d-481e-bdde-fdbc72e6027e`):
 
-> La imagen es una captura de un videojuego y no parece relacionada con el ERP ni con tu empresa; envíame una captura del ERP o un documento de trabajo y te ayudo a leerlo.
+> La imagen es una captura de un videojuego y no parece relacionada con el ERP ni con su empresa; envíeme una captura del ERP o un documento de trabajo y le ayudo a leerlo.
 
 ### ✅ Pregunta fuera de alcance
 
@@ -369,7 +369,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 **Respuesta de SAVI** (6.3 s, conversación `d4e59265-9881-4b77-aeaa-64e8ee925d38`):
 
-> Soy SAVI, el asistente del ERP de SEO Group. Solo puedo ayudarte con temas del producto y de tu empresa dentro del sistema. ¿En qué del ERP te puedo ayudar?
+> Soy SAVI, el asistente del ERP de SEO Group. Solo puedo ayudarle con temas del producto y de su empresa dentro del sistema. ¿En qué del ERP le puedo ayudar?
 
 ### ✅ Glosario
 
@@ -421,7 +421,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 **Respuesta de SAVI** (5.0 s, conversación `3e429fa6-26bf-4648-be25-8c8141b6c3cd`):
 
-> Encontré **13 proveedores inactivos** registrados en el sistema. Acá tenés el listado:
+> Encontré **13 proveedores inactivos** registrados en el sistema. Aquí tiene el listado:
 >
 > | ID | Proveedor | Activo | Bloqueado |
 > |---|---|---|---|
@@ -439,7 +439,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 > | 6983 | TODO EN PLASTICOS LTDA | No | No |
 > | 3269 | STARBUCKS COFFEE CHILE S.A | No | No |
 >
-> ¿Querés revisar el estado de algún proveedor en particular o consultar otra información?
+> ¿Desea revisar el estado de algún proveedor en particular o consultar otra información?
 
 ### ✅ Top de clientes con análisis
 
@@ -449,7 +449,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 **Respuesta de SAVI** (3.9 s, conversación `cc7b406a-ecf7-4ab1-b9d7-1f66b82f65a4`):
 
-> Acá tenés los 5 clientes que más nos compraron en marzo de 2026:
+> Aquí tiene los 5 clientes que más nos compraron en marzo de 2026:
 >
 > | Cliente | Total facturado |
 > |---|---|
@@ -463,7 +463,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 > - El **Consumidor final** concentra el mayor volumen de facturación del mes, superando con amplia diferencia al resto de los clientes del top.
 > - **FARMA4NF S.A.S.** se ubica en el segundo lugar con un monto significativo que duplica al de los siguientes compradores del listado.
 >
-> ¿Querés que revise el detalle de las facturas de alguno de estos clientes en particular?
+> ¿Desea que revise el detalle de las facturas de alguno de estos clientes en particular?
 
 ### ✅ Comparación año contra año
 
@@ -506,9 +506,9 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 > Para el periodo de **enero a marzo de 2026**, las ventas totales alcanzaron los **$6.862.574.932,80**, distribuidos en 133.007 facturas, con un ticket promedio de **$51.595,59**.
 >
-> Tené en cuenta que en el sistema **no tenemos registros de ventas previos a mayo de 2025** (el historial disponible arranca en mayo de 2025), por lo que no es posible hacer una comparación directa frente al primer trimestre de 2025. 
+> Tenga en cuenta que en el sistema **no tenemos registros de ventas previos a mayo de 2025** (el historial disponible arranca en mayo de 2025), por lo que no es posible hacer una comparación directa frente al primer trimestre de 2025. 
 >
-> Acá tenés el desglose mes a mes del primer trimestre de 2026:
+> Aquí tiene el desglose mes a mes del primer trimestre de 2026:
 >
 > | Mes | Total facturado | Cantidad de facturas | Ticket promedio |
 > |---|---|---|---|
@@ -532,7 +532,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 > }
 > ```
 >
-> ¿Te gustaría que comparemos este trimestre con otro periodo disponible, como mayo a julio de 2025?
+> ¿Le gustaría que comparemos este trimestre con otro periodo disponible, como mayo a julio de 2025?
 
 ### ✅ Imagen de trabajo (captura de error del ERP)
 
@@ -547,9 +547,9 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 > > **SEO ERP - Facturación**
 > > **Error 4021:** producto HE0151 sin saldo en bodega
 >
-> Este error sale al intentar facturar un producto que en este momento no tiene existencias registradas en la bodega desde la que estás despachando. 
+> Este error sale al intentar facturar un producto que en este momento no tiene existencias registradas en la bodega desde la que está despachando. 
 >
-> ¿Querés que revisemos el inventario de ese producto para ver en qué bodega hay saldo o si necesitamos hacer un ingreso?
+> ¿Desea que revisemos el inventario de ese producto para ver en qué bodega hay saldo o si necesitamos hacer un ingreso?
 
 ### ✅ Imagen ajena al trabajo (videojuego)
 
@@ -561,7 +561,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 > Esa imagen parece una captura de un videojuego. La verdad es que no está relacionada con el ERP ni con la empresa. 
 >
-> Si tenés alguna captura del sistema, un error, una factura o un documento de trabajo, mandamela y con gusto le damos una vuelta.
+> Si tiene alguna captura del sistema, un error, una factura o un documento de trabajo, envíemela y con gusto le damos una vuelta.
 
 ### ✅ Pregunta fuera de alcance
 
@@ -571,7 +571,7 @@ Cada respuesta es la que quedó guardada en la conversación (la misma que se ve
 
 **Respuesta de SAVI** (3.0 s, conversación `e9210c8e-dae6-4c2b-80b2-4ad3526e86ef`):
 
-> Soy SAVI, el asistente del ERP de SEO Group. Solo puedo ayudarte con temas del producto y de tu empresa dentro del sistema. ¿En qué del ERP te puedo ayudar?
+> Soy SAVI, el asistente del ERP de SEO Group. Solo puedo ayudarle con temas del producto y de su empresa dentro del sistema. ¿En qué del ERP le puedo ayudar?
 
 ### ✅ Glosario
 

@@ -33,14 +33,14 @@ El SKILL.md es lo único que se carga siempre. Las references se leen on-demand 
 
 ## Cómo integrarla en un CLAUDE.md de proyecto
 
-Si querés que un proyecto Vue específico use esta arquitectura como contrato, agregá esto al `CLAUDE.md` del repo:
+Si quieres que un proyecto Vue específico use esta arquitectura como contrato, agrega esto al `CLAUDE.md` del repo:
 
 ```markdown
 ## Arquitectura
 
 Este proyecto sigue la arquitectura empresarial de referencia. Antes de tocar
 código nuevo en `src/modules/`, `src/lib/`, `src/services/` o `src/composables/`,
-cargá la skill `enterprise-frontend-architecture` y respetá sus Hard Rules:
+carga la skill `enterprise-frontend-architecture` y respeta sus Hard Rules:
 
 - Imports desde `@/modules/<x>` (nunca subcarpetas internas)
 - DTO `*Api` no escapa de la capa de adapters
@@ -54,9 +54,9 @@ Ver `~/.claude/skills/enterprise-frontend-architecture/SKILL.md` para el contrat
 
 Cuando la arquitectura de referencia evolucione en Obsidian:
 
-1. Editá la `references/` correspondiente (no el SKILL.md, salvo que cambien las Hard Rules).
-2. Versioná bumpando `metadata.version` en el frontmatter de SKILL.md.
-3. Re-ejecutá `/skill-registry` si tenés ese skill instalado, para reindexar.
+1. Edita la `references/` correspondiente (no el SKILL.md, salvo que cambien las Hard Rules).
+2. Versiona bumpando `metadata.version` en el frontmatter de SKILL.md.
+3. Re-ejecuta `/skill-registry` si tienes ese skill instalado, para reindexar.
 
 ## Fuente
 

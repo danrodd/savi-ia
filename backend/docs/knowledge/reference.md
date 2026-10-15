@@ -1,6 +1,6 @@
 # Referencia del schema — campo por campo
 
-Este es el detalle de **qué campo va en cada entidad** y qué espera el sistema. Es la documentación de referencia para cuando editás un archivo y querés saber qué podés poner.
+Este es el detalle de **qué campo va en cada entidad** y qué espera el sistema. Es la documentación de referencia para cuando editas un archivo y quieres saber qué puedes poner.
 
 ## Notación
 
@@ -279,7 +279,7 @@ Atajos para preguntas muy frecuentes que justifican respuesta canónica.
   "question": "¿Qué formulario uso para consultar saldos contables?",
   "synonyms": ["ver saldo contable", "saldo de una cuenta", "consulta de saldos"],
   "module": "CONTABILIDAD",
-  "answer_summary": "Andá a Contabilidad → Consultas → Saldos contables. Filtrás por año, mes y rango de cuentas del PUC.",
+  "answer_summary": "Vaya a Contabilidad → Consultas → Saldos contables. Filtre por año, mes y rango de cuentas del PUC.",
   "related_forms": ["frmConsultaSaldoContable"],
   "related_workflows": []
 }

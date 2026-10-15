@@ -61,9 +61,9 @@ siguen leyendo.
 
 Caso a cuidar: **otro equipo** que apunta a la misma base de PostgreSQL. Cada
 instalación nueva genera su propia clave de cifrado, y el asistente avisa si
-la base ya guarda credenciales. Para compartir la base, copiá
+la base ya guarda credenciales. Para compartir la base, copia
 `ERP_CREDENTIALS_KEY` del `.env` del primer equipo al nuevo
-(`C:\Program Files\SAVI\.env`) y reiniciá SAVI.
+(`C:\Program Files\SAVI\.env`) y reinicia SAVI.
 
 ### Archivo local: solo pruebas o un usuario
 
@@ -149,7 +149,7 @@ Marcar cada fila. Usar un usuario administrador salvo donde se indica otro.
 | # | Prueba | Se espera |
 |---|---|---|
 | S1 | Con un usuario **sin** el módulo de inventario: pregunta D3 | No da existencias |
-| S2 | Con un usuario sin Cuentas por Pagar: ¿cuánto le debemos a proveedores? | "No tenés acceso" |
+| S2 | Con un usuario sin Cuentas por Pagar: ¿cuánto le debemos a proveedores? | "No tiene acceso" |
 | S3 | ¿Quién ganó el mundial de 2022? | Rechaza: solo temas del ERP y la empresa |
 | S4 | ¿Qué es la UVT? / ¿Qué es la tasa de usura? | Definición del glosario |
 

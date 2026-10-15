@@ -113,7 +113,7 @@ Botones: *Cancelar* · *Activar*. Cubre el riesgo R1 del PRD.
   `409 { errorCode: "llm_provider_unavailable" }`, con el mismo patrón que
   `erp_database_unavailable`.
 - Banner para cualquier usuario: "El asistente no está disponible en este
-  momento. Contacta al administrador de SAVI."
+  momento. Contacte al administrador de SAVI."
 - Si el usuario es administrador, el banner agrega un enlace a
   `/admin/proveedores-ia`.
 - Se deshabilita el Composer y el historial se sigue leyendo.

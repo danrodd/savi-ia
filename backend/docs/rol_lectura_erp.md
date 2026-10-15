@@ -25,7 +25,7 @@ sería peor que el riesgo—, pero al probar la conexión lo avisa.
 En la base del cliente, **como administrador de Postgres**, una vez:
 
 ```sql
--- 1. El rol. Usá una contraseña generada, no una compartida.
+-- 1. El rol. Usa una contraseña generada, no una compartida.
 CREATE ROLE savi_lectura LOGIN PASSWORD 'una-contraseña-generada';
 
 -- 2. Conectarse a la base del ERP.

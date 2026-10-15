@@ -72,8 +72,8 @@ o "durante 2025".
 4. `run_semantic_query` atrapa la excepción genérica, la registra como
    `semantic_query_execution_failed` y devuelve al modelo este texto:
 
-   > "Hubo un problema técnico al consultar la información. Intentá reformular
-   > la pregunta o pedí menos detalle."
+   > "Hubo un problema técnico al consultar la información. Intente reformular
+   > la pregunta o pida menos detalle."
 
 ### Por qué se veía intermitente
 
@@ -143,7 +143,7 @@ Postgres real.
 
 ## Hallazgo 2 — El mensaje de error invita a reintentar en loop — PARCIAL
 
-El texto que recibe el modelo dice "problema técnico" e "intentá reformular".
+El texto que recibe el modelo dice "problema técnico" e "intente reformular".
 Ante eso, el modelo asume una falla transitoria de conexión y reintenta — cosa
 que se vio en las respuestas al usuario:
 
@@ -303,7 +303,7 @@ tres proveedores después del fix.
 - **Cartera vencida**: 15 llamadas a herramientas, pero la respuesta fue
   correcta y además validó contra el catálogo de conocimiento.
 - **Facturas pendientes a proveedores**: respondió bien y acotó por su cuenta
-  el volumen — "te muestro las 30 con vencimiento más antiguo (las más urgentes
+  el volumen — "le muestro las 30 con vencimiento más antiguo (las más urgentes
   de atender)". Ese criterio propio es exactamente el comportamiento buscado.
 - **Turnos en segundo plano**: sobrevivieron al cambio de chat y al cierre de la
   pestaña.

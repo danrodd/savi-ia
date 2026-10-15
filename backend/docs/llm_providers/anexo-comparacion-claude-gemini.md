@@ -19,7 +19,7 @@ Tres preguntas, cada una en una conversación nueva (sin contexto previo
 que favorezca a la segunda tanda):
 
 1. "Resumime en una frase muy corta qué es SAVI." — sin tools.
-2. "Decime la razón social de la empresa." — tool `info_empresa`.
+2. "Dime la razón social de la empresa." — tool `info_empresa`.
 3. "Cuántos terceros (clientes o proveedores) tenemos registrados en
    total?" — tool `consultar_datos`, modo agregado.
 
@@ -62,7 +62,7 @@ Las dos respondieron correcto y sin alucinar las 3 preguntas (razón
 social exacta, 19.866 terceros exacto — mismo número ya verificado con
 Claude en una sesión anterior).
 
-Diferencia real observada: ante "decime la razón social", Claude
+Diferencia real observada: ante "dime la razón social", Claude
 agregó el NIT sin que se lo pidieran (dato que la tool `info_empresa`
 sí trae, junto con dirección, teléfono, representante legal, etc.);
 Gemini respondió solo la razón social, ciñéndose estrictamente a lo

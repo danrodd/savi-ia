@@ -240,7 +240,7 @@ quedan indescifrables.
 **Regla: eso no puede tumbar la aplicación.** El `decrypt` que falla con
 `InvalidToken` se traduce a un estado visible de la base —
 `credentials_unreadable`— y la UI la muestra como "credenciales
-ilegibles, volvé a ingresar la contraseña". La base no se puede usar
+ilegibles, vuelva a ingresar la contraseña". La base no se puede usar
 hasta que se re-ingrese, pero el resto de SAVI arranca y funciona.
 
 Sin esta regla, un `.env` restaurado del backup equivocado deja la
@@ -718,7 +718,7 @@ prompt. Si el modelo pudiera elegir la base, podría cruzar datos de dos
 clientes en un turno.
 
 El `SYSTEM_PROMPT` tiene que mencionar de qué cliente son los datos de
-este turno, para que el agente no diga "tu empresa" refiriéndose al
+este turno, para que el agente no diga "su empresa" refiriéndose al
 cliente equivocado.
 
 ---

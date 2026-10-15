@@ -1,12 +1,12 @@
 # Sistema de Autenticación y Autorización de SAVI
 
-Este documento describe **cómo SAVI sabe quién sos y qué módulos del ERP podés ver**. Está pensado para que cualquier persona del equipo entienda el flujo de extremo a extremo sin tener que leer el código.
+Este documento describe **cómo SAVI sabe quién eres y qué módulos del ERP puedes ver**. Está pensado para que cualquier persona del equipo entienda el flujo de extremo a extremo sin tener que leer el código.
 
-> **Resumen ejecutivo**: la identidad la valida la base de datos del ERP (esquema `Seguridad`). Una vez autenticado, SAVI calcula a qué módulos del ERP tenés acceso combinando tres fuentes: el flag de administrador, el plan contratado por el cliente, y los permisos por formulario asignados al usuario. Ese set de módulos se entrega al frontend en un endpoint de "bootstrap" y se cachea con un hash de versión para detectar cambios en caliente.
+> **Resumen ejecutivo**: la identidad la valida la base de datos del ERP (esquema `Seguridad`). Una vez autenticado, SAVI calcula a qué módulos del ERP tienes acceso combinando tres fuentes: el flag de administrador, el plan contratado por el cliente, y los permisos por formulario asignados al usuario. Ese set de módulos se entrega al frontend en un endpoint de "bootstrap" y se cachea con un hash de versión para detectar cambios en caliente.
 
 ---
 
-## 1. Identidad: quién sos
+## 1. Identidad: quién eres
 
 La identidad la sigue manejando el ERP. SAVI **no crea usuarios propios**: reutiliza la tabla `Seguridad.Usuario` del cliente.
 
@@ -15,7 +15,7 @@ La identidad la sigue manejando el ERP. SAVI **no crea usuarios propios**: reuti
 - El access token contiene solo lo mínimo: `idUsuario`, `login`, `nombre completo`, `is_admin`, `purpose: access`. **NO contiene la lista de módulos** — eso vive en el endpoint de bootstrap (ver sección 3).
 - Al hacer refresh, los tokens se rotan (se revoca el anterior, se emite uno nuevo) y se re-leen los datos del usuario desde el ERP. Eso permite que cambios de nombre, deshabilitación, o conversión a admin se reflejen en la siguiente ventana sin reloguear.
 
-## 2. Autorización: a qué módulos accedés
+## 2. Autorización: a qué módulos accedes
 
 SAVI gating funciona a **nivel módulo**, no a nivel acción. No nos interesa por ahora distinguir entre "puede crear factura" y "puede consultar factura"; nos interesa decir "tiene acceso a Contabilidad" o "no lo tiene".
 

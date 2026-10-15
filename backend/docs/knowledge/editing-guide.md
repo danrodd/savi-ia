@@ -2,29 +2,29 @@
 
 Esta es **la guía principal del equipo SEO** (y de cualquiera que quiera enriquecer SAVI). Te dice cómo hacer los cambios más frecuentes paso a paso, con ejemplos copy-paste.
 
-> Si todavía no leíste [`README.md`](./README.md), empezá por ahí. Si querés la referencia exacta de cada campo, andá a [`reference.md`](./reference.md).
+> Si todavía no leíste [`README.md`](./README.md), empieza por ahí. Si quieres la referencia exacta de cada campo, ve a [`reference.md`](./reference.md).
 
 ## Antes de tocar nada
 
-Tres cosas que tenés que saber:
+Tres cosas que tienes que saber:
 
 1. **Todos los archivos viven en `backend/app/modules/knowledge/data/`**. Nunca toques nada fuera de esa carpeta.
 2. **Cada cambio se valida con Pydantic al arrancar el backend**. Si rompiste algo, el backend NO arranca y te dice qué archivo está mal.
-3. **No hay reload en caliente**. Para ver los cambios tenés que reiniciar el backend (en local: `uv run dev`, parar y volver a correr).
+3. **No hay reload en caliente**. Para ver los cambios tienes que reiniciar el backend (en local: `uv run dev`, parar y volver a correr).
 
 ## Caso 1 — Enriquecer un formulario existente (lo más común)
 
-Querés agregarle pasos, ruta de menú, o cálculos a un formulario que ya tiene una entrada en el catálogo.
+Quieres agregarle pasos, ruta de menú, o cálculos a un formulario que ya tiene una entrada en el catálogo.
 
 ### Paso a paso
 
-1. Encontrá el archivo:
+1. Encuentra el archivo:
    ```
    backend/app/modules/knowledge/data/modules/<modulo>/forms/<nombreForm>.json
    ```
    Por ejemplo, `data/modules/contabilidad/forms/frmConciliacionBancaria.json`.
 
-2. Abrilo en tu editor. Vas a ver algo así:
+2. Ábrelo en tu editor. Vas a ver algo así:
    ```json
    {
      "name": "frmConciliacionBancaria",
@@ -36,7 +36,7 @@ Querés agregarle pasos, ruta de menú, o cálculos a un formulario que ya tiene
    }
    ```
 
-3. Agregale los campos que querés. Por ejemplo, ruta del menú y pasos:
+3. Agrégale los campos que quieres. Por ejemplo, ruta del menú y pasos:
    ```json
    {
      "name": "frmConciliacionBancaria",
@@ -63,26 +63,26 @@ Querés agregarle pasos, ruta de menú, o cálculos a un formulario que ya tiene
    }
    ```
 
-4. Guardá. Reiniciá el backend.
+4. Guarda. Reinicia el backend.
 
-5. Probá en el chat: *"¿cómo concilio el extracto del banco?"*. SAVI ahora te tiene que dar la ruta del menú, los prerrequisitos y los pasos.
+5. Prueba en el chat: *"¿cómo concilio el extracto del banco?"*. SAVI ahora te tiene que dar la ruta del menú, los prerrequisitos y los pasos.
 
 ### Reglas importantes para no cagarla
 
-- **NO cambies** los 4 campos requeridos sin entender bien (`name`, `module`, `type`, `description`). El `name` está referenciado desde otros formularios (`related_forms`) — si lo cambiás, esas referencias se rompen.
+- **NO cambies** los 4 campos requeridos sin entender bien (`name`, `module`, `type`, `description`). El `name` está referenciado desde otros formularios (`related_forms`) — si lo cambias, esas referencias se rompen.
 - **JSON estricto**: comilla doble siempre, sin trailing commas, sin comentarios.
-- **`module` con tilde donde corresponda**: `"NÓMINA"`, no `"NOMINA"`. La validación atrapa el typo pero te ahorrás el viaje.
+- **`module` con tilde donde corresponda**: `"NÓMINA"`, no `"NOMINA"`. La validación atrapa el typo pero te ahorras el viaje.
 - **Listas vacías** se ponen `[]` o se omiten directamente. No pongas `null` ni `""`.
 
 ## Caso 2 — Agregar un formulario nuevo
 
-El formulario existe en el ERP pero no está en el catálogo. Lo agregás creando un archivo nuevo.
+El formulario existe en el ERP pero no está en el catálogo. Lo agregas creando un archivo nuevo.
 
 ### Paso a paso
 
-1. Identificá a qué módulo pertenece. Por ejemplo, `frmCertificadoIngresos` va en `nomina/`.
+1. Identifica a qué módulo pertenece. Por ejemplo, `frmCertificadoIngresos` va en `nomina/`.
 
-2. Creá el archivo:
+2. Crea el archivo:
    ```
    backend/app/modules/knowledge/data/modules/nomina/forms/frmCertificadoIngresos.json
    ```
@@ -97,9 +97,9 @@ El formulario existe en el ERP pero no está en el catálogo. Lo agregás creand
    }
    ```
 
-4. Reiniciá. El loader lo descubre automáticamente — **no tenés que registrarlo en ningún lado**.
+4. Reinicia. El loader lo descubre automáticamente — **no tienes que registrarlo en ningún lado**.
 
-5. Si querés enriquecerlo desde el día 1, agregale los demás campos (ver [`reference.md`](./reference.md) para todos los disponibles).
+5. Si quieres enriquecerlo desde el día 1, agrégale los demás campos (ver [`reference.md`](./reference.md) para todos los disponibles).
 
 ## Caso 3 — Crear un workflow nuevo
 
@@ -107,9 +107,9 @@ Un workflow describe un proceso end-to-end que cruza formularios.
 
 ### Paso a paso
 
-1. Decidí en qué módulo "principal" vive. Por ejemplo, `wf_facturacion_electronica` va en `cuentacobrar/`.
+1. Decide en qué módulo "principal" vive. Por ejemplo, `wf_facturacion_electronica` va en `cuentacobrar/`.
 
-2. Creá el archivo:
+2. Crea el archivo:
    ```
    data/modules/cuentacobrar/workflows/wf_facturacion_electronica.json
    ```
@@ -153,25 +153,25 @@ Una FAQ es una pregunta natural pre-mapeada con respuesta canónica.
      "question": "¿Cómo veo el balance general del mes?",
      "synonyms": ["balance del mes", "estado financiero mensual"],
      "module": "CONTABILIDAD",
-     "answer_summary": "Andá a Contabilidad → Informes → Balance General. Filtrás año y mes. Podés exportar a Excel o generar el gráfico de distribución.",
+     "answer_summary": "Vaya a Contabilidad → Informes → Balance General. Filtre año y mes. Puede exportar a Excel o generar el gráfico de distribución.",
      "related_forms": ["frmInformeBalanceGeneral"]
    }
    ```
 
 ## Caso 5 — Agregar términos al glosario
 
-El glosario es un archivo único con una lista. Para agregar un término, editás esa lista.
+El glosario es un archivo único con una lista. Para agregar un término, editas esa lista.
 
 ### Paso a paso
 
-1. Abrí `data/shared/glossary.json`. Es una lista:
+1. Abre `data/shared/glossary.json`. Es una lista:
    ```json
    [
      { "term": "DIAN", "definition": "...", "aliases": ["dian"] }
    ]
    ```
 
-2. Agregá tu entrada al final de la lista:
+2. Agrega tu entrada al final de la lista:
    ```json
    [
      { "term": "DIAN", "definition": "...", "aliases": ["dian"] },
@@ -185,9 +185,9 @@ El glosario es un archivo único con una lista. Para agregar un término, editá
 
 ## Caso 6 — Eliminar un formulario obsoleto
 
-Si un formulario fue retirado del ERP, simplemente borrás el archivo. El loader no se entera (no hay registro central).
+Si un formulario fue retirado del ERP, simplemente borras el archivo. El loader no se entera (no hay registro central).
 
-**Pero**: revisá si otros formularios lo referencian en `related_forms`. Si sí, esas referencias quedan apuntando a un nombre que ya no existe — el LLM puede mencionarlo y confundir al usuario. Limpiá esas referencias en el mismo PR.
+**Pero**: revisa si otros formularios lo referencian en `related_forms`. Si sí, esas referencias quedan apuntando a un nombre que ya no existe — el LLM puede mencionarlo y confundir al usuario. Limpia esas referencias en el mismo PR.
 
 ```bash
 # Buscar referencias antes de borrar
@@ -205,7 +205,7 @@ description
   Field required
 ```
 
-→ Te faltó un campo requerido. Mirá la referencia.
+→ Te faltó un campo requerido. Mira la referencia.
 
 ### "Extra inputs are not permitted"
 
@@ -224,7 +224,7 @@ descritpion
 
 ### "Input should be a valid enumeration member" (en module)
 
-→ El `module` no matchea un `ModuleCode`. Recordá tildes (`NÓMINA`) y mayúsculas exactas.
+→ El `module` no matchea un `ModuleCode`. Recuerda tildes (`NÓMINA`) y mayúsculas exactas.
 
 ### "JSON inválido"
 
@@ -232,7 +232,7 @@ descritpion
 
 ## Cuándo NO usar el catálogo y NSESITÁS otra cosa
 
-- **Si la info es narrativa larga** (manual de 20 páginas) → la metés en Capa 2 (RAG, futuro). No la copies en un `business_rules` ni en `description`.
+- **Si la info es narrativa larga** (manual de 20 páginas) → la metes en Capa 2 (RAG, futuro). No la copies en un `business_rules` ni en `description`.
 - **Si la info es del cliente** (políticas internas, lista de proveedores específica) → Capa 3 (multi-tenant, futuro).
 - **Si la info son DATOS** (saldo, factura, stock) → eso lo consulta `data_query`, no el catálogo.
 

@@ -54,7 +54,7 @@ Las 4 capas no son redundantes: cumplen roles distintos.
 
 - **Capas 1 y 2** son de **UX y robustez del agente**. Sin ellas, el LLM intenta queries que sabemos que van a fallar y le devuelve errores al usuario. Con ellas, el LLM ni intenta — explica directamente que no tiene acceso y ofrece alternativas válidas dentro de sus módulos.
 - **Capa 3** es la **defensa real**. Aunque el LLM ignore el system prompt, aunque el catálogo se filtre mal, aunque alguien inyecte instrucciones en un mensaje, la query no se ejecuta si toca un esquema prohibido.
-- **Capa 4** es **observabilidad**. Te permite ver si alguien está intentando bypass deliberado, si el LLM está "peleando" contra el filtro, o si necesitás ajustar el prompt.
+- **Capa 4** es **observabilidad**. Te permite ver si alguien está intentando bypass deliberado, si el LLM está "peleando" contra el filtro, o si necesitas ajustar el prompt.
 
 ---
 
@@ -72,11 +72,11 @@ Acceso del usuario actual:
 Si el usuario te pide información de módulos NO habilitados (Inventario,
 Nómina, Cartera, etc.):
 - Responde que no tiene acceso a esa información.
-- Sugerí contactar al administrador del ERP si lo necesita.
+- Sugiere contactar al administrador del ERP si lo necesita.
 - NO intentes consultar la BD — no vas a poder.
 
-Si dudás si una consulta cae en un módulo permitido, pregúntale al usuario
-qué módulo busca o explicá qué módulos sí podés consultar.
+Si dudas si una consulta cae en un módulo permitido, pregúntale al usuario
+qué módulo busca o explica qué módulos sí puedes consultar.
 ```
 
 ### Qué NO hace
@@ -202,7 +202,7 @@ Cuando el validador rechaza, devuelve un error estructurado que el LLM recibe co
 }
 ```
 
-El LLM ve este error y se lo traduce al usuario de forma natural ("disculpá, no tenés acceso al módulo de Nómina, no puedo consultar empleados").
+El LLM ve este error y se lo traduce al usuario de forma natural ("disculpe, no tiene acceso al módulo de Nómina, no puedo consultar empleados").
 
 ---
 
@@ -249,7 +249,7 @@ Estas decisiones se cierran en el momento de implementar la capa 3, no antes:
 
 Ejemplo: usuario tiene CONTABILIDAD pero no CUENTACOBRAR. Pregunta "mostrame los asientos contables de las facturas del mes". La query tocaría `Contabilidad.MovimientoContable` (permitido) y `CuentaCobrar.Factura` (denegado).
 
-**Decisión propuesta**: rechazar la query (default-deny), y el LLM debería sugerir: "no podés ver el detalle de las facturas, pero puedo mostrarte los movimientos contables solos si querés".
+**Decisión propuesta**: rechazar la query (default-deny), y el LLM debería sugerir: "no puede ver el detalle de las facturas, pero puedo mostrarle los movimientos contables solos si desea".
 
 ### 7.2 — Esquema `public` y vistas
 

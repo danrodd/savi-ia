@@ -27,9 +27,10 @@ NO la cargues para fixes triviales, refactors locales de una vista, o proyectos 
 - **DTO ≠ Modelo**: los servicios devuelven modelos de dominio; los DTOs crudos (`*Api`) NO escapan de la capa de adapters.
 - **Caché centralizada**: los componentes NUNCA llaman axios/HttpClient directo. Consumen composables (`useGet*`, `useCreate*`) que envuelven `useQuery`/`useMutation` con query keys tipadas.
 - **Tiempo real unidireccional**: los WebSockets NO mutan estado local — invalidan cachés de vue-query.
-- **Variables de entorno validadas**: validá `import.meta.env` al bootstrap con zod; la app debe romperse temprano si falta una env crítica.
+- **Variables de entorno validadas**: valida `import.meta.env` al bootstrap con zod; la app debe romperse temprano si falta una env crítica.
 - **Tokens**: JWT en cookie `HttpOnly` (preferible) o en memoria con refresh automático y cola anti-condición de carrera.
 - **Pinia setup syntax**: `defineStore('x', () => { ... })`. Nunca options API.
+- **Texto de interfaz en usted**: todo texto visible (labels, errores, toasts, placeholders) va en español colombiano formal, tratando de usted; nunca voseo ni tuteo (ver `CLAUDE.md` §14).
 - **`<script setup>` + Composition API** universal. Sin Options API en código nuevo.
 - **Lazy-loading obligatorio** de todas las vistas en `vue-router` y `manualChunks` para vendor en Vite.
 - **Tests co-localizados**: `Archivo.ts` junto a `Archivo.spec.ts`.
@@ -44,24 +45,24 @@ NO la cargues para fixes triviales, refactors locales de una vista, o proyectos 
 | ¿Evento de WebSocket recibido? | Invalidar query keys, NUNCA mutar estado local manualmente |
 | ¿Componente UI shared o de dominio? | Si es reutilizable y agnóstico → `src/components/ui/` (shadcn). Si es del dominio → `modules/<x>/components/` |
 | ¿Lógica de validación de formulario? | `vee-validate` + `zod` con error map global ([references/forms-and-validation.md](references/forms-and-validation.md)) |
-| ¿Necesitás permisos en UI? | `useCan(recurso, accion)` o directiva `v-can` desde `modules/permisos` |
+| ¿Necesitas permisos en UI? | `useCan(recurso, accion)` o directiva `v-can` desde `modules/permisos` |
 
 ## Execution Steps
 
-1. Antes de tocar código, leé las references relevantes según el cambio (ver tabla de gates).
-2. Si es un proyecto nuevo, ejecutá el starter en [assets/starter-kit.sh](assets/starter-kit.sh) y validá `package.json` engines (Node >=20).
-3. Para cada cambio, verificá que respete las Hard Rules — si rompés una, justificá en el PR.
-4. Reportá decisiones arquitectónicas no triviales vía `mem_save` (engram) con `type: architecture`.
+1. Antes de tocar código, lee las references relevantes según el cambio (ver tabla de gates).
+2. Si es un proyecto nuevo, ejecuta el starter en [assets/starter-kit.sh](assets/starter-kit.sh) y valida `package.json` engines (Node >=20).
+3. Para cada cambio, verifica que respete las Hard Rules — si rompes una, justifica en el PR.
+4. Reporta decisiones arquitectónicas no triviales vía `mem_save` (engram) con `type: architecture`.
 
 ## Output Contract
 
-Cuando apliques esta skill, entregá:
+Cuando apliques esta skill, entrega:
 
 - Cambios alineados con la estructura `modules/` feature-based.
 - Servicios + adapters + composables + tipos co-localizados por módulo.
 - Tests `.spec.ts` co-localizados con el archivo bajo prueba.
 - Imports siempre desde `@/modules/<x>` (nunca rutas internas).
-- Si introducís una dependencia nueva, justificá por qué no alcanzaba la del stack base.
+- Si introduces una dependencia nueva, justifica por qué no alcanzaba la del stack base.
 
 ## References
 

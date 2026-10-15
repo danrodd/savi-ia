@@ -80,7 +80,7 @@ Primera página del asistente, después de la bienvenida:
 |---|---|
 | **Servidor de la empresa** (recomendada) | "Se instala una sola vez, en un equipo siempre encendido de la red. Los usuarios entran desde su navegador." |
 | **Escritorio** | "Para agentes de soporte que atienden varios clientes desde su propio equipo." |
-| **Acceso a un servidor existente** | "Solo crea el acceso directo al SAVI de tu empresa. No instala el servidor." |
+| **Acceso a un servidor existente** | "Solo crea el acceso directo al SAVI de su empresa. No instala el servidor." |
 
 ### 3.2 Pasos por modo
 
@@ -246,7 +246,7 @@ class LoginThrottle(ABC):
   al emitir tokens.
 - Respuesta: `429`, `errorCode: "too_many_login_attempts"`, header
   `Retry-After` con los segundos restantes, y mensaje "Demasiados intentos
-  fallidos. Probá de nuevo en N minutos."
+  fallidos. Intente de nuevo en N minutos."
 - IP: `request.client.host`. **No** se lee `X-Forwarded-For`: en modo
   Servidor no hay proxy, y aceptarlo permitiría falsear la IP para
   evadir el límite.
@@ -376,7 +376,7 @@ en ese modo (`GET /version` o `server-status` expone el modo).
   certificado, bases del ERP y proveedor de IA.
 - Lista de avisos con texto de acción por `code`.
 - **Fallback del botón copiar:** la API de portapapeles exige contexto
-  seguro. Sobre HTTP se usa selección de texto y se avisa ("Copiá con
+  seguro. Sobre HTTP se usa selección de texto y se avisa ("Copie con
   Ctrl+C").
 
 ### 9.3 Banner global de administración

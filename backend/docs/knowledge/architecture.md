@@ -1,6 +1,6 @@
 # Arquitectura del knowledge
 
-Este documento explica **por qué** el sistema está diseñado como está, qué decisiones se tomaron y qué se descartó. Si solo querés saber cómo editar contenido, andá a [`editing-guide.md`](./editing-guide.md) — esto es para quien quiere entender el fondo.
+Este documento explica **por qué** el sistema está diseñado como está, qué decisiones se tomaron y qué se descartó. Si solo quieres saber cómo editar contenido, ve a [`editing-guide.md`](./editing-guide.md) — esto es para quien quiere entender el fondo.
 
 > Hay un doc previo más extenso en [`backend/docs/knowledge_system.md`](../knowledge_system.md) con la propuesta original aprobada. Este resume y agrega la implementación real.
 
@@ -45,7 +45,7 @@ Las tres capas son **complementarias**, no excluyentes. Capa 1 es lo que tenemos
 
 ## 3. ¿Por qué híbrida en vez de "solo RAG"?
 
-La tentación inicial era *"tirá todo a un vector store y listo"*. Lo descartamos porque:
+La tentación inicial era *"tira todo a un vector store y listo"*. Lo descartamos porque:
 
 | Caso | Catálogo (Capa 1) | RAG (Capa 2) |
 |---|---|---|
@@ -67,7 +67,7 @@ Pregunta importante porque hay confusión potencial.
 | `knowledge` (nuevo) | Explicar conceptos del ERP | Formulario / workflow / FAQ | Texto / explicación |
 
 Ejemplo concreto:
-- *"¿Cómo cobro a un cliente?"* → `knowledge` responde *"usá Recibo de Cliente, ciclo Cartera, cruzá la factura..."*.
+- *"¿Cómo cobro a un cliente?"* → `knowledge` responde *"use Recibo de Cliente, ciclo Cartera, cruce la factura..."*.
 - *"¿Cuánto me debe Juan?"* → `data_query` devuelve el saldo real consultando la BD.
 
 Se complementan. Un mismo turno puede usar las dos (el LLM decide). No se pisan ni se confunden.
@@ -101,7 +101,7 @@ Cada entidad del catálogo (form, workflow, FAQ, module) declara un `module: Mod
 
 Si el usuario es admin (`is_admin=True`), `allowed_modules` viaja como `None` y las tools no filtran nada.
 
-Si el usuario tiene solo CONTABILIDAD y pregunta por algo de NÓMINA, las tools devuelven listas vacías + un `message` explicativo. El LLM se lo traduce: *"no tenés acceso al módulo de Nómina, no puedo darte esa información"*.
+Si el usuario tiene solo CONTABILIDAD y pregunta por algo de NÓMINA, las tools devuelven listas vacías + un `message` explicativo. El LLM se lo traduce: *"no tiene acceso al módulo de Nómina, no puedo darle esa información"*.
 
 ## 7. ¿Por qué Pydantic y no JSON Schema o YAML?
 

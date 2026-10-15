@@ -283,8 +283,8 @@ La respuesta del heartbeat (Fase 2 §3.2) completa `ai`:
 
 | `reason` / error | Usuario del chat | Administrador |
 |---|---|---|
-| `credits_exhausted` | "El servicio de IA de tu empresa no tiene saldo disponible. Avisale a tu administrador." | Banner: "Sin créditos de IA. Contactá a SEO Group para recargar." |
-| `monthly_limit_reached` | "Tu empresa alcanzó el límite mensual de uso de IA." | Banner con límite y fecha de reinicio |
+| `credits_exhausted` | "El servicio de IA de su empresa no tiene saldo disponible. Avise a su administrador." | Banner: "Sin créditos de IA. Contacte a SEO Group para recargar." |
+| `monthly_limit_reached` | "Su empresa alcanzó el límite mensual de uso de IA." | Banner con límite y fecha de reinicio |
 | `managed_ai_unavailable` | "El servicio de IA no está disponible en este momento." | Banner con el estado de la vinculación |
 | `402` del gateway a mitad de turno | Mismo texto que `credits_exhausted`, como `ErrorEvent` | — |
 

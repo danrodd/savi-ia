@@ -71,7 +71,7 @@ documenta en el docstring del endpoint.
 | `POST ""` | `SaveErpDatabaseRequest` suma `client_id` **obligatorio**. Si el cliente no tiene bases, la nueva queda como identidad. **Se elimina** la creación implícita de cliente que dejó la Fase 1. |
 | `PATCH /{id}` | `client_id` se ignora: mover es una operación aparte (§3.2), para no disparar un cambio de identidad desde un formulario de edición. |
 | `POST /{id}/set-default` | **Se elimina.** El predeterminado es del cliente. |
-| `POST /{id}/deactivate`, `DELETE /{id}` | `422` si es la identidad de un cliente con otras bases activas ("designá otra base de identidad primero"). Si es la única base, `422` con "desactivá el cliente". |
+| `POST /{id}/deactivate`, `DELETE /{id}` | `422` si es la identidad de un cliente con otras bases activas ("designe otra base de identidad primero"). Si es la única base, `422` con "desactive el cliente". |
 | **+** `POST /{id}/set-identity` | Ver §3.1. |
 | **+** `POST /{id}/move` | Ver §3.2. |
 
@@ -118,7 +118,7 @@ Body: `{ "client_id": "…", "confirm_owner_change": false }`
 | Caso | Comportamiento |
 |---|---|
 | La base **no** es identidad | Se mueve. Si el cliente destino no tenía bases, queda como identidad. Sin conversaciones afectadas (el owner no depende de ella). |
-| Es identidad y el cliente origen **tiene otras bases** | `422`: "designá otra base de identidad antes de moverla". |
+| Es identidad y el cliente origen **tiene otras bases** | `422`: "designe otra base de identidad antes de moverla". |
 | Es identidad y es **la única** base del origen | Mismo `409` de §3.1 si hay conversaciones con owner en ella. Con confirmación, se mueve y el cliente origen queda sin bases, en estado incompleto. El body del `409` agrega `old_login_code` y `new_login_code`, para que la UI advierta el cambio de login (R2). |
 | Código de base repetido en el destino | `422`: "ya existe una base con código X en ese cliente". |
 | Destino inactivo o eliminado | `422`. |

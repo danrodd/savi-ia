@@ -1,6 +1,6 @@
 # Dependency Injection
 
-FastAPI funciona bien con DI explícita vía `Depends`. Usá `Annotated` para tipos reutilizables.
+FastAPI funciona bien con DI explícita vía `Depends`. Usa `Annotated` para tipos reutilizables.
 
 ## Session de base de datos
 

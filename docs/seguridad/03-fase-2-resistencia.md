@@ -111,7 +111,7 @@ resolutor: un `asyncio.Semaphore` de proceso.
 # Un turno = un subproceso del CLI + su contexto. Sin tope, N usuarios
 # concurrentes son N procesos y la máquina se queda sin memoria antes de
 # que ninguno termine. Se rechaza rápido en lugar de encolar: un chat que
-# tarda 3 minutos en arrancar es peor que un "probá de nuevo".
+# tarda 3 minutos en arrancar es peor que un "intente de nuevo".
 _MAX_CONCURRENT_TURNS = settings.max_concurrent_chat_turns  # default 3
 ```
 
@@ -152,7 +152,7 @@ envolver el consumo del runner con `asyncio.timeout`.
 Al vencer:
 
 1. Emitir un `ErrorEvent` con texto claro ("La consulta tardó demasiado y se
-   detuvo; probá acotarla").
+   detuvo; intente acotarla").
 2. **Persistir lo que se alcanzó a generar** con `finish_reason=INTERRUPTED`,
    igual que hoy hace la cancelación del cliente. Eso ya está resuelto en el
    camino de cancelación: reutilizarlo, no duplicarlo.
@@ -211,7 +211,7 @@ Tres códigos de error nuevos que la interfaz tiene que entender:
 | `errorCode` | Situación | Qué muestra |
 |---|---|---|
 | `rate_limited` | Demasiados pedidos | Aviso con el tiempo de espera, sin perder el texto escrito |
-| `chat_busy` | Servidor con turnos al tope | "SAVI está atendiendo otras consultas, probá en un momento" |
+| `chat_busy` | Servidor con turnos al tope | "SAVI está atendiendo otras consultas, intente en un momento" |
 | `conversation_busy` | Ya hay un turno en esa conversación | Deshabilitar enviar y avisar |
 
 **Criterio de aceptación:** ninguno de los tres se ve como error genérico ni

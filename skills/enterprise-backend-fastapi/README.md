@@ -38,8 +38,8 @@ enterprise-backend-fastapi/
 ## Arquitectura
 
 Este backend sigue la arquitectura empresarial de referencia (Clean + Hexagonal).
-Antes de tocar `app/modules/`, `app/shared/` o `app/infrastructure/`, cargá la
-skill `enterprise-backend-fastapi` y respetá sus Hard Rules:
+Antes de tocar `app/modules/`, `app/shared/` o `app/infrastructure/`, carga la
+skill `enterprise-backend-fastapi` y respeta sus Hard Rules:
 
 - Dependencias hacia adentro: infrastructure → application → domain
 - Domain no importa FastAPI/SQLAlchemy/Pydantic
@@ -55,9 +55,9 @@ Ver `~/.claude/skills/enterprise-backend-fastapi/SKILL.md` para el contrato comp
 
 Cuando la nota de Obsidian evolucione:
 
-1. Editá la `references/` correspondiente (Hard Rules cambian en `SKILL.md`).
-2. Bumpeá `metadata.version`.
-3. Re-corré `/skill-registry` para reindexar.
+1. Edita la `references/` correspondiente (Hard Rules cambian en `SKILL.md`).
+2. Incrementa `metadata.version`.
+3. Re-corre `/skill-registry` para reindexar.
 
 ## Fuente
 

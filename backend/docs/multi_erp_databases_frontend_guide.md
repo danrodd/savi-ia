@@ -171,7 +171,7 @@ Agregar a `router/index.ts`:
   antes de guardar (el backend lo fuerza). Al éxito muestra `razon_social`
   y, si el campo nombre está vacío, la propone.
 - **Estados en la tabla**: activa / desactivada / `credentials_unreadable`
-  ("credenciales ilegibles — volvé a ingresar la contraseña"). La default
+  ("credenciales ilegibles — vuelva a ingresar la contraseña"). La default
   no se puede eliminar ni desactivar (el backend devuelve 422; la UI
   debería deshabilitar esos botones y mostrar por qué).
 

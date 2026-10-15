@@ -1,6 +1,6 @@
 # Gotcha: el modo "deferred tools" del Claude Agent SDK
 
-> **TL;DR**: el Claude Agent SDK cambia de comportamiento cuando hay **muchas tools** registradas en el MCP server. A partir de ~5-6 tools, las pone en modo **diferido**: el LLM tiene que descubrirlas vía `ToolSearch` antes de poder usarlas. Ese cambio de paradigma confunde al modelo y produce respuestas raras: alucinaciones de "la herramienta no responde", llamadas redundantes, pills repetidas, costo en tokens disparado. **La cura es mantener pocas tools** — y si necesitás muchas funcionalidades, **consolidá en una sola tool con un campo `tipo` discriminador** que despache internamente.
+> **TL;DR**: el Claude Agent SDK cambia de comportamiento cuando hay **muchas tools** registradas en el MCP server. A partir de ~5-6 tools, las pone en modo **diferido**: el LLM tiene que descubrirlas vía `ToolSearch` antes de poder usarlas. Ese cambio de paradigma confunde al modelo y produce respuestas raras: alucinaciones de "la herramienta no responde", llamadas redundantes, pills repetidas, costo en tokens disparado. **La cura es mantener pocas tools** — y si necesitas muchas funcionalidades, **consolida en una sola tool con un campo `tipo` discriminador** que despache internamente.
 
 ---
 
@@ -10,7 +10,7 @@ Lo vimos cuando pasamos de 3 tools (`info_empresa`, `consultar_datos`, `consulta
 
 - El LLM llamaba a `ToolSearch` antes de usar cualquier tool del knowledge.
 - A pesar de que las tools devolvían matches válidos (logueamos el payload exacto enviado al LLM), el LLM respondía: *"Las herramientas del catálogo no me están respondiendo en este momento"*.
-- El LLM inventaba pasos genéricos de su entrenamiento (*"buscá en Tesorería o Contabilidad"*) en lugar de usar el dato real del catálogo (*"está en Contabilidad"*).
+- El LLM inventaba pasos genéricos de su entrenamiento (*"busque en Tesorería o Contabilidad"*) en lugar de usar el dato real del catálogo (*"está en Contabilidad"*).
 - Las pills del frontend mostraban *"Procesando información ×3"* + *"Buscando en el catálogo ×2"* + *"Revisando el flujo del proceso ×1"* en una sola interacción — el LLM dando vueltas.
 - El costo del turno se disparó: **264k tokens cacheados** en un turno (vs ~100k antes), porque cada `ToolSearch` agrega schema discovery al contexto.
 
@@ -19,7 +19,7 @@ Lo vimos cuando pasamos de 3 tools (`info_empresa`, `consultar_datos`, `consulta
 El Claude Agent SDK, cuando detecta que el set de tools supera cierto umbral (alrededor de 5-7), las **no expone todas directamente al LLM**. En su lugar:
 
 1. Mantiene las tools en un catálogo interno.
-2. Le dice al LLM: *"hay tools disponibles, pero no las podés ver directamente. Usá `ToolSearch` para descubrirlas."*
+2. Le dice al LLM: *"hay tools disponibles, pero no las puedes ver directamente. Usa `ToolSearch` para descubrirlas."*
 3. El LLM tiene que llamar a `ToolSearch` con keywords, recibir el schema de la(s) tool(s) que matcheen, y recién entonces puede llamarlas.
 
 Esto agrega un round trip extra (`ToolSearch` → schema → llamada real) y, lo más grave, **cambia el modelo mental del LLM**. En lugar de tratar tools como "extensiones de mis capacidades disponibles ahora", el LLM las trata como "recursos remotos que pueden o no estar disponibles" — y se vuelve más conservador hasta el punto de **dudar de los resultados** y alucinar fallas.
@@ -43,7 +43,7 @@ Si el LLM está usando `ToolSearch`, vas a verlo en `tool_invocations` de los me
 
 ### En las pills del frontend
 
-`ToolSearch` no tiene mapeo en `toolLabels.ts`, así que se renderiza como **"Procesando información"**. Si ves esa pill apareciendo cuando deberías ver una pill específica de tu tool, sospechá del modo diferido.
+`ToolSearch` no tiene mapeo en `toolLabels.ts`, así que se renderiza como **"Procesando información"**. Si ves esa pill apareciendo cuando deberías ver una pill específica de tu tool, sospecha del modo diferido.
 
 ### En los costos
 
@@ -53,7 +53,7 @@ El cache balloon a >150k tokens cacheados por turno cuando antes estaba en <100k
 
 Las señales más claras son:
 - Respuestas tipo *"no encontré"*, *"la herramienta no responde"*, *"el catálogo no está disponible"* **aunque la tool sí devolvió matches válidos** (verificarlo logueando el payload retornado).
-- El LLM pide aclaraciones que no debería pedir (*"¿en qué módulo del ERP trabajás?"*) en vez de usar el dato del catálogo.
+- El LLM pide aclaraciones que no debería pedir (*"¿en qué módulo del ERP trabaja?"*) en vez de usar el dato del catálogo.
 - Múltiples llamadas a tools distintas para la misma pregunta, como tanteando.
 
 ## El fix: consolidación con dispatcher
@@ -124,23 +124,23 @@ Puntos clave del patrón:
 
 > **Máximo 4 tools registradas en el MCP server.**
 
-Si necesitás más funcionalidades, consolidalas. Si en algún momento necesitás cruzar ese umbral, **medí antes/después**: corré el chat con queries reales, mirá los `tool_invocations` y el costo en tokens. Si aparece `ToolSearch` o el costo escala feo, **revertí y consolidá**.
+Si necesitas más funcionalidades, consolídalas. Si en algún momento necesitas cruzar ese umbral, **mide antes/después**: corre el chat con queries reales, mira los `tool_invocations` y el costo en tokens. Si aparece `ToolSearch` o el costo escala feo, **revierte y consolida**.
 
 ## Checklist al agregar una tool MCP nueva
 
-Antes de mergear cualquier PR que agregue una tool al MCP server, validá:
+Antes de mergear cualquier PR que agregue una tool al MCP server, valida:
 
 - [ ] **¿Cuántas tools quedan después de este cambio?** Si quedan ≥5, evaluar consolidación.
-- [ ] **¿La funcionalidad nueva es realmente disjunta de las existentes?** Si comparte 80% del comportamiento con otra (mismo catálogo, misma fuente de datos), considerá un parámetro extra en lugar de tool separada.
-- [ ] **¿Tiene sentido como `tipo` de una tool existente?** Si la respuesta es sí, agregalo como `tipo` y NO crees tool nueva.
-- [ ] **Después del merge: probá una pregunta real** y verificá los logs:
+- [ ] **¿La funcionalidad nueva es realmente disjunta de las existentes?** Si comparte 80% del comportamiento con otra (mismo catálogo, misma fuente de datos), considera un parámetro extra en lugar de tool separada.
+- [ ] **¿Tiene sentido como `tipo` de una tool existente?** Si la respuesta es sí, agrégalo como `tipo` y NO crees tool nueva.
+- [ ] **Después del merge: prueba una pregunta real** y verifica los logs:
   - No debe aparecer `ToolSearch` en `tool_invocations` para queries simples.
   - `cache_read_input_tokens` no debe explotar (>150k es señal de alarma).
-- [ ] **Si el LLM dice "la herramienta no responde"** o frases similares cuando la tool sí está respondiendo (verificalo con logging del payload), volvé al patrón dispatcher.
+- [ ] **Si el LLM dice "la herramienta no responde"** o frases similares cuando la tool sí está respondiendo (verifícalo con logging del payload), vuelve al patrón dispatcher.
 
 ## Cómo verificar rápido si tu set actual está en modo deferred
 
-Hacé una query típica del agente y mirá el campo `tool_invocations` del mensaje asistente persistido en `messages`. Si ves:
+Haz una query típica del agente y mira el campo `tool_invocations` del mensaje asistente persistido en `messages`. Si ves:
 
 ```json
 {"name": "ToolSearch", ...}

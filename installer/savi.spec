@@ -117,14 +117,14 @@ if not list(KNOWLEDGE_DATA.rglob("*.json")):
 _require(
     FRONTEND_BUILD,
     "Es el build de Vue que sirve el backend.\n"
-    "Generalo con: installer/build.ps1  (o copiá frontend/dist a backend/frontend).",
+    "Para generarlo: installer/build.ps1  (o copiar frontend/dist a backend/frontend).",
 )
 
 _require(
     EMBEDDING_MODELS,
     "Es el modelo de embeddings de los documentos de la empresa. SAVI no\n"
     "descarga nada en runtime: sin el, los documentos quedan en cola.\n"
-    "Bajalo con: cd backend && uv run download-embedding-model",
+    "Para descargarlo: cd backend && uv run download-embedding-model",
 )
 
 datas = [

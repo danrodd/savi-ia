@@ -172,9 +172,9 @@ base disponible, sin conversación activa).
 
 `LoginView.vue:98`: el texto de ayuda pasa a:
 
-> Ingresa con tu usuario y el código de tu empresa: `USUARIO@EMPRESA`.
+> Ingrese con su usuario y el código de su empresa: `USUARIO@EMPRESA`.
 
-(Tuteo neutro, igual que el texto actual: "Si atiendes varios clientes…").
+(Todo texto de la interfaz va de "usted", igual que el texto actual: "Si atiende varios clientes…").
 
 El resto no cambia: el `datalist` de códigos recordados y el mensaje de
 error único (multi-BD §8.3). Los códigos que ya están guardados siguen
