@@ -36,7 +36,7 @@ const currentIndex = computed(() => props.steps.findIndex((step) => step.key ===
 <style scoped>
 .ui-stepper {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -46,16 +46,21 @@ const currentIndex = computed(() => props.steps.findIndex((step) => step.key ===
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  flex: 1;
   min-width: 0;
   color: var(--text-subtle);
   font-size: 12px;
   font-weight: var(--fw-medium);
 }
 
+/* El conector ocupa el espacio libre entre pasos: las etiquetas nunca se recortan. */
+.ui-stepper__step + .ui-stepper__step {
+  flex: 1 1 auto;
+}
+
 .ui-stepper__step + .ui-stepper__step::before {
   content: '';
-  flex: 0 0 12px;
+  flex: 1 1 12px;
+  min-width: 12px;
   height: 1px;
   margin-right: var(--space-1);
   background: var(--border-strong);
@@ -73,8 +78,6 @@ const currentIndex = computed(() => props.steps.findIndex((step) => step.key ===
 }
 
 .ui-stepper__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
