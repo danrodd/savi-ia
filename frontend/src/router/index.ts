@@ -148,26 +148,22 @@ const router = createRouter({
  * 4. Rutas con `meta.requiresAdmin` (en la ruta o en un padre) exigen
  *    `is_admin`; si no, redirige a `/`.
  */
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   if (shouldShowLanding(to.name, authStore.isAuthenticated, ENV.LANDING_ENABLED)) {
-    next({ name: 'landing' })
-    return
+    return { name: 'landing' }
   }
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({
+    return {
       name: 'login',
       query: { next: to.fullPath !== '/login' ? to.fullPath : undefined },
-    })
-    return
+    }
   }
   if (to.meta.hideForAuthed && authStore.isAuthenticated) {
-    next({ name: 'home' })
-    return
+    return { name: 'home' }
   }
   if (isAdminRouteDenied(to, authStore.user)) {
-    next({ name: 'home' })
-    return
+    return { name: 'home' }
   }
 
   const requiredModule = to.meta.requireModule
@@ -177,12 +173,11 @@ router.beforeEach(async (to, _from, next) => {
       await permisos.cargarBootstrap()
     }
     if (!permisos.puede(requiredModule)) {
-      next({ name: 'no-access', query: { modulo: requiredModule } })
-      return
+      return { name: 'no-access', query: { modulo: requiredModule } }
     }
   }
 
-  next()
+  return true
 })
 
 export default router

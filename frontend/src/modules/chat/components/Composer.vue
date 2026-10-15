@@ -151,6 +151,7 @@ const { dragging } = useFileDrop(
         class="composer__input"
         rows="1"
         placeholder="Preguntale a SAVI…"
+        aria-label="Mensaje para SAVI"
         :disabled="disabled"
         @keydown="onKeydown"
         @paste="onPaste"

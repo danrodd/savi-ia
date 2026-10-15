@@ -35,7 +35,7 @@ function goBack(): void {
 </script>
 
 <template>
-  <div class="not-found">
+  <main class="not-found">
     <div class="not-found__card">
       <p class="not-found__code" aria-hidden="true">404</p>
       <h1 class="not-found__title">Esta página no existe</h1>
@@ -51,7 +51,7 @@ function goBack(): void {
         <Button @click="goHome">Ir al inicio</Button>
       </div>
     </div>
-  </div>
+  </main>
 </template>
 
 <style scoped>

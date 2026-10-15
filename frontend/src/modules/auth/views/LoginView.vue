@@ -78,7 +78,7 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="login">
+  <main class="login">
     <div class="login__glow login__glow--top" aria-hidden="true" />
     <div class="login__glow login__glow--bottom" aria-hidden="true" />
     <div class="login__card">
@@ -167,7 +167,7 @@ async function onSubmit(): Promise<void> {
            justamente quien llama a soporte. -->
       <AppVersion class="login__version" />
     </div>
-  </div>
+  </main>
 </template>
 
 <style scoped>
