@@ -104,7 +104,7 @@ describe('con instalaciones que todavía no reportan', () => {
 
     expect(wrapper.text()).toContain('Hay instalaciones vinculadas')
     await wrapper.get('[data-test="empty-cta"]').trigger('click')
-    expect(push).toHaveBeenCalledWith('/clientes/c1/instancias')
+    expect(push).toHaveBeenCalledWith('/clientes/c1/operacion/instancias')
   })
 })
 

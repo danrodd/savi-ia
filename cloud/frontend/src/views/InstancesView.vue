@@ -46,7 +46,7 @@ const CONNECTIVITY_OPTIONS = [
 ]
 
 const COLUMNS: TableColumn[] = [
-  { key: 'name', label: 'Instalación' },
+  { key: 'name', label: 'Instalación', card: 'title' },
   { key: 'client_code', label: 'Cliente', width: '160px' },
   { key: 'state', label: 'Estado', width: '150px' },
   { key: 'version', label: 'Versión', width: '190px' },
@@ -164,6 +164,7 @@ function open(instance: Instance): void {
           row-key="id"
           :loading="loading"
           clickable
+          :cards-below="720"
           caption="Instancias"
           @row-click="open"
         >

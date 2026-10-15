@@ -1,3 +1,4 @@
+import type { ClientSection } from './clientRoutes'
 import { roleLabel } from './format'
 import type { ClientOnboarding, Permission } from './types'
 
@@ -7,8 +8,8 @@ export interface OnboardingStep {
   /** Qué se hace en este paso. */
   hint: string
   done: boolean
-  /** Pestaña del cliente donde se completa o se comprueba. */
-  tab: string
+  /** Sección del cliente donde se completa o se comprueba. */
+  tab: ClientSection
   /** Rol al que le toca, solo si la persona actual no puede hacerlo. */
   pendingRole: string | null
 }
@@ -17,7 +18,7 @@ interface StepDefinition {
   key: keyof ClientOnboarding
   label: string
   hint: string
-  tab: string
+  tab: ClientSection
   /** Permiso que exige completar el paso; sin él, el paso no depende de una persona. */
   permission?: Permission
   /** Rol que tiene ese permiso (la matriz vive en el backend). */
@@ -29,7 +30,7 @@ const DEFINITIONS: StepDefinition[] = [
     key: 'plan_loaded',
     label: 'Plan cargado',
     hint: 'Registra el plan contratado y hasta cuándo está vigente.',
-    tab: 'suscripcion',
+    tab: 'plan',
     permission: 'clients.billing',
     role: 'comercial',
   },
@@ -37,7 +38,7 @@ const DEFINITIONS: StepDefinition[] = [
     key: 'policy_defined',
     label: 'Política definida',
     hint: 'Decide cómo se identifica a las personas y qué bases puede consultar cada una.',
-    tab: 'politica',
+    tab: 'instalaciones',
     permission: 'clients.policy',
     role: 'admin',
   },

@@ -4,6 +4,7 @@ import { Check, CircleCheck } from 'lucide-vue-next'
 import { computed, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { consoleApi } from '@/lib/api'
+import { clientPath } from '@/lib/clientRoutes'
 import { buildOnboardingSteps } from '@/lib/onboarding'
 import { useAsync } from '@/lib/useAsync'
 import { useAuthStore } from '@/stores/authStore'
@@ -58,7 +59,7 @@ const nextKey = computed(() => steps.value.find((s) => !s.done && !s.pendingRole
           <p class="onboarding__label">
             <span v-if="step.done">{{ step.label }}</span>
             <span v-else-if="step.pendingRole">{{ step.label }}</span>
-            <RouterLink v-else :to="`/clientes/${clientId}/${step.tab}`">{{ step.label }}</RouterLink>
+            <RouterLink v-else :to="clientPath(clientId, step.tab)">{{ step.label }}</RouterLink>
             <span v-if="step.done" class="sr-only"> (listo)</span>
             <Badge v-if="step.key === nextKey" tone="brand">Siguiente</Badge>
             <Badge v-else-if="step.pendingRole" tone="neutral" data-test="onboarding-role">

@@ -8,6 +8,7 @@ import type {
   AlertRule,
   AlertSummary,
   AuditEntry,
+  BulkAlertResult,
   Client,
   ClientCounts,
   ClientDatabase,
@@ -145,6 +146,11 @@ export const consoleApi = {
   acknowledgeAlert: (id: string) => http.post<Alert>(`${API}/alerts/${id}/ack`),
   resolveAlert: (id: string, note: string) =>
     http.post<Alert>(`${API}/alerts/${id}/resolve`, { note }),
+  /** Reconoce varias alertas en una sola transacción (hasta 200). */
+  acknowledgeAlerts: (ids: string[]) =>
+    http.post<BulkAlertResult>(`${API}/alerts/bulk/ack`, { ids }),
+  resolveAlerts: (ids: string[], note: string) =>
+    http.post<BulkAlertResult>(`${API}/alerts/bulk/resolve`, { ids, note }),
   alertRules: () => http.get<AlertRule[]>(`${API}/alert-rules`),
   updateRule: (
     code: string,

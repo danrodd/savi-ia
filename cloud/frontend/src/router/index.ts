@@ -5,6 +5,7 @@ import {
   type RouteRecordRaw,
   type Router,
 } from 'vue-router'
+import { clientPath, LEGACY_CLIENT_TABS } from '@/lib/clientRoutes'
 import type { Permission } from '@/lib/types'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -29,6 +30,20 @@ function clientTab(
     name: `client-${path}`,
     component,
     meta: { permission: permission ?? 'clients.read', title: `Cliente · ${title}` },
+  }
+}
+
+/** Subsección de Operación (`/clientes/:id/operacion/<path>`). */
+function operationTab(
+  path: string,
+  component: RouteComponent | (() => Promise<RouteComponent>),
+  title: string,
+): RouteRecordRaw {
+  return {
+    path,
+    name: `client-operacion-${path}`,
+    component,
+    meta: { permission: 'clients.read', title: `Cliente · ${title}` },
   }
 }
 
@@ -68,35 +83,43 @@ export const routes: RouteRecordRaw[] = [
           },
           clientTab('resumen', () => import('@/views/client/ClientSummaryTab.vue'), 'Resumen'),
           clientTab(
-            'suscripcion',
+            'plan',
             () => import('@/views/client/ClientSubscriptionTab.vue'),
-            'Suscripción',
+            'Plan',
             'clients.billing',
           ),
           clientTab(
-            'politica',
-            () => import('@/views/client/ClientPolicyTab.vue'),
-            'Política',
+            'configuracion',
+            () => import('@/views/client/ClientConfigTab.vue'),
+            'Configuración',
             'clients.policy',
           ),
-          clientTab('ia', () => import('@/views/client/ClientAiTab.vue'), 'IA', 'clients.policy'),
-          clientTab(
-            'acceso',
-            () => import('@/views/client/ClientAccessTab.vue'),
-            'Acceso',
-            'clients.policy',
-          ),
-          clientTab(
-            'instancias',
-            () => import('@/views/client/ClientInstancesTab.vue'),
-            'Instancias',
-          ),
-          clientTab(
-            'sucursales',
-            () => import('@/views/client/ClientDatabasesTab.vue'),
-            'Sucursales',
-          ),
-          clientTab('usuarios', () => import('@/views/client/ClientUsersTab.vue'), 'Usuarios'),
+          {
+            // Instancias, sucursales y personas comparten pestaña: un selector propio con rutas hijas.
+            path: 'operacion',
+            component: () => import('@/views/client/ClientOperationTab.vue'),
+            meta: { permission: 'clients.read', title: 'Cliente · Operación' },
+            // Sin subsección, a Instancias. La redirección va en el padre (no en un hijo vacío)
+            // para que el enlace de la pestaña quede activo en todas las subsecciones.
+            redirect: (to) => clientPath(String(to.params.id), 'instancias'),
+            children: [
+              operationTab(
+                'instancias',
+                () => import('@/views/client/ClientInstancesTab.vue'),
+                'Instancias',
+              ),
+              operationTab(
+                'sucursales',
+                () => import('@/views/client/ClientDatabasesTab.vue'),
+                'Sucursales',
+              ),
+              operationTab(
+                'personas',
+                () => import('@/views/client/ClientUsersTab.vue'),
+                'Personas',
+              ),
+            ],
+          },
           clientTab(
             'vinculacion',
             () => import('@/views/client/ClientTokensTab.vue'),
@@ -104,6 +127,13 @@ export const routes: RouteRecordRaw[] = [
             'tokens.manage',
           ),
           clientTab('alertas', () => import('@/views/client/ClientAlertsTab.vue'), 'Alertas'),
+          // URLs de antes de agrupar las pestañas: se conservan los enlaces guardados.
+          ...Object.entries(LEGACY_CLIENT_TABS).map(
+            ([old, section]): RouteRecordRaw => ({
+              path: old,
+              redirect: (to) => clientPath(String(to.params.id), section),
+            }),
+          ),
         ],
       },
       {

@@ -33,13 +33,16 @@ withDefaults(
       <span v-if="icon" class="ui-kpi__icon" aria-hidden="true"><component :is="icon" :size="16" /></span>
     </div>
     <strong class="ui-kpi__value">{{ value }}</strong>
-    <span v-if="hint || $slots.hint" class="ui-kpi__hint"><slot name="hint">{{ hint }}</slot></span>
+    <!-- La línea de contexto siempre ocupa su lugar: así las tarjetas de una fila alinean. -->
+    <span class="ui-kpi__hint"><slot name="hint">{{ hint }}</slot></span>
   </div>
 </template>
 
 <style scoped>
 .ui-kpi {
   display: grid;
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
   gap: var(--space-2);
   min-width: 0;
   padding: var(--space-5);
@@ -50,6 +53,8 @@ withDefaults(
 }
 
 .ui-kpi__top {
+  /* Alto fijo: el ícono de ayuda (24px) y el ícono de la tarjeta (30px) no deben mover el valor. */
+  min-height: 30px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -105,7 +110,9 @@ withDefaults(
 }
 
 .ui-kpi__hint {
+  min-height: 1.4em;
   font-size: 12px;
+  line-height: 1.4;
   color: var(--text-muted);
 }
 

@@ -26,7 +26,7 @@ const actions = useAlertActions(async () => {
 
 const COLUMNS: TableColumn[] = [
   { key: 'severity', label: 'Severidad', width: '120px' },
-  { key: 'rule_code', label: 'Alerta' },
+  { key: 'rule_code', label: 'Alerta', card: 'title' },
   { key: 'status', label: 'Estado', width: '130px' },
   { key: 'opened_at', label: 'Abierta', width: '150px' },
   { key: 'actions', label: '', align: 'right', width: '210px' },
@@ -40,6 +40,7 @@ const COLUMNS: TableColumn[] = [
       :rows="alerts.data.value ?? []"
       row-key="id"
       :loading="alerts.loading.value"
+      :cards-below="720"
       caption="Alertas del cliente"
     >
       <template #empty>

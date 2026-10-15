@@ -28,6 +28,7 @@ from app.modules.staff.domain import Permission
 router = APIRouter(prefix="/console/api", tags=["console-alerts"])
 
 MAX_LIMIT = 200
+MAX_BULK = 200
 
 
 class _Body(BaseModel):
@@ -107,6 +108,21 @@ class ResolveBody(_Body):
     note: str = Field(default="", max_length=500)
 
 
+class BulkAckBody(_Body):
+    ids: list[UUID] = Field(min_length=1, max_length=MAX_BULK)
+
+
+class BulkResolveBody(BulkAckBody):
+    note: str = Field(default="", max_length=500)
+
+
+class BulkOut(BaseModel):
+    """Alertas que cambiaron y alertas omitidas (ya reconocidas, resueltas o inexistentes)."""
+
+    changed: int
+    skipped: int
+
+
 class RulePatch(_Body):
     enabled: bool | None = None
     threshold: float | None = None
@@ -162,6 +178,33 @@ async def alerts_summary(
     return AlertSummaryOut(
         open=counts.get(AlertStatus.OPEN, 0), acknowledged=counts.get(AlertStatus.ACKNOWLEDGED, 0)
     )
+
+
+# Las rutas masivas van antes que `/alerts/{alert_id}/…`: si no, `bulk` se leería como un id.
+@router.post("/alerts/bulk/ack", response_model=BulkOut)
+async def acknowledge_alerts(
+    body: BulkAckBody,
+    request: Request,
+    principal: Principal = Depends(RequirePermission(Permission.ALERTS_MANAGE)),
+) -> BulkOut:
+    async with transaction(request) as session:
+        result = await _actions(request, session).acknowledge_many(
+            body.ids, request_context(request, principal)
+        )
+    return BulkOut(changed=len(result.changed), skipped=result.skipped)
+
+
+@router.post("/alerts/bulk/resolve", response_model=BulkOut)
+async def resolve_alerts(
+    body: BulkResolveBody,
+    request: Request,
+    principal: Principal = Depends(RequirePermission(Permission.ALERTS_MANAGE)),
+) -> BulkOut:
+    async with transaction(request) as session:
+        result = await _actions(request, session).resolve_many(
+            body.ids, body.note, request_context(request, principal)
+        )
+    return BulkOut(changed=len(result.changed), skipped=result.skipped)
 
 
 @router.post("/alerts/{alert_id}/ack", response_model=AlertOut)

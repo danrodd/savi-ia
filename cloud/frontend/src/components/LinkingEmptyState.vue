@@ -2,6 +2,7 @@
 import { Button, EmptyState } from '@savi/ui'
 import type { Component } from 'vue'
 import { useRouter } from 'vue-router'
+import { type ClientSection, clientPath } from '@/lib/clientRoutes'
 import { useAuthStore } from '@/stores/authStore'
 
 /**
@@ -22,8 +23,8 @@ const props = defineProps<{
 const router = useRouter()
 const auth = useAuthStore()
 
-function go(tab: string): void {
-  void router.push(`/clientes/${props.clientId}/${tab}`)
+function go(section: ClientSection): void {
+  void router.push(clientPath(props.clientId, section))
 }
 </script>
 

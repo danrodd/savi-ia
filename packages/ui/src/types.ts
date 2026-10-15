@@ -22,6 +22,12 @@ export interface TableColumn {
   /** Ancho CSS (`'120px'`, `'20%'`). */
   width?: string
   mono?: boolean
+  /**
+   * Cómo se ve la columna cuando la tabla pasa a tarjetas (`cardsBelow`): `title` arriba sin
+   * etiqueta, `footer` abajo sin etiqueta (acciones), `hidden` no se muestra. Sin valor es un
+   * campo con su etiqueta; una columna sin etiqueta se toma como `footer`.
+   */
+  card?: 'title' | 'footer' | 'hidden'
 }
 
 /** Pestaña de `Tabs`. Con `to` es un enlace del router; sin él, una pestaña local. */

@@ -3,6 +3,7 @@ import {
   Alert as AlertBox,
   Button,
   Card,
+  Checkbox,
   DataTable,
   EmptyState,
   PageHeader,
@@ -10,7 +11,7 @@ import {
   type TableColumn,
 } from '@savi/ui'
 import { BellOff } from 'lucide-vue-next'
-import { watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import AlertResolveDialog from '@/components/AlertResolveDialog.vue'
 import AlertRowActions from '@/components/AlertRowActions.vue'
@@ -24,6 +25,7 @@ import { ALERT_STATUS, relativeTime, SEVERITY } from '@/lib/format'
 import { useRuleTitles } from '@/lib/ruleTitles'
 import type { Severity } from '@/lib/types'
 import { useAsync } from '@/lib/useAsync'
+import { useAuthStore } from '@/stores/authStore'
 
 const ruleTitle = useRuleTitles()
 
@@ -45,13 +47,20 @@ const SEVERITY_OPTIONS: { value: Severity; label: string }[] = [
   { value: 'info', label: 'Info' },
 ]
 
-const COLUMNS: TableColumn[] = [
+const auth = useAuthStore()
+const canManage = computed(() => auth.can('alerts.manage'))
+
+// En pantallas angostas las filas pasan a tarjetas (ver `cards-below`).
+const CARDS_BELOW = 720
+
+const COLUMNS = computed<TableColumn[]>(() => [
+  ...(canManage.value ? [{ key: 'select', label: '', width: '44px', card: 'title' as const }] : []),
   { key: 'severity', label: 'Severidad', width: '120px' },
-  { key: 'rule_code', label: 'Alerta' },
+  { key: 'rule_code', label: 'Alerta', card: 'title' },
   { key: 'status', label: 'Estado', width: '170px' },
   { key: 'opened_at', label: 'Abierta', width: '130px' },
   { key: 'actions', label: '', align: 'right', width: '210px' },
-]
+])
 
 const { data, loading, error, reload } = useAsync(() =>
   consoleApi.alerts({
@@ -63,6 +72,42 @@ const { data, loading, error, reload } = useAsync(() =>
 watch([status, severity, clientId], () => void reload())
 
 const actions = useAlertActions(reload)
+
+// Selección para las acciones masivas: solo alertas que todavía se pueden gestionar.
+const rows = computed(() => data.value ?? [])
+const selectable = computed(() => rows.value.filter((a) => actions.canManage(a)))
+const selected = ref<Set<string>>(new Set())
+
+// Al recargar (filtros, acciones) se descarta lo seleccionado que ya no está o ya no aplica.
+watch(selectable, (list) => {
+  const alive = new Set(list.map((a) => a.id))
+  selected.value = new Set([...selected.value].filter((id) => alive.has(id)))
+})
+
+const allSelected = computed(
+  () => selectable.value.length > 0 && selectable.value.every((a) => selected.value.has(a.id)),
+)
+
+function toggle(id: string, on: boolean): void {
+  const next = new Set(selected.value)
+  if (on) next.add(id)
+  else next.delete(id)
+  selected.value = next
+}
+
+function toggleAll(on: boolean): void {
+  selected.value = on ? new Set(selectable.value.map((a) => a.id)) : new Set()
+}
+
+const selectedIds = computed(() => [...selected.value])
+const selectedOpen = computed(() =>
+  selectable.value.filter((a) => selected.value.has(a.id) && a.status === 'open').map((a) => a.id),
+)
+
+async function acknowledgeSelected(): Promise<void> {
+  // Reconocer solo aplica a las abiertas: las ya reconocidas de la selección no se mandan.
+  if (await actions.acknowledgeMany(selectedOpen.value)) selected.value = new Set()
+}
 </script>
 
 <template>
@@ -106,13 +151,72 @@ const actions = useAlertActions(reload)
         </template>
       </AlertBox>
 
+      <Card v-if="canManage && selectable.length" padding="md">
+        <div class="bulk" data-test="alerts-bulk">
+          <Checkbox
+            :model-value="allSelected"
+            label="Seleccionar todas las visibles"
+            data-test="alerts-select-all"
+            @update:model-value="toggleAll"
+          />
+          <span class="muted bulk__count" data-test="alerts-selected-count" aria-live="polite">
+            {{
+              selectedIds.length === 0
+                ? 'Ninguna seleccionada'
+                : selectedIds.length === 1
+                  ? '1 seleccionada'
+                  : `${selectedIds.length} seleccionadas`
+            }}
+          </span>
+          <div class="bulk__actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="selectedOpen.length === 0"
+              :loading="actions.bulkBusy.value"
+              data-test="alerts-bulk-ack"
+              @click="acknowledgeSelected"
+            >
+              Reconocer seleccionadas
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="selectedIds.length === 0"
+              data-test="alerts-bulk-resolve"
+              @click="actions.openResolveMany(selectedIds)"
+            >
+              Resolver seleccionadas
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       <Card padding="none">
-        <DataTable :columns="COLUMNS" :rows="data ?? []" row-key="id" :loading="loading" caption="Alertas">
+        <DataTable
+          :columns="COLUMNS"
+          :rows="rows"
+          row-key="id"
+          :loading="loading"
+          :cards-below="CARDS_BELOW"
+          caption="Alertas"
+        >
           <template #empty>
             <EmptyState
               :icon="BellOff"
               :title="status === 'open' ? 'No hay alertas abiertas' : 'No hay alertas con esos filtros'"
               :description="status === 'open' ? 'Todo en orden por ahora.' : undefined"
+            />
+          </template>
+          <template #cell-select="{ row }">
+            <input
+              v-if="actions.canManage(row)"
+              type="checkbox"
+              class="pick"
+              :checked="selected.has(row.id)"
+              :aria-label="`Seleccionar ${ruleTitle(row.rule_code)}`"
+              data-test="alert-select"
+              @change="toggle(row.id, ($event.target as HTMLInputElement).checked)"
             />
           </template>
           <template #cell-severity="{ row }">
@@ -152,6 +256,32 @@ const actions = useAlertActions(reload)
   gap: var(--space-4);
 }
 
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+.bulk__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.bulk__count {
+  font-size: 12.5px;
+}
+
+.pick {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
 .alert {
   display: grid;
   gap: 2px;
@@ -175,6 +305,11 @@ const actions = useAlertActions(reload)
 @media (max-width: 600px) {
   .filters {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bulk__actions {
+    width: 100%;
+    margin-left: 0;
   }
 }
 </style>

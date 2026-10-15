@@ -42,21 +42,16 @@ interface ClientTab {
 /** Mismo orden y permisos que las rutas hijas de `/clientes/:id` (router/index.ts). */
 const TABS: ClientTab[] = [
   { key: 'resumen', label: 'Resumen' },
-  { key: 'suscripcion', label: 'Suscripción', permission: 'clients.billing' },
-  { key: 'politica', label: 'Política', permission: 'clients.policy' },
-  { key: 'ia', label: 'IA', permission: 'clients.policy' },
-  { key: 'acceso', label: 'Acceso', permission: 'clients.policy' },
-  { key: 'instancias', label: 'Instancias' },
-  { key: 'sucursales', label: 'Sucursales' },
-  { key: 'usuarios', label: 'Usuarios' },
+  { key: 'plan', label: 'Plan', permission: 'clients.billing' },
+  { key: 'configuracion', label: 'Configuración', permission: 'clients.policy' },
+  { key: 'operacion', label: 'Operación' },
   { key: 'vinculacion', label: 'Vinculación', permission: 'tokens.manage' },
   { key: 'alertas', label: 'Alertas' },
 ]
 
 /** Cuántos hay en cada pestaña con contador; `undefined` (sin número) mientras no se sabe. */
 function tabCount(key: string): number | undefined {
-  if (key === 'instancias') return client.data.value?.instances_total
-  if (key === 'usuarios') return counts.data.value?.people
+  if (key === 'operacion') return client.data.value?.instances_total
   if (key === 'alertas' && auth.can('alerts.read')) return counts.data.value?.open_alerts
   return undefined
 }

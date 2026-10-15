@@ -5,6 +5,7 @@ No abren transacciones: lo hace el llamador (el job o la ruta HTTP).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from uuid import UUID, uuid4
 
@@ -130,6 +131,12 @@ class EvaluateAlertsUseCase:
 
 
 @dataclass(frozen=True)
+class BulkResult:
+    changed: list[Alert]
+    skipped: int
+
+
+@dataclass(frozen=True)
 class AlertActions:
     alerts: AlertRepository
     rules: AlertRuleRepository
@@ -142,12 +149,7 @@ class AlertActions:
             raise AlertNotFound("No existe la alerta.")
         return alert
 
-    async def acknowledge(self, alert_id: UUID, ctx: RequestContext) -> Alert:
-        alert = await self._get(alert_id)
-        if alert.status is AlertStatus.RESOLVED:
-            raise AlertAlreadyResolved("La alerta ya está resuelta.")
-        if alert.status is AlertStatus.ACKNOWLEDGED:
-            return alert
+    async def _acknowledged(self, alert: Alert, ctx: RequestContext) -> Alert:
         updated = replace(
             alert,
             status=AlertStatus.ACKNOWLEDGED,
@@ -159,36 +161,79 @@ class AlertActions:
             ctx,
             "alert.acknowledge",
             target_type="alert",
-            target_id=str(alert_id),
+            target_id=str(alert.id),
             before={"status": alert.status.value},
             after={"status": updated.status.value},
         )
         return updated
 
-    async def resolve(self, alert_id: UUID, note: str, ctx: RequestContext) -> Alert:
-        alert = await self._get(alert_id)
-        if alert.status is AlertStatus.RESOLVED:
-            raise AlertAlreadyResolved("La alerta ya está resuelta.")
-        clean = note.strip()
-        if len(clean) > MAX_NOTE_LENGTH:
-            raise InvalidAlertRule(f"La nota admite hasta {MAX_NOTE_LENGTH} caracteres.")
+    async def _resolved(self, alert: Alert, clean_note: str, ctx: RequestContext) -> Alert:
         updated = replace(
             alert,
             status=AlertStatus.RESOLVED,
             resolved_at=self.clock(),
             resolved_by=ctx.actor_email,
-            resolution_note=clean or None,
+            resolution_note=clean_note or None,
         )
         await self.alerts.save(updated)
         await self.audit.record(
             ctx,
             "alert.resolve",
             target_type="alert",
-            target_id=str(alert_id),
+            target_id=str(alert.id),
             before={"status": alert.status.value},
             after={"status": updated.status.value, "resolution_note": updated.resolution_note},
         )
         return updated
+
+    @staticmethod
+    def _clean_note(note: str) -> str:
+        clean = note.strip()
+        if len(clean) > MAX_NOTE_LENGTH:
+            raise InvalidAlertRule(f"La nota admite hasta {MAX_NOTE_LENGTH} caracteres.")
+        return clean
+
+    async def acknowledge(self, alert_id: UUID, ctx: RequestContext) -> Alert:
+        alert = await self._get(alert_id)
+        if alert.status is AlertStatus.RESOLVED:
+            raise AlertAlreadyResolved("La alerta ya está resuelta.")
+        if alert.status is AlertStatus.ACKNOWLEDGED:
+            return alert
+        return await self._acknowledged(alert, ctx)
+
+    async def resolve(self, alert_id: UUID, note: str, ctx: RequestContext) -> Alert:
+        alert = await self._get(alert_id)
+        if alert.status is AlertStatus.RESOLVED:
+            raise AlertAlreadyResolved("La alerta ya está resuelta.")
+        return await self._resolved(alert, self._clean_note(note), ctx)
+
+    async def acknowledge_many(self, alert_ids: Sequence[UUID], ctx: RequestContext) -> BulkResult:
+        """Reconoce las abiertas de la lista; el resto (ya reconocidas, resueltas, inexistentes)
+        se cuenta como omitida. Una auditoría por alerta, igual que la acción individual."""
+        changed: list[Alert] = []
+        skipped = 0
+        for alert_id in dict.fromkeys(alert_ids):
+            alert = await self.alerts.get(alert_id)
+            if alert is None or alert.status is not AlertStatus.OPEN:
+                skipped += 1
+                continue
+            changed.append(await self._acknowledged(alert, ctx))
+        return BulkResult(changed=changed, skipped=skipped)
+
+    async def resolve_many(
+        self, alert_ids: Sequence[UUID], note: str, ctx: RequestContext
+    ) -> BulkResult:
+        """Resuelve las vivas de la lista con la misma nota; las demás se cuentan como omitidas."""
+        clean = self._clean_note(note)
+        changed: list[Alert] = []
+        skipped = 0
+        for alert_id in dict.fromkeys(alert_ids):
+            alert = await self.alerts.get(alert_id)
+            if alert is None or alert.status is AlertStatus.RESOLVED:
+                skipped += 1
+                continue
+            changed.append(await self._resolved(alert, clean, ctx))
+        return BulkResult(changed=changed, skipped=skipped)
 
     async def configure_rule(
         self,
@@ -241,6 +286,7 @@ class AlertActions:
 __all__ = [
     "LIVE_STATUSES",
     "AlertActions",
+    "BulkResult",
     "EvaluateAlertsUseCase",
     "EvaluationResult",
     "NoopAlertNotifier",

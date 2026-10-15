@@ -17,7 +17,7 @@ const instances = useAsync(() => consoleApi.instances({ client_id: id.value }))
 watch(id, () => instances.reload())
 
 const COLUMNS: TableColumn[] = [
-  { key: 'name', label: 'Instalación' },
+  { key: 'name', label: 'Instalación', card: 'title' },
   { key: 'state', label: 'Estado', width: '150px' },
   { key: 'version', label: 'Versión', width: '120px', mono: true },
   { key: 'last_seen_at', label: 'Último contacto', width: '170px' },
@@ -36,6 +36,7 @@ function open(instance: Instance): void {
       row-key="id"
       :loading="instances.loading.value"
       clickable
+      :cards-below="720"
       caption="Instalaciones del cliente"
       @row-click="open"
     >

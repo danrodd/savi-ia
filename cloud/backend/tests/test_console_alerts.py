@@ -458,3 +458,89 @@ async def test_database_blocks_duplicate_live_alerts(fx: Fixture) -> None:
     with pytest.raises(IntegrityError):
         async with fx.console.maker() as s, s.begin():
             s.add(row())
+
+
+# ------------------------------------------------------------------ acciones masivas
+
+
+async def two_open_alerts(fx: Fixture) -> list[str]:
+    linked = await link_instance(fx, await busy_client(fx))
+    await beat(
+        fx,
+        linked,
+        warnings=["cert_expired"],
+        sync={"streams": {}, "last_error": "contract_rejected"},
+    )
+    rows = await _after(fx)
+    assert len(rows) == 2
+    return [a["id"] for a in rows]
+
+
+async def test_bulk_acknowledge_changes_open_ones_and_audits_each(fx: Fixture) -> None:
+    ids = await two_open_alerts(fx)
+    soporte = await fx.console.login("soporte@seo.example")
+    res = await fx.console.http.post(
+        f"{API}/alerts/bulk/ack",
+        json={"ids": [*ids, ids[0], str(uuid4())]},  # un duplicado y uno inexistente
+        headers=soporte.auth,
+    )
+    assert res.status_code == 200, res.text
+    assert res.json() == {"changed": 2, "skipped": 1}
+    assert {a["status"] for a in await alerts(fx)} == {"acknowledged"}
+    actions = await fx.console.audit_actions()
+    assert actions.count("alert.acknowledge") == 2
+
+    # Repetir no cambia nada: ya están reconocidas.
+    again = await fx.console.http.post(
+        f"{API}/alerts/bulk/ack", json={"ids": ids}, headers=soporte.auth
+    )
+    assert again.json() == {"changed": 0, "skipped": 2}
+    assert (await fx.console.audit_actions()).count("alert.acknowledge") == 2
+
+
+async def test_bulk_resolve_applies_note_and_skips_resolved(fx: Fixture) -> None:
+    ids = await two_open_alerts(fx)
+    admin = await fx.console.login("admin@seo.example")
+    single = await fx.console.http.post(
+        f"{API}/alerts/{ids[0]}/resolve", json={"note": ""}, headers=admin.auth
+    )
+    assert single.status_code == 200
+
+    res = await fx.console.http.post(
+        f"{API}/alerts/bulk/resolve",
+        json={"ids": ids, "note": "  Revisado en bloque  "},
+        headers=admin.auth,
+    )
+    assert res.json() == {"changed": 1, "skipped": 1}
+    resolved = {a["id"]: a for a in await alerts(fx, status="resolved")}
+    assert resolved[ids[1]]["resolution_note"] == "Revisado en bloque"
+    assert resolved[ids[1]]["resolved_by"] == "admin@seo.example"
+    assert resolved[ids[0]]["resolution_note"] is None  # no se pisa la ya resuelta
+    assert (await fx.console.audit_actions()).count("alert.resolve") == 2
+
+
+async def test_bulk_validation_and_permissions(fx: Fixture) -> None:
+    ids = await two_open_alerts(fx)
+    admin = await fx.console.login("admin@seo.example")
+    empty = await fx.console.http.post(
+        f"{API}/alerts/bulk/ack", json={"ids": []}, headers=admin.auth
+    )
+    assert empty.status_code == 422
+    too_many = await fx.console.http.post(
+        f"{API}/alerts/bulk/ack",
+        json={"ids": [str(uuid4()) for _ in range(201)]},
+        headers=admin.auth,
+    )
+    assert too_many.status_code == 422
+    long_note = await fx.console.http.post(
+        f"{API}/alerts/bulk/resolve", json={"ids": ids, "note": "x" * 501}, headers=admin.auth
+    )
+    assert long_note.status_code == 422
+    assert {a["status"] for a in await alerts(fx)} == {"open"}  # nada cambió
+
+    comercial = await fx.console.login("comercial@seo.example")
+    for path in ("ack", "resolve"):
+        denied = await fx.console.http.post(
+            f"{API}/alerts/bulk/{path}", json={"ids": ids}, headers=comercial.auth
+        )
+        assert denied.status_code == 403

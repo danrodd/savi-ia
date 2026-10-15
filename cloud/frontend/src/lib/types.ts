@@ -186,6 +186,12 @@ export interface Alert {
   resolution_note: string | null
 }
 
+/** Resultado de una acción masiva: cuántas cambiaron y cuántas se omitieron. */
+export interface BulkAlertResult {
+  changed: number
+  skipped: number
+}
+
 /** Conteos baratos de alertas vivas (de todos los clientes o de uno). */
 export interface AlertSummary {
   open: number

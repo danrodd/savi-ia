@@ -39,7 +39,7 @@ const SORT_OPTIONS = [
 ]
 
 const COLUMNS: TableColumn[] = [
-  { key: 'code', label: 'Cliente' },
+  { key: 'code', label: 'Cliente', card: 'title' },
   { key: 'status', label: 'Estado', width: '130px' },
   { key: 'instances', label: 'En línea', align: 'right', width: '110px' },
   { key: 'last_seen_at', label: 'Última actividad', width: '160px' },
@@ -138,6 +138,7 @@ function onCreated(client: Client): void {
           row-key="id"
           :loading="loading"
           clickable
+          :cards-below="720"
           caption="Clientes"
           @row-click="open"
         >

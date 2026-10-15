@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useEventListener } from '@vueuse/core'
 import { nextTick, onMounted, onUpdated, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { TabItem } from '../types'
@@ -16,6 +17,22 @@ const props = defineProps<{
 const model = defineModel<string>()
 const root = ref<HTMLElement | null>(null)
 
+/**
+ * Si hay pestañas fuera de la vista, el borde correspondiente se difumina: sin barra de
+ * desplazamiento visible, es la pista de que la lista continúa.
+ */
+const fadeStart = ref(false)
+const fadeEnd = ref(false)
+
+function measure(): void {
+  const el = root.value
+  if (!el) return
+  fadeStart.value = el.scrollLeft > 1
+  fadeEnd.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+}
+
+useEventListener(window, 'resize', measure)
+
 /** En pantallas chicas la barra se desplaza: la pestaña activa siempre queda a la vista. */
 function revealActive(): void {
   void nextTick(() => {
@@ -24,8 +41,14 @@ function revealActive(): void {
   })
 }
 
-onMounted(revealActive)
-onUpdated(revealActive)
+onMounted(() => {
+  revealActive()
+  measure()
+})
+onUpdated(() => {
+  revealActive()
+  measure()
+})
 
 function onKeydown(event: KeyboardEvent, index: number): void {
   if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
@@ -41,20 +64,35 @@ function onKeydown(event: KeyboardEvent, index: number): void {
 </script>
 
 <template>
-  <nav v-if="items.some((item) => item.to)" ref="root" class="ui-tabs" :aria-label="label">
+  <nav
+    v-if="items.some((item) => item.to)"
+    ref="root"
+    class="ui-tabs"
+    :class="{ 'ui-tabs--fade-start': fadeStart, 'ui-tabs--fade-end': fadeEnd }"
+    :aria-label="label"
+    @scroll.passive="measure"
+  >
     <RouterLink
       v-for="item in items"
       :key="item.key"
       :to="item.to ?? ''"
       class="ui-tabs__tab"
       active-class="ui-tabs__tab--active"
-      exact-active-class="ui-tabs__tab--active"
+      exact-active-class="ui-tabs__tab--exact"
     >
       {{ item.label }}
       <span v-if="item.count !== undefined" class="ui-tabs__count">{{ item.count }}</span>
     </RouterLink>
   </nav>
-  <div v-else ref="root" class="ui-tabs" role="tablist" :aria-label="label">
+  <div
+    v-else
+    ref="root"
+    class="ui-tabs"
+    :class="{ 'ui-tabs--fade-start': fadeStart, 'ui-tabs--fade-end': fadeEnd }"
+    role="tablist"
+    :aria-label="label"
+    @scroll.passive="measure"
+  >
     <button
       v-for="(item, index) in items"
       :key="item.key"
@@ -85,6 +123,27 @@ function onKeydown(event: KeyboardEvent, index: number): void {
 
 .ui-tabs::-webkit-scrollbar {
   display: none;
+}
+
+.ui-tabs--fade-end {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+}
+
+.ui-tabs--fade-start {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent);
+}
+
+.ui-tabs--fade-start.ui-tabs--fade-end {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 36px,
+    #000 calc(100% - 36px),
+    transparent
+  );
+  mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
 }
 
 .ui-tabs__tab {

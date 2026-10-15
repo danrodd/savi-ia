@@ -2,6 +2,13 @@ import { useEventListener } from '@vueuse/core'
 import { inject, type Ref } from 'vue'
 import { matchedRouteKey, onBeforeRouteLeave } from 'vue-router'
 
+/**
+ * Navegaciones en las que la persona ya aceptó salir. Una página con varios formularios sucios
+ * (Configuración) registra varios avisos: con esto se pregunta una sola vez por navegación.
+ * El destino (`to`) es el mismo objeto para todos los avisos de una navegación.
+ */
+const approved = new WeakSet<object>()
+
 export const LEAVE_MESSAGE = 'Tenés cambios sin guardar. Si salís ahora, se pierden.'
 
 /**
@@ -11,9 +18,11 @@ export const LEAVE_MESSAGE = 'Tenés cambios sin guardar. Si salís ahora, se pi
  */
 export function useLeaveGuard(isDirty: Ref<boolean>): void {
   if (inject(matchedRouteKey, null)?.value) {
-    onBeforeRouteLeave(() => {
-      if (!isDirty.value) return true
-      return window.confirm(`${LEAVE_MESSAGE} ¿Salir igual?`)
+    onBeforeRouteLeave((to) => {
+      if (!isDirty.value || approved.has(to)) return true
+      const leave = window.confirm(`${LEAVE_MESSAGE} ¿Salir igual?`)
+      if (leave) approved.add(to)
+      return leave
     })
   }
 

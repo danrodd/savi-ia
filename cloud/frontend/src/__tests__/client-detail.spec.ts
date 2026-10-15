@@ -162,10 +162,10 @@ describe('detalle del cliente', () => {
     const { wrapper } = await mountAt('/clientes/c1', ['clients.read'])
     const labels = wrapper.findAll('.ui-tabs a').map((a) => a.text().replace(/\s*\d+$/, ''))
 
-    expect(labels).toEqual(['Resumen', 'Instancias', 'Sucursales', 'Usuarios', 'Alertas'])
+    expect(labels).toEqual(['Resumen', 'Operación', 'Alertas'])
   })
 
-  it('con todos los permisos aparecen suscripción, política, IA, acceso y vinculación', async () => {
+  it('con todos los permisos aparecen plan, configuración y vinculación', async () => {
     const { wrapper } = await mountAt('/clientes/c1', [
       'clients.read',
       'clients.billing',
@@ -176,13 +176,9 @@ describe('detalle del cliente', () => {
 
     expect(labels).toEqual([
       'Resumen',
-      'Suscripción',
-      'Política',
-      'IA',
-      'Acceso',
-      'Instancias',
-      'Sucursales',
-      'Usuarios',
+      'Plan',
+      'Configuración',
+      'Operación',
       'Vinculación',
       'Alertas',
     ])
@@ -197,10 +193,18 @@ describe('detalle del cliente', () => {
     }
 
     expect(api.clientCounts).toHaveBeenCalledWith('c1')
-    expect(count('Instancias')).toBe('2')
-    expect(count('Usuarios')).toBe('7')
+    expect(count('Operación')).toBe('2')
     expect(count('Alertas')).toBe('3')
     expect(count('Resumen')).toBeUndefined()
+  })
+
+  it('Operación abre en Instancias y cada subsección trae su contador', async () => {
+    const { wrapper, router } = await mountAt('/clientes/c1/operacion', ['clients.read'])
+
+    expect(router.currentRoute.value.path).toBe('/clientes/c1/operacion/instancias')
+    expect(wrapper.get('[data-test="operation-instancias"]').text()).toContain('2')
+    expect(wrapper.get('[data-test="operation-personas"]').text()).toContain('7')
+    expect(wrapper.get('[data-test="operation-sucursales"]').text()).toBe('Sucursales')
   })
 
   it('sin permiso para ver alertas la pestaña no muestra su contador', async () => {
@@ -210,7 +214,7 @@ describe('detalle del cliente', () => {
     expect(tab?.find('.ui-tabs__count').exists()).toBe(false)
   })
 
-  it('en la pestaña Usuarios se busca por etiqueta o seudónimo', async () => {
+  it('en Operación > Personas se busca por etiqueta o seudónimo', async () => {
     api.clientUsers.mockResolvedValue([
       {
         user_ref: 'aaaa1111bbbb',
@@ -229,7 +233,7 @@ describe('detalle del cliente', () => {
         databases_used: 1,
       },
     ])
-    const { wrapper } = await mountAt('/clientes/c1/usuarios', ['clients.read'])
+    const { wrapper } = await mountAt('/clientes/c1/operacion/personas', ['clients.read'])
     const input = wrapper.get('[data-test="users-search"] input')
     const rows = () => wrapper.findAll('tbody tr').length
 
@@ -309,10 +313,13 @@ describe('detalle del cliente', () => {
   })
 
   it('cada pestaña se abre por su URL', async () => {
-    const { wrapper } = await mountAt('/clientes/c1/ia', ['clients.read', 'clients.policy'])
+    const { wrapper } = await mountAt('/clientes/c1/configuracion#ia', [
+      'clients.read',
+      'clients.policy',
+    ])
 
     expect(wrapper.find('[data-test="ai-policy"]').exists()).toBe(true)
-    expect(wrapper.find('.ui-tabs__tab--active').text()).toBe('IA')
+    expect(wrapper.find('.ui-tabs__tab--active').text()).toBe('Configuración')
   })
 
   it('editar el cliente manda nombre y NIT y recarga', async () => {

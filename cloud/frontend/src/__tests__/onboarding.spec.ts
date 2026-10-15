@@ -99,11 +99,11 @@ describe('tarjeta "Puesta en marcha"', () => {
     )
     const links = wrapper.findAllComponents(RouterLinkStub).map((l) => l.props('to'))
     expect(links).toEqual([
-      '/clientes/c1/politica',
-      '/clientes/c1/ia',
+      '/clientes/c1/configuracion#instalaciones',
+      '/clientes/c1/configuracion#ia',
       '/clientes/c1/vinculacion',
-      '/clientes/c1/instancias',
-      '/clientes/c1/sucursales',
+      '/clientes/c1/operacion/instancias',
+      '/clientes/c1/operacion/sucursales',
     ])
   })
 
