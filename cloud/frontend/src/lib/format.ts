@@ -4,6 +4,11 @@ const ZONE = 'America/Bogota'
 
 export type Tone = 'ok' | 'warn' | 'bad' | 'muted'
 
+/** Tono de la consola → tono del `Badge` compartido. */
+export function badgeTone(tone: Tone): 'success' | 'warning' | 'danger' | 'neutral' {
+  return ({ ok: 'success', warn: 'warning', bad: 'danger', muted: 'neutral' } as const)[tone]
+}
+
 export function formatInt(value: number): string {
   return new Intl.NumberFormat('es-CO').format(value)
 }
@@ -106,4 +111,29 @@ const REASONS: Record<string, string> = {
 
 export function reasonLabel(reason: string | null): string {
   return reason ? (REASONS[reason] ?? reason) : '—'
+}
+
+/** Estado visible de una instancia: suspendida/revocada manda sobre la conexión. */
+export function instanceState(instance: { status: string; online: boolean }): {
+  label: string
+  tone: Tone
+} {
+  if (instance.status !== 'active') {
+    return { label: instanceStatusLabel(instance.status), tone: 'bad' }
+  }
+  return instance.online
+    ? { label: 'En línea', tone: 'ok' }
+    : { label: 'Sin conexión', tone: 'warn' }
+}
+
+export const SEVERITY: Record<'info' | 'warning' | 'critical', { label: string; tone: Tone }> = {
+  info: { label: 'Info', tone: 'muted' },
+  warning: { label: 'Aviso', tone: 'warn' },
+  critical: { label: 'Crítica', tone: 'bad' },
+}
+
+export const ALERT_STATUS: Record<'open' | 'acknowledged' | 'resolved', string> = {
+  open: 'Abierta',
+  acknowledged: 'Reconocida',
+  resolved: 'Resuelta',
 }

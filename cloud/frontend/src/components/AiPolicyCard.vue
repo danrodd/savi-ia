@@ -14,6 +14,7 @@ import {
 import { UserRound, X } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
 import { formatUsd } from '@/lib/format'
 import {
@@ -35,6 +36,8 @@ watch(
   () => props.policy,
   (policy) => form.reset(toForm(policy)),
 )
+
+useLeaveGuard(form.isDirty)
 
 const people = ref<ClientUser[]>([])
 onMounted(async () => {

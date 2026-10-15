@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { CircleHelp } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import type { Tone } from '../types'
+import Tooltip from './Tooltip.vue'
 
 /** Indicador: etiqueta, valor y una línea de contexto opcional. */
 withDefaults(
@@ -10,6 +12,8 @@ withDefaults(
     hint?: string
     tone?: Tone
     icon?: Component
+    /** Definición de la métrica: se muestra al pasar o enfocar el ícono de ayuda. */
+    help?: string
   }>(),
   { tone: 'neutral' },
 )
@@ -18,7 +22,14 @@ withDefaults(
 <template>
   <div class="ui-kpi" :class="`ui-kpi--${tone}`">
     <div class="ui-kpi__top">
-      <span class="ui-kpi__label">{{ label }}</span>
+      <span class="ui-kpi__label">
+        {{ label }}
+        <Tooltip v-if="help" :text="help">
+          <button type="button" class="ui-kpi__help" :aria-label="`Qué es: ${help}`">
+            <CircleHelp :size="13" aria-hidden="true" />
+          </button>
+        </Tooltip>
+      </span>
       <span v-if="icon" class="ui-kpi__icon" aria-hidden="true"><component :is="icon" :size="16" /></span>
     </div>
     <strong class="ui-kpi__value">{{ value }}</strong>
@@ -51,6 +62,27 @@ withDefaults(
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-subtle);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.ui-kpi__help {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-subtle);
+  cursor: help;
+}
+
+.ui-kpi__help:hover,
+.ui-kpi__help:focus-visible {
+  color: var(--text);
 }
 
 .ui-kpi__icon {

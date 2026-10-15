@@ -15,6 +15,7 @@ import {
   useZodForm,
 } from '@savi/ui'
 import { computed, onMounted, ref } from 'vue'
+import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
 import { formatDateTime, formatDay, formatUsd } from '@/lib/format'
 import { ledgerEntrySchema, planSchema } from '@/lib/schemas/billing'
@@ -62,6 +63,8 @@ const entry = useZodForm(ledgerEntrySchema, {
   note: '',
   extends_until: '',
 })
+
+useLeaveGuard(plan.isDirty)
 
 function hydrate(sub: Subscription): void {
   subscription.value = sub

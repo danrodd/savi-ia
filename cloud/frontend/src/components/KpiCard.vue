@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { KpiCard, type Tone } from '@savi/ui'
+import { type Component, computed } from 'vue'
 import { useDefinitions } from '@/lib/definitions'
 
+/** Indicador de la consola: agrega la definición única de la métrica (`metric-definitions`). */
 const props = defineProps<{
   label: string
   value: string
-  /** Clave de `metric-definitions`: muestra la definición única de la métrica. */
+  /** Clave de `metric-definitions`: muestra la definición de la métrica como ayuda. */
   metric?: string
   hint?: string
+  tone?: Tone
+  icon?: Component
 }>()
 
 const definitions = useDefinitions()
@@ -15,42 +19,5 @@ const help = computed(() => (props.metric ? definitions.value[props.metric] : un
 </script>
 
 <template>
-  <div class="card kpi">
-    <div class="label">
-      {{ label }}
-      <span v-if="help" class="help" :title="help" role="img" :aria-label="`Definición: ${help}`">?</span>
-    </div>
-    <div class="value">{{ value }}</div>
-    <div v-if="hint" class="muted hint">{{ hint }}</div>
-  </div>
+  <KpiCard :label="label" :value="value" :hint="hint" :help="help" :tone="tone" :icon="icon" />
 </template>
-
-<style scoped>
-.kpi {
-  display: grid;
-  gap: 0.15rem;
-}
-.label {
-  color: var(--text-muted);
-  font-size: 0.82rem;
-}
-.value {
-  font-size: 1.6rem;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.hint {
-  font-size: 0.8rem;
-}
-.help {
-  display: inline-grid;
-  place-items: center;
-  width: 1.05rem;
-  height: 1.05rem;
-  margin-left: 0.2rem;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  font-size: 0.7rem;
-  cursor: help;
-}
-</style>

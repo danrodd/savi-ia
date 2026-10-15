@@ -99,8 +99,8 @@ describe('FreshnessChip', () => {
     const warn = mount(FreshnessChip, { props: { seconds: 2 * 3600 } })
     const bad = mount(FreshnessChip, { props: { seconds: 30 * 3600 } })
 
-    expect(warn.get('.badge').classes()).toContain('tone-warn')
-    expect(bad.get('.badge').classes()).toContain('tone-bad')
+    expect(warn.get('.ui-badge').classes()).toContain('ui-badge--warning')
+    expect(bad.get('.ui-badge').classes()).toContain('ui-badge--danger')
     expect(bad.text()).toContain('Datos hasta hace 30 h')
   })
 })

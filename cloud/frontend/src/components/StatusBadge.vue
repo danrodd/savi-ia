@@ -1,36 +1,11 @@
 <script setup lang="ts">
-import type { Tone } from '@/lib/format'
+import { Badge } from '@savi/ui'
+import { badgeTone, type Tone } from '@/lib/format'
 
+/** Estado con los tonos de la consola (`ok`, `warn`, `bad`, `muted`) sobre el `Badge` compartido. */
 defineProps<{ tone: Tone; label: string }>()
 </script>
 
 <template>
-  <span class="badge" :class="`tone-${tone}`">{{ label }}</span>
+  <Badge :tone="badgeTone(tone)" dot>{{ label }}</Badge>
 </template>
-
-<style scoped>
-.badge {
-  display: inline-block;
-  padding: 0.1rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.tone-ok {
-  background: var(--success-soft);
-  color: var(--success);
-}
-.tone-warn {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
-.tone-bad {
-  background: var(--surface-danger);
-  color: var(--danger);
-}
-.tone-muted {
-  background: var(--surface-subtle);
-  color: var(--text-muted);
-}
-</style>

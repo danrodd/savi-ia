@@ -16,6 +16,7 @@ import {
 import { Trash2, UserRound, UsersRound } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
 import { accessPolicySchema, toBody, toForm } from '@/lib/schemas/accessPolicy'
 import type { AccessPolicy, ClientDatabase, ClientUser } from '@/lib/types'
@@ -29,6 +30,8 @@ watch(
   () => props.policy,
   (policy) => form.reset(toForm(policy)),
 )
+
+useLeaveGuard(form.isDirty)
 
 const databases = ref<ClientDatabase[]>([])
 const people = ref<ClientUser[]>([])
