@@ -144,6 +144,9 @@ const versions = computed(() =>
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   font-size: 12.5px;
   font-weight: var(--fw-medium);
 }

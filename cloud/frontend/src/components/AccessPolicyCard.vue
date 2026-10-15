@@ -381,7 +381,7 @@ async function save(): Promise<void> {
   font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .access__checks {

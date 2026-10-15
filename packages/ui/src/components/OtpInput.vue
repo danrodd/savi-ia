@@ -133,7 +133,7 @@ onMounted(() => {
   margin-bottom: var(--space-3);
   padding: 0;
   font-size: 11px;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: var(--fw-medium);

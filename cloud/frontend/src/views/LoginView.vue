@@ -443,7 +443,7 @@ async function submitCode(value: string): Promise<void> {
 .login__hint {
   margin: calc(-1 * var(--space-3)) 0 0;
   font-size: 12px;
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .login__back {

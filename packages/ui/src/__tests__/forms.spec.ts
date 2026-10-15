@@ -116,6 +116,14 @@ describe('Checkbox y Switch', () => {
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([true])
   })
 
+  it('el switch puede tener un nombre propio distinto de la etiqueta visible', () => {
+    const wrapper = mount(Switch, { props: { label: 'Activa', ariaLabel: 'Regla Pico de costo' } })
+    const button = wrapper.get('[role="switch"]')
+
+    expect(button.attributes('aria-label')).toBe('Regla Pico de costo')
+    expect(button.attributes('aria-labelledby')).toBeUndefined()
+  })
+
   it('el switch expone su estado con aria-checked y lo invierte al hacer clic', async () => {
     const wrapper = mount(Switch, { props: { label: 'Bloquear configuración', modelValue: false } })
     const button = wrapper.get('[role="switch"]')

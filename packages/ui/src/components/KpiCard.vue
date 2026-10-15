@@ -61,7 +61,7 @@ withDefaults(
   font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -70,13 +70,13 @@ withDefaults(
 .ui-kpi__help {
   display: inline-grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   cursor: help;
 }
 

@@ -67,7 +67,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 .ui-copy__label {
   font-size: 11px;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: var(--fw-medium);
@@ -128,7 +128,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 .ui-copy__hint {
   margin: 0;
   font-size: 11.5px;
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .ui-copy__live {

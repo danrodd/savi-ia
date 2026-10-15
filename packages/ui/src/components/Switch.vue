@@ -6,6 +6,8 @@ defineProps<{
   label: string
   description?: string
   disabled?: boolean
+  /** Nombre accesible propio cuando la etiqueta visible se repite (p. ej. "Activa" en cada fila). */
+  ariaLabel?: string
 }>()
 
 const model = defineModel<boolean>({ default: false })
@@ -24,7 +26,8 @@ const id = `switch-${useId()}`
       class="ui-switch__track"
       :class="{ 'ui-switch__track--on': model }"
       :aria-checked="model"
-      :aria-labelledby="`${id}-label`"
+      :aria-label="ariaLabel"
+      :aria-labelledby="ariaLabel ? undefined : `${id}-label`"
       :aria-describedby="description ? `${id}-desc` : undefined"
       :disabled="disabled"
       @click="model = !model"
@@ -66,8 +69,8 @@ const id = `switch-${useId()}`
 .ui-switch__track {
   position: relative;
   flex-shrink: 0;
-  width: 38px;
-  height: 22px;
+  width: 42px;
+  height: 24px;
   padding: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--r-pill);
@@ -94,8 +97,8 @@ const id = `switch-${useId()}`
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--surface-elev);
   box-shadow: var(--shadow-sm);
@@ -103,6 +106,6 @@ const id = `switch-${useId()}`
 }
 
 .ui-switch__track--on .ui-switch__thumb {
-  transform: translateX(16px);
+  transform: translateX(18px);
 }
 </style>

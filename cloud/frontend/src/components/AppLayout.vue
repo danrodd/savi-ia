@@ -85,7 +85,8 @@ const THEME: Record<ThemeMode, { icon: Component; label: string }> = {
   dark: { icon: Moon, label: 'Tema oscuro' },
   system: { icon: Monitor, label: 'Tema del sistema' },
 }
-const theme = computed(() => THEME[mode.value])
+// Un valor guardado desconocido (editado a mano, versión vieja) cae en "sistema" en vez de romper.
+const theme = computed(() => THEME[mode.value] ?? THEME.system)
 
 const initials = computed(() => {
   const name = auth.user?.full_name?.trim() ?? ''
@@ -225,7 +226,7 @@ async function logout(): Promise<void> {
 }
 
 .identity small {
-  color: var(--text-subtle);
+  color: var(--text-muted);
   font-size: 10.5px;
 }
 
@@ -258,7 +259,7 @@ async function logout(): Promise<void> {
   padding: 0 var(--space-3);
   font-size: 11px;
   font-weight: var(--fw-medium);
-  color: var(--text-subtle);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -332,7 +333,7 @@ async function logout(): Promise<void> {
 }
 
 .account__text small {
-  color: var(--text-subtle);
+  color: var(--text-muted);
   font-size: 11px;
 }
 

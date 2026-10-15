@@ -47,7 +47,7 @@ const currentIndex = computed(() => props.steps.findIndex((step) => step.key ===
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: var(--fw-medium);
 }

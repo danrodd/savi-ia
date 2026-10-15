@@ -59,7 +59,7 @@ const controlAttrs = computed(() => ({
 
 .ui-field__label {
   font-size: 11px;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: var(--fw-medium);
@@ -81,7 +81,7 @@ const controlAttrs = computed(() => ({
 }
 
 .ui-field__hint {
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .ui-field__error {

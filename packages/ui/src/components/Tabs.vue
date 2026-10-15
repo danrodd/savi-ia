@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, onMounted, onUpdated, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { TabItem } from '../types'
 
@@ -13,6 +14,18 @@ const props = defineProps<{
 }>()
 
 const model = defineModel<string>()
+const root = ref<HTMLElement | null>(null)
+
+/** En pantallas chicas la barra se desplaza: la pestaña activa siempre queda a la vista. */
+function revealActive(): void {
+  void nextTick(() => {
+    const active = root.value?.querySelector<HTMLElement>('.ui-tabs__tab--active')
+    active?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  })
+}
+
+onMounted(revealActive)
+onUpdated(revealActive)
 
 function onKeydown(event: KeyboardEvent, index: number): void {
   if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
@@ -28,7 +41,7 @@ function onKeydown(event: KeyboardEvent, index: number): void {
 </script>
 
 <template>
-  <nav v-if="items.some((item) => item.to)" class="ui-tabs" :aria-label="label">
+  <nav v-if="items.some((item) => item.to)" ref="root" class="ui-tabs" :aria-label="label">
     <RouterLink
       v-for="item in items"
       :key="item.key"
@@ -41,7 +54,7 @@ function onKeydown(event: KeyboardEvent, index: number): void {
       <span v-if="item.count !== undefined" class="ui-tabs__count">{{ item.count }}</span>
     </RouterLink>
   </nav>
-  <div v-else class="ui-tabs" role="tablist" :aria-label="label">
+  <div v-else ref="root" class="ui-tabs" role="tablist" :aria-label="label">
     <button
       v-for="(item, index) in items"
       :key="item.key"

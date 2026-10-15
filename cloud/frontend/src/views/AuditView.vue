@@ -163,7 +163,7 @@ function pretty(value: Record<string, unknown> | null): string {
   font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 pre {

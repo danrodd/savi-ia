@@ -102,6 +102,7 @@ function saveThreshold(rule: AlertRule): void {
           <Switch
             :model-value="rule.enabled"
             :label="rule.enabled ? 'Activa' : 'Apagada'"
+            :aria-label="`Regla ${rule.title}`"
             :disabled="busy === rule.code"
             :data-test="`rule-${rule.code}-enabled`"
             @update:model-value="save(rule, { enabled: $event }, $event ? 'Regla activada' : 'Regla apagada')"

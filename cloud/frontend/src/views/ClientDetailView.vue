@@ -171,6 +171,7 @@ async function runClientAction(): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: 32px;
   margin-bottom: var(--space-4);
   color: var(--text-muted);
   font-size: 12.5px;

@@ -384,6 +384,7 @@ async function run(): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: 32px;
   margin-bottom: var(--space-4);
   color: var(--text-muted);
   font-size: 12.5px;
@@ -413,7 +414,7 @@ async function run(): Promise<void> {
   font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .facts dd {

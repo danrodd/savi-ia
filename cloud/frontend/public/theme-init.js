@@ -2,7 +2,10 @@
 // destello claro al cargar. La misma clave usa `useTheme` (src/lib/theme.ts).
 ;(() => {
   try {
-    const mode = JSON.parse(localStorage.getItem('savi-cloud-theme-mode') || '"system"')
+    // `useTheme` (VueUse) guarda el modo como texto plano: `dark`, no `"dark"`. Se toleran
+    // las comillas por si quedó un valor viejo serializado como JSON.
+    const stored = localStorage.getItem('savi-cloud-theme-mode')
+    const mode = stored ? stored.replace(/^"|"$/g, '') : 'system'
     const dark =
       mode === 'dark' ||
       (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)

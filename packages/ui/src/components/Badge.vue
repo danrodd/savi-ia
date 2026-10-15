@@ -61,7 +61,8 @@ withDefaults(
 }
 
 .ui-badge--info {
-  color: var(--navy);
+  /* El azul solo no llega a 4.5:1 sobre su fondo en oscuro: se mezcla con el texto del tema. */
+  color: color-mix(in srgb, var(--navy) 70%, var(--text));
   background: var(--navy-soft);
 }
 

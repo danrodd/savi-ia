@@ -352,7 +352,7 @@ async function recordEntry(): Promise<void> {
   font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .billing__facts dd {

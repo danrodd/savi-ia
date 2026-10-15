@@ -115,7 +115,7 @@ function onRowKeydown(event: KeyboardEvent, row: Row): void {
   font-weight: var(--fw-medium);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
