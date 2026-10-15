@@ -28,8 +28,12 @@ const emit = defineEmits<{ save: []; discard: [] }>()
         {{ message }}
       </span>
       <div class="ui-unsaved__actions">
-        <Button variant="ghost" :disabled="saving" @click="emit('discard')">Descartar</Button>
-        <Button :loading="saving" :disabled="!canSave" @click="emit('save')">{{ saveLabel }}</Button>
+        <Button variant="ghost" :disabled="saving" data-test="unsaved-discard" @click="emit('discard')">
+          Descartar
+        </Button>
+        <Button :loading="saving" :disabled="!canSave" data-test="unsaved-save" @click="emit('save')">
+          {{ saveLabel }}
+        </Button>
       </div>
     </div>
   </Transition>

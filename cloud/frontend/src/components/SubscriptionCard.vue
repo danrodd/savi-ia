@@ -1,32 +1,63 @@
 <script setup lang="ts">
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  Select,
+  Skeleton,
+  type TableColumn,
+  Textarea,
+  TextField,
+  type Tone,
+  toast,
+  useZodForm,
+} from '@savi/ui'
 import { computed, onMounted, ref } from 'vue'
 import { consoleApi } from '@/lib/api'
 import { formatDateTime, formatDay, formatUsd } from '@/lib/format'
+import { ledgerEntrySchema, planSchema } from '@/lib/schemas/billing'
 import type { LedgerEntry, Subscription } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
 const props = defineProps<{ clientId: string }>()
 
-const AMOUNT = /^-?\d{1,8}(\.\d{1,2})?$/
-const DAY = /^\d{4}-\d{2}-\d{2}$/
-
-const STATUS_LABEL: Record<Subscription['status'], string> = {
-  none: 'Sin vencimiento cargado',
-  active: 'Vigente',
-  expiring: 'Por vencer',
-  expired: 'Vencida',
+const STATUS: Record<Subscription['status'], { label: string; tone: Tone }> = {
+  none: { label: 'Sin vencimiento cargado', tone: 'neutral' },
+  active: { label: 'Vigente', tone: 'success' },
+  expiring: { label: 'Por vencer', tone: 'warning' },
+  expired: { label: 'Vencida', tone: 'danger' },
 }
+
+const KINDS = [
+  { value: 'payment' as const, label: 'Pago recibido' },
+  { value: 'adjustment' as const, label: 'Ajuste (corrección o cortesía)' },
+]
+
+const LEDGER_COLUMNS: TableColumn[] = [
+  { key: 'created_at', label: 'Fecha', width: '150px' },
+  { key: 'kind', label: 'Tipo', width: '90px' },
+  { key: 'amount_usd', label: 'Monto', align: 'right', width: '110px' },
+  { key: 'note', label: 'Referencia' },
+  { key: 'created_by', label: 'Registró' },
+]
 
 const subscription = ref<Subscription | null>(null)
 const ledger = ref<LedgerEntry[]>([])
 const loading = ref(true)
-const error = ref<string | null>(null)
-const saved = ref(false)
-const busy = ref(false)
+const loadError = ref<string | null>(null)
 
-const plan = ref({ plan_name: '', monthly_fee_usd: '', max_users: '', valid_until: '', notes: '' })
-const entry = ref({
-  kind: 'payment' as 'payment' | 'adjustment',
+const plan = useZodForm(planSchema, {
+  plan_name: '',
+  monthly_fee_usd: '',
+  max_users: null,
+  valid_until: '',
+  notes: '',
+})
+
+const entry = useZodForm(ledgerEntrySchema, {
+  kind: 'payment',
   amount_usd: '',
   note: '',
   extends_until: '',
@@ -34,17 +65,18 @@ const entry = ref({
 
 function hydrate(sub: Subscription): void {
   subscription.value = sub
-  plan.value = {
+  plan.reset({
     plan_name: sub.plan_name ?? '',
     monthly_fee_usd: sub.monthly_fee_usd ?? '',
-    max_users: sub.max_users === null ? '' : String(sub.max_users),
+    max_users: sub.max_users,
     valid_until: sub.valid_until ?? '',
     notes: sub.notes ?? '',
-  }
+  })
 }
 
 async function load(): Promise<void> {
   loading.value = true
+  loadError.value = null
   try {
     const [sub, entries] = await Promise.all([
       consoleApi.subscription(props.clientId),
@@ -53,7 +85,7 @@ async function load(): Promise<void> {
     hydrate(sub)
     ledger.value = entries
   } catch (e) {
-    error.value = errorMessage(e)
+    loadError.value = errorMessage(e)
   } finally {
     loading.value = false
   }
@@ -61,250 +93,290 @@ async function load(): Promise<void> {
 
 onMounted(load)
 
-const statusTone = computed(() => subscription.value?.status ?? 'none')
+const status = computed(() => STATUS[subscription.value?.status ?? 'none'])
+const daysLeft = computed(() => {
+  const days = subscription.value?.days_left
+  if (days === null || days === undefined) return null
+  if (days < 0) return `Venció hace ${Math.abs(days)} ${Math.abs(days) === 1 ? 'día' : 'días'}`
+  return days === 0 ? 'Vence hoy' : `Quedan ${days} ${days === 1 ? 'día' : 'días'}`
+})
 
 async function savePlan(): Promise<void> {
-  error.value = null
-  saved.value = false
-  const p = plan.value
-  if (p.monthly_fee_usd.trim() && !/^\d{1,8}(\.\d{1,2})?$/.test(p.monthly_fee_usd.trim())) {
-    error.value = 'La cuota va en USD, con hasta 2 decimales (por ejemplo 120 o 49.90).'
-    return
-  }
-  if (p.max_users.trim() && !/^\d{1,6}$/.test(p.max_users.trim())) {
-    error.value = 'El cupo de personas debe ser un número entero.'
-    return
-  }
-  if (p.valid_until.trim() && !DAY.test(p.valid_until.trim())) {
-    error.value = 'La vigencia es una fecha (AAAA-MM-DD).'
-    return
-  }
-  busy.value = true
-  try {
-    hydrate(
-      await consoleApi.setSubscription(props.clientId, {
-        plan_name: p.plan_name.trim() || null,
-        monthly_fee_usd: p.monthly_fee_usd.trim() || null,
-        max_users: p.max_users.trim() ? Number(p.max_users) : null,
-        valid_until: p.valid_until.trim() || null,
-        notes: p.notes.trim() || null,
-      }),
-    )
-    saved.value = true
-  } catch (e) {
-    error.value = errorMessage(e)
-  } finally {
-    busy.value = false
-  }
+  await plan.handleSubmit(async (data) => {
+    try {
+      hydrate(await consoleApi.setSubscription(props.clientId, data))
+      toast.success('Plan guardado')
+    } catch (e) {
+      toast.error('No se pudo guardar el plan', { description: errorMessage(e) })
+    }
+  })
 }
 
-async function record(): Promise<void> {
-  error.value = null
-  const e = entry.value
-  if (!AMOUNT.test(e.amount_usd.trim())) {
-    error.value = 'El monto va en USD, con hasta 2 decimales (por ejemplo 120 o 49.90).'
-    return
-  }
-  if (e.kind === 'payment' && e.amount_usd.trim().startsWith('-')) {
-    error.value = 'Un pago no puede ser negativo: usá un ajuste.'
-    return
-  }
-  if (!e.note.trim()) {
-    error.value = 'Anotá la referencia del movimiento (por ejemplo, número de transferencia).'
-    return
-  }
-  if (e.extends_until.trim() && !DAY.test(e.extends_until.trim())) {
-    error.value = 'La nueva vigencia es una fecha (AAAA-MM-DD).'
-    return
-  }
-  busy.value = true
-  try {
-    await consoleApi.recordLedgerEntry(props.clientId, {
-      kind: e.kind,
-      amount_usd: e.amount_usd.trim(),
-      note: e.note.trim(),
-      extends_until: e.extends_until.trim() || null,
-    })
-    entry.value = { kind: 'payment', amount_usd: '', note: '', extends_until: '' }
-    await load()
-  } catch (err) {
-    error.value = errorMessage(err)
-  } finally {
-    busy.value = false
-  }
+async function recordEntry(): Promise<void> {
+  await entry.handleSubmit(async (data) => {
+    try {
+      await consoleApi.recordLedgerEntry(props.clientId, data)
+      toast.success(data.kind === 'payment' ? 'Pago registrado' : 'Ajuste registrado')
+      entry.reset({ kind: 'payment', amount_usd: '', note: '', extends_until: '' })
+      await load()
+    } catch (e) {
+      toast.error('No se pudo registrar el movimiento', { description: errorMessage(e) })
+    }
+  })
 }
 </script>
 
 <template>
-  <section class="card billing" data-test="subscription">
-    <h2>Suscripción</h2>
-    <p class="muted">
-      SAVI Cloud no cobra: el pago se hace por fuera y acá se registra. La vigencia dispara el aviso
-      de renovación.
-    </p>
-    <p v-if="error" class="error-text" role="alert" data-test="billing-error">{{ error }}</p>
-    <p v-if="loading" class="muted">Cargando…</p>
+  <div class="billing" data-test="subscription">
+    <Alert v-if="loadError" tone="danger" data-test="billing-error">
+      {{ loadError }}
+      <template #action>
+        <Button size="sm" variant="secondary" @click="load">Reintentar</Button>
+      </template>
+    </Alert>
 
-    <template v-else-if="subscription">
-      <p class="status" :data-status="statusTone" data-test="billing-status">
-        {{ STATUS_LABEL[subscription.status] }}
-        <span v-if="subscription.valid_until">
-          · hasta {{ formatDay(subscription.valid_until) }}
-          <template v-if="subscription.days_left !== null && subscription.days_left >= 0">
-            ({{ subscription.days_left }} días)
-          </template>
-        </span>
+    <Card padding="md">
+      <div v-if="loading" class="billing__summary">
+        <Skeleton height="20px" width="40%" />
+        <Skeleton height="14px" width="60%" />
+      </div>
+      <div v-else-if="subscription" class="billing__summary">
+        <div class="billing__status" data-test="billing-status">
+          <Badge :tone="status.tone" dot>{{ status.label }}</Badge>
+          <span v-if="subscription.valid_until" class="billing__until">
+            Hasta el {{ formatDay(subscription.valid_until) }}
+          </span>
+          <span v-if="daysLeft" class="billing__days">· {{ daysLeft }}</span>
+        </div>
+        <dl class="billing__facts">
+          <div>
+            <dt>Plan</dt>
+            <dd>{{ subscription.plan_name ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Cuota mensual</dt>
+            <dd>{{ subscription.monthly_fee_usd ? formatUsd(subscription.monthly_fee_usd) : '—' }}</dd>
+          </div>
+          <div>
+            <dt>Cupo de personas</dt>
+            <dd>{{ subscription.max_users ?? 'Sin límite' }}</dd>
+          </div>
+        </dl>
+      </div>
+      <p class="billing__note">
+        SAVI Cloud no cobra: el pago se hace por fuera y acá se registra. La vigencia dispara el aviso
+        de renovación siete días antes.
       </p>
+    </Card>
 
-      <div class="grid">
-        <label>
-          Plan
-          <input v-model="plan.plan_name" maxlength="80" data-test="plan-name" />
-        </label>
-        <label>
-          Cuota mensual (USD)
-          <input v-model="plan.monthly_fee_usd" inputmode="decimal" data-test="plan-fee" />
-        </label>
-        <label>
-          Cupo de personas
-          <input v-model="plan.max_users" inputmode="numeric" data-test="plan-users" />
-        </label>
-        <label>
-          Vigente hasta
-          <input
-            v-model="plan.valid_until"
-            type="date"
-            data-test="plan-valid-until"
+    <div class="billing__forms">
+      <Card title="Plan" description="Lo que se acordó con el cliente.">
+        <form class="form-grid" novalidate @submit.prevent="savePlan">
+          <TextField
+            v-model="plan.values.plan_name"
+            label="Nombre del plan"
+            placeholder="Equipo, Empresa…"
+            :maxlength="80"
+            :error="plan.errors.value.plan_name"
+            data-test="plan-name"
+            @blur="plan.touch('plan_name')"
           />
-        </label>
-      </div>
-      <label>
-        Notas
-        <textarea v-model="plan.notes" rows="2" maxlength="500" data-test="plan-notes" />
-      </label>
-      <div class="row">
-        <button
-          class="btn btn-primary"
-          type="button"
-          :disabled="busy"
-          data-test="plan-save"
-          @click="savePlan"
-        >
-          Guardar plan
-        </button>
-        <span v-if="saved" class="muted" role="status">Guardado.</span>
-      </div>
+          <TextField
+            v-model="plan.values.monthly_fee_usd"
+            label="Cuota mensual (USD)"
+            inputmode="decimal"
+            placeholder="120.00"
+            :error="plan.errors.value.monthly_fee_usd"
+            data-test="plan-fee"
+            @blur="plan.touch('monthly_fee_usd')"
+          />
+          <TextField
+            v-model="plan.values.max_users"
+            label="Cupo de personas"
+            type="number"
+            :min="1"
+            hint="Vacío: sin límite."
+            :error="plan.errors.value.max_users"
+            data-test="plan-users"
+            @blur="plan.touch('max_users')"
+          />
+          <TextField
+            v-model="plan.values.valid_until"
+            label="Vigente hasta"
+            type="date"
+            :error="plan.errors.value.valid_until"
+            data-test="plan-valid-until"
+            @blur="plan.touch('valid_until')"
+          />
+          <Textarea
+            v-model="plan.values.notes"
+            class="form-grid__wide"
+            label="Notas"
+            :rows="2"
+            :maxlength="500"
+            :error="plan.errors.value.notes"
+            data-test="plan-notes"
+            @blur="plan.touch('notes')"
+          />
+          <div class="form-grid__wide billing__actions">
+            <Button
+              v-if="plan.isDirty.value"
+              variant="ghost"
+              :disabled="plan.submitting.value"
+              @click="plan.reset()"
+            >
+              Descartar
+            </Button>
+            <Button
+              type="submit"
+              :loading="plan.submitting.value"
+              :disabled="!plan.isDirty.value"
+              data-test="plan-save"
+            >
+              Guardar plan
+            </Button>
+          </div>
+        </form>
+      </Card>
 
-      <fieldset>
-        <legend>Registrar movimiento</legend>
-        <div class="grid">
-          <label>
-            Tipo
-            <select v-model="entry.kind" data-test="entry-kind">
-              <option value="payment">Pago recibido</option>
-              <option value="adjustment">Ajuste (corrección o cortesía)</option>
-            </select>
-          </label>
-          <label>
-            Monto (USD)
-            <input v-model="entry.amount_usd" inputmode="decimal" data-test="entry-amount" />
-          </label>
-          <label>
-            Referencia
-            <input v-model="entry.note" maxlength="500" data-test="entry-note" />
-          </label>
-          <label>
-            Extiende la vigencia hasta
-            <input v-model="entry.extends_until" type="date" data-test="entry-until" />
-          </label>
-        </div>
-        <div class="row">
-          <button
-            class="btn"
-            type="button"
-            :disabled="busy"
-            data-test="entry-save"
-            @click="record"
-          >
-            Registrar
-          </button>
-        </div>
-      </fieldset>
+      <Card title="Registrar movimiento" description="Un pago recibido o un ajuste manual.">
+        <form class="form-grid" novalidate @submit.prevent="recordEntry">
+          <Select v-model="entry.values.kind" label="Tipo" :options="KINDS" data-test="entry-kind" />
+          <TextField
+            v-model="entry.values.amount_usd"
+            label="Monto (USD)"
+            inputmode="decimal"
+            placeholder="120.00"
+            :error="entry.errors.value.amount_usd"
+            data-test="entry-amount"
+            @blur="entry.touch('amount_usd')"
+          />
+          <TextField
+            v-model="entry.values.note"
+            class="form-grid__wide"
+            label="Referencia"
+            placeholder="Transferencia 4412"
+            :maxlength="500"
+            :error="entry.errors.value.note"
+            data-test="entry-note"
+            @blur="entry.touch('note')"
+          />
+          <TextField
+            v-model="entry.values.extends_until"
+            class="form-grid__wide"
+            label="Extiende la vigencia hasta"
+            type="date"
+            hint="Opcional. Un pago puede extender la vigencia, nunca acortarla."
+            :error="entry.errors.value.extends_until"
+            data-test="entry-until"
+            @blur="entry.touch('extends_until')"
+          />
+          <div class="form-grid__wide billing__actions">
+            <Button type="submit" :loading="entry.submitting.value" data-test="entry-save">
+              Registrar movimiento
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
 
-      <table v-if="ledger.length" class="ledger" data-test="ledger">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Monto</th>
-            <th>Referencia</th>
-            <th>Registró</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="e in ledger" :key="e.id" data-test="ledger-row">
-            <td>{{ formatDateTime(e.created_at) }}</td>
-            <td>{{ e.kind === 'payment' ? 'Pago' : 'Ajuste' }}</td>
-            <td>{{ formatUsd(e.amount_usd) }}</td>
-            <td>
-              {{ e.note }}
-              <span v-if="e.extends_until" class="muted">
-                · cubre hasta {{ formatDay(e.extends_until) }}
-              </span>
-            </td>
-            <td>{{ e.created_by }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="muted" data-test="ledger-empty">Todavía no se registró ningún movimiento.</p>
-    </template>
-  </section>
+    <Card title="Movimientos" padding="none">
+      <DataTable
+        :columns="LEDGER_COLUMNS"
+        :rows="ledger"
+        row-key="id"
+        :loading="loading"
+        caption="Movimientos registrados"
+        data-test="ledger"
+      >
+        <template #empty>
+          <span data-test="ledger-empty">Todavía no se registró ningún movimiento.</span>
+        </template>
+        <template #cell-created_at="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        <template #cell-kind="{ row }">
+          <Badge :tone="row.kind === 'payment' ? 'success' : 'info'">
+            {{ row.kind === 'payment' ? 'Pago' : 'Ajuste' }}
+          </Badge>
+        </template>
+        <template #cell-amount_usd="{ row }">
+          <span class="num" data-test="ledger-row">{{ formatUsd(row.amount_usd) }}</span>
+        </template>
+        <template #cell-note="{ row }">
+          {{ row.note }}
+          <span v-if="row.extends_until" class="muted"> · cubre hasta {{ formatDay(row.extends_until) }}</span>
+        </template>
+      </DataTable>
+    </Card>
+  </div>
 </template>
 
 <style scoped>
 .billing {
   display: grid;
-  gap: 0.9rem;
+  gap: var(--space-6);
 }
-.grid {
+
+.billing__summary {
   display: grid;
-  gap: 0.7rem;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-5);
 }
-.billing fieldset {
-  display: grid;
-  gap: 0.6rem;
-  border: 1px solid var(--border, #d0d5dd);
-  border-radius: 8px;
-  padding: 0.7rem 0.9rem;
-  min-width: 0;
-}
-.row {
+
+.billing__status {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
   align-items: center;
+  gap: var(--space-3);
+  font-size: 13px;
 }
-.status {
+
+.billing__until {
+  font-weight: var(--fw-semibold);
+}
+
+.billing__days {
+  color: var(--text-muted);
+}
+
+.billing__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
   margin: 0;
-  font-weight: 600;
 }
-.status[data-status='expiring'] {
-  color: var(--warning, #b54708);
+
+.billing__facts dt {
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle);
 }
-.status[data-status='expired'] {
-  color: var(--danger, #b42318);
+
+.billing__facts dd {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: var(--fw-semibold);
 }
-.ledger {
-  width: 100%;
-  border-collapse: collapse;
-  display: block;
-  overflow-x: auto;
+
+.billing__note {
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
 }
-.ledger th,
-.ledger td {
-  text-align: left;
-  padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid var(--border, #d0d5dd);
+
+.billing__forms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.billing__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 </style>

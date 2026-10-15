@@ -1,32 +1,34 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMemoryHistory, createRouter } from 'vue-router'
-import type { Client } from '@/lib/types'
+import type { AccessPolicy, AiPolicy, Client } from '@/lib/types'
 
 const api = vi.hoisted(() => ({
-  client: vi.fn(),
-  clientMetrics: vi.fn(),
   clientDatabases: vi.fn(),
   clientUsers: vi.fn(),
-  instances: vi.fn(),
-  tokens: vi.fn(),
-  alerts: vi.fn(),
   setClientPolicy: vi.fn(),
   setClientAiPolicy: vi.fn(),
   setClientAccessPolicy: vi.fn(),
-  suspendClient: vi.fn(),
-  activateClient: vi.fn(),
-  definitions: vi.fn(),
 }))
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }))
 
 vi.mock('@/lib/api', () => ({ consoleApi: api, authApi: {} }))
+vi.mock('@savi/ui', async (original) => ({ ...(await original<object>()), toast }))
 
-import { useAuthStore } from '@/stores/authStore'
-import ClientDetailView from '@/views/ClientDetailView.vue'
+import AccessPolicyCard from '@/components/AccessPolicyCard.vue'
+import AiPolicyCard from '@/components/AiPolicyCard.vue'
+import ClientPolicyCard from '@/components/ClientPolicyCard.vue'
 
 const DB_1 = '7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d'
 const DB_2 = '11111111-2222-4333-8444-555555555555'
+const PERSON = 'a'.repeat(32)
+
+const AI_POLICY: AiPolicy = {
+  allowed_providers: null,
+  user_monthly_usd: null,
+  provider_monthly_usd: {},
+  user_overrides: {},
+}
+const ACCESS_POLICY: AccessPolicy = { default_databases: null, user_databases: {}, groups: [] }
 
 const CLIENT: Client = {
   id: 'c1',
@@ -43,68 +45,27 @@ const CLIENT: Client = {
   identity_mode: 'pseudonym',
   config_locked: false,
   allow_local_cli: false,
-  ai_policy: {
-    allowed_providers: null,
-    user_monthly_usd: null,
-    provider_monthly_usd: {},
-    user_overrides: {},
-  },
-  access_policy: { default_databases: null, user_databases: {}, groups: [] },
+  ai_policy: AI_POLICY,
+  access_policy: ACCESS_POLICY,
 }
 
-async function mountView(permissions: string[]) {
-  const auth = useAuthStore()
-  auth.user = {
-    id: 'u1',
-    email: 'a@b.co',
-    full_name: 'Ana',
-    role: 'admin',
-    permissions: permissions as never,
-  }
-  auth.accessToken = 'tok'
-  const router = createRouter({
-    history: createMemoryHistory(),
-    routes: [{ path: '/clientes/:id', component: ClientDetailView }],
-  })
-  await router.push('/clientes/c1')
-  const wrapper = mount(ClientDetailView, { global: { plugins: [router] } })
+/** El `data-test` va en el contenedor del campo: el control es el de adentro. */
+function control(wrapper: VueWrapper, name: string) {
+  const root = wrapper.get(`[data-test="${name}"]`)
+  return root.element.matches('input, select, textarea, button')
+    ? root
+    : root.get('input, select, textarea, button[role="switch"]')
+}
+
+async function saveWithBar(wrapper: VueWrapper) {
+  await wrapper.get('[data-test="unsaved-save"]').trigger('click')
   await flushPromises()
-  return wrapper
+  await wrapper.get('[data-test="confirm-accept"]').trigger('click')
+  await flushPromises()
 }
 
 beforeEach(() => {
-  setActivePinia(createPinia())
   vi.clearAllMocks()
-  api.client.mockResolvedValue({ ...CLIENT })
-  api.clientMetrics.mockResolvedValue({
-    period: { start: '', end: '' },
-    freshness: { seconds: 0, last_seen_at: null },
-    totals: {
-      turns: 0,
-      conversations: 0,
-      active_users: 0,
-      entering_users: 0,
-      adoption: null,
-      tokens: 0,
-      cost_usd: '0',
-      cost_per_active_user: null,
-      turns_without_price: 0,
-      turns_with_error: 0,
-      turns_interrupted: 0,
-      turns_truncated: 0,
-      error_rate: null,
-      latency_p50_ms: null,
-      latency_p90_ms: null,
-      free_queries: 0,
-      free_queries_failed: 0,
-    },
-    series: [],
-    by_model: [],
-    by_database: [],
-    tools: [],
-    finish_reasons: {},
-  })
-  api.definitions.mockResolvedValue([])
   api.setClientPolicy.mockResolvedValue({ ...CLIENT, config_locked: true })
   api.setClientAiPolicy.mockResolvedValue({ ...CLIENT })
   api.setClientAccessPolicy.mockResolvedValue({ ...CLIENT })
@@ -132,7 +93,7 @@ beforeEach(() => {
   ])
   api.clientUsers.mockResolvedValue([
     {
-      user_ref: 'a'.repeat(32),
+      user_ref: PERSON,
       label: 'JPEREZ',
       turns: 3,
       cost_usd: '1.2',
@@ -143,17 +104,12 @@ beforeEach(() => {
 })
 
 describe('política de las instalaciones del cliente', () => {
-  it('solo la ve quien tiene el permiso', async () => {
-    const without = await mountView(['clients.read'])
-    expect(without.find('[data-test="client-policy"]').exists()).toBe(false)
+  function mountCard(client: Client = CLIENT) {
+    return mount(ClientPolicyCard, { props: { clientId: 'c1', client } })
+  }
 
-    setActivePinia(createPinia())
-    const withPermission = await mountView(['clients.read', 'clients.policy'])
-    expect(withPermission.find('[data-test="client-policy"]').exists()).toBe(true)
-  })
-
-  it('bloquear la configuración pide confirmación y recién ahí llama al API', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+  it('bloquear la configuración pide confirmación, llama al API y confirma', async () => {
+    const wrapper = mountCard()
 
     await wrapper.get('[data-test="toggle-lock"]').trigger('click')
     expect(api.setClientPolicy).not.toHaveBeenCalled()
@@ -163,10 +119,12 @@ describe('política de las instalaciones del cliente', () => {
     await flushPromises()
 
     expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { config_locked: true })
+    expect(toast.success).toHaveBeenCalled()
+    expect(wrapper.emitted('saved')).toHaveLength(1)
   })
 
   it('identificar a las personas advierte que es solo para la organización interna', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+    const wrapper = mountCard()
 
     await wrapper.get('[data-test="toggle-identity"]').trigger('click')
 
@@ -177,51 +135,56 @@ describe('política de las instalaciones del cliente', () => {
   })
 
   it('permitir el CLI de Claude pide confirmación y manda solo ese campo', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+    const wrapper = mountCard()
 
     await wrapper.get('[data-test="toggle-cli"]').trigger('click')
-    expect(api.setClientPolicy).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('con su propia cuenta')
-
     await wrapper.get('[data-test="confirm-accept"]').trigger('click')
     await flushPromises()
 
     expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { allow_local_cli: true })
   })
 
-  it('un cliente ya bloqueado ofrece permitir la configuración', async () => {
-    api.client.mockResolvedValue({ ...CLIENT, config_locked: true })
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+  it('un cliente ya bloqueado ofrece permitir la configuración', () => {
+    const wrapper = mountCard({ ...CLIENT, config_locked: true })
 
     expect(wrapper.get('[data-test="toggle-lock"]').text()).toBe('Permitir configuración')
     expect(wrapper.text()).toContain('Bloqueada')
   })
+
+  it('si el servidor rechaza, avisa con un toast de error', async () => {
+    api.setClientPolicy.mockRejectedValue(new Error('Sin permiso.'))
+    const wrapper = mountCard()
+
+    await wrapper.get('[data-test="toggle-lock"]').trigger('click')
+    await wrapper.get('[data-test="confirm-accept"]').trigger('click')
+    await flushPromises()
+
+    expect(toast.error).toHaveBeenCalledWith('No se pudo cambiar la política', {
+      description: 'Sin permiso.',
+    })
+    expect(wrapper.emitted('saved')).toBeUndefined()
+  })
 })
 
 describe('IA: proveedores y topes del cliente', () => {
-  async function open() {
-    return mountView(['clients.read', 'clients.policy'])
-  }
-
-  async function save(wrapper: Awaited<ReturnType<typeof open>>) {
-    await wrapper.get('[data-test="ai-save"]').trigger('click')
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Guardar límites')
-      ?.trigger('click')
+  async function mountCard(policy: AiPolicy = AI_POLICY) {
+    const wrapper = mount(AiPolicyCard, { props: { clientId: 'c1', policy } })
     await flushPromises()
+    return wrapper
   }
 
-  it('solo la ve quien tiene el permiso', async () => {
-    const without = await mountView(['clients.read'])
-    expect(without.find('[data-test="ai-policy"]').exists()).toBe(false)
+  it('sin cambios no muestra la barra de guardar', async () => {
+    const wrapper = await mountCard()
+
+    expect(wrapper.find('[data-test="unsaved-save"]').exists()).toBe(false)
   })
 
   it('guarda el tope por persona y manda todos los proveedores como null', async () => {
-    const wrapper = await open()
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="ai-user-cap"]').setValue('5')
-    await save(wrapper)
+    await control(wrapper, 'ai-user-cap').setValue('5')
+    await saveWithBar(wrapper)
 
     expect(api.setClientAiPolicy).toHaveBeenCalledWith('c1', {
       allowed_providers: null,
@@ -229,14 +192,15 @@ describe('IA: proveedores y topes del cliente', () => {
       provider_monthly_usd: {},
       user_overrides: {},
     })
+    expect(toast.success).toHaveBeenCalled()
   })
 
   it('desmarcar un proveedor y fijar su tope viaja en el cuerpo', async () => {
-    const wrapper = await open()
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="ai-provider-openai"]').setValue(false)
-    await wrapper.get('[data-test="ai-provider-cap-gemini"]').setValue('50')
-    await save(wrapper)
+    await control(wrapper, 'ai-provider-openai').setValue(false)
+    await control(wrapper, 'ai-provider-cap-gemini').setValue('50')
+    await saveWithBar(wrapper)
 
     expect(api.setClientAiPolicy).toHaveBeenCalledWith('c1', {
       allowed_providers: ['claude', 'gemini'],
@@ -247,129 +211,145 @@ describe('IA: proveedores y topes del cliente', () => {
   })
 
   it('agrega una excepción por persona usando su código de usuario', async () => {
-    const wrapper = await open()
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="ai-override-person"]').setValue('a'.repeat(32))
-    await wrapper.get('[data-test="ai-override-amount"]').setValue('20')
+    await control(wrapper, 'ai-override-person').setValue(PERSON)
+    await control(wrapper, 'ai-override-amount').setValue('20')
     await wrapper.get('[data-test="ai-override-add"]').trigger('click')
 
     expect(wrapper.get('[data-test="ai-override"]').text()).toContain('JPEREZ')
-    await save(wrapper)
+    await saveWithBar(wrapper)
     expect(api.setClientAiPolicy).toHaveBeenCalledWith(
       'c1',
-      expect.objectContaining({ user_overrides: { ['a'.repeat(32)]: '20' } }),
+      expect.objectContaining({ user_overrides: { [PERSON]: '20' } }),
     )
   })
 
-  it('rechaza montos inválidos sin llamar al API', async () => {
-    const wrapper = await open()
+  it('una excepción sin persona o con monto inválido marca los campos', async () => {
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="ai-user-cap"]').setValue('-5')
-    await wrapper.get('[data-test="ai-save"]').trigger('click')
+    await control(wrapper, 'ai-override-amount').setValue('veinte')
+    await wrapper.get('[data-test="ai-override-add"]').trigger('click')
 
-    expect(wrapper.get('[data-test="ai-error"]').text()).toContain('USD')
+    expect(wrapper.get('[data-test="ai-override-person"]').text()).toContain('Elegí una persona')
+    expect(wrapper.get('[data-test="ai-override-amount"]').text()).toContain('USD')
+    expect(wrapper.find('[data-test="ai-override"]').exists()).toBe(false)
+  })
+
+  it('rechaza montos inválidos en el campo, sin llamar al API', async () => {
+    const wrapper = await mountCard()
+
+    await control(wrapper, 'ai-user-cap').setValue('-5')
+    await wrapper.get('[data-test="unsaved-save"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="ai-user-cap"]').text()).toContain('USD')
+    expect(wrapper.find('[data-test="confirm-accept"]').exists()).toBe(false)
     expect(api.setClientAiPolicy).not.toHaveBeenCalled()
   })
 
   it('no deja guardar sin ningún proveedor habilitado', async () => {
-    const wrapper = await open()
+    const wrapper = await mountCard()
 
     for (const key of ['claude', 'gemini', 'openai']) {
-      await wrapper.get(`[data-test="ai-provider-${key}"]`).setValue(false)
+      await control(wrapper, `ai-provider-${key}`).setValue(false)
     }
-    await wrapper.get('[data-test="ai-save"]').trigger('click')
+    await wrapper.get('[data-test="unsaved-save"]').trigger('click')
+    await flushPromises()
 
     expect(wrapper.get('[data-test="ai-error"]').text()).toContain('al menos un proveedor')
     expect(api.setClientAiPolicy).not.toHaveBeenCalled()
   })
 
   it('avisa que Gemini y OpenAI necesitan precios cuando hay un tope', async () => {
-    const wrapper = await open()
+    const wrapper = await mountCard()
     expect(wrapper.find('[data-test="ai-price-warning"]').exists()).toBe(false)
 
-    await wrapper.get('[data-test="ai-user-cap"]').setValue('5')
+    await control(wrapper, 'ai-user-cap').setValue('5')
 
     expect(wrapper.get('[data-test="ai-price-warning"]').text()).toContain('precios')
+  })
+
+  it('descartar vuelve a lo guardado', async () => {
+    const wrapper = await mountCard()
+
+    await control(wrapper, 'ai-user-cap').setValue('5')
+    await wrapper.get('[data-test="unsaved-discard"]').trigger('click')
+
+    expect((control(wrapper, 'ai-user-cap').element as HTMLInputElement).value).toBe('')
+    expect(wrapper.find('[data-test="unsaved-save"]').exists()).toBe(false)
   })
 })
 
 describe('bases por persona', () => {
-  async function save(wrapper: Awaited<ReturnType<typeof mountView>>) {
-    await wrapper.get('[data-test="access-save"]').trigger('click')
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Guardar reglas')
-      ?.trigger('click')
+  async function mountCard(policy: AccessPolicy = ACCESS_POLICY) {
+    const wrapper = mount(AccessPolicyCard, { props: { clientId: 'c1', policy } })
     await flushPromises()
+    return wrapper
   }
 
-  it('solo la ve quien tiene el permiso', async () => {
-    const without = await mountView(['clients.read'])
-    expect(without.find('[data-test="access-policy"]').exists()).toBe(false)
-  })
-
-  it('sin restricción general manda null', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
-
-    await save(wrapper)
-
-    expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
-      default_databases: null,
-      user_databases: {},
-      groups: [],
-    })
-  })
-
   it('limitar por defecto manda solo las bases marcadas', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="access-limit-default"]').setValue(true)
-    await wrapper.get(`[data-test="access-default-${DB_1}"]`).setValue(true)
-    await save(wrapper)
+    await control(wrapper, 'access-limit-default').trigger('click')
+    await control(wrapper, `access-default-${DB_1}`).setValue(true)
+    await saveWithBar(wrapper)
 
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
       default_databases: [DB_1],
       user_databases: {},
       groups: [],
     })
+    expect(toast.success).toHaveBeenCalled()
   })
 
-  it('una regla por persona con bases marcadas', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
-    const ref = 'a'.repeat(32)
+  it('volver a "sin límite" manda null', async () => {
+    const wrapper = await mountCard({ ...ACCESS_POLICY, default_databases: [DB_1] })
 
-    await wrapper.get('[data-test="access-rule-person"]').setValue(ref)
-    await wrapper.get('[data-test="access-rule-add"]').trigger('click')
-    expect(wrapper.get('[data-test="access-rule"]').text()).toContain('JPEREZ')
-    await wrapper.get(`[data-test="access-rule-${ref}-${DB_2}"]`).setValue(true)
-    await save(wrapper)
+    await control(wrapper, 'access-limit-default').trigger('click')
+    await saveWithBar(wrapper)
 
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
       default_databases: null,
-      user_databases: { [ref]: [DB_2] },
+      user_databases: {},
+      groups: [],
+    })
+  })
+
+  it('una regla por persona con bases marcadas', async () => {
+    const wrapper = await mountCard()
+
+    await control(wrapper, 'access-rule-person').setValue(PERSON)
+    await wrapper.get('[data-test="access-rule-add"]').trigger('click')
+    expect(wrapper.get('[data-test="access-rule"]').text()).toContain('JPEREZ')
+    await control(wrapper, `access-rule-${PERSON}-${DB_2}`).setValue(true)
+    await saveWithBar(wrapper)
+
+    expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
+      default_databases: null,
+      user_databases: { [PERSON]: [DB_2] },
       groups: [],
     })
   })
 
   it('avisa cuando una regla queda sin ninguna base', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="access-rule-person"]').setValue('a'.repeat(32))
+    await control(wrapper, 'access-rule-person').setValue(PERSON)
     await wrapper.get('[data-test="access-rule-add"]').trigger('click')
 
     expect(wrapper.get('[data-test="access-rule-empty"]').text()).toContain('no podrán consultar')
   })
 
   it('arma un grupo con personas y bases', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
-    const ref = 'a'.repeat(32)
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="access-group-name"]').setValue('Soporte norte')
-    await wrapper.get('[data-test="access-group-add"]').trigger('click')
+    await control(wrapper, 'access-group-name').setValue('Soporte norte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('submit')
     expect(wrapper.get('[data-test="access-group"]').text()).toContain('Soporte norte')
-    await wrapper.get(`[data-test="access-group-Soporte norte-person-${ref}"]`).setValue(true)
-    await wrapper.get(`[data-test="access-group-Soporte norte-db-${DB_1}"]`).setValue(true)
-    await save(wrapper)
+    await control(wrapper, `access-group-Soporte norte-person-${PERSON}`).setValue(true)
+    await control(wrapper, `access-group-Soporte norte-db-${DB_1}`).setValue(true)
+    await saveWithBar(wrapper)
 
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith('c1', {
       default_databases: null,
@@ -378,7 +358,7 @@ describe('bases por persona', () => {
         {
           id: null,
           name: 'Soporte norte',
-          members: [ref],
+          members: [PERSON],
           databases: [DB_1],
           user_monthly_usd: null,
         },
@@ -386,25 +366,25 @@ describe('bases por persona', () => {
     })
   })
 
-  it('no permite dos grupos con el mismo nombre', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+  it('no permite dos grupos con el mismo nombre y lo dice en el campo', async () => {
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="access-group-name"]').setValue('Norte')
-    await wrapper.get('[data-test="access-group-add"]').trigger('click')
-    await wrapper.get('[data-test="access-group-name"]').setValue('norte')
-    await wrapper.get('[data-test="access-group-add"]').trigger('click')
+    await control(wrapper, 'access-group-name').setValue('Norte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('submit')
+    await control(wrapper, 'access-group-name').setValue('norte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('submit')
 
     expect(wrapper.findAll('[data-test="access-group"]')).toHaveLength(1)
-    expect(wrapper.get('[data-test="access-error"]').text()).toContain('ese nombre')
+    expect(wrapper.get('[data-test="access-group-name"]').text()).toContain('ese nombre')
   })
 
   it('un grupo puede fijar el tope mensual de IA de sus miembros', async () => {
-    const wrapper = await mountView(['clients.read', 'clients.policy'])
+    const wrapper = await mountCard()
 
-    await wrapper.get('[data-test="access-group-name"]').setValue('Soporte')
-    await wrapper.get('[data-test="access-group-add"]').trigger('click')
-    await wrapper.get('[data-test="access-group-Soporte-cap"]').setValue(' 7.5 ')
-    await save(wrapper)
+    await control(wrapper, 'access-group-name').setValue('Soporte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('submit')
+    await control(wrapper, 'access-group-Soporte-cap').setValue(' 7.5 ')
+    await saveWithBar(wrapper)
 
     expect(api.setClientAccessPolicy).toHaveBeenCalledWith(
       'c1',
@@ -412,5 +392,18 @@ describe('bases por persona', () => {
         groups: [expect.objectContaining({ name: 'Soporte', user_monthly_usd: '7.5' })],
       }),
     )
+  })
+
+  it('un tope de grupo inválido se marca y no se guarda', async () => {
+    const wrapper = await mountCard()
+
+    await control(wrapper, 'access-group-name').setValue('Soporte')
+    await wrapper.get('[data-test="access-group-add"]').trigger('submit')
+    await control(wrapper, 'access-group-Soporte-cap').setValue('mucho')
+    await wrapper.get('[data-test="unsaved-save"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="access-group-Soporte-cap"]').text()).toContain('USD')
+    expect(api.setClientAccessPolicy).not.toHaveBeenCalled()
   })
 })
