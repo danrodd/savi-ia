@@ -2,7 +2,7 @@ import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 
 import App from './App.vue'
-import './assets/styles/tokens.css'
+import '@savi/ui/tokens.css'
 import { installAuthBridge } from './lib/authBridge'
 import { useAuthStore } from './modules/auth/stores/authStore'
 import { usePermisosStore, vModule } from './modules/permisos'

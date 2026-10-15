@@ -6,10 +6,9 @@
  * de esta instalación — así que quien lo reciba necesita esa misma
  * contraseña para poder importarlo.
  */
-import { ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { ref, watch } from 'vue'
 import { triggerDownload } from '@/lib/download'
 import { toast } from '@/lib/toast'
 import { erpDatabaseService } from '../services/erpDatabaseService'
@@ -45,9 +44,12 @@ async function onExport(): Promise<void> {
     const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' })
     const date = file.exported_at.slice(0, 10)
     triggerDownload(URL.createObjectURL(blob), `savi-bases-erp-${date}.json`)
-    toast.success(`${file.count} base${file.count === 1 ? '' : 's'} exportada${file.count === 1 ? '' : 's'}`, {
-      description: 'Compartí el archivo y la contraseña por separado.',
-    })
+    toast.success(
+      `${file.count} base${file.count === 1 ? '' : 's'} exportada${file.count === 1 ? '' : 's'}`,
+      {
+        description: 'Compartí el archivo y la contraseña por separado.',
+      },
+    )
     open.value = false
   } catch (e) {
     error.value = (e as Error).message || 'No se pudo exportar.'

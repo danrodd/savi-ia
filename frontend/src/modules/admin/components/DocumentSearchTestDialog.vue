@@ -4,10 +4,9 @@
  * para otro usuario. Sirve para verificar permisos antes de que un usuario
  * real pregunte. Usa el mismo índice y la misma política que el chat.
  */
-import { ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { ref, watch } from 'vue'
 import { companyDocumentService } from '../services/companyDocumentService'
 import type { SearchTestResult } from '../types'
 import { EXCLUSION_LABELS } from '../utils/companyDocuments'

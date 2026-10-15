@@ -8,11 +8,10 @@
  * eso devuelve 401 limpia sesión y redirige a /login (lo hace el
  * HttpClient interceptor → store → bridge).
  */
+
+import { Button } from '@savi/ui'
 import { computed, nextTick, onMounted, ref } from 'vue'
-
 import { useRoute, useRouter } from 'vue-router'
-
-import Button from '@/components/ui/Button.vue'
 import { toTitleCase } from '@/lib/personName'
 import { MODULE_LABELS, type ModuleCode, usePermisosStore } from '@/modules/permisos'
 import { MyUsagePanel, UsageFilterBar } from '@/modules/usage'

@@ -6,10 +6,10 @@
  * pantallas medianas y las acciones competían con el contenido. El menú
  * deja una sola columna angosta y agrupa lo destructivo al final.
  */
+
+import { Popover } from '@savi/ui'
 import { Ellipsis } from 'lucide-vue-next'
 import { ref, useTemplateRef } from 'vue'
-
-import Popover from '@/components/ui/Popover.vue'
 import type { RowAction } from '../types'
 
 defineProps<{

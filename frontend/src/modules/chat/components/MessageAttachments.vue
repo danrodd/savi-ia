@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { Dialog } from '@savi/ui'
 import { ref } from 'vue'
-import Dialog from '@/components/ui/Dialog.vue'
 import type { UIAttachment } from '../types'
 import AuthImage from './AuthImage.vue'
 

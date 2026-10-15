@@ -3,9 +3,9 @@
  * Páginas de un sitio: qué se importó, qué se omitió y por qué.
  * Mientras el sitio se lee, el detalle se refresca solo.
  */
-import { computed, onUnmounted, ref, watch } from 'vue'
 
-import Dialog from '@/components/ui/Dialog.vue'
+import { Dialog } from '@savi/ui'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useWebSourceStore, WEB_POLL_INTERVAL_MS } from '../stores/webSourceStore'
 import type { WebPage, WebPageStatus, WebSourceDetail } from '../types'
 import {

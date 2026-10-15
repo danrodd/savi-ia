@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { useTheme } from '@savi/ui'
 import { computed } from 'vue'
-import { useTheme } from '@/composables/useTheme'
+import { STORAGE_KEYS } from '@/lib/storageKeys'
 
-const { mode, cycleTheme } = useTheme()
+const { mode, cycleTheme } = useTheme({ storageKey: STORAGE_KEYS.THEME_MODE })
 
 const label = computed(() => {
   if (mode.value === 'light') return 'Apariencia: clara'

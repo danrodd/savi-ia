@@ -1,8 +1,6 @@
 <script setup lang="ts">
+import { Button, ConfirmDialog } from '@savi/ui'
 import { computed, onMounted, ref } from 'vue'
-
-import Button from '@/components/ui/Button.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { toast } from '@/lib/toast'
 import ErpDatabaseFormDialog from '../components/ErpDatabaseFormDialog.vue'
 import ErpDatabaseTable from '../components/ErpDatabaseTable.vue'

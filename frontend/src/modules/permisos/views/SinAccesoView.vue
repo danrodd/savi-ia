@@ -6,11 +6,10 @@
  * NO redirige al login: la sesión es válida. Le explica al usuario qué
  * pasó y le da una salida (volver al home).
  */
+
+import { Button } from '@savi/ui'
 import { computed } from 'vue'
-
 import { useRoute, useRouter } from 'vue-router'
-
-import Button from '@/components/ui/Button.vue'
 import { MODULE_LABELS, type ModuleCode } from '../constants'
 
 const route = useRoute()

@@ -3,10 +3,9 @@
  * Edita título y permisos. No reprocesa: aplica en la siguiente pregunta.
  * Si el cambio puede dejar sin acceso a alguien, pide confirmación antes.
  */
-import { computed, ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { computed, ref, watch } from 'vue'
 import { toast } from '@/lib/toast'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 import type { CompanyDocument, DocumentPermissions } from '../types'

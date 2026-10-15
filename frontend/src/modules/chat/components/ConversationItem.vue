@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { Tooltip } from '@savi/ui'
 import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
-import Tooltip from '@/components/ui/Tooltip.vue'
 import type { Conversation } from '../types'
 import ConversationMenu from './ConversationMenu.vue'
 

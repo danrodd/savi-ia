@@ -1,8 +1,6 @@
 <script setup lang="ts">
+import { Button, ConfirmDialog } from '@savi/ui'
 import { computed, onMounted, ref } from 'vue'
-
-import Button from '@/components/ui/Button.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { formatFullDateTime } from '@/lib/dateTime'
 import { toast } from '@/lib/toast'
 import CloudPreviewPanel from '../components/CloudPreviewPanel.vue'

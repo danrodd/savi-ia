@@ -6,12 +6,11 @@
  * el querystring para devolverlo a la vista que quería visitar. Si no
  * hay `next`, vuelve a la home `/`.
  */
+
+import { Button } from '@savi/ui'
 import { computed, ref } from 'vue'
-
 import { useRoute, useRouter } from 'vue-router'
-
 import AppVersion from '@/components/AppVersion.vue'
-import Button from '@/components/ui/Button.vue'
 import MfaPanel from '../components/MfaPanel.vue'
 import { useAuthStore } from '../stores/authStore'
 import type { MfaChallenge } from '../types'

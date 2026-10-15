@@ -9,11 +9,10 @@
  * No redirige sola al inicio: una redirección automática esconde el error y
  * deja al usuario preguntándose por qué terminó en otro lado.
  */
+
+import { Button } from '@savi/ui'
 import { computed } from 'vue'
-
 import { useRoute, useRouter } from 'vue-router'
-
-import Button from '@/components/ui/Button.vue'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 
 const route = useRoute()

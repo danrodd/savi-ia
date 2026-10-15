@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Tooltip from '@/components/ui/Tooltip.vue'
+import { Tooltip } from '@savi/ui'
 import BrandMark from './BrandMark.vue'
 import ShareMenu from './ShareMenu.vue'
 

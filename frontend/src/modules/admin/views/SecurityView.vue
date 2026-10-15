@@ -5,10 +5,9 @@
  * Hoy: restablecer el segundo factor de una persona que perdió su celular. Al restablecerlo se
  * cierran sus sesiones y en el próximo ingreso configura una aplicación nueva.
  */
-import { computed, ref } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import { Button, ConfirmDialog } from '@savi/ui'
+import { computed, ref } from 'vue'
 import { toast } from '@/lib/toast'
 import { mfaAdminService } from '../services/mfaAdminService'
 

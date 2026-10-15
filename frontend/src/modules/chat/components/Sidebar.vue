@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import { Tooltip } from '@savi/ui'
 import { computed, ref } from 'vue'
-
 import { useRouter } from 'vue-router'
-
 import AppVersion from '@/components/AppVersion.vue'
-import Tooltip from '@/components/ui/Tooltip.vue'
 import { toTitleCase } from '@/lib/personName'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import type { Conversation } from '../types'

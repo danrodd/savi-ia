@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { ConfirmDialog, useBreakpoint } from '@savi/ui'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
-import { useBreakpoint } from '@/composables/useBreakpoint'
 import { toast } from '@/lib/toast'
 import { useAuthStore } from '@/modules/auth/stores/authStore'
 import Composer from '../components/Composer.vue'

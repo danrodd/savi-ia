@@ -7,9 +7,9 @@
  * techo; acá el administrador elige dentro de ese techo sin tocar el
  * servidor.
  */
-import { computed, onMounted, ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
+import { Button } from '@savi/ui'
+import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from '@/lib/toast'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 

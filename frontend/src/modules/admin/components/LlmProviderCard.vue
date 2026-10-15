@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@savi/ui'
 import {
   CircleCheck,
   CircleDashed,
@@ -13,7 +14,6 @@ import {
   Type,
 } from 'lucide-vue-next'
 import { computed } from 'vue'
-import Button from '@/components/ui/Button.vue'
 import { formatMessageTime } from '@/lib/dateTime'
 import { friendlyModelName } from '../lib/modelNames'
 import type { LlmProvider } from '../types'

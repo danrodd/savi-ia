@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Tooltip } from '@savi/ui'
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import {
   GridComponent,
@@ -10,7 +11,6 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { computed, ref } from 'vue'
 import VChart from 'vue-echarts'
-import Tooltip from '@/components/ui/Tooltip.vue'
 import { type ChartSpec, parseChartSpec } from '@/lib/chartSpec'
 import { slugify, triggerDownload } from '@/lib/download'
 import DownloadButton from './DownloadButton.vue'

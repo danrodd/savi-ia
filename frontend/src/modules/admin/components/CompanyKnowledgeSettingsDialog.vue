@@ -11,11 +11,10 @@
  * aviso para ESE proveedor. Si después cambia el proveedor activo, la
  * lectura queda en pausa hasta que alguien acepte el nuevo.
  */
+
+import { Button, Dialog } from '@savi/ui'
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
 import { toast } from '@/lib/toast'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'
 import { approxUsd, needsConsent } from '../utils/aiReading'

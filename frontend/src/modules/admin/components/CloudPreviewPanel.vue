@@ -1,7 +1,6 @@
 <script setup lang="ts">
+import { Button } from '@savi/ui'
 import { computed } from 'vue'
-
-import Button from '@/components/ui/Button.vue'
 import type { CloudPreview } from '../types'
 import { EVENT_STREAM_HELP, HEARTBEAT_FIELD_HELP, NOT_SENT, streamLabel } from '../utils/cloudLink'
 

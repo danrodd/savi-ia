@@ -9,10 +9,9 @@
  * Cada PDF cuenta sus páginas en el navegador al elegirlo, para mostrar si
  * se leerá con IA y cuánto costaría antes de subir.
  */
-import { computed, ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { computed, ref, watch } from 'vue'
 import { HttpRequestError } from '@/lib/HttpClient'
 import { toast } from '@/lib/toast'
 import { useCompanyDocumentStore } from '../stores/companyDocumentStore'

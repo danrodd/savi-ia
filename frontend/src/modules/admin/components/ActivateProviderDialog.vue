@@ -1,7 +1,6 @@
 <script setup lang="ts">
+import { Button, Dialog } from '@savi/ui'
 import { TriangleAlert } from 'lucide-vue-next'
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
 import type { LlmProvider } from '../types'
 import ProviderIcon from './ProviderIcon.vue'
 

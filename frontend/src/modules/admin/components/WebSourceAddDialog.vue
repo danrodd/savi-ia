@@ -8,10 +8,9 @@
  * Cambiar la dirección o el alcance descarta la vista previa: se guarda lo
  * que se revisó.
  */
-import { computed, ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { computed, ref, watch } from 'vue'
 import { toast } from '@/lib/toast'
 import { useWebSourceStore } from '../stores/webSourceStore'
 import type {

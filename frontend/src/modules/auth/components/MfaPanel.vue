@@ -11,10 +11,9 @@
  * otra forma, para quien no puede escanear.
  */
 
+import { Button } from '@savi/ui'
 import QRCode from 'qrcode'
 import { computed, onMounted, ref } from 'vue'
-
-import Button from '@/components/ui/Button.vue'
 import { useAuthStore } from '../stores/authStore'
 import type { MfaChallenge, MfaSetup } from '../types'
 import { isMfaExpired, loginErrorMessage, MFA_EXPIRED_MESSAGE } from '../utils/loginErrors'

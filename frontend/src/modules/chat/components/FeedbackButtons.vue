@@ -6,10 +6,9 @@
  * calificación activa la quita. El estado vive en `message.feedback` (lo
  * trae el backend); la UI es optimista y el store revierte si falla.
  */
-import { computed, ref } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { computed, ref } from 'vue'
 import { toast } from '@/lib/toast'
 import { useChatStore } from '../stores/chatStore'
 import type { FeedbackInput, FeedbackReason, MessageFeedback } from '../types'

@@ -6,10 +6,9 @@
  * a probar antes de persistir y responde 422 si falla. Al editar, la
  * contraseña arranca vacía y solo se envía si se escribe una nueva.
  */
-import { computed, ref, useId, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { computed, ref, useId, watch } from 'vue'
 import { toast } from '@/lib/toast'
 import { erpDatabaseService } from '../services/erpDatabaseService'
 import { useErpDatabaseStore } from '../stores/erpDatabaseStore'

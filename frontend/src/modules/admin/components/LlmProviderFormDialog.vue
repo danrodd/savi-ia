@@ -1,8 +1,7 @@
 <script setup lang="ts">
+import { Button, Dialog } from '@savi/ui'
 import { FlaskConical } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
 import { recommendModel } from '../lib/modelRecommendation'
 import type {
   LlmCredentialKind,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { Tooltip } from '@savi/ui'
 import { onMounted, ref, watch } from 'vue'
-import Tooltip from '@/components/ui/Tooltip.vue'
 import { triggerDownload } from '@/lib/download'
 import DownloadButton from './DownloadButton.vue'
 

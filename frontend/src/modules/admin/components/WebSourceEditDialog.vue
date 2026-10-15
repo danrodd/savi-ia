@@ -7,10 +7,9 @@
  * - El alcance (máximo de páginas, secciones excluidas) solo cambia en la
  *   próxima lectura: al guardarlo se pide una lectura nueva.
  */
-import { computed, ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { computed, ref, watch } from 'vue'
 import { toast } from '@/lib/toast'
 import { useWebSourceStore } from '../stores/webSourceStore'
 import type { DocumentPermissions, RefreshFrequency, WebSource } from '../types'

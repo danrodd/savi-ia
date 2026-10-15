@@ -1,7 +1,6 @@
 <script setup lang="ts">
+import { Dialog } from '@savi/ui'
 import { computed } from 'vue'
-
-import Dialog from '@/components/ui/Dialog.vue'
 import { formatFullDateTime } from '@/lib/dateTime'
 import { toast } from '@/lib/toast'
 import MarkdownRenderer from '@/modules/chat/components/MarkdownRenderer.vue'

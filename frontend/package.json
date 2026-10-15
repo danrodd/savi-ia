@@ -15,6 +15,7 @@
     "check": "biome check --write ."
   },
   "dependencies": {
+    "@savi/ui": "*",
     "@vueuse/core": "^14.3.0",
     "dompurify": "^3.4.5",
     "echarts": "^6.1.0",

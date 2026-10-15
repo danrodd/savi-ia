@@ -1,8 +1,6 @@
 <script setup lang="ts">
+import { Button, ConfirmDialog } from '@savi/ui'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-
-import Button from '@/components/ui/Button.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { toast } from '@/lib/toast'
 import { useWebSourceStore } from '../stores/webSourceStore'
 import type { WebSource } from '../types'

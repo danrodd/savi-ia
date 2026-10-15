@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Popover from '@/components/ui/Popover.vue'
+import { Popover } from '@savi/ui'
 
 defineProps<{
   open: boolean

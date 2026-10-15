@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { Popover } from '@savi/ui'
 import { computed, ref, useTemplateRef } from 'vue'
-import Popover from '@/components/ui/Popover.vue'
 import { toCsv } from '@/lib/csv'
 import { triggerDownload } from '@/lib/download'
 import { inlineMarkdownToText, renderInlineMarkdown } from '@/lib/markdown'

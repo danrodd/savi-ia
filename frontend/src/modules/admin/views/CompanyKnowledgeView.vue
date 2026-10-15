@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import { Button, ConfirmDialog } from '@savi/ui'
 import { Settings2 } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-
-import Button from '@/components/ui/Button.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { HttpRequestError } from '@/lib/HttpClient'
 import { toast } from '@/lib/toast'
 import CompanyDocumentEditDialog from '../components/CompanyDocumentEditDialog.vue'

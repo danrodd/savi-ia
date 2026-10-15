@@ -1,6 +1,5 @@
 import { useStorage } from '@vueuse/core'
 import { computed, onUnmounted, ref, watchEffect } from 'vue'
-import { STORAGE_KEYS } from '@/lib/storageKeys'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -15,8 +14,13 @@ function getSystemPreference(): 'light' | 'dark' {
   return getSystemMedia()?.matches ? 'dark' : 'light'
 }
 
-export function useTheme() {
-  const mode = useStorage<ThemeMode>(STORAGE_KEYS.THEME_MODE, 'system')
+export interface UseThemeOptions {
+  /** Clave de `localStorage` donde se recuerda el modo. Cada app usa la suya. */
+  storageKey: string
+}
+
+export function useTheme({ storageKey }: UseThemeOptions) {
+  const mode = useStorage<ThemeMode>(storageKey, 'system')
   const systemPreference = ref<'light' | 'dark'>(getSystemPreference())
 
   const systemMedia = getSystemMedia()

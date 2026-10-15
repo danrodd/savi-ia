@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { Tooltip } from '@savi/ui'
 import { computed, nextTick, ref, watch } from 'vue'
-import Tooltip from '@/components/ui/Tooltip.vue'
 import { toast } from '@/lib/toast'
 import { useAttachmentUploader } from '../composables/useAttachmentUploader'
 import { useFileDrop } from '../composables/useFileDrop'

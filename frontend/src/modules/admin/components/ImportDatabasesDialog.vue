@@ -7,10 +7,9 @@
  * alcanza algún cliente por red, esa fila queda `failed` y el resto se
  * importa igual.
  */
-import { ref, watch } from 'vue'
 
-import Button from '@/components/ui/Button.vue'
-import Dialog from '@/components/ui/Dialog.vue'
+import { Button, Dialog } from '@savi/ui'
+import { ref, watch } from 'vue'
 import { toast } from '@/lib/toast'
 import { erpDatabaseService } from '../services/erpDatabaseService'
 import { useErpDatabaseStore } from '../stores/erpDatabaseStore'
@@ -79,7 +78,9 @@ async function onImport(): Promise<void> {
     await store.load()
     const failed = result.rows.filter((r) => r.status === 'failed').length
     if (failed === 0) {
-      toast.success(`${result.rows.length} base${result.rows.length === 1 ? '' : 's'} importada${result.rows.length === 1 ? '' : 's'}`)
+      toast.success(
+        `${result.rows.length} base${result.rows.length === 1 ? '' : 's'} importada${result.rows.length === 1 ? '' : 's'}`,
+      )
     } else {
       toast.info(`${failed} de ${result.rows.length} no se pudieron importar — revisá el detalle`)
     }
