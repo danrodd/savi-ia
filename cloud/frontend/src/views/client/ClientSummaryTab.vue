@@ -5,6 +5,7 @@ import { computed, watch } from 'vue'
 import BarChart from '@/components/BarChart.vue'
 import FreshnessChip from '@/components/FreshnessChip.vue'
 import KpiCard from '@/components/KpiCard.vue'
+import OnboardingChecklist from '@/components/OnboardingChecklist.vue'
 import { consoleApi } from '@/lib/api'
 import { useClientContext } from '@/lib/clientContext'
 import { formatDay, formatInt, formatMs, formatPercent, formatUsd } from '@/lib/format'
@@ -46,6 +47,8 @@ const tools = computed(() =>
 
 <template>
   <div class="stack">
+    <OnboardingChecklist :client-id="id" />
+
     <Alert v-if="metrics.error.value" tone="danger">
       {{ metrics.error.value }}
       <template #action>

@@ -25,6 +25,7 @@ const emit = defineEmits<{ close: [] }>()
       </Alert>
       <CopyField :value="secret" label="Valor" data-test="secret" />
       <p class="secret__instructions">{{ instructions }}</p>
+      <slot />
     </div>
     <template #footer>
       <Button data-test="secret-close" @click="emit('close')">Ya lo guardé</Button>

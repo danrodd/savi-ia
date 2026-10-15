@@ -1,25 +1,59 @@
 <script setup lang="ts">
 import {
+  Alert,
   Badge,
   Button,
   Card,
+  CopyField,
   DataTable,
   Select,
+  type StepItem,
+  Stepper,
   type TableColumn,
   type Tone,
   toast,
 } from '@savi/ui'
-import { KeyRound } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { KeyRound, Loader } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import SecretDialog from '@/components/SecretDialog.vue'
+import { useNewInstanceWatch } from '@/composables/useNewInstanceWatch'
 import { consoleApi } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import type { EnrollmentToken } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
-const props = defineProps<{ clientId: string; tokens: EnrollmentToken[]; loading: boolean }>()
+const props = withDefaults(
+  defineProps<{
+    clientId: string
+    tokens: EnrollmentToken[]
+    loading: boolean
+    /** Quien no tiene `tokens.manage` ve la lista, pero no puede generar ni revocar. */
+    canManage?: boolean
+  }>(),
+  { canManage: true },
+)
 const emit = defineEmits<{ changed: [] }>()
+
+const STEPS: StepItem[] = [
+  { key: 'generate', label: 'Generar token' },
+  { key: 'install', label: 'Instalar SAVI y pegar el token' },
+  { key: 'waiting', label: 'Esperando la primera conexión' },
+]
+const STEPS_LINKED: StepItem[] = [...STEPS, { key: 'linked', label: 'Vinculada' }]
+
+/** Dirección de esta consola: es la de SAVI Cloud (`-SaviCloudUrl` del instalador). */
+const cloudUrl = window.location.origin
+
+const watcher = useNewInstanceWatch(() => props.clientId)
+const step = ref<'generate' | 'install'>('generate')
+const current = computed(() => {
+  if (watcher.state.value === 'found') return 'linked'
+  if (watcher.state.value === 'waiting' || watcher.state.value === 'timeout') return 'waiting'
+  return step.value
+})
+const steps = computed(() => (watcher.state.value === 'found' ? STEPS_LINKED : STEPS))
 
 const DURATIONS = [
   { value: 24, label: '24 horas' },
@@ -52,7 +86,10 @@ async function createToken(): Promise<void> {
   creating.value = true
   try {
     const created = await consoleApi.createToken(props.clientId, expiresHours.value ?? 72)
+    watcher.reset()
+    await watcher.snapshot()
     createdToken.value = created.token
+    step.value = 'install'
   } catch (e) {
     toast.error('No se pudo generar el token', { description: errorMessage(e) })
   } finally {
@@ -63,8 +100,26 @@ async function createToken(): Promise<void> {
 function closeToken(): void {
   // El token ya no se puede recuperar: se descarta de memoria al cerrar.
   createdToken.value = null
+  step.value = 'generate'
+  watcher.start()
   emit('changed')
 }
+
+function generateAnother(): void {
+  watcher.reset()
+}
+
+function keepWaiting(): void {
+  watcher.start()
+}
+
+// Al vincularse, el token pasa a "Usado": se recarga la lista.
+watch(
+  () => watcher.state.value,
+  (state) => {
+    if (state === 'found') emit('changed')
+  },
+)
 
 async function revokeToken(): Promise<void> {
   const token = revoking.value
@@ -85,16 +140,80 @@ async function revokeToken(): Promise<void> {
 
 <template>
   <div class="tokens">
+    <Alert v-if="!canManage" tone="info">
+      Generar y revocar tokens es tarea de Soporte. Aquí puedes ver los que ya existen.
+    </Alert>
+
     <Card
+      v-else
       title="Vincular una instalación"
-      description="El token se pega en SAVI → Administración → SAVI Cloud, o en el instalador. Se muestra una sola vez y sirve para una sola instalación."
+      description="El token se muestra una sola vez y sirve para una sola instalación."
     >
-      <div class="tokens__create">
+      <Stepper :steps="steps" :current="current" class="tokens__stepper" />
+
+      <div v-if="current === 'generate'" class="tokens__create">
         <Select v-model="expiresHours" label="Vigencia" :options="DURATIONS" data-test="token-duration" />
         <Button :loading="creating" class="tokens__button" data-test="token-create" @click="createToken">
           <KeyRound :size="15" aria-hidden="true" />
           Generar token de vinculación
         </Button>
+      </div>
+
+      <div v-else-if="current === 'install'" class="tokens__step" data-test="link-step-install">
+        <p>Copia el token de la ventana y pégalo en la instalación de SAVI.</p>
+      </div>
+
+      <div v-else-if="current === 'waiting'" class="tokens__step" data-test="link-step-waiting">
+        <template v-if="watcher.state.value === 'timeout'">
+          <Alert tone="warning">
+            No se detectó ninguna conexión en 10 minutos. Revisa que la instalación tenga salida a
+            internet y que el token no haya vencido.
+          </Alert>
+          <div class="tokens__actions">
+            <Button variant="secondary" data-test="link-keep-waiting" @click="keepWaiting">
+              Seguir esperando
+            </Button>
+            <Button variant="ghost" data-test="link-another" @click="generateAnother">
+              Generar otro token
+            </Button>
+          </div>
+        </template>
+        <template v-else>
+          <p class="tokens__waiting" role="status">
+            <Loader :size="15" class="tokens__spin" aria-hidden="true" />
+            Esperando a que la instalación se conecte. Esta pantalla se actualiza sola.
+          </p>
+          <ol class="tokens__howto">
+            <li>Instala SAVI en el equipo o servidor del cliente.</li>
+            <li>
+              En SAVI → Administración → SAVI Cloud, o en el instalador, pega el token y confirma
+              la dirección de SAVI Cloud.
+            </li>
+          </ol>
+          <div class="tokens__actions">
+            <Button variant="ghost" data-test="link-another" @click="generateAnother">
+              Generar otro token
+            </Button>
+          </div>
+        </template>
+      </div>
+
+      <div v-else class="tokens__step" data-test="link-step-linked">
+        <Alert tone="success">
+          Instalación vinculada:
+          <RouterLink
+            v-if="watcher.found.value"
+            :to="`/instancias/${watcher.found.value.id}`"
+            data-test="link-instance"
+          >
+            {{ watcher.found.value.name }}
+          </RouterLink>
+        </Alert>
+        <div class="tokens__actions">
+          <Button variant="secondary" data-test="link-another" @click="generateAnother">
+            Vincular otra instalación
+          </Button>
+        </div>
       </div>
     </Card>
 
@@ -116,7 +235,7 @@ async function revokeToken(): Promise<void> {
         <template #cell-expires_at="{ row }">{{ formatDateTime(row.expires_at) }}</template>
         <template #cell-actions="{ row }">
           <Button
-            v-if="row.state === 'pending'"
+            v-if="canManage && row.state === 'pending'"
             variant="ghost"
             size="sm"
             data-test="token-revoke"
@@ -133,9 +252,11 @@ async function revokeToken(): Promise<void> {
     :open="createdToken !== null"
     title="Token de vinculación"
     :secret="createdToken ?? ''"
-    instructions="Pegalo en SAVI → Administración → SAVI Cloud, o en el instalador."
+    instructions="Pégalo en SAVI → Administración → SAVI Cloud, o en el instalador."
     @close="closeToken"
-  />
+  >
+    <CopyField :value="cloudUrl" label="Dirección de SAVI Cloud" hint="La que usa el instalador (-SaviCloudUrl)." />
+  </SecretDialog>
 
   <ConfirmDialog
     :open="revoking !== null"
@@ -164,6 +285,58 @@ async function revokeToken(): Promise<void> {
 
 .tokens__button {
   margin-top: 21px;
+}
+
+.tokens__stepper {
+  margin-bottom: var(--space-5);
+}
+
+.tokens__step {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.tokens__step p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.tokens__waiting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tokens__spin {
+  animation: tokens-spin 1.2s linear infinite;
+}
+
+.tokens__howto {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.tokens__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@keyframes tokens-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tokens__spin {
+    animation: none;
+  }
 }
 
 @media (max-width: 600px) {

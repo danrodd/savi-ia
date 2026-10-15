@@ -11,6 +11,7 @@ const api = vi.hoisted(() => ({
   clientUsers: vi.fn(),
   clientPeople: vi.fn(),
   clientCounts: vi.fn(),
+  clientOnboarding: vi.fn(),
   acknowledgeAlert: vi.fn(),
   resolveAlert: vi.fn(),
   instances: vi.fn(),
@@ -118,6 +119,14 @@ beforeEach(() => {
   api.clientUsers.mockResolvedValue([])
   api.clientPeople.mockResolvedValue([])
   api.clientCounts.mockResolvedValue({ people: 7, open_alerts: 3 })
+  api.clientOnboarding.mockResolvedValue({
+    plan_loaded: false,
+    policy_defined: false,
+    ai_defined: false,
+    token_created: false,
+    instance_connected: false,
+    report_received: false,
+  })
   api.alerts.mockResolvedValue([])
   api.tokens.mockResolvedValue([])
   api.subscription.mockResolvedValue({
@@ -139,6 +148,14 @@ describe('detalle del cliente', () => {
     expect(router.currentRoute.value.path).toBe('/clientes/c1/resumen')
     expect(wrapper.get('h1').text()).toBe('SEO Group')
     expect(wrapper.text()).toContain('Últimos 30 días')
+  })
+
+  it('el resumen abre con la puesta en marcha, sin quitar los KPIs', async () => {
+    const { wrapper } = await mountAt('/clientes/c1', ['clients.read'])
+
+    expect(api.clientOnboarding).toHaveBeenCalledWith('c1')
+    expect(wrapper.get('[data-test="onboarding"]').text()).toContain('Puesta en marcha')
+    expect(wrapper.text()).toContain('Turnos por día')
   })
 
   it('solo muestra las pestañas que permite el rol', async () => {

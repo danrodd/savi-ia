@@ -2,12 +2,13 @@
 import { Alert, Card, DataTable, EmptyState, type TableColumn, TextField } from '@savi/ui'
 import { Users } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
+import LinkingEmptyState from '@/components/LinkingEmptyState.vue'
 import { consoleApi } from '@/lib/api'
 import { useClientContext } from '@/lib/clientContext'
 import { formatInt, formatUsd, relativeTime } from '@/lib/format'
 import { useAsync } from '@/lib/useAsync'
 
-const { id, client } = useClientContext()
+const { id, client, counts } = useClientContext()
 const users = useAsync(() => consoleApi.clientUsers(id.value))
 watch(id, () => users.reload())
 
@@ -53,8 +54,27 @@ const COLUMNS: TableColumn[] = [
       >
         <template #empty>
           <EmptyState
+            v-if="search.trim()"
             :icon="Users"
-            :title="search.trim() ? 'Ninguna persona coincide con la búsqueda' : 'Sin personas activas en el período'"
+            title="Ninguna persona coincide con la búsqueda"
+          />
+          <EmptyState
+            v-else-if="(counts?.people ?? 0) > 0"
+            :icon="Users"
+            title="Sin personas activas en el período"
+            description="Hay personas que ya usaron SAVI, pero ninguna en los últimos 30 días."
+          />
+          <LinkingEmptyState
+            v-else
+            :client-id="id"
+            :icon="Users"
+            title="Todavía no hay personas"
+            :description="
+              (client?.instances_total ?? 0) > 0
+                ? 'Hay instalaciones vinculadas, pero nadie usó SAVI todavía. Las personas aparecen con su primer uso.'
+                : 'Las personas aparecen cuando una instalación vinculada reporta su primer uso. Aún no hay ninguna vinculada.'
+            "
+            :has-instances="(client?.instances_total ?? 0) > 0"
           />
         </template>
         <template #cell-user_ref="{ row }">

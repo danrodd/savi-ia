@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Card, DataTable, EmptyState, type TableColumn } from '@savi/ui'
+import { Card, DataTable, type TableColumn } from '@savi/ui'
 import { Database } from 'lucide-vue-next'
 import { watch } from 'vue'
+import LinkingEmptyState from '@/components/LinkingEmptyState.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
 import { useClientContext } from '@/lib/clientContext'
@@ -9,7 +10,7 @@ import { formatDateTime, type Tone } from '@/lib/format'
 import type { ClientDatabase } from '@/lib/types'
 import { useAsync } from '@/lib/useAsync'
 
-const { id } = useClientContext()
+const { id, client } = useClientContext()
 const databases = useAsync(() => consoleApi.clientDatabases(id.value))
 watch(id, () => databases.reload())
 
@@ -38,10 +39,16 @@ function state(d: ClientDatabase): { label: string; tone: Tone } {
       caption="Sucursales del cliente"
     >
       <template #empty>
-        <EmptyState
+        <LinkingEmptyState
+          :client-id="id"
           :icon="Database"
           title="Todavía no informaron sucursales"
-          description="Aparecen cuando una instalación vinculada envía su primer reporte."
+          :description="
+            (client?.instances_total ?? 0) > 0
+              ? 'Hay instalaciones vinculadas, pero ninguna envió su primer reporte. Aparecen en cuanto lo hagan.'
+              : 'Aparecen cuando una instalación vinculada envía su primer reporte. Aún no hay ninguna vinculada.'
+          "
+          :has-instances="(client?.instances_total ?? 0) > 0"
         />
       </template>
       <template #cell-name="{ row }"><strong>{{ row.name }}</strong></template>

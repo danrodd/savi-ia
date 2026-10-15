@@ -14,6 +14,7 @@ import {
 import { UserRound, X } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import LinkingEmptyState from '@/components/LinkingEmptyState.vue'
 import { useClientPeople } from '@/composables/useClientPeople'
 import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
@@ -41,7 +42,7 @@ watch(
 useLeaveGuard(form.isDirty)
 
 // Las excepciones ya guardadas se muestran aunque la persona no esté en el padrón.
-const { people, personLabel } = useClientPeople(() => props.clientId)
+const { people, loaded, personLabel } = useClientPeople(() => props.clientId)
 
 // Alta de una excepción: se valida acá, aparte del formulario principal.
 const newRef = ref<string | null>(null)
@@ -197,7 +198,15 @@ async function save(): Promise<void> {
         description="Todas las personas usan el tope general."
         class="ai__empty"
       />
-      <div class="ai__add">
+      <LinkingEmptyState
+        v-if="loaded && people.length === 0"
+        :client-id="clientId"
+        :icon="UserRound"
+        title="Todavía no hay personas para elegir"
+        description="La lista sale de quienes ya usaron SAVI en este cliente. Aparecen cuando una instalación vinculada reporta su primer uso."
+        data-test="ai-no-people"
+      />
+      <div v-else class="ai__add">
         <Select
           v-model="newRef"
           label="Persona"

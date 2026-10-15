@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { Button, Card, DataTable, EmptyState, type TableColumn } from '@savi/ui'
+import { Card, DataTable, type TableColumn } from '@savi/ui'
 import { Server } from 'lucide-vue-next'
 import { watch } from 'vue'
 import { useRouter } from 'vue-router'
+import LinkingEmptyState from '@/components/LinkingEmptyState.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
 import { useClientContext } from '@/lib/clientContext'
 import { instanceState, relativeTime } from '@/lib/format'
 import type { Instance } from '@/lib/types'
 import { useAsync } from '@/lib/useAsync'
-import { useAuthStore } from '@/stores/authStore'
 
 const { id } = useClientContext()
 const router = useRouter()
-const auth = useAuthStore()
 const instances = useAsync(() => consoleApi.instances({ client_id: id.value }))
 watch(id, () => instances.reload())
 
@@ -41,19 +40,12 @@ function open(instance: Instance): void {
       @row-click="open"
     >
       <template #empty>
-        <EmptyState
+        <LinkingEmptyState
+          :client-id="id"
           :icon="Server"
           title="Todavía no hay instalaciones vinculadas"
-          description="Generá un token en la pestaña Vinculación y pegalo en SAVI → Administración → SAVI Cloud."
-        >
-          <Button
-            v-if="auth.can('tokens.manage')"
-            variant="secondary"
-            @click="router.push(`/clientes/${id}/vinculacion`)"
-          >
-            Ir a Vinculación
-          </Button>
-        </EmptyState>
+          description="Una instalación aparece aquí cuando se vincula con un token de este cliente. Genera el token, instala SAVI y pégalo."
+        />
       </template>
       <template #cell-name="{ row }">
         <strong>{{ row.name }}</strong>

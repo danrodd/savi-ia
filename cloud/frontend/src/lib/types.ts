@@ -73,6 +73,16 @@ export interface ClientCounts {
   open_alerts: number
 }
 
+/** Avance de la puesta en marcha de un cliente (cada paso, hecho o no). */
+export interface ClientOnboarding {
+  plan_loaded: boolean
+  policy_defined: boolean
+  ai_defined: boolean
+  token_created: boolean
+  instance_connected: boolean
+  report_received: boolean
+}
+
 export interface Page<T> {
   items: T[]
   total: number

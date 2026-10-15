@@ -15,9 +15,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_clock, transaction
 from app.modules.alerts.domain import AlertStatus, Severity
 from app.modules.alerts.infrastructure import SqlAlchemyAlertRepository
+from app.modules.audit.infrastructure import AuditLogModel
 from app.modules.clients.domain import ClientNotFound
-from app.modules.clients.infrastructure import ClientModel
+from app.modules.clients.infrastructure import ClientModel, SqlAlchemyClientRepository
 from app.modules.console.queries import is_online
+from app.modules.enrollments.infrastructure import EnrollmentTokenModel
+from app.modules.ingest.infrastructure import InstanceDatabaseModel
 from app.modules.instances.domain import InstanceNotFound
 from app.modules.instances.infrastructure import InstanceModel, to_entity
 from app.modules.metrics.definitions import METRICS
@@ -473,6 +476,99 @@ async def client_counts(
         people = await MetricsQueries(session).count_people_of_client(client_id)
         alerts = await SqlAlchemyAlertRepository(session).count_by_status(client_id=client_id)
     return ClientCountsOut(people=people, open_alerts=alerts.get(AlertStatus.OPEN, 0))
+
+
+class OnboardingOut(BaseModel):
+    plan_loaded: bool
+    policy_defined: bool
+    ai_defined: bool
+    token_created: bool
+    instance_connected: bool
+    report_received: bool
+
+
+async def _audited(session: AsyncSession, client_id: UUID, *actions: str) -> bool:
+    """¿Alguien guardó alguna vez estas acciones sobre el cliente? (auditoría: solo inserción)."""
+    stmt = (
+        select(AuditLogModel.id)
+        .where(
+            AuditLogModel.target_type == "client",
+            AuditLogModel.target_id == str(client_id),
+            AuditLogModel.action.in_(actions),
+        )
+        .limit(1)
+    )
+    return (await session.execute(stmt)).first() is not None
+
+
+@router.get("/clients/{client_id}/onboarding", response_model=OnboardingOut)
+async def client_onboarding(
+    client_id: UUID,
+    request: Request,
+    _: Principal = Depends(RequirePermission(Permission.CLIENTS_READ)),
+) -> OnboardingOut:
+    """Avance de la puesta en marcha del cliente, en una sola petición.
+
+    Lo puede ver cualquier rol con acceso al cliente aunque no pueda abrir la pestaña de cada
+    paso (el plan, por ejemplo, es de `clients.billing`): solo expone si el paso está hecho.
+
+    - Plan: hay plan o vigencia cargados.
+    - Política: se guardó alguna vez (auditoría) o difiere de los valores por defecto.
+    - IA: los límites se guardaron alguna vez (auditoría) o no están vacíos.
+    - Token: se generó alguno, aunque ya esté usado, vencido o revocado.
+    - Instalación: una instancia del cliente ya contactó a Cloud.
+    - Reporte: llegaron sucursales o personas.
+    """
+    async with transaction(request) as session:
+        client = await SqlAlchemyClientRepository(session).get_by_id(client_id)
+        if client is None:
+            raise ClientNotFound("No existe el cliente.")
+        policy_default = (
+            client.identity_mode.value == "pseudonym"
+            and not client.config_locked
+            and not client.allow_local_cli
+            and client.access_policy.is_empty
+        )
+        policy_defined = not policy_default or await _audited(
+            session, client_id, "client.policy", "client.access_policy"
+        )
+        ai_defined = not client.ai_policy.is_empty or await _audited(
+            session, client_id, "client.ai_policy"
+        )
+        token = (
+            await session.execute(
+                select(EnrollmentTokenModel.id)
+                .where(EnrollmentTokenModel.client_id == client_id)
+                .limit(1)
+            )
+        ).first()
+        seen = (
+            await session.execute(
+                select(InstanceModel.id)
+                .where(
+                    InstanceModel.client_id == client_id, InstanceModel.last_seen_at.is_not(None)
+                )
+                .limit(1)
+            )
+        ).first()
+        queries = MetricsQueries(session)
+        reported = (
+            await session.execute(
+                select(InstanceDatabaseModel.database_ref)
+                .where(InstanceDatabaseModel.client_id == client_id)
+                .limit(1)
+            )
+        ).first() is not None or await queries.count_people_of_client(client_id) > 0
+    return OnboardingOut(
+        plan_loaded=(
+            client.subscription.plan_name is not None or client.subscription.valid_until is not None
+        ),
+        policy_defined=policy_defined,
+        ai_defined=ai_defined,
+        token_created=token is not None,
+        instance_connected=seen is not None,
+        report_received=reported,
+    )
 
 
 @router.get("/clients/{client_id}/users", response_model=list[UserOut])

@@ -9,12 +9,16 @@ import type { Person } from '@/lib/types'
  */
 export function useClientPeople(clientId: () => string) {
   const people = ref<Person[]>([])
+  /** `true` al terminar de cargar (con o sin personas): distingue vacío de cargando. */
+  const loaded = ref(false)
 
   onMounted(async () => {
     try {
       people.value = await consoleApi.clientPeople(clientId())
     } catch {
       people.value = []
+    } finally {
+      loaded.value = true
     }
   })
 
@@ -29,5 +33,5 @@ export function useClientPeople(clientId: () => string) {
     return found.label ?? `${userRef.slice(0, 8)}…`
   }
 
-  return { people, isKnown, personLabel }
+  return { people, loaded, isKnown, personLabel }
 }

@@ -1,10 +1,11 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { EnrollmentToken } from '@/lib/types'
+import { flushPromises, mount, RouterLinkStub } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { EnrollmentToken, Instance } from '@/lib/types'
 
 const api = vi.hoisted(() => ({
   createToken: vi.fn(),
   revokeToken: vi.fn(),
+  instances: vi.fn(),
 }))
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }))
@@ -25,14 +26,20 @@ const PENDING: EnrollmentToken = {
   revoked_at: null,
 }
 
-function mountPanel(tokens: EnrollmentToken[] = [], loading = false) {
-  return mount(ClientTokensPanel, { props: { clientId: 'c1', tokens, loading } })
+function mountPanel(tokens: EnrollmentToken[] = [], loading = false, canManage = true) {
+  return mount(ClientTokensPanel, {
+    props: { clientId: 'c1', tokens, loading, canManage },
+    global: { stubs: { RouterLink: RouterLinkStub } },
+  })
 }
+
+const NEW_INSTANCE = { id: 'i2', name: 'SRV-NUEVA' } as Instance
 
 beforeEach(() => {
   vi.clearAllMocks()
   api.createToken.mockResolvedValue({ token: 'svk_enr_secreto' })
   api.revokeToken.mockResolvedValue(undefined)
+  api.instances.mockResolvedValue([])
 })
 
 describe('tokens de vinculación', () => {
@@ -101,5 +108,141 @@ describe('tokens de vinculación', () => {
     const wrapper = mountPanel([{ ...PENDING, state: 'used' }])
 
     expect(wrapper.find('[data-test="token-revoke"]').exists()).toBe(false)
+  })
+})
+
+describe('vinculación guiada', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function generateAndClose(wrapper: ReturnType<typeof mountPanel>) {
+    await wrapper.get('[data-test="token-create"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-test="secret-close"]').trigger('click')
+    await flushPromises()
+  }
+
+  it('muestra los tres pasos y la dirección de Cloud junto al token', async () => {
+    const wrapper = mountPanel()
+    expect(wrapper.findAll('.ui-stepper__step')).toHaveLength(3)
+
+    await wrapper.get('[data-test="token-create"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(window.location.origin)
+    expect(wrapper.text()).toContain('Pégalo')
+    expect(wrapper.find('[data-test="link-step-install"]').exists()).toBe(true)
+  })
+
+  it('al cerrar el token espera la conexión y avisa cuando aparece una instalación nueva', async () => {
+    api.instances.mockResolvedValue([{ id: 'i1', name: 'Vieja' }])
+    const wrapper = mountPanel()
+    await generateAndClose(wrapper)
+
+    expect(wrapper.find('[data-test="link-step-waiting"]').exists()).toBe(true)
+    // Una instalación que ya existía no cuenta.
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(wrapper.find('[data-test="link-step-linked"]').exists()).toBe(false)
+
+    api.instances.mockResolvedValue([{ id: 'i1', name: 'Vieja' }, NEW_INSTANCE])
+    await vi.advanceTimersByTimeAsync(5_000)
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="link-step-linked"]').text()).toContain('Instalación vinculada')
+    const link = wrapper.getComponent(RouterLinkStub)
+    expect(link.props('to')).toBe('/instancias/i2')
+    expect(link.text()).toBe('SRV-NUEVA')
+    // Refresca la lista de tokens (el usado deja de estar vigente).
+    expect(wrapper.emitted('changed')).toHaveLength(2)
+  })
+
+  it('consulta cada 5 segundos y deja de consultar al encontrarla', async () => {
+    const wrapper = mountPanel()
+    await generateAndClose(wrapper)
+    const baseline = api.instances.mock.calls.length
+
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(api.instances.mock.calls.length - baseline).toBe(3)
+
+    api.instances.mockResolvedValue([NEW_INSTANCE])
+    await vi.advanceTimersByTimeAsync(5_000)
+    const afterFound = api.instances.mock.calls.length
+    await vi.advanceTimersByTimeAsync(30_000)
+
+    expect(api.instances).toHaveBeenCalledWith({ client_id: 'c1' })
+    expect(api.instances.mock.calls.length).toBe(afterFound)
+  })
+
+  it('deja de consultar al desmontar', async () => {
+    const wrapper = mountPanel()
+    await generateAndClose(wrapper)
+    await vi.advanceTimersByTimeAsync(5_000)
+    wrapper.unmount()
+    const calls = api.instances.mock.calls.length
+
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(api.instances.mock.calls.length).toBe(calls)
+  })
+
+  it('no consulta con la pestaña oculta', async () => {
+    const wrapper = mountPanel()
+    await generateAndClose(wrapper)
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    const calls = api.instances.mock.calls.length
+
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(api.instances.mock.calls.length).toBe(calls)
+
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(api.instances.mock.calls.length).toBeGreaterThan(calls)
+    wrapper.unmount()
+  })
+
+  it('tras 10 minutos sin conexión se detiene y ofrece seguir esperando', async () => {
+    const wrapper = mountPanel()
+    await generateAndClose(wrapper)
+
+    await vi.advanceTimersByTimeAsync(10 * 60_000 + 5_000)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('No se detectó ninguna conexión')
+    const calls = api.instances.mock.calls.length
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(api.instances.mock.calls.length).toBe(calls)
+
+    await wrapper.get('[data-test="link-keep-waiting"]').trigger('click')
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(api.instances.mock.calls.length).toBeGreaterThan(calls)
+    wrapper.unmount()
+  })
+
+  it('un fallo de red al consultar no corta la espera', async () => {
+    const wrapper = mountPanel()
+    await generateAndClose(wrapper)
+    api.instances.mockRejectedValueOnce(new Error('sin red'))
+    await vi.advanceTimersByTimeAsync(5_000)
+
+    api.instances.mockResolvedValue([NEW_INSTANCE])
+    await vi.advanceTimersByTimeAsync(5_000)
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="link-step-linked"]').exists()).toBe(true)
+  })
+
+  it('sin tokens.manage no ofrece generar ni revocar, pero sí lista los tokens', () => {
+    const wrapper = mountPanel([PENDING], false, false)
+
+    expect(wrapper.find('[data-test="token-create"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="token-revoke"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('tarea de Soporte')
+    expect(wrapper.text()).toContain('Vigente')
   })
 })
