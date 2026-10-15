@@ -170,7 +170,16 @@ router.beforeEach(async (to) => {
   if (requiredModule && authStore.isAuthenticated) {
     const permisos = usePermisosStore()
     if (!permisos.loaded) {
-      await permisos.cargarBootstrap()
+      try {
+        await permisos.cargarBootstrap()
+      } catch {
+        // Una excepción acá abortaba la navegación y dejaba la pantalla en
+        // negro. Si la sesión caducó (401 sin refresh), el HttpClient ya la
+        // limpió: se vuelve al login en lugar de quedarse sin ruta.
+        if (!authStore.isAuthenticated) {
+          return { name: 'login', query: { next: to.fullPath } }
+        }
+      }
     }
     if (!permisos.puede(requiredModule)) {
       return { name: 'no-access', query: { modulo: requiredModule } }

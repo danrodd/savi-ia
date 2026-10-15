@@ -36,15 +36,16 @@ installAuthBridge({
     })
   },
   reloadPermisos: () => {
-    void permisosStore.cargarBootstrap()
+    permisosStore.cargarBootstrap().catch(() => undefined)
   },
 })
 
 // Si arrancamos con sesión persistida en localStorage, cargamos el
 // bootstrap de permisos antes del primer render para que los guards
 // y la UI tengan el set fresco.
+// Un 401 acá ya limpia la sesión y manda al login: no debe quedar como error sin capturar.
 if (authStore.isAuthenticated) {
-  void permisosStore.cargarBootstrap()
+  permisosStore.cargarBootstrap().catch(() => undefined)
 }
 
 app.mount('#app')
