@@ -19,8 +19,12 @@ deploy/**/secrets
 deploy/**/data
 deploy/**/backups
 
-# Otras aplicaciones del monorepo y material que la imagen no usa.
-cloud
+# Otras aplicaciones del monorepo y material que la imagen no usa. De la consola de Cloud solo
+# entra su package.json: `npm ci` lo pide porque es un workspace del lock único.
+cloud/*
+!cloud/frontend
+cloud/frontend/*
+!cloud/frontend/package.json
 installer
 docs
 skills

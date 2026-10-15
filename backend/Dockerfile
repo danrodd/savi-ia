@@ -14,16 +14,22 @@ ARG NODE_VERSION=22
 # ── 1. Frontend ──────────────────────────────────────────────────────
 FROM node:${NODE_VERSION}-alpine AS frontend
 WORKDIR /build
-COPY frontend/package.json frontend/package-lock.json ./
+# npm workspaces: el lock es único en la raíz y `npm ci` necesita el package.json de cada
+# workspace (también el de la consola de Cloud, aunque esta imagen no la compile).
+COPY package.json package-lock.json ./
+COPY packages/ui/package.json packages/ui/
+COPY frontend/package.json frontend/
+COPY cloud/frontend/package.json cloud/frontend/
 RUN npm ci --no-audit --no-fund
-COPY frontend/ ./
+COPY packages/ui/ packages/ui/
+COPY frontend/ frontend/
 ARG APP_VERSION=0.0.0-dev
 # Base relativa: el backend sirve la SPA desde su mismo origen, así que las llamadas al API
 # no llevan host. La landing comercial es del sitio público, no de la aplicación.
 ENV VITE_API_BASE_URL=/ \
     VITE_LANDING_ENABLED=false \
     VITE_APP_VERSION=${APP_VERSION}
-RUN npm run build
+RUN npm run build --workspace frontend
 
 
 # ── 2. Dependencias de Python y modelo de embeddings ─────────────────
@@ -82,7 +88,7 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=builder --chown=savi:savi /app /app
-COPY --from=frontend --chown=savi:savi /build/dist /app/frontend
+COPY --from=frontend --chown=savi:savi /build/frontend/dist /app/frontend
 COPY --chown=savi:savi backend/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 

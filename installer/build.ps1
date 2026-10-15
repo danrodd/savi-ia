@@ -137,12 +137,20 @@ donde se mantiene. Estructura esperada:
 # ── 1. Frontend ───────────────────────────────────────────────────────
 if (-not $SkipFrontend) {
     Write-Step 'Compilando el frontend'
-    Push-Location $Frontend
-    try {
-        if (-not (Test-Path 'node_modules')) {
+    # npm workspaces: las dependencias se instalan una sola vez en la raíz del monorepo
+    # (lock único, `node_modules` compartido con el paquete de UI y la consola de Cloud).
+    if (-not (Test-Path (Join-Path $Root 'node_modules'))) {
+        Push-Location $Root
+        try {
             npm install
             if ($LASTEXITCODE -ne 0) { throw 'npm install falló.' }
         }
+        finally {
+            Pop-Location
+        }
+    }
+    Push-Location $Frontend
+    try {
         # Base relativa: el backend sirve la SPA desde su mismo origen, así
         # que las llamadas al API no llevan host. Los dos consumidores
         # (HttpClient y authService) recortan la barra final.

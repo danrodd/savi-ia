@@ -136,8 +136,8 @@ services:
 
   cloud:
     build:
-      context: ../../cloud
-      dockerfile: backend/Dockerfile
+      context: ../..
+      dockerfile: cloud/backend/Dockerfile
     image: savi-master/cloud:${SAVI_VERSION}
     container_name: savi-master-cloud
     restart: unless-stopped

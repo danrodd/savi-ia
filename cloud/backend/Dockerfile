@@ -1,4 +1,5 @@
-# SAVI Cloud: API + consola web. El contexto de build es `cloud/` (ver deploy/docker-compose.yml).
+# SAVI Cloud: API + consola web. El contexto de build es la RAÍZ del monorepo (la consola usa el
+# paquete compartido `packages/ui`); ver deploy/master/docker-compose.yml.
 # Multi-stage: la consola se compila con Node, el builder resuelve dependencias con uv y la
 # imagen final solo lleva el venv, el código y la consola ya compilada, como usuario sin
 # privilegios.
@@ -7,10 +8,16 @@ ARG NODE_VERSION=22
 
 FROM node:${NODE_VERSION}-alpine AS console
 WORKDIR /console
-COPY frontend/package.json frontend/package-lock.json ./
+# npm workspaces: lock único en la raíz; `npm ci` necesita el package.json de cada workspace
+# (también el de SAVI, aunque esta imagen no lo compile).
+COPY package.json package-lock.json ./
+COPY packages/ui/package.json packages/ui/
+COPY frontend/package.json frontend/
+COPY cloud/frontend/package.json cloud/frontend/
 RUN npm ci --no-audit --no-fund
-COPY frontend/ ./
-RUN npm run build
+COPY packages/ui/ packages/ui/
+COPY cloud/frontend/ cloud/frontend/
+RUN npm run build --workspace cloud/frontend
 
 
 FROM python:${PYTHON_VERSION}-slim AS builder
@@ -24,12 +31,12 @@ RUN pip install "uv==${UV_VERSION}"
 WORKDIR /app
 
 # Dependencias primero: esta capa solo se invalida si cambian pyproject.toml o uv.lock.
-COPY backend/pyproject.toml backend/uv.lock ./
+COPY cloud/backend/pyproject.toml cloud/backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
-COPY backend/app ./app
-COPY backend/alembic ./alembic
-COPY backend/alembic.ini backend/docker-entrypoint.sh ./
+COPY cloud/backend/app ./app
+COPY cloud/backend/alembic ./alembic
+COPY cloud/backend/alembic.ini cloud/backend/docker-entrypoint.sh ./
 RUN uv sync --frozen --no-dev
 
 
@@ -41,7 +48,7 @@ RUN groupadd --system --gid 10001 savi \
     && useradd --system --uid 10001 --gid savi --no-create-home --shell /usr/sbin/nologin savi
 WORKDIR /app
 COPY --from=builder --chown=savi:savi /app /app
-COPY --from=console --chown=savi:savi /console/dist /app/console
+COPY --from=console --chown=savi:savi /console/cloud/frontend/dist /app/console
 ENV CLOUD_CONSOLE_STATIC_DIR=/app/console
 RUN chmod +x /app/docker-entrypoint.sh
 USER savi

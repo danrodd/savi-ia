@@ -1,0 +1,12 @@
+{
+  "name": "savi-ia",
+  "private": true,
+  "workspaces": [
+    "packages/ui",
+    "frontend",
+    "cloud/frontend"
+  ],
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

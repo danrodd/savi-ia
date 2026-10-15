@@ -1,0 +1,24 @@
+# Contexto de build de cloud/backend/Dockerfile: la raíz del monorepo. Lista blanca: solo entra
+# lo que la imagen necesita (la API, la consola, el paquete de UI compartido y los package.json
+# que pide `npm ci` por ser workspaces del lock único).
+*
+!package.json
+!package-lock.json
+!packages/ui
+!frontend/package.json
+!cloud/frontend
+!cloud/backend
+
+# Dentro de lo permitido, nada de dependencias instaladas, builds, cachés ni secretos.
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.pyright
+**/dist
+**/*.db
+**/.env
+**/.env.*
+cloud/backend/tests
