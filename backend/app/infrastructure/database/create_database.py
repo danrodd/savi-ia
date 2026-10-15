@@ -72,7 +72,7 @@ async def _create_if_missing(connection: AsyncConnection, name: str, user: str) 
             raise
         raise AgentDatabaseCreationError(
             f"La base '{name}' no existe y el usuario '{user}' no tiene permiso "
-            f"para crearla. Pedile al administrador del servidor que la cree "
+            f"para crearla. Pídale al administrador del servidor que la cree "
             f"(CREATE DATABASE {quoted};) o use un usuario con permiso CREATEDB."
         ) from None
     return True

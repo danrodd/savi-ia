@@ -56,7 +56,7 @@ async def run_semantic_query(
             )
             return (
                 f"El usuario no tiene acceso a '{entity.name}' en el ERP (requiere el "
-                f"módulo {' o '.join(needed)}). Decile que no tiene "
+                f"módulo {' o '.join(needed)}). Dile que no tiene "
                 "permiso para consultar esa información; no la estimes por otro camino."
             )
         compiled = compile_query(query, entity)

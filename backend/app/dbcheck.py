@@ -227,7 +227,7 @@ async def _missing_database(request: DbRequest, maintenance: str) -> Outcome:
     return Outcome(
         "error",
         f"La base '{request.database}' no existe y el usuario '{request.user}' no tiene "
-        "permiso para crearla. Pedile al administrador del servidor que la cree "
+        "permiso para crearla. Pídale al administrador del servidor que la cree "
         f"(CREATE DATABASE {_quote_identifier(request.database)} OWNER "
         f"{_quote_identifier(request.user)};) o use un usuario con permiso CREATEDB.",
     )
@@ -292,7 +292,7 @@ async def _inspect_savi(connection: AsyncConnection, request: DbRequest) -> Outc
         return Outcome(
             "error",
             f"La base existe, pero el usuario '{request.user}' no puede crear tablas en "
-            "ella (desde PostgreSQL 15 hace falta un permiso explícito). Pedile al "
+            "ella (desde PostgreSQL 15 hace falta un permiso explícito). Pídale al "
             "administrador: GRANT CREATE ON SCHEMA public TO "
             f"{_quote_identifier(request.user)}; o que lo haga dueño de la base.",
         )

@@ -128,7 +128,7 @@ export const PLANS: Plan[] = [
     title: 'Con su propia clave',
     body: 'Conecta su cuenta de Claude, OpenAI o Gemini y le paga directamente al proveedor.',
     points: [
-      'Elige el proveedor y el modelo',
+      'Elija el proveedor y el modelo',
       'Consumo visible por usuario y por empresa',
       'Cambia de proveedor cuando quiera',
     ],

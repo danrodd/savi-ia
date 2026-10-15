@@ -235,7 +235,7 @@ def _voseo_imperatives() -> set[str]:
         out.add(f"{root}é")
     for root in _IR:
         out.add(f"{root}í")
-        out.update(f"{root}i{c}" for c in ("lo", "la", "los", "las"))
+        out.update(f"{root}i{c}" for c in _CLITICS)
     out.update({"cliqueá", "andá", "vení", "decí"})
     return out
 

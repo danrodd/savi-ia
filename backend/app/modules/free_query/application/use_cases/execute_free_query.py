@@ -61,7 +61,7 @@ class ExecuteFreeQueryUseCase:
                     f"La consulta es muy amplia: el planner estima "
                     f"~{estimated:,} filas (máximo {self._policy.max_estimated_rows:,}). "
                     "Afina el filtro (por fecha, cliente, producto…) o "
-                    "pedime un agregado (totales, conteos)."
+                    "pide un agregado (totales, conteos)."
                 )
             columns, rows = await self._executor.execute_select(
                 normalized_sql, max_rows=self._policy.max_rows
