@@ -119,6 +119,7 @@ async def test_offline_escalates_and_auto_resolves(fx: Fixture) -> None:
     assert await evaluate(fx) == (1, 0, 0)
     rows = await alerts(fx)
     assert [(a["rule_code"], a["severity"]) for a in rows] == [("instance_offline", "warning")]
+    assert rows[0]["client_name"]  # la lista trae el nombre del cliente
 
     # Evaluar de nuevo no duplica la alerta abierta.
     assert await evaluate(fx) == (0, 0, 0)

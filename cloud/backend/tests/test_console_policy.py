@@ -255,6 +255,29 @@ async def test_people_have_no_label_for_pseudonymous_clients(fx: Fixture) -> Non
     assert people[0]["user_ref"] == USER_A
 
 
+async def test_client_people_include_everyone_without_a_time_window(fx: Fixture) -> None:
+    client_id = await make_client(fx)
+    await fx.console.http.patch(
+        f"{API}/clients/{client_id}/policy", json={"identity_mode": "named"}, headers=fx.admin.auth
+    )
+    linked = await link_instance(fx, client_id)
+    old = session_event("s2", USER_B, label="MGOMEZ")
+    old["occurred_at"] = "2020-01-01T11:00:00Z"  # muy fuera de los últimos 30 días
+    await send(fx, linked, [session_event("s1", USER_A, label="JPEREZ"), old])
+
+    people = (
+        await fx.console.http.get(f"{API}/clients/{client_id}/people", headers=fx.comercial.auth)
+    ).json()
+
+    assert [p["user_ref"] for p in people] == [USER_A, USER_B]  # la más reciente primero
+    assert {p["user_ref"]: p["label"] for p in people} == {USER_A: "JPEREZ", USER_B: "MGOMEZ"}
+
+
+async def test_client_people_of_unknown_client_is_404(fx: Fixture) -> None:
+    res = await fx.console.http.get(f"{API}/clients/{uuid4()}/people", headers=fx.admin.auth)
+    assert res.status_code == 404
+
+
 async def test_people_of_unknown_instance_is_404(fx: Fixture) -> None:
     res = await fx.console.http.get(f"{API}/instances/{uuid4()}/people", headers=fx.admin.auth)
     assert res.status_code == 404
@@ -479,9 +502,7 @@ async def test_access_policy_changes_are_audited(fx: Fixture) -> None:
     )
 
     audit = (
-        await fx.console.http.get(
-            f"{API}/audit?action=client.access_policy", headers=fx.admin.auth
-        )
+        await fx.console.http.get(f"{API}/audit?action=client.access_policy", headers=fx.admin.auth)
     ).json()
 
     entry = audit["items"][0]
@@ -614,9 +635,7 @@ async def test_groups_are_audited(fx: Fixture) -> None:
     await _put_access(fx, client_id, {"groups": [_group("Norte", [USER_A], [DB_1])]})
 
     audit = (
-        await fx.console.http.get(
-            f"{API}/audit?action=client.access_policy", headers=fx.admin.auth
-        )
+        await fx.console.http.get(f"{API}/audit?action=client.access_policy", headers=fx.admin.auth)
     ).json()
 
     assert audit["items"][0]["after"]["groups"][0]["name"] == "Norte"
@@ -705,9 +724,7 @@ async def test_the_group_cap_is_stored_and_audited(fx: Fixture) -> None:
     got = await fx.console.http.get(f"{API}/clients/{client_id}", headers=fx.admin.auth)
     assert got.json()["access_policy"]["groups"][0]["user_monthly_usd"] == "7.5"
     audit = (
-        await fx.console.http.get(
-            f"{API}/audit?action=client.access_policy", headers=fx.admin.auth
-        )
+        await fx.console.http.get(f"{API}/audit?action=client.access_policy", headers=fx.admin.auth)
     ).json()
     assert audit["items"][0]["after"]["groups"][0]["user_monthly_usd"] == "7.5"
 
@@ -730,4 +747,3 @@ async def test_group_and_personal_caps_cannot_exceed_the_contract_limit(fx: Fixt
     res = await _put_ai(fx, client_id, {"user_overrides": {"f" * 32: "1"}})
 
     assert res.status_code == 422, res.text
-

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { ApiError } from '@/lib/http'
-import type { Alert, AlertRule, StaffMember } from '@/lib/types'
+import type { Alert, AlertRule, Client, StaffMember } from '@/lib/types'
 
 const api = vi.hoisted(() => ({
   clients: vi.fn(),
@@ -162,6 +162,43 @@ describe('clientes', () => {
     expect(wrapper.get('[data-test="client-code"]').text()).toContain('Ya existe un cliente')
   })
 
+  it('pide de a 50 y "Ver más" trae el siguiente tramo sin mentir en el conteo', async () => {
+    const page = (from: number, count: number) =>
+      Array.from(
+        { length: count },
+        (_, n) =>
+          ({
+            id: `c${from + n}`,
+            code: `C${from + n}`,
+            name: `Cliente ${from + n}`,
+            status: 'active',
+            instances_online: 0,
+            instances_total: 0,
+            last_seen_at: null,
+            oldest_version: null,
+          }) as unknown as Client,
+      )
+    api.clients
+      .mockResolvedValueOnce({ items: page(0, 50), total: 120 })
+      .mockResolvedValueOnce({ items: page(50, 50), total: 120 })
+      .mockResolvedValueOnce({ items: page(100, 20), total: 120 })
+    const { wrapper } = await mountView(ClientsView, ['clients.read'])
+
+    expect(api.clients).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50, offset: 0 }))
+    expect(wrapper.get('[data-test="clients-total"]').text()).toBe('Mostrando 50 de 120 clientes')
+
+    await wrapper.get('[data-test="clients-more"]').trigger('click')
+    await flushPromises()
+    expect(api.clients).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50, offset: 50 }))
+    expect(wrapper.get('[data-test="clients-total"]').text()).toBe('Mostrando 100 de 120 clientes')
+
+    await wrapper.get('[data-test="clients-more"]').trigger('click')
+    await flushPromises()
+    expect(api.clients).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 100 }))
+    expect(wrapper.get('[data-test="clients-total"]').text()).toBe('120 clientes')
+    expect(wrapper.find('[data-test="clients-more"]').exists()).toBe(false)
+  })
+
   it('sin permiso de escritura no ofrece crear', async () => {
     const { wrapper } = await mountView(ClientsView, ['clients.read'])
 
@@ -181,6 +218,21 @@ describe('alertas', () => {
 
     expect(api.alerts).toHaveBeenCalledWith({ status: 'open', severity: undefined })
     expect(wrapper.text()).toContain('Suscripción por vencer')
+  })
+
+  it('muestra el detalle legible y el nombre del cliente', async () => {
+    api.alerts.mockResolvedValue([
+      {
+        ...ALERT,
+        client_name: 'Farmacias X',
+        details: { valid_until: '2026-10-03', days_left: 2 },
+      },
+    ])
+    const { wrapper } = await mountView(AlertsView, ['alerts.read'])
+
+    expect(wrapper.text()).toContain('Vence el 03/10/2026 · quedan 2 días')
+    expect(wrapper.text()).not.toContain('days_left')
+    expect(wrapper.get('[data-test="alert-client"]').text()).toBe('Farmacias X')
   })
 
   it('reconocer avisa y recarga', async () => {

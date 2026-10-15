@@ -15,11 +15,12 @@ import {
   useZodForm,
 } from '@savi/ui'
 import { computed, onMounted, ref } from 'vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
 import { formatDateTime, formatDay, formatUsd } from '@/lib/format'
 import { ledgerEntrySchema, planSchema } from '@/lib/schemas/billing'
-import type { LedgerEntry, Subscription } from '@/lib/types'
+import type { LedgerEntry, LedgerEntryInput, Subscription } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
 const props = defineProps<{ clientId: string }>()
@@ -115,17 +116,87 @@ async function savePlan(): Promise<void> {
   })
 }
 
-async function recordEntry(): Promise<void> {
-  await entry.handleSubmit(async (data) => {
-    try {
-      await consoleApi.recordLedgerEntry(props.clientId, data)
-      toast.success(data.kind === 'payment' ? 'Pago registrado' : 'Ajuste registrado')
-      entry.reset({ kind: 'payment', amount_usd: '', note: '', extends_until: '' })
-      await load()
-    } catch (e) {
-      toast.error('No se pudo registrar el movimiento', { description: errorMessage(e) })
-    }
+/**
+ * Refresca el resumen y los movimientos sin tocar el formulario del plan: si hay ediciones
+ * sin guardar se conservan. La vigencia sí se acompaña (un pago pudo extenderla) siempre que
+ * la persona no la haya editado, para que guardar el plan no la devuelva al valor viejo.
+ */
+async function refreshBilling(): Promise<void> {
+  const [sub, entries] = await Promise.all([
+    consoleApi.subscription(props.clientId),
+    consoleApi.ledger(props.clientId),
+  ])
+  const previousUntil = subscription.value?.valid_until ?? ''
+  ledger.value = entries
+  if (!plan.isDirty.value) {
+    hydrate(sub)
+    return
+  }
+  subscription.value = sub
+  if (plan.values.valid_until === previousUntil) plan.values.valid_until = sub.valid_until ?? ''
+}
+
+function discardPlan(): void {
+  if (subscription.value) hydrate(subscription.value)
+  else plan.reset()
+}
+
+// Registrar un movimiento no se puede deshacer: primero se pide confirmación.
+const pending = ref<LedgerEntryInput | null>(null)
+const recording = ref(false)
+
+function askToRecord(): void {
+  void entry.handleSubmit((data) => {
+    pending.value = data
   })
+}
+
+const pendingTitle = computed(() =>
+  pending.value?.kind === 'payment' ? 'Registrar el pago' : 'Registrar el ajuste',
+)
+
+const pendingMessage = computed(() => {
+  const data = pending.value
+  if (!data) return ''
+  const kind = data.kind === 'payment' ? 'Pago recibido' : 'Ajuste'
+  const parts = [`${kind} de ${formatUsd(data.amount_usd)}.`, `Referencia: ${data.note}.`]
+  if (data.extends_until) {
+    const current = subscription.value?.valid_until ?? null
+    const target = formatDay(data.extends_until)
+    parts.push(
+      current && data.extends_until <= current
+        ? `La vigencia no cambia: ya llega hasta el ${formatDay(current)}.`
+        : current
+          ? `La vigencia pasa del ${formatDay(current)} al ${target}.`
+          : `La vigencia queda hasta el ${target}.`,
+    )
+  }
+  parts.push('Queda en el historial y no se puede deshacer.')
+  return parts.join(' ')
+})
+
+async function recordEntry(): Promise<void> {
+  const data = pending.value
+  if (!data) return
+  recording.value = true
+  try {
+    await consoleApi.recordLedgerEntry(props.clientId, data)
+  } catch (e) {
+    toast.error('No se pudo registrar el movimiento', { description: errorMessage(e) })
+    return
+  } finally {
+    recording.value = false
+    pending.value = null
+  }
+  toast.success(data.kind === 'payment' ? 'Pago registrado' : 'Ajuste registrado')
+  entry.reset({ kind: 'payment', amount_usd: '', note: '', extends_until: '' })
+  try {
+    await refreshBilling()
+  } catch (e) {
+    toast.error('El movimiento quedó registrado, pero no se pudo actualizar la vista', {
+      description: errorMessage(e),
+    })
+  }
 }
 </script>
 
@@ -226,7 +297,7 @@ async function recordEntry(): Promise<void> {
               v-if="plan.isDirty.value"
               variant="ghost"
               :disabled="plan.submitting.value"
-              @click="plan.reset()"
+              @click="discardPlan"
             >
               Descartar
             </Button>
@@ -243,7 +314,7 @@ async function recordEntry(): Promise<void> {
       </Card>
 
       <Card title="Registrar movimiento" description="Un pago recibido o un ajuste manual.">
-        <form class="form-grid" novalidate @submit.prevent="recordEntry">
+        <form class="form-grid" novalidate @submit.prevent="askToRecord">
           <Select v-model="entry.values.kind" label="Tipo" :options="KINDS" data-test="entry-kind" />
           <TextField
             v-model="entry.values.amount_usd"
@@ -282,6 +353,16 @@ async function recordEntry(): Promise<void> {
         </form>
       </Card>
     </div>
+
+    <ConfirmDialog
+      :open="pending !== null"
+      :title="pendingTitle"
+      :message="pendingMessage"
+      confirm-label="Registrar"
+      :busy="recording"
+      @confirm="recordEntry"
+      @cancel="pending = null"
+    />
 
     <Card title="Movimientos" padding="none">
       <DataTable

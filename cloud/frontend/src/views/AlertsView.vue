@@ -16,6 +16,7 @@ import { BellOff } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import StatusBadge from '@/components/StatusBadge.vue'
+import { alertDetail } from '@/lib/alertDetails'
 import { consoleApi } from '@/lib/api'
 import { ALERT_STATUS, relativeTime, SEVERITY } from '@/lib/format'
 import { useRuleTitles } from '@/lib/ruleTitles'
@@ -53,12 +54,6 @@ const { data, loading, error, reload } = useAsync(() =>
   consoleApi.alerts({ status: status.value ?? undefined, severity: severity.value ?? undefined }),
 )
 watch([status, severity], () => void reload())
-
-function detail(alert: Alert): string {
-  return Object.entries(alert.details)
-    .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`)
-    .join(' · ')
-}
 
 const busyId = ref<string | null>(null)
 
@@ -143,8 +138,10 @@ async function resolve(): Promise<void> {
           <template #cell-rule_code="{ row }">
             <div class="alert">
               <strong>{{ ruleTitle(row.rule_code) }}</strong>
-              <span v-if="Object.keys(row.details).length" class="alert__detail">{{ detail(row) }}</span>
-              <RouterLink :to="`/clientes/${row.client_id}`" class="alert__link">Ver cliente</RouterLink>
+              <span v-if="Object.keys(row.details).length" class="alert__detail">{{ alertDetail(row) }}</span>
+              <RouterLink :to="`/clientes/${row.client_id}`" class="alert__link" data-test="alert-client">
+                {{ row.client_name ?? 'Ver cliente' }}
+              </RouterLink>
             </div>
           </template>
           <template #cell-status="{ row }">

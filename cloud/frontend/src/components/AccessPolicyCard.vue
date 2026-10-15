@@ -16,10 +16,11 @@ import {
 import { Trash2, UserRound, UsersRound } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useClientPeople } from '@/composables/useClientPeople'
 import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
 import { accessPolicySchema, toBody, toForm } from '@/lib/schemas/accessPolicy'
-import type { AccessPolicy, ClientDatabase, ClientUser } from '@/lib/types'
+import type { AccessPolicy, ClientDatabase } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
 const props = defineProps<{ clientId: string; policy: AccessPolicy }>()
@@ -34,19 +35,23 @@ watch(
 useLeaveGuard(form.isDirty)
 
 const databases = ref<ClientDatabase[]>([])
-const people = ref<ClientUser[]>([])
+const { people, isKnown, personLabel } = useClientPeople(() => props.clientId)
 
 onMounted(async () => {
-  const [dbs, users] = await Promise.allSettled([
-    consoleApi.clientDatabases(props.clientId),
-    consoleApi.clientUsers(props.clientId),
-  ])
-  databases.value = dbs.status === 'fulfilled' ? dbs.value : []
-  people.value = users.status === 'fulfilled' ? users.value : []
+  try {
+    databases.value = await consoleApi.clientDatabases(props.clientId)
+  } catch {
+    databases.value = []
+  }
 })
 
-function personLabel(ref: string): string {
-  return people.value.find((p) => p.user_ref === ref)?.label ?? `${ref.slice(0, 8)}…`
+/** Personas de un grupo: el padrón más los miembros ya guardados que no aparezcan en él. */
+function memberOptions(members: string[]): { ref: string; label: string }[] {
+  const saved = members.filter((m) => !isKnown(m))
+  return [...saved, ...people.value.map((p) => p.user_ref)].map((ref) => ({
+    ref,
+    label: personLabel(ref),
+  }))
 }
 
 function toggle(list: string[], ref: string, on: boolean): string[] {
@@ -61,7 +66,7 @@ const newRef = ref<string | null>(null)
 const candidates = computed(() =>
   people.value
     .filter((p) => !form.values.rules.some((r) => r.user_ref === p.user_ref))
-    .map((p) => ({ value: p.user_ref, label: p.label ?? `${p.user_ref.slice(0, 8)}…` })),
+    .map((p) => ({ value: p.user_ref, label: personLabel(p.user_ref) })),
 )
 
 function addGroup(): void {
@@ -188,14 +193,14 @@ async function save(): Promise<void> {
               <p class="access__label">Personas</p>
               <div class="access__checks">
                 <Checkbox
-                  v-for="p in people"
-                  :key="p.user_ref"
-                  :model-value="g.members.includes(p.user_ref)"
-                  :label="p.label ?? `${p.user_ref.slice(0, 8)}…`"
-                  :data-test="`access-group-${g.name}-person-${p.user_ref}`"
-                  @update:model-value="g.members = toggle(g.members, p.user_ref, $event)"
+                  v-for="p in memberOptions(g.members)"
+                  :key="p.ref"
+                  :model-value="g.members.includes(p.ref)"
+                  :label="p.label"
+                  :data-test="`access-group-${g.name}-person-${p.ref}`"
+                  @update:model-value="g.members = toggle(g.members, p.ref, $event)"
                 />
-                <p v-if="!people.length" class="muted">Todavía no hay personas con consumo registrado.</p>
+                <p v-if="!people.length && !g.members.length" class="muted">Todavía no hay personas con consumo registrado.</p>
               </div>
             </section>
             <section>

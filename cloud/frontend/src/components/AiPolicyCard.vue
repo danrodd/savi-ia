@@ -12,8 +12,9 @@ import {
   useZodForm,
 } from '@savi/ui'
 import { UserRound, X } from 'lucide-vue-next'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useClientPeople } from '@/composables/useClientPeople'
 import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
 import { formatUsd } from '@/lib/format'
@@ -25,7 +26,7 @@ import {
   toBody,
   toForm,
 } from '@/lib/schemas/aiPolicy'
-import type { AiPolicy, ClientUser } from '@/lib/types'
+import type { AiPolicy } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
 const props = defineProps<{ clientId: string; policy: AiPolicy }>()
@@ -39,19 +40,8 @@ watch(
 
 useLeaveGuard(form.isDirty)
 
-const people = ref<ClientUser[]>([])
-onMounted(async () => {
-  try {
-    people.value = await consoleApi.clientUsers(props.clientId)
-  } catch {
-    people.value = []
-  }
-})
-
-function personLabel(ref: string): string {
-  const found = people.value.find((p) => p.user_ref === ref)
-  return found?.label ?? `${ref.slice(0, 8)}…`
-}
+// Las excepciones ya guardadas se muestran aunque la persona no esté en el padrón.
+const { people, personLabel } = useClientPeople(() => props.clientId)
 
 // Alta de una excepción: se valida acá, aparte del formulario principal.
 const newRef = ref<string | null>(null)
@@ -61,7 +51,7 @@ const newError = ref<{ person?: string; amount?: string }>({})
 const candidates = computed(() =>
   people.value
     .filter((p) => !form.values.overrides.some((o) => o.user_ref === p.user_ref))
-    .map((p) => ({ value: p.user_ref, label: p.label ?? `${p.user_ref.slice(0, 8)}…` })),
+    .map((p) => ({ value: p.user_ref, label: personLabel(p.user_ref) })),
 )
 
 function addOverride(): void {
@@ -183,7 +173,7 @@ async function save(): Promise<void> {
 
     <Card
       title="Excepciones por persona"
-      description="Reemplazan el tope por persona. Con 0, la persona queda sin IA. La lista sale de quienes ya usaron SAVI."
+      description="Reemplazan el tope por persona. Con 0, la persona queda sin IA. La lista sale de las personas que ya usaron SAVI en este cliente."
     >
       <ul v-if="form.values.overrides.length" class="ai__overrides">
         <li v-for="o in form.values.overrides" :key="o.user_ref" data-test="ai-override">

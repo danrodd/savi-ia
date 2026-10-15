@@ -11,14 +11,14 @@ import {
   TextField,
 } from '@savi/ui'
 import { Building2, Plus, Search } from 'lucide-vue-next'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import ClientFormDialog from '@/components/ClientFormDialog.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
 import { relativeTime } from '@/lib/format'
 import type { Client } from '@/lib/types'
-import { useAsync } from '@/lib/useAsync'
+import { errorMessage } from '@/lib/useAsync'
 import { useAuthStore } from '@/stores/authStore'
 
 const auth = useAuthStore()
@@ -46,18 +46,50 @@ const COLUMNS: TableColumn[] = [
   { key: 'oldest_version', label: 'Versión más antigua', width: '170px', mono: true },
 ]
 
-const { data, loading, error, reload } = useAsync(() =>
-  consoleApi.clients({
-    q: q.value.trim() || undefined,
-    status: status.value ?? undefined,
-    sort: sort.value ?? 'code',
-  }),
-)
+// El backend pagina (`limit`/`offset`): se pide de a PAGE_SIZE y "Ver más" agrega la siguiente.
+const PAGE_SIZE = 50
+
+const items = ref<Client[]>([])
+const total = ref(0)
+const loading = ref(false)
+const error = ref<string | null>(null)
+let sequence = 0
+
+async function load(more = false): Promise<void> {
+  // La última llamada gana: un filtro nuevo descarta lo que venga de una página anterior.
+  const mine = ++sequence
+  loading.value = true
+  error.value = null
+  try {
+    const page = await consoleApi.clients({
+      q: q.value.trim() || undefined,
+      status: status.value ?? undefined,
+      sort: sort.value ?? 'code',
+      limit: PAGE_SIZE,
+      offset: more ? items.value.length : 0,
+    })
+    if (mine !== sequence) return
+    if (more) {
+      const known = new Set(items.value.map((c) => c.id))
+      items.value = [...items.value, ...page.items.filter((c) => !known.has(c.id))]
+    } else {
+      items.value = page.items
+    }
+    total.value = page.total
+  } catch (e) {
+    if (mine === sequence) error.value = errorMessage(e)
+  } finally {
+    if (mine === sequence) loading.value = false
+  }
+}
+void load()
+
+const hasMore = computed(() => items.value.length < total.value)
 
 let timer: ReturnType<typeof setTimeout> | undefined
 watch([q, status, sort], () => {
   clearTimeout(timer)
-  timer = setTimeout(() => void reload(), 250)
+  timer = setTimeout(() => void load(), 250)
 })
 
 const creating = ref(false)
@@ -95,14 +127,14 @@ function onCreated(client: Client): void {
       <Alert v-if="error" tone="danger">
         {{ error }}
         <template #action>
-          <Button size="sm" variant="secondary" @click="reload()">Reintentar</Button>
+          <Button size="sm" variant="secondary" @click="load()">Reintentar</Button>
         </template>
       </Alert>
 
       <Card padding="none">
         <DataTable
           :columns="COLUMNS"
-          :rows="data?.items ?? []"
+          :rows="items"
           row-key="id"
           :loading="loading"
           clickable
@@ -138,9 +170,15 @@ function onCreated(client: Client): void {
           <template #cell-last_seen_at="{ row }">{{ relativeTime(row.last_seen_at) }}</template>
           <template #cell-oldest_version="{ row }">{{ row.oldest_version ?? '—' }}</template>
         </DataTable>
+        <template v-if="hasMore" #footer>
+          <Button variant="secondary" :loading="loading" data-test="clients-more" @click="load(true)">
+            Ver más
+          </Button>
+        </template>
       </Card>
-      <p v-if="data && data.total > 0" class="muted total">
-        {{ data.total }} {{ data.total === 1 ? 'cliente' : 'clientes' }}
+      <p v-if="total > 0" class="muted total" data-test="clients-total">
+        <template v-if="hasMore">Mostrando {{ items.length }} de {{ total }} clientes</template>
+        <template v-else>{{ total }} {{ total === 1 ? 'cliente' : 'clientes' }}</template>
       </p>
     </div>
 

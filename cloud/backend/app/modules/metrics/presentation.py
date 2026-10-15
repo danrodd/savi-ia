@@ -434,6 +434,28 @@ async def instance_people(
     ]
 
 
+@router.get("/clients/{client_id}/people", response_model=list[PersonOut])
+async def client_people(
+    client_id: UUID,
+    request: Request,
+    limit: int = Query(default=1000, ge=1, le=5000),
+    _: Principal = Depends(RequirePermission(Permission.CLIENTS_READ)),
+) -> list[PersonOut]:
+    """Padrón de personas del cliente (sin ventana de tiempo), para los selectores de la consola."""
+    async with transaction(request) as session:
+        await _require_client(session, client_id)
+        rows = await MetricsQueries(session).people_of_client(client_id, limit)
+    return [
+        PersonOut(
+            user_ref=p.user_ref,
+            label=p.label,
+            sessions=p.sessions,
+            last_session_at=p.last_session_at,
+        )
+        for p in rows
+    ]
+
+
 @router.get("/clients/{client_id}/users", response_model=list[UserOut])
 async def client_users(
     client_id: UUID,

@@ -158,6 +158,8 @@ export interface Alert {
   severity: Severity
   status: 'open' | 'acknowledged' | 'resolved'
   client_id: string
+  /** Nombre del cliente; `null` si ya no existe. */
+  client_name?: string | null
   instance_id: string | null
   details: Record<string, unknown>
   opened_at: string

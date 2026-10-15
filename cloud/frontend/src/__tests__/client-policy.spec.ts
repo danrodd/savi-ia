@@ -4,7 +4,7 @@ import type { AccessPolicy, AiPolicy, Client } from '@/lib/types'
 
 const api = vi.hoisted(() => ({
   clientDatabases: vi.fn(),
-  clientUsers: vi.fn(),
+  clientPeople: vi.fn(),
   setClientPolicy: vi.fn(),
   setClientAiPolicy: vi.fn(),
   setClientAccessPolicy: vi.fn(),
@@ -21,6 +21,8 @@ import ClientPolicyCard from '@/components/ClientPolicyCard.vue'
 const DB_1 = '7a1f3c52-9d4e-4b6a-8c0d-1e2f3a4b5c6d'
 const DB_2 = '11111111-2222-4333-8444-555555555555'
 const PERSON = 'a'.repeat(32)
+// Persona ya configurada que no figura en el padrón (nunca reportó o se perdió el dato).
+const GHOST = 'f'.repeat(32)
 
 const AI_POLICY: AiPolicy = {
   allowed_providers: null,
@@ -91,15 +93,8 @@ beforeEach(() => {
       snapshot_date: '2026-10-01',
     },
   ])
-  api.clientUsers.mockResolvedValue([
-    {
-      user_ref: PERSON,
-      label: 'JPEREZ',
-      turns: 3,
-      cost_usd: '1.2',
-      last_used_at: '2026-10-01T00:00:00Z',
-      databases_used: 1,
-    },
+  api.clientPeople.mockResolvedValue([
+    { user_ref: PERSON, label: 'JPEREZ', sessions: 3, last_session_at: '2026-10-01T00:00:00Z' },
   ])
 })
 
@@ -270,6 +265,23 @@ describe('IA: proveedores y topes del cliente', () => {
     expect(wrapper.get('[data-test="ai-price-warning"]').text()).toContain('precios')
   })
 
+  it('una excepción guardada de alguien fuera del padrón se muestra y se puede quitar', async () => {
+    const wrapper = await mountCard({ ...AI_POLICY, user_overrides: { [GHOST]: '5' } })
+
+    const row = wrapper.get('[data-test="ai-override"]')
+    expect(row.text()).toContain('Persona sin actividad reciente (ffffffff…)')
+
+    await row.get('button').trigger('click')
+    expect(wrapper.find('[data-test="ai-override"]').exists()).toBe(false)
+  })
+
+  it('las excepciones se ofrecen sobre todo el padrón, no solo sobre quien usó hace poco', async () => {
+    const wrapper = await mountCard()
+
+    expect(api.clientPeople).toHaveBeenCalledWith('c1')
+    expect(wrapper.get('[data-test="ai-override-person"]').text()).toContain('JPEREZ')
+  })
+
   it('descartar vuelve a lo guardado', async () => {
     const wrapper = await mountCard()
 
@@ -364,6 +376,31 @@ describe('bases por persona', () => {
         },
       ],
     })
+  })
+
+  it('un miembro guardado que no está en el padrón se ve con su casilla y se puede quitar', async () => {
+    const wrapper = await mountCard({
+      ...ACCESS_POLICY,
+      groups: [
+        { id: 'g1', name: 'Norte', members: [GHOST], databases: [], user_monthly_usd: null },
+      ],
+    })
+
+    const member = wrapper.get(`[data-test="access-group-Norte-person-${GHOST}"]`)
+    expect(member.text()).toContain('Persona sin actividad reciente (ffffffff…)')
+    expect(
+      (control(wrapper, `access-group-Norte-person-${GHOST}`).element as HTMLInputElement).checked,
+    ).toBe(true)
+
+    await control(wrapper, `access-group-Norte-person-${GHOST}`).setValue(false)
+    await saveWithBar(wrapper)
+
+    expect(api.setClientAccessPolicy).toHaveBeenCalledWith(
+      'c1',
+      expect.objectContaining({
+        groups: [expect.objectContaining({ name: 'Norte', members: [] })],
+      }),
+    )
   })
 
   it('no permite dos grupos con el mismo nombre y lo dice en el campo', async () => {

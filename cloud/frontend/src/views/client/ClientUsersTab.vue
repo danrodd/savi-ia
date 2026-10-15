@@ -47,5 +47,16 @@ const COLUMNS: TableColumn[] = [
         <template #cell-last_used_at="{ row }">{{ relativeTime(row.last_used_at) }}</template>
       </DataTable>
     </Card>
+    <p class="muted note">
+      Ranking de los últimos 30 días: hasta 100 personas, ordenadas por turnos. Quien no usó SAVI
+      en ese período no aparece acá, pero sí al configurar excepciones, reglas y grupos.
+    </p>
   </div>
 </template>
+
+<style scoped>
+.note {
+  margin: 0;
+  font-size: 12px;
+}
+</style>

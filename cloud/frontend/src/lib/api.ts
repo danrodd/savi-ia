@@ -103,6 +103,7 @@ export const consoleApi = {
   clientMetrics: (id: string, period: Period = {}) =>
     http.get<ClientMetrics>(`${API}/clients/${id}/metrics`, { ...period }),
   clientDatabases: (id: string) => http.get<ClientDatabase[]>(`${API}/clients/${id}/databases`),
+  clientPeople: (id: string) => http.get<Person[]>(`${API}/clients/${id}/people`),
   clientUsers: (id: string, period: Period = {}) =>
     http.get<ClientUser[]>(`${API}/clients/${id}/users`, { ...period }),
 

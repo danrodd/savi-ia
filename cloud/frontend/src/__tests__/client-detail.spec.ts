@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
   clientMetrics: vi.fn(),
   clientDatabases: vi.fn(),
   clientUsers: vi.fn(),
+  clientPeople: vi.fn(),
   instances: vi.fn(),
   tokens: vi.fn(),
   alerts: vi.fn(),
@@ -112,6 +113,7 @@ beforeEach(() => {
   api.instances.mockResolvedValue([])
   api.clientDatabases.mockResolvedValue([])
   api.clientUsers.mockResolvedValue([])
+  api.clientPeople.mockResolvedValue([])
   api.alerts.mockResolvedValue([])
   api.tokens.mockResolvedValue([])
   api.subscription.mockResolvedValue({

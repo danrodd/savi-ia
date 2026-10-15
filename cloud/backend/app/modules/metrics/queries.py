@@ -462,6 +462,39 @@ class MetricsQueries:
             for ref, n, last in (await self._s.execute(stmt)).all()
         ]
 
+    async def people_of_client(self, client_id: UUID, limit: int = 1000) -> list[PersonActivity]:
+        """Toda persona que alguna vez reportó una sesión o un turno, sin ventana de tiempo.
+
+        Es el padrón para los selectores de la consola (excepciones de IA, reglas de acceso,
+        grupos): `users()` solo ve los últimos 30 días y las 100 más activas, y dejaría fuera a
+        quien todavía no usó SAVI o lleva un tiempo sin hacerlo.
+        """
+        s = EvSessionModel
+        t = EvTurnModel
+        sessions = (
+            await self._s.execute(
+                select(s.user_ref, func.count(), func.max(s.occurred_at))
+                .where(s.client_id == client_id)
+                .group_by(s.user_ref)
+            )
+        ).all()
+        turns = (
+            await self._s.execute(
+                select(t.user_ref, func.max(t.occurred_at))
+                .where(t.client_id == client_id)
+                .group_by(t.user_ref)
+            )
+        ).all()
+        found: dict[str, tuple[int, datetime]] = {
+            ref: (int(n), _utc(last)) for ref, n, last in sessions
+        }
+        for ref, last in turns:
+            n, seen = found.get(ref, (0, _utc(last)))
+            found[ref] = (n, max(seen, _utc(last)))
+        labels = await self._labels(client_id)
+        ranked = sorted(found.items(), key=lambda kv: (kv[1][1], kv[0]), reverse=True)
+        return [PersonActivity(ref, labels.get(ref), n, seen) for ref, (n, seen) in ranked[:limit]]
+
     # ------------------------------------------------------------ inventario
 
     async def databases(self, client_id: UUID) -> list[DatabaseInfo]:

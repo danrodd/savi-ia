@@ -55,6 +55,12 @@ async function submit(wrapper: VueWrapper, button: string) {
   await flushPromises()
 }
 
+/** Registrar pide confirmación: acepta el diálogo. */
+async function confirm(wrapper: VueWrapper) {
+  await wrapper.get('[data-test="confirm-accept"]').trigger('click')
+  await flushPromises()
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   api.subscription.mockResolvedValue(PLAN)
@@ -132,6 +138,7 @@ describe('suscripción del cliente', () => {
     await field(wrapper, 'entry-note').setValue('Transferencia 4413')
     await field(wrapper, 'entry-until').setValue('2026-02-28')
     await submit(wrapper, 'entry-save')
+    await confirm(wrapper)
 
     expect(api.recordLedgerEntry).toHaveBeenCalledWith('c1', {
       kind: 'payment',
@@ -141,6 +148,68 @@ describe('suscripción del cliente', () => {
     })
     expect(toast.success).toHaveBeenCalledWith('Pago registrado')
     expect(api.ledger).toHaveBeenCalledTimes(2)
+  })
+
+  it('antes de registrar pide confirmar y resume tipo, monto, referencia y nueva vigencia', async () => {
+    const wrapper = await mountCard()
+
+    await field(wrapper, 'entry-amount').setValue('120')
+    await field(wrapper, 'entry-note').setValue('Transferencia 4413')
+    await field(wrapper, 'entry-until').setValue('2026-02-28')
+    await submit(wrapper, 'entry-save')
+
+    expect(api.recordLedgerEntry).not.toHaveBeenCalled()
+    const text = wrapper.get('[role="dialog"]').text()
+    expect(text).toContain('Registrar el pago')
+    expect(text).toContain('Pago recibido')
+    expect(text).toContain('Transferencia 4413')
+    expect(text).toContain('del 31/01/2026 al 28/02/2026')
+  })
+
+  it('cancelar la confirmación no registra nada y conserva el formulario', async () => {
+    const wrapper = await mountCard()
+
+    await field(wrapper, 'entry-amount').setValue('120')
+    await field(wrapper, 'entry-note').setValue('Transferencia 4413')
+    await submit(wrapper, 'entry-save')
+    await wrapper.get('[data-test="confirm-cancel"]').trigger('click')
+    await flushPromises()
+
+    expect(api.recordLedgerEntry).not.toHaveBeenCalled()
+    expect((field(wrapper, 'entry-note').element as HTMLInputElement).value).toBe(
+      'Transferencia 4413',
+    )
+  })
+
+  it('registrar un movimiento no descarta las ediciones sin guardar del plan', async () => {
+    const wrapper = await mountCard()
+
+    await field(wrapper, 'plan-name').setValue('Pro')
+    await field(wrapper, 'entry-amount').setValue('120')
+    await field(wrapper, 'entry-note').setValue('Transferencia 4413')
+    await submit(wrapper, 'entry-save')
+    await confirm(wrapper)
+
+    expect(api.recordLedgerEntry).toHaveBeenCalled()
+    expect(api.ledger).toHaveBeenCalledTimes(2)
+    expect((field(wrapper, 'plan-name').element as HTMLInputElement).value).toBe('Pro')
+    expect(wrapper.get('[data-test="plan-save"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('si el pago extendió la vigencia y el plan no se tocó, el formulario la acompaña', async () => {
+    const wrapper = await mountCard()
+    api.subscription.mockResolvedValue({ ...PLAN, valid_until: '2026-02-28' })
+
+    await field(wrapper, 'plan-name').setValue('Pro')
+    await field(wrapper, 'entry-amount').setValue('120')
+    await field(wrapper, 'entry-note').setValue('Transferencia 4413')
+    await submit(wrapper, 'entry-save')
+    await confirm(wrapper)
+
+    expect((field(wrapper, 'plan-valid-until').element as HTMLInputElement).value).toBe(
+      '2026-02-28',
+    )
+    expect((field(wrapper, 'plan-name').element as HTMLInputElement).value).toBe('Pro')
   })
 
   it('un pago sin referencia no se registra y marca el campo', async () => {
@@ -171,6 +240,7 @@ describe('suscripción del cliente', () => {
     await field(wrapper, 'entry-amount').setValue('-10')
     await field(wrapper, 'entry-note').setValue('Cortesía')
     await submit(wrapper, 'entry-save')
+    await confirm(wrapper)
 
     expect(api.recordLedgerEntry).toHaveBeenCalledWith(
       'c1',

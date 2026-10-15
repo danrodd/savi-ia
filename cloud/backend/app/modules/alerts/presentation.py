@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_clock, transaction
@@ -19,6 +20,7 @@ from app.modules.alerts.infrastructure import (
 )
 from app.modules.audit.application import AuditRecorder
 from app.modules.audit.infrastructure import SqlAlchemyAuditRepository
+from app.modules.clients.infrastructure import ClientModel
 from app.modules.staff.application import Principal
 from app.modules.staff.dependencies import RequirePermission, request_context
 from app.modules.staff.domain import Permission
@@ -38,6 +40,8 @@ class AlertOut(BaseModel):
     severity: str
     status: str
     client_id: str
+    # Nombre del cliente, para no mostrar solo un enlace; `None` si ya no existe.
+    client_name: str | None = None
     instance_id: str | None
     details: dict[str, Any]
     opened_at: datetime
@@ -48,13 +52,14 @@ class AlertOut(BaseModel):
     resolution_note: str | None
 
     @classmethod
-    def of(cls, a: Alert) -> AlertOut:
+    def of(cls, a: Alert, client_name: str | None = None) -> AlertOut:
         return cls(
             id=str(a.id),
             rule_code=a.rule_code,
             severity=a.severity.value,
             status=a.status.value,
             client_id=str(a.client_id),
+            client_name=client_name,
             instance_id=str(a.instance_id) if a.instance_id else None,
             details=a.details,
             opened_at=a.opened_at,
@@ -113,6 +118,16 @@ def _actions(request: Request, session: AsyncSession) -> AlertActions:
     )
 
 
+async def _client_names(session: AsyncSession, alerts: list[Alert]) -> dict[UUID, str]:
+    ids = {a.client_id for a in alerts}
+    if not ids:
+        return {}
+    rows = await session.execute(
+        select(ClientModel.id, ClientModel.name).where(ClientModel.id.in_(ids))
+    )
+    return {cid: str(name) for cid, name in rows.all()}
+
+
 @router.get("/alerts", response_model=list[AlertOut])
 async def list_alerts(
     request: Request,
@@ -126,7 +141,8 @@ async def list_alerts(
         rows = await SqlAlchemyAlertRepository(session).list(
             status=status, severity=severity, client_id=client_id, limit=limit
         )
-    return [AlertOut.of(a) for a in rows]
+        names = await _client_names(session, rows)
+    return [AlertOut.of(a, names.get(a.client_id)) for a in rows]
 
 
 @router.post("/alerts/{alert_id}/ack", response_model=AlertOut)
@@ -139,7 +155,8 @@ async def acknowledge_alert(
         alert = await _actions(request, session).acknowledge(
             alert_id, request_context(request, principal)
         )
-    return AlertOut.of(alert)
+        names = await _client_names(session, [alert])
+    return AlertOut.of(alert, names.get(alert.client_id))
 
 
 @router.post("/alerts/{alert_id}/resolve", response_model=AlertOut)
@@ -153,7 +170,8 @@ async def resolve_alert(
         alert = await _actions(request, session).resolve(
             alert_id, body.note, request_context(request, principal)
         )
-    return AlertOut.of(alert)
+        names = await _client_names(session, [alert])
+    return AlertOut.of(alert, names.get(alert.client_id))
 
 
 @router.get("/alert-rules", response_model=list[RuleOut])
