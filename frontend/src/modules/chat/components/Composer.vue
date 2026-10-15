@@ -128,7 +128,7 @@ const { dragging } = useFileDrop(
           <circle cx="9" cy="9" r="2" />
           <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
         </svg>
-        Soltá las imágenes acá
+        Suelte las imágenes aquí
       </div>
     </div>
     <form class="composer" :class="{ 'composer--focused': false }" @submit.prevent="submit">
@@ -150,7 +150,7 @@ const { dragging } = useFileDrop(
         v-model="text"
         class="composer__input"
         rows="1"
-        placeholder="Preguntale a SAVI…"
+        placeholder="Pregúntele a SAVI…"
         :disabled="disabled"
         @keydown="onKeydown"
         @paste="onPaste"
@@ -166,7 +166,7 @@ const { dragging } = useFileDrop(
         @change="onPick"
       />
       <div class="composer__row">
-        <Tooltip text="Adjuntar imagen · También podés pegar una captura con Ctrl+V">
+        <Tooltip text="Adjuntar imagen · También puede pegar una captura con Ctrl+V">
           <button
             type="button"
             class="composer__btn composer__btn--attach"
@@ -182,7 +182,7 @@ const { dragging } = useFileDrop(
         <span class="composer__hint">
           <kbd>Enter</kbd> para enviar · <kbd>Shift</kbd>+<kbd>Enter</kbd> para nueva línea
           <span class="composer__hint-paste">
-            · También podés pegar una captura con <kbd>Ctrl</kbd>+<kbd>V</kbd>
+            · También puede pegar una captura con <kbd>Ctrl</kbd>+<kbd>V</kbd>
           </span>
         </span>
         <Tooltip v-if="streaming" text="Detener">

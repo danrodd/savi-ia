@@ -60,7 +60,7 @@ class ManageLlmProvidersUseCase:
         stored = await self._repository.get(descriptor.kind)
         if stored is None or not stored.has_credential:
             raise ValidationError(
-                "Guardá una credencial válida antes de consultar los modelos."
+                "Guarde una credencial válida antes de consultar los modelos."
             )
         return await self._probe(descriptor).list_models(stored)
 
@@ -83,7 +83,7 @@ class ManageLlmProvidersUseCase:
             # lo que faltaba eran los IDs de modelo.
             if not candidate.chat_model or not candidate.title_model:
                 raise ValidationError(
-                    "Este proveedor está activo: indicá el modelo de chat y el "
+                    "Este proveedor está activo: indique el modelo de chat y el "
                     "de títulos antes de guardar."
                 )
             raise ValidationError(
@@ -108,7 +108,7 @@ class ManageLlmProvidersUseCase:
             candidate.credential_kind != CredentialKind.LOCAL_SESSION
             and not candidate.has_credential
         ):
-            return ProbeResult(ok=False, detail="Ingresá la credencial para probarla.")
+            return ProbeResult(ok=False, detail="Ingrese la credencial para probarla.")
 
         result = await self._probe(descriptor).test(candidate)
         if result.ok and stored is not None and candidate.credential == stored.credential:
@@ -120,7 +120,7 @@ class ManageLlmProvidersUseCase:
         descriptor = self._implemented(provider)
         stored = await self._repository.get(descriptor.kind)
         if stored is None:
-            raise ValidationError("Configurá el proveedor antes de activarlo.")
+            raise ValidationError("Configure el proveedor antes de activarlo.")
         if not stored.is_usable:
             raise ValidationError(
                 "No se puede activar: falta la credencial o no se puede leer."

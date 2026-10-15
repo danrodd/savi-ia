@@ -141,7 +141,7 @@ class TurnRegistry:
         if self._active >= limite:
             raise RateLimitExceededError(
                 retry_after_seconds=_BUSY_RETRY_AFTER_S,
-                detail="SAVI está atendiendo otras consultas. Probá en unos segundos.",
+                detail="SAVI está atendiendo otras consultas. Pruebe en unos segundos.",
             )
         turno = RunningTurn(conversation_id=conversation_id)
         turno.on_model_done = lambda: self._liberar_cupo(turno)

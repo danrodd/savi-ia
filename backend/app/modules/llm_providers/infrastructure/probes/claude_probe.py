@@ -68,7 +68,7 @@ class ClaudeProbe(ProviderProbe):
                 return ProbeResult(
                     ok=False,
                     detail=(
-                        "Ingresá un ID de modelo: el login local de Claude no expone "
+                        "Ingrese un ID de modelo: el login local de Claude no expone "
                         "un catálogo de modelos."
                     ),
                 )
@@ -78,13 +78,13 @@ class ClaudeProbe(ProviderProbe):
                 return ProbeResult(ok=False, detail=_detail_for(str(e)))
             return ProbeResult(
                 ok=True,
-                detail="La credencial de Claude es válida. Elegí un modelo de la lista.",
+                detail="La credencial de Claude es válida. Elija un modelo de la lista.",
                 models=tuple(models),
             )
 
         options = ClaudeAgentOptions(
             model=config.title_model,
-            system_prompt="Respondé únicamente con la palabra: ok",
+            system_prompt="Responde únicamente con la palabra: ok",
             allowed_tools=[],
             permission_mode="bypassPermissions",
             max_turns=1,
@@ -109,7 +109,7 @@ class ClaudeProbe(ProviderProbe):
         except TimeoutError:
             return ProbeResult(
                 ok=False,
-                detail="Claude no respondió a tiempo. Revisá la conexión a internet.",
+                detail="Claude no respondió a tiempo. Revise la conexión a internet.",
             )
         except Exception as e:  # noqa: BLE001
             # `result` ya llegó: el error es ruido del cierre del subproceso.
@@ -161,6 +161,6 @@ def _detail_for(message: str) -> str:
     if any(hint in lowered for hint in _CREDENTIAL_HINTS):
         return "La credencial de Claude no es válida o venció."
     if "model" in lowered:
-        return "Claude rechazó el modelo configurado. Revisá el ID del modelo de títulos."
+        return "Claude rechazó el modelo configurado. Revise el ID del modelo de títulos."
     detail = message.strip()[:300]
     return f"No se pudo usar Claude: {detail}" if detail else "No se pudo usar Claude."

@@ -9,10 +9,10 @@
  */
 
 export const ASSISTANT_UNAVAILABLE_MESSAGE =
-  'El asistente no está disponible en este momento. Avisale a tu administrador.'
+  'El asistente no está disponible en este momento. Avise a su administrador.'
 
 export const ASSISTANT_FAILED_MESSAGE =
-  'No pude completar la respuesta. Probá de nuevo en un momento.'
+  'No pude completar la respuesta. Pruebe de nuevo en un momento.'
 
 export interface ChatErrorInfo {
   message: string

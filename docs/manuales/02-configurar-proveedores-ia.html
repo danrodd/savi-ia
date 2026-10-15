@@ -200,16 +200,16 @@ table.larga { break-inside: auto; page-break-inside: auto; }
     <div class="fecha">Octubre de 2026<div class="para">Para administradores y personal de soporte.</div></div>
   </section>
 <main class="contenido">
-<section class="indice"><h2>Qué vas a encontrar</h2>
-    <p class="intro">Tocá o hacé clic en un título para ir directo a esa parte.</p>
+<section class="indice"><h2>Qué va a encontrar</h2>
+    <p class="intro">Toque o haga clic en un título para ir directo a esa parte.</p>
     <ol><li><a href="#s1">1. Qué es un proveedor de IA y por qué SAVI necesita uno</a></li><li><a href="#s2">2. Los tres proveedores disponibles</a></li><li><a href="#s3">3. Dónde conseguir la clave de cada proveedor</a></li><li><a href="#s4">4. La pantalla Proveedores de IA</a></li><li><a href="#s5">5. Configurar un proveedor paso a paso</a></li><li><a href="#s6">6. Elegir los modelos</a></li><li><a href="#s7">7. Avanzado: precios por modelo</a></li><li><a href="#s8">8. Activar un proveedor y cambiar de proveedor</a></li><li><a href="#s9">9. Qué pasa si se acaban los créditos o se alcanzan los límites</a></li><li><a href="#s10">10. Recomendaciones de seguridad</a></li><li><a href="#s11">11. Resolución de problemas</a></li></ol></section>
 <section>
 <h2 id="s1">1. Qué es un proveedor de IA y por qué SAVI necesita uno</h2>
 <p>SAVI no tiene "cerebro" propio. Para entender las preguntas y redactar las respuestas usa un servicio de inteligencia artificial de una empresa externa. A esa empresa la llamamos <strong>proveedor de IA</strong>.</p>
 <p>El proveedor se conecta con SAVI mediante una <strong>clave</strong> (también llamada <em>API key</em>): un texto largo y secreto que funciona como una contraseña. Con esa clave el proveedor sabe a qué cuenta cobrarle el uso. Sin un proveedor configurado y activo, SAVI no puede responder.</p>
 <div class="nota importante"><strong>Importante</strong>
-<p>Los proveedores cobran por uso. Las claves de API funcionan con <strong>saldo prepago (créditos)</strong>: si la cuenta del proveedor no tiene saldo, SAVI deja de responder aunque la clave sea correcta. Antes de configurar, confirmá que la cuenta tenga créditos cargados.</p></div>
-<p>Esta guía es para quien <strong>administra</strong> SAVI. La pantalla <em>Proveedores de IA</em> es del <strong>administrador de la instalación</strong>: si tu usuario no es de ese nivel, no vas a poder entrar.</p>
+<p>Los proveedores cobran por uso. Las claves de API funcionan con <strong>saldo prepago (créditos)</strong>: si la cuenta del proveedor no tiene saldo, SAVI deja de responder aunque la clave sea correcta. Antes de configurar, confirme que la cuenta tenga créditos cargados.</p></div>
+<p>Esta guía es para quien <strong>administra</strong> SAVI. La pantalla <em>Proveedores de IA</em> es del <strong>administrador de la instalación</strong>: si su usuario no es de ese nivel, no va a poder entrar.</p>
 </section>
 
 <section>
@@ -222,9 +222,9 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tr><td><strong>Gemini</strong> (Google)</td><td>Gemini Flash Lite</td><td>Gemini Flash Lite</td><td>Intermedio</td><td>Quien ya trabaja con Google o quiere una opción económica y rápida.</td></tr>
 <tr><td><strong>OpenAI</strong></td><td>GPT-6 Luna</td><td>GPT-6 Luna</td><td>El más económico</td><td><strong>Opción recomendada por defecto</strong>: mejor relación entre costo y calidad.</td></tr>
 </tbody></table>
-<p>Los modelos de la tabla son los que vienen configurados en esta instalación; podés cambiarlos (sección 6). La columna de costo es una comparación relativa basada en el consumo medido dentro de SAVI; los precios reales los define cada proveedor y cambian con el tiempo.</p>
-<div class="nota consejo"><strong>Consejo</strong><p>Si no tenés una razón para elegir otro, empezá con <strong>OpenAI (GPT-6 Luna)</strong>: es el más económico de los tres. Después podés cambiar cuando quieras (sección 8).</p></div>
-<p>Además del chat, el proveedor activo se usa para dos tareas más: <strong>poner nombre a las conversaciones</strong> y <strong>leer PDF escaneados</strong> cuando importás conocimiento (manual 04).</p>
+<p>Los modelos de la tabla son los que vienen configurados en esta instalación; puede cambiarlos (sección 6). La columna de costo es una comparación relativa basada en el consumo medido dentro de SAVI; los precios reales los define cada proveedor y cambian con el tiempo.</p>
+<div class="nota consejo"><strong>Consejo</strong><p>Si no tiene una razón para elegir otro, empiece con <strong>OpenAI (GPT-6 Luna)</strong>: es el más económico de los tres. Después puede cambiar cuando quiera (sección 8).</p></div>
+<p>Además del chat, el proveedor activo se usa para dos tareas más: <strong>poner nombre a las conversaciones</strong> y <strong>leer PDF escaneados</strong> cuando importa conocimiento (manual 04).</p>
 </section>
 
 <section>
@@ -232,19 +232,19 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <table>
 <thead><tr><th>Proveedor</th><th>Dónde se obtiene</th><th>Detalle</th></tr></thead>
 <tbody>
-<tr><td>OpenAI</td><td><strong>platform.openai.com</strong> → <span class="menu">API keys</span></td><td>Iniciá sesión, creá una clave nueva y copiala en el momento: después no se vuelve a mostrar completa. Cargá saldo en la sección de facturación (<em>Billing</em>).</td></tr>
-<tr><td>Gemini (Google)</td><td><strong>Google AI Studio</strong> → <span class="menu">Get API key</span></td><td>Entrá con una cuenta de Google, creá la clave y copiala. Para uso empresarial, asegurate de tener activa la facturación del proyecto.</td></tr>
-<tr><td>Claude (Anthropic)</td><td><strong>console.anthropic.com</strong> → <span class="menu">API keys</span></td><td>Creá la clave y cargá créditos en la sección de facturación. Claude también permite usar una sesión de Claude iniciada en la PC o un token de cuenta (ver más abajo).</td></tr>
+<tr><td>OpenAI</td><td><strong>platform.openai.com</strong> → <span class="menu">API keys</span></td><td>Inicie sesión, cree una clave nueva y cópiela en el momento: después no se vuelve a mostrar completa. Cargue saldo en la sección de facturación (<em>Billing</em>).</td></tr>
+<tr><td>Gemini (Google)</td><td><strong>Google AI Studio</strong> → <span class="menu">Get API key</span></td><td>Entre con una cuenta de Google, cree la clave y cópiela. Para uso empresarial, asegúrese de tener activa la facturación del proyecto.</td></tr>
+<tr><td>Claude (Anthropic)</td><td><strong>console.anthropic.com</strong> → <span class="menu">API keys</span></td><td>Cree la clave y cargue créditos en la sección de facturación. Claude también permite usar una sesión de Claude iniciada en la PC o un token de cuenta (ver más abajo).</td></tr>
 </tbody></table>
 <div class="nota importante"><strong>Importante</strong>
-<p>Una clave nueva <strong>sin saldo no funciona</strong>. Si la prueba de conexión dice que la cuenta no tiene créditos, cargá saldo en la página del proveedor y volvé a probar.</p></div>
+<p>Una clave nueva <strong>sin saldo no funciona</strong>. Si la prueba de conexión dice que la cuenta no tiene créditos, cargue saldo en la página del proveedor y vuelva a probar.</p></div>
 
 <h3>Claude: tres formas de conectarse</h3>
 <p>Al editar Claude, el campo <strong>Tipo de credencial</strong> ofrece estas opciones:</p>
 <table>
 <thead><tr><th>Opción</th><th>Qué es</th></tr></thead>
 <tbody>
-<tr><td>API key</td><td>La clave de la consola de Anthropic. Es la forma más simple: pegás la clave que te dio el proveedor.</td></tr>
+<tr><td>API key</td><td>La clave de la consola de Anthropic. Es la forma más simple: pegue la clave que le dio el proveedor.</td></tr>
 <tr><td>Token OAuth</td><td>Un token generado con el comando <code>claude setup-token</code>, a partir de una cuenta de Claude.</td></tr>
 <tr><td>Sesión de Claude en este equipo</td><td>Usa la sesión de Claude iniciada en esta PC. No hace falta pegar nada. Si la sesión vence, se renueva abriendo <em>Iniciar sesión en Claude</em> desde el menú Inicio.</td></tr>
 </tbody></table>
@@ -254,12 +254,12 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <section>
 <h2 id="s4">4. La pantalla Proveedores de IA</h2>
 <ol class="pasos">
-  <li>Entrá a SAVI con un usuario administrador.</li>
-  <li>En el menú de la izquierda tocá <span class="btn">Administración</span> <span class="n">1</span>.</li>
-  <li>En el menú de administración elegí <span class="btn">Proveedores de IA</span>.</li>
+  <li>Entre a SAVI con un usuario administrador.</li>
+  <li>En el menú de la izquierda toque <span class="btn">Administración</span> <span class="n">1</span>.</li>
+  <li>En el menú de administración elija <span class="btn">Proveedores de IA</span>.</li>
 </ol>
 <figure class="angosta"><img src="imagenes/prov-01-administracion.png" alt="Botón Administración en el menú lateral"><figcaption>El botón <span class="n">1</span> aparece solo para administradores.</figcaption></figure>
-<p>Vas a ver una tarjeta por proveedor. Cada tarjeta muestra:</p>
+<p>Va a ver una tarjeta por proveedor. Cada tarjeta muestra:</p>
 <figure><img src="imagenes/prov-02-lista.png" alt="Tres tarjetas de proveedores con sus estados y botones"><figcaption>Pantalla Proveedores de IA con sus partes numeradas.</figcaption></figure>
 <ul class="leyenda">
   <li><span class="n">1</span><strong>Estado.</strong> Aquí dice <em>Disponible</em>: el proveedor está configurado y se puede activar.</li>
@@ -276,7 +276,7 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tr><td><strong>En uso</strong></td><td>SAVI responde con este proveedor.</td></tr>
 <tr><td><strong>Disponible</strong></td><td>Está configurado (tiene credencial y modelos), pero no es el que se usa.</td></tr>
 <tr><td><strong>Sin configurar</strong></td><td>Falta cargar la credencial o los modelos. El botón Activar está deshabilitado.</td></tr>
-<tr><td><strong>Credencial ilegible</strong></td><td>La credencial guardada no se pudo leer (por ejemplo, tras restaurar una copia). Volvé a pegar la clave.</td></tr>
+<tr><td><strong>Credencial ilegible</strong></td><td>La credencial guardada no se pudo leer (por ejemplo, tras restaurar una copia). Vuelva a pegar la clave.</td></tr>
 <tr><td><strong>Próximamente</strong></td><td>El proveedor aún no está disponible.</td></tr>
 </tbody></table>
 <p>El botón <span class="btn">Actualizar</span> (arriba a la derecha) vuelve a leer el estado de todas las tarjetas.</p>
@@ -286,34 +286,34 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <h2 id="s5">5. Configurar un proveedor paso a paso</h2>
 <p>Estos pasos sirven para los tres proveedores. Las pantallas de ejemplo son de Claude, Gemini y OpenAI.</p>
 <ol class="pasos">
-  <li>En la tarjeta del proveedor tocá <span class="btn">Configurar</span> (o <span class="btn">Editar</span> si ya estaba configurado). Se abre el formulario.</li>
-  <li>En <strong>Tipo de credencial</strong> <span class="n">1</span> elegí <em>API key</em> (salvo que uses las opciones especiales de Claude).</li>
-  <li>En <strong>Credencial</strong> <span class="n">2</span> pegá la clave. Se muestra con puntos para que nadie la lea por encima del hombro.</li>
-  <li>Al pegar la clave, SAVI trae solo la lista de modelos del proveedor. También podés tocar <span class="btn">Probar conexión</span> <span class="n">3</span>.</li>
-  <li>Elegí los modelos <span class="n">4</span>: <strong>Modelo de chat</strong>, <strong>Modelo para nombres de conversación</strong> y <strong>Modelo para leer PDF</strong> (sección 6).</li>
-  <li>Si hace falta, abrí <strong>Avanzado: precios por modelo</strong> <span class="n">5</span> (sección 7).</li>
-  <li>Tocá <span class="btn">Guardar</span> <span class="n">6</span>.</li>
-  <li>De vuelta en la tarjeta, tocá <span class="btn">Probar conexión</span>. Debe aparecer <em>La conexión funciona.</em></li>
-  <li>Recién entonces, si querés usarlo, tocá <span class="btn">Activar</span> (sección 8).</li>
+  <li>En la tarjeta del proveedor toque <span class="btn">Configurar</span> (o <span class="btn">Editar</span> si ya estaba configurado). Se abre el formulario.</li>
+  <li>En <strong>Tipo de credencial</strong> <span class="n">1</span> elija <em>API key</em> (salvo que use las opciones especiales de Claude).</li>
+  <li>En <strong>Credencial</strong> <span class="n">2</span> pegue la clave. Se muestra con puntos para que nadie la lea por encima del hombro.</li>
+  <li>Al pegar la clave, SAVI trae solo la lista de modelos del proveedor. También puede tocar <span class="btn">Probar conexión</span> <span class="n">3</span>.</li>
+  <li>Elija los modelos <span class="n">4</span>: <strong>Modelo de chat</strong>, <strong>Modelo para nombres de conversación</strong> y <strong>Modelo para leer PDF</strong> (sección 6).</li>
+  <li>Si hace falta, abra <strong>Avanzado: precios por modelo</strong> <span class="n">5</span> (sección 7).</li>
+  <li>Toque <span class="btn">Guardar</span> <span class="n">6</span>.</li>
+  <li>De vuelta en la tarjeta, toque <span class="btn">Probar conexión</span>. Debe aparecer <em>La conexión funciona.</em></li>
+  <li>Recién entonces, si quiere usarlo, toque <span class="btn">Activar</span> (sección 8).</li>
 </ol>
-<figure class="dialogo"><img src="imagenes/prov-03-editar-claude.png" alt="Formulario de edición de Claude con sus campos numerados"><figcaption>Formulario de un proveedor (ejemplo con Claude). Cuando ya hay una clave guardada, el campo dice "Ya hay una guardada — dejala vacía para conservarla".</figcaption></figure>
+<figure class="dialogo"><img src="imagenes/prov-03-editar-claude.png" alt="Formulario de edición de Claude con sus campos numerados"><figcaption>Formulario de un proveedor (ejemplo con Claude). Cuando ya hay una clave guardada, el campo dice "Ya hay una guardada — déjela vacía para conservarla".</figcaption></figure>
 <div class="nota info"><strong>Para saber</strong>
-<p>Si el proveedor ya tiene una credencial guardada, no hace falta volver a pegarla para cambiar solo el modelo. Dejá el campo vacío y la clave actual se conserva.</p></div>
+<p>Si el proveedor ya tiene una credencial guardada, no hace falta volver a pegarla para cambiar solo el modelo. Deje el campo vacío y la clave actual se conserva.</p></div>
 
 <h3>Probar la conexión</h3>
 <p><span class="btn">Probar conexión</span> verifica que la clave sea válida y que la cuenta pueda usar el proveedor, <strong>sin guardar nada</strong>. Estos son los resultados más comunes:</p>
 <table>
 <thead><tr><th>Mensaje</th><th>Qué significa</th><th>Qué hacer</th></tr></thead>
 <tbody>
-<tr><td>La API key de OpenAI es válida. Elegí un modelo de la lista.</td><td>Todo bien.</td><td>Elegí los modelos y guardá.</td></tr>
-<tr><td>La API key de Gemini es válida.</td><td>Todo bien.</td><td>Elegí los modelos y guardá.</td></tr>
-<tr><td>La credencial de Claude es válida. Elegí un modelo de la lista.</td><td>Todo bien.</td><td>Elegí los modelos y guardá.</td></tr>
-<tr><td>La API key de … no es válida o no tiene permisos.</td><td>La clave está mal copiada, fue revocada o no corresponde al proveedor.</td><td>Copiá de nuevo la clave desde la consola del proveedor, sin espacios al principio ni al final.</td></tr>
-<tr><td>No se pudo probar Gemini.</td><td>Gemini rechazó la prueba (clave inválida o incompleta).</td><td>Revisá la clave y volvé a probar.</td></tr>
-<tr><td>La cuenta de OpenAI no tiene créditos. Cargá saldo en la plataforma de OpenAI para poder usar el chat.</td><td>La clave es correcta, pero la cuenta no tiene saldo.</td><td>Cargá saldo en la página del proveedor.</td></tr>
-<tr><td>OpenAI rechazó la solicitud por límite de uso. Intentá de nuevo.</td><td>Se superó un límite de pedidos por minuto o por día.</td><td>Esperá unos minutos y probá otra vez.</td></tr>
-<tr><td>El modelo '…' no está disponible para esta cuenta. Elegí otro de la lista.</td><td>La cuenta no tiene acceso a ese modelo.</td><td>Elegí otro modelo del catálogo.</td></tr>
-<tr><td>… no respondió a tiempo. Revisá la conexión a internet. / No se pudo conectar con … Revisá la conexión a internet.</td><td>El equipo no llega al proveedor.</td><td>Revisá internet, proxy o firewall del servidor donde corre SAVI.</td></tr>
+<tr><td>La API key de OpenAI es válida. Elija un modelo de la lista.</td><td>Todo bien.</td><td>Elija los modelos y guarde.</td></tr>
+<tr><td>La API key de Gemini es válida.</td><td>Todo bien.</td><td>Elija los modelos y guarde.</td></tr>
+<tr><td>La credencial de Claude es válida. Elija un modelo de la lista.</td><td>Todo bien.</td><td>Elija los modelos y guarde.</td></tr>
+<tr><td>La API key de … no es válida o no tiene permisos.</td><td>La clave está mal copiada, fue revocada o no corresponde al proveedor.</td><td>Copie de nuevo la clave desde la consola del proveedor, sin espacios al principio ni al final.</td></tr>
+<tr><td>No se pudo probar Gemini.</td><td>Gemini rechazó la prueba (clave inválida o incompleta).</td><td>Revise la clave y vuelva a probar.</td></tr>
+<tr><td>La cuenta de OpenAI no tiene créditos. Cargue saldo en la plataforma de OpenAI para poder usar el chat.</td><td>La clave es correcta, pero la cuenta no tiene saldo.</td><td>Cargue saldo en la página del proveedor.</td></tr>
+<tr><td>OpenAI rechazó la solicitud por límite de uso. Intente de nuevo.</td><td>Se superó un límite de pedidos por minuto o por día.</td><td>Espere unos minutos y pruebe otra vez.</td></tr>
+<tr><td>El modelo '…' no está disponible para esta cuenta. Elija otro de la lista.</td><td>La cuenta no tiene acceso a ese modelo.</td><td>Elija otro modelo del catálogo.</td></tr>
+<tr><td>… no respondió a tiempo. Revise la conexión a internet. / No se pudo conectar con … Revise la conexión a internet.</td><td>El equipo no llega al proveedor.</td><td>Revise internet, proxy o firewall del servidor donde corre SAVI.</td></tr>
 </tbody></table>
 <figure class="dialogo"><img src="imagenes/prov-04-clave-invalida.png" alt="Formulario de Gemini con una clave de ejemplo y el resultado de la prueba"><figcaption>Prueba con una clave de ejemplo (no real): la clave <span class="n">1</span> se ve con puntos, se toca <span class="n">2</span> y el resultado aparece al lado <span class="n">3</span>. Nada se guardó.</figcaption></figure>
 </section>
@@ -326,17 +326,17 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tbody>
 <tr><td><strong>Modelo de chat</strong></td><td>Responder las preguntas de los usuarios. Es el que más consume.</td></tr>
 <tr><td><strong>Modelo para nombres de conversación</strong></td><td>Ponerle título a cada conversación. Alcanza con uno liviano.</td></tr>
-<tr><td><strong>Modelo para leer PDF</strong></td><td>Leer con IA los PDF escaneados al importar conocimiento. Si lo dejás en <em>El mismo del chat</em>, usa el modelo de chat.</td></tr>
+<tr><td><strong>Modelo para leer PDF</strong></td><td>Leer con IA los PDF escaneados al importar conocimiento. Si lo deja en <em>El mismo del chat</em>, usa el modelo de chat.</td></tr>
 </tbody></table>
-<figure class="dialogo"><img src="imagenes/prov-05-modelos.png" alt="Catálogo de modelos con los tres selectores"><figcaption>Catálogo de modelos <span class="n">1</span>. SAVI marca un modelo como "Recomendado" <span class="n">2</span>, pero podés cambiarlo a mano.</figcaption></figure>
+<figure class="dialogo"><img src="imagenes/prov-05-modelos.png" alt="Catálogo de modelos con los tres selectores"><figcaption>Catálogo de modelos <span class="n">1</span>. SAVI marca un modelo como "Recomendado" <span class="n">2</span>, pero puede cambiarlo a mano.</figcaption></figure>
 <p>El <strong>Catálogo de modelos</strong> muestra cuántos modelos tiene disponibles la cuenta y un buscador para encontrar uno por nombre. La etiqueta <em>Recomendado</em> es una sugerencia automática basada en el modelo más reciente del catálogo; <strong>no tiene en cuenta el costo</strong>. Para uso diario en la mayoría de las empresas conviene el modelo económico indicado en la sección 2 (<em>GPT-6 Luna</em> en OpenAI).</p>
 <div class="nota importante"><strong>Importante</strong>
-<p>El modelo para leer PDF conviene que sea uno que no confunda números ni códigos. Los modelos más livianos a veces los confunden en fichas técnicas escaneadas. Si vas a importar muchos PDF escaneados, probá primero con unos pocos.</p></div>
-<p>Si el proveedor no entrega una lista (puede pasar con la sesión local de Claude), los campos pasan a ser de texto: escribí el identificador del modelo. El campo ofrece sugerencias.</p>
+<p>El modelo para leer PDF conviene que sea uno que no confunda números ni códigos. Los modelos más livianos a veces los confunden en fichas técnicas escaneadas. Si va a importar muchos PDF escaneados, pruebe primero con unos pocos.</p></div>
+<p>Si el proveedor no entrega una lista (puede pasar con la sesión local de Claude), los campos pasan a ser de texto: escriba el identificador del modelo. El campo ofrece sugerencias.</p>
 <div class="nota falla"><strong>Si algo falla</strong>
 <ul>
-<li><em>Pegá la clave del proveedor para poder guardar.</em> Falta la credencial.</li>
-<li><em>Elegí el modelo que usará el chat.</em> / <em>Elegí el modelo para nombrar las conversaciones.</em> Completá los campos marcados en rojo.</li>
+<li><em>Pegue la clave del proveedor para poder guardar.</em> Falta la credencial.</li>
+<li><em>Elija el modelo que usará el chat.</em> / <em>Elija el modelo para nombrar las conversaciones.</em> Complete los campos marcados en rojo.</li>
 </ul></div>
 </section>
 
@@ -345,7 +345,7 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <p>SAVI muestra en la pantalla <em>Consumo</em> cuánto cuesta cada respuesta. Para eso necesita saber el precio de los modelos:</p>
 <ul>
   <li><strong>Claude</strong> informa el costo real de cada respuesta: no hay que cargar precios.</li>
-  <li><strong>Gemini y OpenAI</strong> no lo informan: SAVI lo calcula con la tabla de precios que cargues acá.</li>
+  <li><strong>Gemini y OpenAI</strong> no lo informan: SAVI lo calcula con la tabla de precios que cargue aquí.</li>
 </ul>
 <figure class="dialogo"><img src="imagenes/prov-06-precios.png" alt="Tabla de precios por modelo con Entrada, Salida, Lectura caché y Escritura caché"><figcaption>Tabla de precios <span class="n">1</span>. Los valores están en dólares por millón de tokens.</figcaption></figure>
 <p>La tabla pide cuatro valores por modelo, en <strong>USD por millón de tokens</strong> (un token es un pedacito de texto, aproximadamente una sílaba):</p>
@@ -356,15 +356,15 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tr><td>Salida</td><td>Lo que cuesta el texto que el modelo escribe de vuelta.</td></tr>
 <tr><td>Lectura caché / Escritura caché</td><td>Precios cuando el proveedor reutiliza información que ya había procesado.</td></tr>
 </tbody></table>
-<p>Copiá estos valores de la página de precios oficial de tu proveedor. Si el modelo de chat activo no tiene precio, la tarjeta muestra el aviso <em>"Falta el precio de …: las respuestas se van a guardar sin costo"</em>, y el costo real será mayor al que muestra la pantalla de consumo.</p>
+<p>Copie estos valores de la página de precios oficial de su proveedor. Si el modelo de chat activo no tiene precio, la tarjeta muestra el aviso <em>"Falta el precio de …: las respuestas se van a guardar sin costo"</em>, y el costo real será mayor al que muestra la pantalla de consumo.</p>
 </section>
 
 <section>
 <h2 id="s8">8. Activar un proveedor y cambiar de proveedor</h2>
 <ol class="pasos">
-  <li>Verificá que la tarjeta diga <em>Disponible</em> y que la prueba de conexión sea correcta.</li>
-  <li>Tocá <span class="btn">Activar</span> en esa tarjeta.</li>
-  <li>Si ya había otro proveedor en uso, SAVI muestra un aviso de privacidad. Leelo y confirmá con <span class="btn">Activar</span> <span class="n">4</span>, o cancelá con <span class="btn">Cancelar</span> <span class="n">3</span>.</li>
+  <li>Verifique que la tarjeta diga <em>Disponible</em> y que la prueba de conexión sea correcta.</li>
+  <li>Toque <span class="btn">Activar</span> en esa tarjeta.</li>
+  <li>Si ya había otro proveedor en uso, SAVI muestra un aviso de privacidad. Léalo y confirme con <span class="btn">Activar</span> <span class="n">4</span>, o cancele con <span class="btn">Cancelar</span> <span class="n">3</span>.</li>
 </ol>
 <figure class="media"><img src="imagenes/prov-07-activar.png" alt="Diálogo de confirmación de activación con el aviso de privacidad"><figcaption>Aviso al activar un proveedor distinto: <span class="n">1</span> qué cambia y <span class="n">2</span> qué no cambia.</figcaption></figure>
 <h3>Qué cambia y qué no cambia</h3>
@@ -376,14 +376,14 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tr><td>El costo se calcula con la tabla del nuevo proveedor.</td><td>Los usuarios no tienen que hacer nada: siguen usando SAVI igual.</td></tr>
 </tbody></table>
 <div class="nota importante"><strong>Importante: privacidad</strong>
-<p>Los datos viajan al proveedor activo. Antes de cambiar, asegurate de que la empresa esté de acuerdo con las condiciones de uso de datos del nuevo proveedor.</p></div>
+<p>Los datos viajan al proveedor activo. Antes de cambiar, asegúrese de que la empresa esté de acuerdo con las condiciones de uso de datos del nuevo proveedor.</p></div>
 </section>
 
 <section>
 <h2 id="s9">9. Qué pasa si se acaban los créditos o se alcanzan los límites</h2>
 <p>Cuando el proveedor rechaza un pedido, <strong>los usuarios y los administradores ven mensajes distintos</strong>:</p>
 <ul>
-  <li><strong>Usuarios comunes</strong> ven siempre: <em>"El asistente no está disponible en este momento. Avisale a tu administrador."</em> No ven detalles técnicos.</li>
+  <li><strong>Usuarios comunes</strong> ven siempre: <em>"El asistente no está disponible en este momento. Avise a su administrador."</em> No ven detalles técnicos.</li>
   <li><strong>Administradores</strong> ven el motivo exacto y qué hacer.</li>
 </ul>
 <table class="larga">
@@ -393,22 +393,22 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tr><td>La cuenta de Gemini no tiene créditos. Un administrador debe cargar saldo en Google AI Studio…</td><td>Se acabó el saldo.</td><td>Cargar saldo en Google AI Studio.</td></tr>
 <tr><td>La cuenta de Anthropic (Claude) no tiene créditos. Un administrador debe cargar saldo en la consola de Anthropic…</td><td>Se acabó el saldo.</td><td>Cargar saldo en console.anthropic.com.</td></tr>
 <tr><td>Se agotó la cuota diaria de Gemini para los modelos configurados. Se renueva mañana; para seguir hoy, un administrador puede subir el plan en Google AI Studio o activar otro proveedor.</td><td>Se alcanzó el tope diario del plan gratuito o inicial.</td><td>Subir el plan o activar otro proveedor.</td></tr>
-<tr><td>La API key de … no es válida o no tiene permisos. Revisá la configuración del proveedor…</td><td>La clave fue revocada, cambiada o venció.</td><td>Pegar una clave nueva en <em>Editar</em>.</td></tr>
-<tr><td>La credencial de Claude venció o no es válida. Para renovarla, abrí 'Iniciar sesión en Claude' desde el menú Inicio…</td><td>Venció la sesión de Claude en la PC.</td><td>Seguir el mensaje, o cambiar a una API key.</td></tr>
-<tr><td>Claude está recibiendo demasiadas solicitudes en este momento. Probá de nuevo en unos minutos.</td><td>Límite de pedidos por minuto.</td><td>Esperar unos minutos.</td></tr>
+<tr><td>La API key de … no es válida o no tiene permisos. Revise la configuración del proveedor…</td><td>La clave fue revocada, cambiada o venció.</td><td>Pegar una clave nueva en <em>Editar</em>.</td></tr>
+<tr><td>La credencial de Claude venció o no es válida. Para renovarla, abra 'Iniciar sesión en Claude' desde el menú Inicio…</td><td>Venció la sesión de Claude en la PC.</td><td>Seguir el mensaje, o cambiar a una API key.</td></tr>
+<tr><td>Claude está recibiendo demasiadas solicitudes en este momento. Pruebe de nuevo en unos minutos.</td><td>Límite de pedidos por minuto.</td><td>Esperar unos minutos.</td></tr>
 </tbody></table>
-<p>En la pantalla <em>Conocimiento de la empresa</em>, si un PDF no se pudo leer por falta de saldo, aparece <em>"Revisá el proveedor de IA"</em>. Cuando resolvés el problema, usá <span class="btn">Reintentar todos</span> o <strong>Leer con IA</strong> en cada documento.</p>
-<div class="nota consejo"><strong>Consejo</strong><p>Para evitar cortes sorpresivos, activá en la cuenta del proveedor un aviso por saldo bajo y revisá el consumo en <em>Administración → Consumo</em>.</p></div>
+<p>En la pantalla <em>Conocimiento de la empresa</em>, si un PDF no se pudo leer por falta de saldo, aparece <em>"Revise el proveedor de IA"</em>. Cuando resuelve el problema, use <span class="btn">Reintentar todos</span> o <strong>Leer con IA</strong> en cada documento.</p>
+<div class="nota consejo"><strong>Consejo</strong><p>Para evitar cortes sorpresivos, active en la cuenta del proveedor un aviso por saldo bajo y revise el consumo en <em>Administración → Consumo</em>.</p></div>
 </section>
 
 <section>
 <h2 id="s10">10. Recomendaciones de seguridad</h2>
 <ul>
-  <li><strong>No compartas la clave por chat ni por correo.</strong> Si hay que pasarla, hacelo en persona o por un gestor de contraseñas.</li>
-  <li><strong>Una clave por entorno.</strong> Usá claves distintas para pruebas y para producción: así podés revocar una sin afectar la otra.</li>
-  <li><strong>Rotá la clave después de la etapa piloto o de pruebas.</strong> Creá una nueva, pegala en SAVI y revocá la vieja en la consola del proveedor.</li>
-  <li><strong>Nunca pegues una clave en capturas, tickets o documentos.</strong> Si una clave se mostró, revocala.</li>
-  <li><strong>Poné un tope de gasto</strong> en la cuenta del proveedor.</li>
+  <li><strong>No compartas la clave por chat ni por correo.</strong> Si hay que pasarla, hágalo en persona o por un gestor de contraseñas.</li>
+  <li><strong>Una clave por entorno.</strong> Use claves distintas para pruebas y para producción: así puede revocar una sin afectar la otra.</li>
+  <li><strong>Rote la clave después de la etapa piloto o de pruebas.</strong> Cree una nueva, péguela en SAVI y revoque la vieja en la consola del proveedor.</li>
+  <li><strong>Nunca pegue una clave en capturas, tickets o documentos.</strong> Si una clave se mostró, revóquela.</li>
+  <li><strong>Ponga un tope de gasto</strong> en la cuenta del proveedor.</li>
   <li>SAVI guarda las credenciales cifradas y nunca las vuelve a mostrar completas en pantalla.</li>
 </ul>
 </section>
@@ -418,14 +418,14 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <table class="larga">
 <thead><tr><th style="width:30%">Problema</th><th>Posible causa</th><th>Solución</th></tr></thead>
 <tbody>
-<tr><td>El botón Activar está deshabilitado</td><td>Falta la credencial o los modelos, o el proveedor ya está en uso.</td><td>Abrí <em>Configurar</em>, completá y guardá. Al pasar el mouse sobre el botón se ve el motivo.</td></tr>
-<tr><td>"No se pudo probar …" o "no es válida o no tiene permisos"</td><td>Clave mal copiada, con espacios o revocada.</td><td>Generá y pegá una nueva.</td></tr>
-<tr><td>Dice que no tiene créditos y acabo de cargar</td><td>El saldo puede demorar unos minutos en verse, o la clave es de otra cuenta.</td><td>Esperá y probá de nuevo; verificá que la clave sea de la cuenta que cargaste.</td></tr>
-<tr><td>El catálogo de modelos no aparece</td><td>El proveedor no lo devolvió o no hay conexión.</td><td>Escribí el identificador del modelo a mano o revisá internet.</td></tr>
-<tr><td>Estado "Credencial ilegible"</td><td>La credencial no se puede descifrar.</td><td>Editá el proveedor y pegá la clave otra vez.</td></tr>
-<tr><td>Los usuarios ven "El asistente no está disponible"</td><td>Falla de clave, saldo o límite del proveedor activo.</td><td>Entrá como administrador y mirá el mensaje exacto al hacer una pregunta; seguí la tabla de la sección 9.</td></tr>
-<tr><td>Cambié de proveedor y las respuestas cambiaron de estilo</td><td>Cada modelo redacta distinto.</td><td>Es esperable. Si no te convence, volvé a activar el anterior.</td></tr>
-<tr><td>El costo en Consumo parece menor al real</td><td>Falta el precio del modelo.</td><td>Cargalo en <em>Avanzado: precios por modelo</em>.</td></tr>
+<tr><td>El botón Activar está deshabilitado</td><td>Falta la credencial o los modelos, o el proveedor ya está en uso.</td><td>Abra <em>Configurar</em>, complete y guarde. Al pasar el mouse sobre el botón se ve el motivo.</td></tr>
+<tr><td>"No se pudo probar …" o "no es válida o no tiene permisos"</td><td>Clave mal copiada, con espacios o revocada.</td><td>Genere y pegue una nueva.</td></tr>
+<tr><td>Dice que no tiene créditos y acabo de cargar</td><td>El saldo puede demorar unos minutos en verse, o la clave es de otra cuenta.</td><td>Espere y pruebe de nuevo; verifique que la clave sea de la cuenta que cargó.</td></tr>
+<tr><td>El catálogo de modelos no aparece</td><td>El proveedor no lo devolvió o no hay conexión.</td><td>Escriba el identificador del modelo a mano o revise internet.</td></tr>
+<tr><td>Estado "Credencial ilegible"</td><td>La credencial no se puede descifrar.</td><td>Edite el proveedor y pegue la clave otra vez.</td></tr>
+<tr><td>Los usuarios ven "El asistente no está disponible"</td><td>Falla de clave, saldo o límite del proveedor activo.</td><td>Entre como administrador y mire el mensaje exacto al hacer una pregunta; siga la tabla de la sección 9.</td></tr>
+<tr><td>Cambié de proveedor y las respuestas cambiaron de estilo</td><td>Cada modelo redacta distinto.</td><td>Es esperable. Si no le convence, vuelva a activar el anterior.</td></tr>
+<tr><td>El costo en Consumo parece menor al real</td><td>Falta el precio del modelo.</td><td>Cárguelo en <em>Avanzado: precios por modelo</em>.</td></tr>
 </tbody></table>
 </section>
 

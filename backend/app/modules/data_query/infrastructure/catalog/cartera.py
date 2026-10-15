@@ -133,15 +133,15 @@ CARTERA = SemanticEntity(
         "REGLA OBLIGATORIA: esta entidad mezcla DOS deudas opuestas — lo "
         "que los clientes deben a la empresa y lo que la empresa debe a "
         "sus proveedores. Un total sin separar suma las dos y NO significa "
-        "nada. Siempre: (a) agrupá por la dimensión 'lado', o (b) filtrá "
+        "nada. Siempre: (a) agrupa por la dimensión 'lado', o (b) filtra "
         "por 'lado' si el usuario pidió una sola punta. Si la pregunta no "
-        "aclara cuál quiere, devolvé el desglose por 'lado' y que elija.\n"
+        "aclara cuál quiere, devuelve el desglose por 'lado' y que elija.\n"
         "El filtro 'lado' usa SIEMPRE el operador 'contiene', con una "
         "de estas palabras: 'clientes' (lo que nos deben), 'proveedores' "
         "(lo que debemos), 'notas' (notas crédito) o 'devoluciones'. 'clientes' NO "
-        "incluye las notas crédito: si el usuario las quiere, pedilas "
-        "aparte o agrupá por 'lado'.\n"
-        "Para las ventas facturadas usá 'ventas', que es otra cosa."
+        "incluye las notas crédito: si el usuario las quiere, pídelas "
+        "aparte o agrupa por 'lado'.\n"
+        "Para las ventas facturadas usa 'ventas', que es otra cosa."
     ),
     joins={
         "tercero": JoinDef(

@@ -64,7 +64,7 @@ async function onFileChange(event: Event): Promise<void> {
 
 async function onImport(): Promise<void> {
   if (!selectedFile.value) {
-    error.value = 'Elegí el archivo exportado.'
+    error.value = 'Elija el archivo exportado.'
     return
   }
   if (!passphrase.value) {
@@ -81,7 +81,7 @@ async function onImport(): Promise<void> {
     if (failed === 0) {
       toast.success(`${result.rows.length} base${result.rows.length === 1 ? '' : 's'} importada${result.rows.length === 1 ? '' : 's'}`)
     } else {
-      toast.info(`${failed} de ${result.rows.length} no se pudieron importar — revisá el detalle`)
+      toast.info(`${failed} de ${result.rows.length} no se pudieron importar — revise el detalle`)
     }
   } catch (e) {
     error.value = (e as Error).message || 'No se pudo importar el archivo.'
@@ -95,7 +95,7 @@ async function onImport(): Promise<void> {
   <Dialog
     :open="open"
     title="Importar bases de datos"
-    description="Cargá un archivo exportado desde otra instalación de SAVI. Las bases con el mismo código se actualizan; el resto se crea."
+    description="Cargue un archivo exportado desde otra instalación de SAVI. Las bases con el mismo código se actualizan; el resto se crea."
     :max-width="520"
     @update:open="open = $event"
   >

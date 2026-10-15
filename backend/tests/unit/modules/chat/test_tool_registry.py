@@ -143,11 +143,11 @@ async def test_typed_domain_errors_keep_their_message() -> None:
     from app.modules.free_query.domain.errors import AstValidationError
 
     async def rechazo(_args: dict[str, Any]) -> dict[str, Any]:
-        raise AstValidationError("SELECT * no está permitido. Listá las columnas.")
+        raise AstValidationError("SELECT * no está permitido. Lista las columnas.")
 
     spec = registry._spec("consultar_libre", "x", {"type": "object", "properties": {}}, rechazo)  # pyright: ignore[reportPrivateUsage]
 
     result = await spec.handler({})
 
     assert result.is_error is True
-    assert "Listá las columnas" in result.text
+    assert "Lista las columnas" in result.text

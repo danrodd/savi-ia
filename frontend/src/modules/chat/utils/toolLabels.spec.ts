@@ -38,7 +38,7 @@ describe('getToolLabel', () => {
       const label = getToolLabel('mcp__savi__algo_nuevo', status)
       expect(label).not.toMatch(/Procesando|mcp__|savi__/)
     }
-    expect(getToolLabel('algo_nuevo', 'running')).toBe('Trabajando en tu consulta…')
+    expect(getToolLabel('algo_nuevo', 'running')).toBe('Trabajando en su consulta…')
     expect(getToolLabel('algo_nuevo', 'success')).toBe('Listo')
   })
 

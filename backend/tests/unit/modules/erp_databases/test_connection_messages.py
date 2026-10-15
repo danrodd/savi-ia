@@ -28,7 +28,7 @@ def _error(message: str) -> Exception:
         (_error('database "x" does not exist'), "La base de datos no existe"),
         (TimeoutError("timed out"), "no respondió a tiempo"),
         (ConnectionRefusedError("Connect call failed, connection refused"), "aceptando conexiones"),
-        (_error("algo raro"), "Revisá los datos de conexión"),
+        (_error("algo raro"), "Revise los datos de conexión"),
     ],
 )
 def test_each_failure_has_its_own_single_sentence(error: Exception, fragment: str) -> None:

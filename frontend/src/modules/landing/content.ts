@@ -31,19 +31,19 @@ export interface Feature {
 export const FEATURES: Feature[] = [
   {
     icon: Database,
-    title: 'Los datos de tu ERP, interpretados',
+    title: 'Los datos de su ERP, interpretados',
     body: 'Ventas, clientes y cartera respondidos en lenguaje natural, con cifras reales y sin exportar nada a Excel.',
     example: '¿Cuánto facturamos en marzo frente a febrero?',
   },
   {
     icon: FileSearch,
-    title: 'Tus documentos, citados',
+    title: 'Sus documentos, citados',
     body: 'Políticas, fichas técnicas y escaneos: SAVI los lee, incluso tablas e imágenes, y cita la página exacta.',
     example: '¿Qué descuento puedo dar sin autorización?',
   },
   {
     icon: Globe,
-    title: 'Tu sitio web, siempre al día',
+    title: 'Su sitio web, siempre al día',
     body: 'Precios, horarios y políticas publicados se leen solos y se actualizan de noche. Cada respuesta trae el link.',
     example: '¿Cuántos kilos de equipaje incluye el tiquete?',
   },
@@ -62,11 +62,11 @@ export interface Step {
 
 export const STEPS: Step[] = [
   {
-    title: 'Se instala junto a tu ERP',
-    body: 'SAVI corre en un servidor de tu empresa, en tu red. Tus usuarios entran desde el navegador.',
+    title: 'Se instala junto a su ERP',
+    body: 'SAVI corre en un servidor de su empresa, en su red. Sus usuarios entran desde el navegador.',
   },
   {
-    title: 'Respeta los permisos que ya tenés',
+    title: 'Respeta los permisos que ya tiene',
     body: 'Cada persona ve solo lo que el ERP le permite: mismos módulos, mismas empresas, mismos límites.',
   },
   {
@@ -84,7 +84,7 @@ export interface Pillar {
 export const SECURITY: Pillar[] = [
   {
     icon: LockKeyhole,
-    title: 'Tus datos no salen de tu empresa',
+    title: 'Sus datos no salen de su empresa',
     body: 'La base del ERP nunca se expone a internet ni pasa por servidores de SEO.',
   },
   {
@@ -125,19 +125,19 @@ export interface Plan {
 export const PLANS: Plan[] = [
   {
     icon: KeyRound,
-    title: 'Con tu propia clave',
-    body: 'Conectás tu cuenta de Claude, OpenAI o Gemini y le pagás directamente al proveedor.',
+    title: 'Con su propia clave',
+    body: 'Conecta su cuenta de Claude, OpenAI o Gemini y le paga directamente al proveedor.',
     points: [
-      'Elegís el proveedor y el modelo',
+      'Elige el proveedor y el modelo',
       'Consumo visible por usuario y por empresa',
-      'Cambiás de proveedor cuando quieras',
+      'Cambia de proveedor cuando quiera',
     ],
   },
   {
     icon: Sparkles,
     title: 'Créditos gestionados por SEO',
     badge: 'Próximamente',
-    body: 'Sin cuentas ni claves: SEO pone la IA y vos consumís créditos desde un panel.',
+    body: 'Sin cuentas ni claves: SEO pone la IA y usted consume créditos desde un panel.',
     points: [
       'Un solo proveedor de facturación',
       'Límites y alertas de consumo',

@@ -110,7 +110,7 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
         # Acá el aviso es para que no se filtre a un despliegue por descuido.
         logger.warning(
             "JWT_SECRET tiene el valor de fábrica: cualquiera que lo conozca puede "
-            "firmarse un token de administrador. Generá uno antes de salir de desarrollo."
+            "firmarse un token de administrador. Genere uno antes de salir de desarrollo."
         )
     init_engines(settings)
 

@@ -94,7 +94,7 @@ function toggleSection(name: string): void {
 
 async function onPreview(): Promise<void> {
   if (!isValidUrlInput(url.value)) {
-    formError.value = 'Escribí una dirección web válida, por ejemplo www.empresa.com.'
+    formError.value = 'Escriba una dirección web válida, por ejemplo www.empresa.com.'
     return
   }
   formError.value = null
@@ -127,7 +127,7 @@ async function onSubmit(): Promise<void> {
     excluded.value.length > 0 &&
     excluded.value.length === sections.value.length
   ) {
-    formError.value = 'Dejaste todas las secciones fuera: elegí al menos una.'
+    formError.value = 'Dejó todas las secciones fuera: elija al menos una.'
     return
   }
   saving.value = true

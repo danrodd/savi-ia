@@ -26,7 +26,7 @@ async function copyConversationId(): Promise<void> {
     await navigator.clipboard.writeText(props.item.conversation_id)
     toast.success('Copiamos el identificador de la conversación.')
   } catch {
-    toast.error('No pudimos copiarlo. Seleccionalo y copialo a mano.')
+    toast.error('No pudimos copiarlo. Selecciónelo y cópielo a mano.')
   }
 }
 </script>

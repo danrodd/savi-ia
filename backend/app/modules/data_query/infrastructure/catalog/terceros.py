@@ -31,7 +31,7 @@ TERCEROS = SemanticEntity(
         "por nombre (modo detalle, filtro 'nombre' contiene) y obtener su "
         "id, o para contar terceros por tipo. Nunca expone datos de contacto. "
         "'activo' y 'bloqueado' son estados INDEPENDIENTES del ERP: un tercero "
-        "puede estar activo y bloqueado a la vez. Para 'bloqueados' filtrá "
+        "puede estar activo y bloqueado a la vez. Para 'bloqueados' filtra "
         "bloqueado=true (nunca activo=false); para 'inactivos', activo=false."
     ),
     metrics={

@@ -39,7 +39,7 @@ async function save(perHour: number | null): Promise<void> {
     perHour !== null &&
     (!Number.isInteger(perHour) || perHour < 1 || perHour > current.maximum)
   ) {
-    error.value = `Elegí un número entre 1 y ${current.maximum}.`
+    error.value = `Elija un número entre 1 y ${current.maximum}.`
     return
   }
   error.value = null

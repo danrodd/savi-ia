@@ -73,7 +73,7 @@ def test_unknown_client_code_has_its_own_error_code(client: TestClient) -> None:
     assert response.status_code == 401
     assert response.json() == {
         "errorCode": "unknown_database",
-        "detail": "No encontramos ese cliente. Revisá el código después de la @.",
+        "detail": "No encontramos ese cliente. Revise el código después de la @.",
     }
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
@@ -84,7 +84,7 @@ def test_disabled_client_has_its_own_error_code(client: TestClient) -> None:
     assert response.status_code == 401
     assert response.json() == {
         "errorCode": "database_disabled",
-        "detail": "Ese cliente está desactivado en SAVI. Avisale a tu administrador.",
+        "detail": "Ese cliente está desactivado en SAVI. Avise a su administrador.",
     }
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
@@ -97,7 +97,7 @@ def test_unreachable_client_is_a_503_with_its_own_error_code(client: TestClient)
         "errorCode": "database_unreachable",
         "detail": (
             "No pudimos conectar con la base de ese cliente. "
-            "Probá de nuevo en unos minutos o avisale a tu administrador."
+            "Pruebe de nuevo en unos minutos o avise a su administrador."
         ),
     }
 

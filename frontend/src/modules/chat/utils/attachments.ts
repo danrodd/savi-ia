@@ -15,7 +15,7 @@ export function isAllowedImageType(type: string): boolean {
 /** Motivo amigable por el que el archivo no se puede adjuntar, o `null` si sirve. */
 export function imageRejection(file: File): string | null {
   if (!isAllowedImageType(file.type)) {
-    return `“${file.name}” no es una imagen compatible. Usá PNG, JPG, WEBP o GIF.`
+    return `“${file.name}” no es una imagen compatible. Use PNG, JPG, WEBP o GIF.`
   }
   if (file.size > MAX_IMAGE_BYTES) {
     return `“${file.name}” pesa más de ${MAX_IMAGE_MB} MB.`
@@ -27,7 +27,7 @@ export function imageRejection(file: File): string | null {
 }
 
 export function tooManyImagesMessage(): string {
-  return `Podés adjuntar hasta ${MAX_IMAGES_PER_MESSAGE} imágenes por mensaje.`
+  return `Puede adjuntar hasta ${MAX_IMAGES_PER_MESSAGE} imágenes por mensaje.`
 }
 
 /** Mensaje corto para una subida fallida; nunca expone detalles internos. */
@@ -35,7 +35,7 @@ export function uploadErrorMessage(e: unknown): string {
   if (e instanceof HttpRequestError) {
     if (e.status === 413) return `Pesa más de ${MAX_IMAGE_MB} MB.`
     if (e.status === 422) return 'No es una imagen válida.'
-    if (e.status === 429) return 'Demasiadas subidas seguidas. Probá en un rato.'
+    if (e.status === 429) return 'Demasiadas subidas seguidas. Pruebe en un rato.'
   }
-  return 'No se pudo subir. Reintentá.'
+  return 'No se pudo subir. Reintente.'
 }

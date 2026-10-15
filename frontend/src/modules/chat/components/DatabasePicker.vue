@@ -8,7 +8,7 @@
  * El modelo vale `null` para "la base de la sesión" (así lo entiende el
  * backend: sin `erp_database_id`, usa la base de login). Esa base aparece
  * UNA sola vez, primera y marcada "tu sesión"; antes figuraba dos veces,
- * como "Base con la que iniciaste sesión" y otra vez con su nombre.
+ * como "Base con la que inició sesión" y otra vez con su nombre.
  */
 import {
   ComboboxAnchor,
@@ -55,7 +55,7 @@ const options = computed(() => {
   if (!sessionInList.value) {
     items.unshift({
       value: SESSION,
-      label: 'Base con la que iniciaste sesión',
+      label: 'Base con la que inició sesión',
       code: '',
       isSession: true,
     })
@@ -85,7 +85,7 @@ const comboValue = computed<string>({
 function labelOf(value: string): string {
   const option = options.value.find((o) => o.value === value)
   if (!option) return ''
-  return option.isSession && option.code ? `${option.label} · tu sesión` : option.label
+  return option.isSession && option.code ? `${option.label} · su sesión` : option.label
 }
 </script>
 
@@ -129,7 +129,7 @@ function labelOf(value: string): string {
               class="dbpicker__item"
             >
               <span class="dbpicker__item-name">{{ option.label }}</span>
-              <span v-if="option.isSession && option.code" class="dbpicker__item-tag">tu sesión</span>
+              <span v-if="option.isSession && option.code" class="dbpicker__item-tag">su sesión</span>
               <span v-else-if="option.code" class="dbpicker__item-code">{{ option.code }}</span>
             </ComboboxItem>
           </ComboboxViewport>
@@ -137,7 +137,7 @@ function labelOf(value: string): string {
       </ComboboxPortal>
     </ComboboxRoot>
     <span class="dbpicker__hint">
-      Cada conversación usa un solo cliente. Elegilo antes de enviar el primer mensaje.
+      Cada conversación usa un solo cliente. Elíjalo antes de enviar el primer mensaje.
     </span>
   </div>
 </template>

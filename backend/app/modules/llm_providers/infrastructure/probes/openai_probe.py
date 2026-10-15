@@ -133,7 +133,7 @@ class OpenAIProbe(ProviderProbe):
         except TimeoutError:
             return ProbeResult(
                 ok=False,
-                detail="OpenAI no respondió a tiempo. Revisá la conexión a internet.",
+                detail="OpenAI no respondió a tiempo. Revise la conexión a internet.",
             )
         except APIStatusError as error:
             if error.status_code in _AUTH_STATUS:
@@ -146,20 +146,20 @@ class OpenAIProbe(ProviderProbe):
                     return ProbeResult(
                         ok=False,
                         detail=(
-                            "La cuenta de OpenAI no tiene créditos. Cargá saldo en la "
+                            "La cuenta de OpenAI no tiene créditos. Cargue saldo en la "
                             "plataforma de OpenAI para poder usar el chat."
                         ),
                     )
                 return ProbeResult(
                     ok=False,
-                    detail="OpenAI rechazó la solicitud por límite de uso. Intentá de nuevo.",
+                    detail="OpenAI rechazó la solicitud por límite de uso. Intente de nuevo.",
                 )
             if error.status_code in _MODEL_UNAVAILABLE_STATUS and config.chat_model:
                 return ProbeResult(
                     ok=False,
                     detail=(
                         f"El modelo '{config.chat_model}' no está disponible para esta "
-                        "cuenta. Elegí otro de la lista."
+                        "cuenta. Elija otro de la lista."
                     ),
                 )
             return ProbeResult(
@@ -169,10 +169,10 @@ class OpenAIProbe(ProviderProbe):
         except Exception:  # noqa: BLE001
             return ProbeResult(
                 ok=False,
-                detail="No se pudo conectar con OpenAI. Revisá la conexión a internet.",
+                detail="No se pudo conectar con OpenAI. Revise la conexión a internet.",
             )
         return ProbeResult(
             ok=True,
-            detail="La API key de OpenAI es válida. Elegí un modelo de la lista.",
+            detail="La API key de OpenAI es válida. Elija un modelo de la lista.",
             models=tuple(models),
         )

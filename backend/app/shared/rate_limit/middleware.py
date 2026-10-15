@@ -50,7 +50,7 @@ class GlobalRateLimitMiddleware(BaseHTTPMiddleware):
                 status_code=429,
                 content={
                     "errorCode": "rate_limited",
-                    "detail": "Demasiados pedidos. Esperá unos segundos.",
+                    "detail": "Demasiados pedidos. Espere unos segundos.",
                 },
                 headers={"Retry-After": str(decision.retry_after_seconds)},
             )

@@ -15,8 +15,8 @@ function update(model: string, key: keyof ModelPricing, value: string): void {
 
 <template>
   <div class="pricing">
-    <p class="pricing__hint">USD por millón de tokens. Completá el precio del modelo de chat para registrar costos.</p>
-    <div v-if="models.length === 0" class="pricing__empty">Elegí al menos un modelo.</div>
+    <p class="pricing__hint">USD por millón de tokens. Complete el precio del modelo de chat para registrar costos.</p>
+    <div v-if="models.length === 0" class="pricing__empty">Elija al menos un modelo.</div>
     <div v-for="model in models" :key="model" class="pricing__row">
       <strong class="pricing__model">{{ model }}</strong>
       <label v-for="key in ['input', 'output', 'cache_read', 'cache_write'] as const" :key="key">

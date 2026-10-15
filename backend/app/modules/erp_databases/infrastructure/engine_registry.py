@@ -170,7 +170,7 @@ def init_engine_registry(*, max_engines: int = DEFAULT_MAX_ENGINES) -> None:
 def get_engine_registry() -> ErpEngineRegistry:
     if _registry is None:
         raise RuntimeError(
-            "ErpEngineRegistry no inicializado. Llamá a "
+            "ErpEngineRegistry no inicializado. Llame a "
             "init_engine_registry() en el arranque."
         )
     return _registry

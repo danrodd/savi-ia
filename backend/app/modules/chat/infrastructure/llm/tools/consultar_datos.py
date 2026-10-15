@@ -26,7 +26,7 @@ def build_description(modules: Collection[str] | None = None) -> str:
     las ve, no promete datos que después le serían negados.
     """
     lines: list[str] = [
-        "Consulta datos del ERP del cliente. NO escribís SQL: armás un "
+        "Consulta datos del ERP del cliente. NO escribes SQL: armas un "
         "objeto de consulta y el sistema lo traduce de forma segura.",
         "",
         "El argumento `consulta` es un objeto con esta forma:",
@@ -49,10 +49,10 @@ def build_description(modules: Collection[str] | None = None) -> str:
         "- detalle: lista de filas (máx ~30). Para 'las últimas N facturas'.",
         "- registro: un único registro identificado por su clave.",
         "",
-        "Reglas: no podés pedir listados masivos crudos; para muchos datos "
-        "usá agregados. Para buscar un cliente por nombre usá entidad "
+        "Reglas: no puedes pedir listados masivos crudos; para muchos datos "
+        "usa agregados. Para buscar un cliente por nombre usa entidad "
         "'terceros', modo 'detalle', filtro {campo:'nombre', op:'contiene', "
-        "valor:'<texto>'} y obtené su 'id', luego filtrá ventas por "
+        "valor:'<texto>'} y obtén su 'id', luego filtra ventas por "
         "{campo:'cliente_id', op:'=', valor:<id>}.",
         "",
         "=== Entidades disponibles ===",
@@ -69,7 +69,7 @@ def build_description(modules: Collection[str] | None = None) -> str:
             labels = " y ".join(s.label for s in visible)
             lines.append(
                 f"PERMISOS: este usuario solo puede ver {labels}. Si pregunta por "
-                "el resto, decile que no tiene acceso a esa información en el ERP."
+                "el resto, dile que no tiene acceso a esa información en el ERP."
             )
         if ent.metrics:
             metricas = ", ".join(f"{m.name} ({m.label})" for m in ent.metrics.values())

@@ -38,13 +38,13 @@ describe('documentStatusView', () => {
   it('un fallo del proveedor de IA manda a revisar el proveedor', () => {
     const view = documentStatusView(doc({ status: 'no_text', status_code: 'ai_failed' }), ctx)
 
-    expect(view.hint).toBe('Revisá el proveedor de IA.')
+    expect(view.hint).toBe('Revise el proveedor de IA.')
   })
 
   it('un PDF escaneado sugiere activar la lectura con IA si todavía no está activa', () => {
     const view = documentStatusView(doc({ status: 'no_text' }), { aiReadingAvailable: false })
 
-    expect(view.hint).toBe('Probá activar la lectura con IA en Configuración.')
+    expect(view.hint).toBe('Pruebe activar la lectura con IA en Configuración.')
   })
 
   it('si la lectura con IA ya está disponible, sugiere usarla', () => {
@@ -56,7 +56,7 @@ describe('documentStatusView', () => {
   it('un PDF con contraseña dice qué hacer', () => {
     const view = documentStatusView(doc({ status: 'failed', status_code: 'pdf_encrypted' }), ctx)
 
-    expect(view.hint).toBe('Quitale la contraseña al PDF y subilo de nuevo.')
+    expect(view.hint).toBe('Quítele la contraseña al PDF y súbalo de nuevo.')
   })
 
   it('las pistas usan voseo', () => {

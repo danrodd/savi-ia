@@ -44,8 +44,8 @@ COMPRAS = SemanticEntity(
     description=(
         "Facturas de compra a proveedores (cabecera). Úsala para 'cuánto le "
         "compramos al proveedor X', 'cuánto compramos en marzo' y 'principales "
-        "proveedores'. Para lo que se le DEBE a un proveedor usá 'cartera'. "
-        "Para detalle por PRODUCTO usá 'compras_detalle'."
+        "proveedores'. Para lo que se le DEBE a un proveedor usa 'cartera'. "
+        "Para detalle por PRODUCTO usa 'compras_detalle'."
     ),
     joins={"tercero": _TERCERO_JOIN},
     metrics={
@@ -100,7 +100,7 @@ COMPRAS_DETALLE = SemanticEntity(
     description=(
         "Líneas de compra (por producto). Úsala para 'cuántas unidades de X "
         "compramos', 'qué productos le compramos al proveedor Y' y costo "
-        "unitario de compra. Para totales de factura usá 'compras'."
+        "unitario de compra. Para totales de factura usa 'compras'."
     ),
     joins={
         "producto": JoinDef(

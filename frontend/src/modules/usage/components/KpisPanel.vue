@@ -232,7 +232,7 @@ onMounted(() => {
   <section class="kp" aria-label="KPIs y tarifa">
     <div class="kp__bar">
       <p class="kp__note">
-        Para fijar tarifa mirá los percentiles, no el promedio: unos pocos
+        Para fijar tarifa mire los percentiles, no el promedio: unos pocos
         usuarios pesados lo distorsionan. El p95 cubre al 95% de las
         conversaciones y es el piso seguro para no perder margen.
       </p>

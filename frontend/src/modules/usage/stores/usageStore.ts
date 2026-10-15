@@ -82,7 +82,7 @@ export const useUsageStore = defineStore('usage', () => {
     try {
       mine.value = await usageService.me(periodQuery())
     } catch (e) {
-      errorMine.value = (e as Error).message || 'No se pudo cargar tu consumo.'
+      errorMine.value = (e as Error).message || 'No se pudo cargar su consumo.'
     } finally {
       loadingMine.value = false
     }

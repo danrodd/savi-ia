@@ -263,10 +263,10 @@ const showConversationShare = computed<boolean>(
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
           </svg>
           <span v-if="isReadOnly">
-            Estás viendo una conversación compartida — <strong>solo lectura</strong>.
+            Está viendo una conversación compartida — <strong>solo lectura</strong>.
           </span>
           <span v-else>
-            Esta conversación está compartida vía enlace. Vos sos el autor, podés seguir escribiendo normalmente.
+            Esta conversación está compartida vía enlace. Usted es el autor y puede seguir escribiendo normalmente.
           </span>
         </div>
 
@@ -284,7 +284,7 @@ const showConversationShare = computed<boolean>(
       <div v-if="error" class="chat-main__banner" role="alert">{{ error }}</div>
 
       <div v-if="store.llmProviderUnavailable" class="chat-main__banner" role="alert">
-        El asistente no está disponible en este momento. Avisale a tu administrador.
+        El asistente no está disponible en este momento. Avise a su administrador.
         <RouterLink v-if="authStore.user?.is_admin" class="chat-main__admin-link" :to="{ name: 'admin-llm-providers' }">Ir a Proveedores de IA</RouterLink>
       </div>
 
@@ -293,8 +293,8 @@ const showConversationShare = computed<boolean>(
         class="chat-main__banner"
         role="alert"
       >
-        La base de datos de esta conversación ya no está disponible. Podés leer el historial,
-        pero no enviar mensajes nuevos. Iniciá una conversación nueva con otro cliente.
+        La base de datos de esta conversación ya no está disponible. Puede leer el historial,
+        pero no enviar mensajes nuevos. Inicie una conversación nueva con otro cliente.
       </div>
       <div
         v-else-if="activeConversation && showsDatabaseContext && activeDatabaseName"

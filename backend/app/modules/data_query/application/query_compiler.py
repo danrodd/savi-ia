@@ -108,7 +108,7 @@ def _resolve_fields(query: SemanticQuery, entity: SemanticEntity) -> list[str]:
     if not entity.fields:
         raise InvalidQueryError(
             f"La entidad '{entity.name}' no soporta consultas de detalle/registro; "
-            "usá modo 'agregado'."
+            "usa modo 'agregado'."
         )
     if not query.campos:
         return list(entity.fields)  # todos los campos por default
@@ -145,8 +145,8 @@ def _require_disambiguating_dimension(
     opciones = ", ".join(f"'{d}'" for d in entity.require_dimensions)
     raise InvalidQueryError(
         f"La entidad '{entity.name}' junta conceptos que no se pueden sumar "
-        f"entre sí, así que un total sin separar no significa nada. Agregá "
-        f"{opciones} a 'dimensiones' para ver el desglose, o filtrá por "
+        f"entre sí, así que un total sin separar no significa nada. Agrega "
+        f"{opciones} a 'dimensiones' para ver el desglose, o filtra por "
         f"{opciones} si el usuario pidió una sola parte."
     )
 
@@ -170,7 +170,7 @@ def _coerce_date(value: Any, campo: str) -> Any:
         except ValueError:
             pass
     raise InvalidQueryError(
-        f"El filtro '{campo}' espera una fecha en formato AAAA-MM-DD, recibí '{value}'."
+        f"El filtro '{campo}' espera una fecha en formato AAAA-MM-DD, se recibió '{value}'."
     )
 
 
@@ -178,7 +178,7 @@ def _coerce_number(value: Any, campo: str) -> Any:
     # `bool` es subclase de `int` en Python: sin este corte, `True` entraría
     # como el número 1 y la consulta filtraría por algo que nadie pidió.
     if isinstance(value, bool):
-        raise InvalidQueryError(f"El filtro '{campo}' espera un número, recibí '{value}'.")
+        raise InvalidQueryError(f"El filtro '{campo}' espera un número, se recibió '{value}'.")
     if isinstance(value, (int, float)):
         return value
     if isinstance(value, str):
@@ -189,7 +189,7 @@ def _coerce_number(value: Any, campo: str) -> Any:
                 return float(value)
             except ValueError:
                 pass
-    raise InvalidQueryError(f"El filtro '{campo}' espera un número, recibí '{value}'.")
+    raise InvalidQueryError(f"El filtro '{campo}' espera un número, se recibió '{value}'.")
 
 
 def _coerce_bool(value: Any, campo: str) -> Any:
@@ -203,7 +203,7 @@ def _coerce_bool(value: Any, campo: str) -> Any:
             return False
     if isinstance(value, int) and value in (0, 1):
         return bool(value)
-    raise InvalidQueryError(f"El filtro '{campo}' espera sí o no (booleano), recibí '{value}'.")
+    raise InvalidQueryError(f"El filtro '{campo}' espera sí o no (booleano), se recibió '{value}'.")
 
 
 def _coerce_value(value: Any, value_type: FilterValueType, campo: str) -> Any:

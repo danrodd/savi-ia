@@ -35,9 +35,9 @@ function onSubmit(): void {
     <div class="lp-container demo__inner">
       <div class="demo__copy">
         <p class="lp-eyebrow">Solicitar demo</p>
-        <h2 class="lp-title">Mirá SAVI con los datos de tu empresa</h2>
+        <h2 class="lp-title">Mire SAVI con los datos de su empresa</h2>
         <p class="lp-lead">
-          Te mostramos cómo responde sobre tu ERP, tus documentos y tu sitio web. Sin compromiso.
+          Le mostramos cómo responde sobre su ERP, sus documentos y su sitio web. Sin compromiso.
         </p>
       </div>
 
@@ -71,7 +71,7 @@ function onSubmit(): void {
           <input v-model="form.phone" type="tel" autocomplete="tel" />
         </label>
         <label class="demo__field demo__field--wide">
-          <span>¿Qué te gustaría resolver? <em>(opcional)</em></span>
+          <span>¿Qué le gustaría resolver? <em>(opcional)</em></span>
           <textarea v-model="form.message" rows="3" maxlength="1000" />
         </label>
 
@@ -79,7 +79,7 @@ function onSubmit(): void {
           El formulario todavía no tiene un correo de destino configurado.
         </p>
         <p v-else-if="sent" class="demo__note" role="status">
-          Se abrió tu correo con la solicitud lista. Solo falta enviarla.
+          Se abrió su correo con la solicitud lista. Solo falta enviarla.
         </p>
         <button type="submit" class="lp-button lp-button--primary demo__submit" :disabled="!contact">
           Solicitar demo

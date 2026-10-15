@@ -108,7 +108,7 @@ async function onSubmit(): Promise<void> {
 
       <p v-if="confirmingNarrowing" class="docedit__warning" role="alert">
         Este cambio puede dejar sin acceso a algunos usuarios. Las respuestas que ya citaron este
-        documento se les mostrarán como no disponibles. Presioná Guardar otra vez para confirmar.
+        documento se les mostrarán como no disponibles. Presione Guardar otra vez para confirmar.
       </p>
       <p v-if="formError" class="docedit__error" role="alert">{{ formError }}</p>
     </form>

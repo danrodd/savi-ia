@@ -46,7 +46,7 @@ async function onExport(): Promise<void> {
     const date = file.exported_at.slice(0, 10)
     triggerDownload(URL.createObjectURL(blob), `savi-bases-erp-${date}.json`)
     toast.success(`${file.count} base${file.count === 1 ? '' : 's'} exportada${file.count === 1 ? '' : 's'}`, {
-      description: 'Compartí el archivo y la contraseña por separado.',
+      description: 'Comparta el archivo y la contraseña por separado.',
     })
     open.value = false
   } catch (e) {
@@ -61,7 +61,7 @@ async function onExport(): Promise<void> {
   <Dialog
     :open="open"
     title="Exportar bases de datos"
-    description="Descargá un archivo con las bases activas para cargarlo en otra instalación de SAVI (por ejemplo, la de otro agente)."
+    description="Descargue un archivo con las bases activas para cargarlo en otra instalación de SAVI (por ejemplo, la de otro agente)."
     :max-width="440"
     @update:open="open = $event"
   >

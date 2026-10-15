@@ -82,7 +82,7 @@ async function onSubmit(): Promise<void> {
             :disabled="isSubmitting"
             :aria-invalid="errorMessage ? 'true' : undefined"
             :aria-describedby="errorMessage ? 'login-error' : (rememberedCodes.length === 0 ? 'login-code-hint' : undefined)"
-            placeholder="Tu código de usuario"
+            placeholder="Su código de usuario"
             list="login-suggestions"
           />
           <datalist id="login-suggestions">
@@ -90,7 +90,7 @@ async function onSubmit(): Promise<void> {
           </datalist>
         </label>
         <p v-if="rememberedCodes.length === 0" id="login-code-hint" class="login__hint">
-          Si atendés varios clientes, agregá su código: <code>USUARIO@CODIGO</code>
+          Si atiende varios clientes, agregue su código: <code>USUARIO@CODIGO</code>
         </p>
         <div class="login__field">
           <label class="login__label" for="login-password">Contraseña</label>

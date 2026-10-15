@@ -116,14 +116,14 @@ def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
     if len(sql) > policy.max_sql_length:
         raise AstValidationError(
             f"El SQL es demasiado largo ({len(sql)} chars; máximo "
-            f"{policy.max_sql_length}). Reformulalo más conciso."
+            f"{policy.max_sql_length}). Reformúlalo más conciso."
         )
 
     try:
         statements = sqlglot.parse(sql, dialect=_DIALECT)
     except sqlglot_errors.ParseError as e:
         raise AstValidationError(
-            f"SQL inválido: no se pudo parsear ({e}). Revisá la sintaxis."
+            f"SQL inválido: no se pudo parsear ({e}). Revisa la sintaxis."
         ) from e
 
     statements = [s for s in statements if s is not None]
@@ -136,7 +136,7 @@ def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
         # modelo qué había hecho mal: con un `UNION` en la raíz el nodo no es
         # `Select`, así que `_reject_unions_anywhere` nunca llegaba a correr.
         kind = type(root).__name__.upper()
-        raise AstValidationError(f"{kind} no está permitido. Hacé una sola consulta por turno.")
+        raise AstValidationError(f"{kind} no está permitido. Haz una sola consulta por turno.")
     if not isinstance(root, exp.Select):
         raise AstValidationError(
             "Solo se permite SELECT. Operaciones de escritura, EXEC y DDL están bloqueadas."
@@ -175,13 +175,13 @@ def _reject_unions_anywhere(root: exp.Select) -> None:
     # `find_all` recorre todo el AST incluyendo subqueries.
     for node in root.find_all(exp.Union, exp.Intersect, exp.Except):
         kind = type(node).__name__.upper()
-        raise AstValidationError(f"{kind} no está permitido. Hacé una sola consulta por turno.")
+        raise AstValidationError(f"{kind} no está permitido. Haz una sola consulta por turno.")
 
 
 def _reject_with_ctes(root: exp.Select) -> None:
     if root.args.get("with") is not None or any(root.find_all(exp.With)):
         raise AstValidationError(
-            "WITH (CTEs) no está permitido. Expresá la lógica en una sola "
+            "WITH (CTEs) no está permitido. Expresa la lógica en una sola "
             "consulta con joins y subqueries simples."
         )
 
@@ -194,8 +194,8 @@ def _reject_lateral_joins(root: exp.Select) -> None:
 def _reject_offset(root: exp.Select) -> None:
     for _ in root.find_all(exp.Offset):
         raise AstValidationError(
-            "OFFSET no está permitido (impide paginación). Si necesitás "
-            "ver otro subconjunto, afiná los filtros (fecha, cliente, "
+            "OFFSET no está permitido (impide paginación). Si necesitas "
+            "ver otro subconjunto, afina los filtros (fecha, cliente, "
             "producto, etc.) en lugar de paginar."
         )
 
@@ -208,11 +208,11 @@ def _reject_select_star_top_level(root: exp.Select) -> None:
     for projection in root.expressions:
         if isinstance(projection, exp.Star):
             raise AstValidationError(
-                "SELECT * no está permitido. Listá explícitamente las columnas que necesitás."
+                "SELECT * no está permitido. Lista explícitamente las columnas que necesitas."
             )
         if isinstance(projection, exp.Column) and isinstance(projection.this, exp.Star):
             raise AstValidationError(
-                "tabla.* no está permitido. Listá explícitamente las columnas que necesitás."
+                "tabla.* no está permitido. Lista explícitamente las columnas que necesitas."
             )
 
 
@@ -251,7 +251,7 @@ def _reject_system_catalogs(root: exp.Select) -> None:
             raise AstValidationError(
                 f"La tabla '{objetivo}' es del catálogo interno de Postgres y no "
                 "se puede consultar. Para descubrir nombres de tablas o columnas "
-                "usá `information_schema`."
+                "usa `information_schema`."
             )
 
 
@@ -267,7 +267,7 @@ def _reject_sensitive_columns(root: exp.Select) -> None:
                     continue
                 raise AstValidationError(
                     f"La columna '{column.name}' es un dato personal y no se puede "
-                    "devolver (identificación, teléfono, email, dirección). Mostrá "
+                    "devolver (identificación, teléfono, email, dirección). Muestra "
                     "el nombre y el código del tercero en su lugar."
                 )
 
@@ -314,7 +314,7 @@ def _check_subquery_depth(root: exp.Select, policy: FreeQueryPolicy) -> None:
     if max_depth > policy.max_subquery_depth:
         raise AstValidationError(
             f"Demasiados niveles de subqueries ({max_depth}; máximo "
-            f"{policy.max_subquery_depth}). Aplaná la consulta."
+            f"{policy.max_subquery_depth}). Aplana la consulta."
         )
 
 

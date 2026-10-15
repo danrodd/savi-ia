@@ -193,7 +193,7 @@ async def test_enabling_requires_accepting_the_active_provider(
     _, pages, settings = repos
     use_case = UpdateAiReadingSettingsUseCase(settings, _Readers(_available("openai")), pages)
 
-    with pytest.raises(CompanyDocumentConflictError, match="aceptá el envío"):
+    with pytest.raises(CompanyDocumentConflictError, match="acepte el envío"):
         await use_case.execute(enabled=True, updated_by_login="ADMIN")
     with pytest.raises(CompanyDocumentConflictError, match="cambió"):
         await use_case.execute(enabled=True, updated_by_login="ADMIN", accept_provider="gemini")

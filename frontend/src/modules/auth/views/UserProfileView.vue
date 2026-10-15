@@ -132,7 +132,7 @@ onMounted(() => {
         <section v-if="showsModulesSection" class="profile__modules">
           <h2 class="profile__modules-title">Módulos habilitados</h2>
           <p v-if="permisosStore.isAdmin" class="profile__modules-admin-note">
-            Tu cuenta tiene acceso total como administrador.
+            Su cuenta tiene acceso total como administrador.
           </p>
           <ul v-else class="profile__chips" aria-label="Módulos con acceso">
             <li v-for="chip in moduleChips" :key="chip.code" class="profile__chip">

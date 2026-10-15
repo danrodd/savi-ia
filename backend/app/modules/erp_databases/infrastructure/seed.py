@@ -117,7 +117,7 @@ async def seed_default_database(
         # sección de administración.
         logger.info(
             "No hay bases del ERP registradas y ERP_DB_* está vacío: "
-            "registrá la primera desde la sección de administración."
+            "registre la primera desde la sección de administración."
         )
         return
 

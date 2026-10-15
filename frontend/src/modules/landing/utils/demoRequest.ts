@@ -7,9 +7,9 @@
 import { z } from 'zod'
 
 export const demoRequestSchema = z.object({
-  name: z.string().trim().min(2, 'Escribí tu nombre.'),
-  company: z.string().trim().min(2, 'Escribí el nombre de tu empresa.'),
-  email: z.email('Escribí un correo válido.'),
+  name: z.string().trim().min(2, 'Escriba su nombre.'),
+  company: z.string().trim().min(2, 'Escriba el nombre de su empresa.'),
+  email: z.email('Escriba un correo válido.'),
   phone: z.string().trim().max(30).optional().default(''),
   message: z.string().trim().max(1000).optional().default(''),
 })

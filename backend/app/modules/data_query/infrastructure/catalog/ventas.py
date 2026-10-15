@@ -40,7 +40,7 @@ VENTAS = SemanticEntity(
     description=(
         "Facturas de venta (cabecera). Úsala para totales facturados, "
         "número de facturas, ticket promedio, IVA y descuentos, agrupados "
-        "por periodo o por cliente. Para detalle por PRODUCTO usá "
+        "por periodo o por cliente. Para detalle por PRODUCTO usa "
         "'ventas_detalle'."
     ),
     joins={
@@ -100,7 +100,7 @@ VENTAS_DETALLE = SemanticEntity(
     description=(
         "Líneas de venta (por producto). Úsala para unidades vendidas, "
         "ingresos y costo por producto o por sucursal. Para totales de "
-        "factura usá 'ventas'."
+        "factura usa 'ventas'."
     ),
     joins={
         # 'detalle' debe ir primero: 'producto' y 'almacen' dependen de él.

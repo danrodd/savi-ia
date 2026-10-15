@@ -35,7 +35,7 @@ watch(
 
 async function onSubmit(): Promise<void> {
   if (!query.value.trim() || !databaseId.value) {
-    error.value = 'Escribí una consulta y elegí una base.'
+    error.value = 'Escriba una consulta y elija una base.'
     return
   }
   running.value = true
@@ -87,7 +87,7 @@ async function onSubmit(): Promise<void> {
 
         <h3 class="doctest__heading">Encontraría</h3>
         <p v-if="result.results.length === 0" class="doctest__empty">
-          Nada relevante. Probá con otras palabras.
+          Nada relevante. Pruebe con otras palabras.
         </p>
         <ul v-else class="doctest__list">
           <li v-for="(hit, i) in result.results" :key="`${hit.document_id}-${i}`" class="doctest__hit">

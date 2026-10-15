@@ -30,7 +30,7 @@ def _parse_mode(raw: Any) -> QueryMode:
         return QueryMode(str(raw))
     except ValueError:
         raise InvalidQueryError(
-            f"Modo inválido '{raw}'. Usá: agregado, detalle o registro."
+            f"Modo inválido '{raw}'. Usa: agregado, detalle o registro."
         ) from None
 
 
@@ -39,7 +39,7 @@ def _parse_op(raw: Any) -> FilterOp:
         return FilterOp(str(raw))
     except ValueError:
         raise InvalidQueryError(
-            f"Operador de filtro inválido '{raw}'. Usá: =, !=, >, >=, <, <=, "
+            f"Operador de filtro inválido '{raw}'. Usa: =, !=, >, >=, <, <=, "
             "entre, contiene, en."
         ) from None
 

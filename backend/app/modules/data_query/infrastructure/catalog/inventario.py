@@ -95,10 +95,10 @@ INVENTARIO = SemanticEntity(
         "Existencias ACTUALES por producto y sucursal/bodega (el último saldo de "
         "cada producto en cada almacén; no incluye servicios). Úsala para "
         "'¿cuántas unidades hay de X?', '¿qué tiene la sucursal Y?', 'productos "
-        "bajo el mínimo' y 'valor del inventario'. Para buscar un producto usá "
+        "bajo el mínimo' y 'valor del inventario'. Para buscar un producto usa "
         "el filtro 'producto' con 1 o 2 palabras clave del nombre (ej. "
         "'acetaminofen 500'), sin la presentación ni unidades: TODAS las palabras "
-        "tienen que aparecer. Si no encuentra nada, probá con menos palabras "
+        "tienen que aparecer. Si no encuentra nada, prueba con menos palabras "
         "antes de decir que no existe. Es una foto del stock de hoy: no tiene "
         "historia por fechas."
     ),

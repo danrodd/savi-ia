@@ -106,7 +106,7 @@ def init_connection_provider(provider: ErpConnectionProvider) -> None:
 def get_connection_provider() -> ErpConnectionProvider:
     if _provider is None:
         raise RuntimeError(
-            "ErpConnectionProvider no inicializado. Llamá a "
+            "ErpConnectionProvider no inicializado. Llame a "
             "init_connection_provider() en el arranque."
         )
     return _provider

@@ -498,18 +498,18 @@ begin
   if AlreadyLoggedIn then
     Result :=
       'Ya hay una sesión de Claude Code iniciada en este equipo: SAVI la va ' +
-      'a usar automáticamente. Dejá los dos campos vacíos salvo que quieras ' +
+      'a usar automáticamente. Deje los dos campos vacíos salvo que quiera ' +
       'forzar una autenticación distinta.'
   else
     Result :=
       'SAVI usa la suscripción de Claude (Pro o Max) del cliente. Lo normal ' +
       'es dejar estos dos campos VACÍOS: al terminar la instalación se abre ' +
       'el navegador para iniciar sesión con esa cuenta, y no hay nada que ' +
-      'copiar. Completá un campo solo si te entregaron la credencial ya ' +
-      'generada. El puerto es el que usa SAVI en este equipo; cambialo solo ' +
+      'copiar. Complete un campo solo si le entregaron la credencial ya ' +
+      'generada. El puerto es el que usa SAVI en este equipo; cámbielo solo ' +
       'si ya está ocupado — está elegido para no chocar con nada.' + #13#10 +
-      'Si el cliente usa Gemini u OpenAI en vez de Claude, dejá estos campos ' +
-      'vacíos y cargá la clave después en SAVI: Administración → Proveedores de IA.';
+      'Si el cliente usa Gemini u OpenAI en vez de Claude, deje estos campos ' +
+      'vacíos y cargue la clave después en SAVI: Administración → Proveedores de IA.';
 end;
 
 { `True` si en el directorio elegido ya hay una instalación configurada.
@@ -585,7 +585,7 @@ begin
   Result := False;
   if Trim(Page.Values[0]) = '' then
   begin
-    MsgBox('Indicá el servidor de ' + Which + '.', mbError, MB_OK);
+    MsgBox('Indique el servidor de ' + Which + '.', mbError, MB_OK);
     Exit;
   end;
   if not IsValidPort(Trim(Page.Values[1])) then
@@ -595,12 +595,12 @@ begin
   end;
   if Trim(Page.Values[2]) = '' then
   begin
-    MsgBox('Indicá el nombre de la base de datos de ' + Which + '.', mbError, MB_OK);
+    MsgBox('Indique el nombre de la base de datos de ' + Which + '.', mbError, MB_OK);
     Exit;
   end;
   if Trim(Page.Values[3]) = '' then
   begin
-    MsgBox('Indicá el usuario de ' + Which + '.', mbError, MB_OK);
+    MsgBox('Indique el usuario de ' + Which + '.', mbError, MB_OK);
     Exit;
   end;
   Result := True;
@@ -946,7 +946,7 @@ begin
     'Configuración existente',
     'Este equipo ya tiene SAVI configurado',
     'Se detectó un archivo de configuración de una instalación anterior. ' +
-    'Podés conservarlo o volver a cargar los datos desde cero.',
+    'Puede conservarlo o volver a cargar los datos desde cero.',
     True, False);
   ReconfigPage.Add('Conservar la configuración actual (recomendado)');
   ReconfigPage.Add('Volver a configurar: bases de datos, autenticación y puerto');
@@ -1088,7 +1088,7 @@ begin
     except
       MsgBox('No se pudieron descargar los componentes necesarios.' + #13#10#13#10 +
              GetExceptionMessage + #13#10#13#10 +
-             'Revisá la conexión a internet y volvé a intentar.', mbCriticalError, MB_OK);
+             'Revise la conexión a internet y vuelva a intentar.', mbCriticalError, MB_OK);
       Result := False;
     end;
   finally
@@ -1108,7 +1108,7 @@ begin
                      'Sirve para pruebas o para un único usuario: si varias personas ' +
                      'usan el chat al mismo tiempo, las respuestas se traban o fallan, ' +
                      'y el historial queda solo en este equipo, sin respaldo del servidor.' + #13#10#13#10 +
-                     'Para el uso normal en una empresa, elegí PostgreSQL.' + #13#10#13#10 +
+                     'Para el uso normal en una empresa, elija PostgreSQL.' + #13#10#13#10 +
                      '¿Seguir con archivo local?',
                      mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES
 
@@ -1126,7 +1126,7 @@ begin
        (Trim(ClaudePage.Values[1]) = '') then
     begin
       Result := MsgBox('No cargaste ningún token ni clave de API.' + #13#10#13#10 +
-                       'Al terminar la instalación se te va a ofrecer iniciar ' +
+                       'Al terminar la instalación se le va a ofrecer iniciar ' +
                        'sesión con la cuenta de Claude del cliente, que es la ' +
                        'forma recomendada.' + #13#10#13#10 +
                        '¿Continuar así?', mbConfirmation, MB_YESNO) = IDYES;
@@ -1226,7 +1226,7 @@ begin
     LogPath := ExpandConstant('{app}\npm-claude-cli.log');
     if NpmCmd = '' then
       MsgBox('No se encontró npm después de instalar Node.js. ' +
-             'Instalá el CLI a mano con: npm install -g @anthropic-ai/claude-code',
+             'Instale el CLI a mano con: npm install -g @anthropic-ai/claude-code',
              mbError, MB_OK)
     else
     begin
@@ -1241,7 +1241,7 @@ begin
       if not RunNpmInstall(NpmCmd, LogPath, ResultCode) then
         MsgBox('La instalación del CLI de Claude Code falló (código ' + IntToStr(ResultCode) + ').' + #13#10 +
                'Detalle en: ' + LogPath + #13#10#13#10 +
-               'Instalalo a mano con: npm install -g @anthropic-ai/claude-code',
+               'Instálelo a mano con: npm install -g @anthropic-ai/claude-code',
                mbError, MB_OK);
     end;
   end;
@@ -1435,7 +1435,7 @@ begin
   if Secret = '' then
   begin
     MsgBox('No se pudo generar la clave de firma de sesiones.' + #13#10 +
-           'Editá JWT_SECRET en el archivo .env antes de usar SAVI.',
+           'Edite JWT_SECRET en el archivo .env antes de usar SAVI.',
            mbError, MB_OK);
     Secret := 'CAMBIAR-ESTE-VALOR';
   end;
@@ -1448,7 +1448,7 @@ begin
   if FernetKey = '' then
   begin
     MsgBox('No se pudo generar la clave de cifrado de credenciales del ERP.' + #13#10 +
-           'Editá ERP_CREDENTIALS_KEY en el archivo .env antes de usar SAVI: generá una con ' + #13#10 +
+           'Edite ERP_CREDENTIALS_KEY en el archivo .env antes de usar SAVI: genere una con ' + #13#10 +
            'python -c "from cryptography.fernet import Fernet; ' +
            'print(Fernet.generate_key().decode())"',
            mbError, MB_OK);
@@ -1502,7 +1502,7 @@ begin
   if LoadStringFromFile(DiagnosticReportPath(), RawAnsi) then
     Text := String(RawAnsi)
   else
-    Text := 'No se encontró el reporte del diagnóstico. Abrí el acceso directo ' +
+    Text := 'No se encontró el reporte del diagnóstico. Abra el acceso directo ' +
             '"Diagnosticar SAVI" desde el menú Inicio para verlo.';
 
   Form := CreateCustomForm(ScaleX(620), ScaleY(420), False, False);
@@ -1565,7 +1565,7 @@ begin
               ewWaitUntilTerminated, ResultCode) then
   begin
     MsgBox('No se pudo ejecutar la verificación de la configuración.' + #13#10 +
-           'Podés correrla después desde el acceso directo "Diagnosticar SAVI".',
+           'Puede correrla después desde el acceso directo "Diagnosticar SAVI".',
            mbError, MB_OK);
     Exit;
   end;
@@ -1589,7 +1589,7 @@ begin
            'pendiente es iniciar sesión con la cuenta de Claude, o renovarla si ' +
            'venció.' + #13#10#13#10 +
            'Al terminar la instalación queda marcada la casilla para hacerlo. ' +
-           'También podés hacerlo cuando quieras desde el acceso directo ' +
+           'También puede hacerlo cuando quiera desde el acceso directo ' +
            '"Iniciar sesión en Claude".',
            mbInformation, MB_OK);
     Exit;
@@ -1598,8 +1598,8 @@ begin
   if ResultCode <> 0 then
     ShowDiagnosticReport('SAVI quedó instalado, pero la verificación encontró problemas y ' +
                          'no va a funcionar hasta corregirlos. Abajo está qué falló y qué ' +
-                         'hacer (las líneas [FALLA]). Para corregir los datos, volvé a ' +
-                         'ejecutar este instalador y elegí "Volver a configurar".');
+                         'hacer (las líneas [FALLA]). Para corregir los datos, vuelva a ' +
+                         'ejecutar este instalador y elija "Volver a configurar".');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

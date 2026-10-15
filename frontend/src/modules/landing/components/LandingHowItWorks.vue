@@ -6,10 +6,10 @@ import { STEPS } from '../content'
   <section id="como-funciona" class="lp-section how">
     <div class="lp-container">
       <p class="lp-eyebrow">Cómo funciona</p>
-      <h2 class="lp-title">SAVI vive al lado de tu ERP, no en la nube de otro</h2>
+      <h2 class="lp-title">SAVI vive al lado de su ERP, no en la nube de otro</h2>
       <p class="lp-lead">
-        Se instala en un servidor de tu empresa y se conecta a la base del ERP que ya usás. SAVI Cloud
-        (próximamente) solo administra licencias y mide el consumo: nunca ve tus datos.
+        Se instala en un servidor de su empresa y se conecta a la base del ERP que ya usa. SAVI Cloud
+        (próximamente) solo administra licencias y mide el consumo: nunca ve sus datos.
       </p>
 
       <ol class="how__steps">
@@ -22,7 +22,7 @@ import { STEPS } from '../content'
 
       <div class="how__diagram" aria-hidden="true">
         <div class="how__zone">
-          <p class="how__zone-label">Tu empresa</p>
+          <p class="how__zone-label">Su empresa</p>
           <div class="how__nodes">
             <span class="how__node">Usuarios · navegador</span>
             <span class="how__arrow">→</span>

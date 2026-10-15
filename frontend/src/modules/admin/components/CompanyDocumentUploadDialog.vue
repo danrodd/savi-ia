@@ -160,7 +160,7 @@ async function onSubmit(): Promise<void> {
   formError.value = validatePermissions(permissions.value)
   if (formError.value) return
   if (pendingCount.value === 0) {
-    formError.value = 'Elegí al menos un archivo válido.'
+    formError.value = 'Elija al menos un archivo válido.'
     return
   }
   uploading.value = true
@@ -218,7 +218,7 @@ const STATE_LABELS: Record<ItemState, string> = {
       @drop.prevent="onDrop"
     >
       <div class="docup__drop" :class="{ 'docup__drop--active': dragging }">
-        <p class="docup__drop-text">Arrastrá los archivos hasta acá o</p>
+        <p class="docup__drop-text">Arrastre los archivos hasta aquí o</p>
         <Button variant="secondary" size="sm" :disabled="uploading" @click="fileInput?.click()">
           Elegir archivos
         </Button>
@@ -289,7 +289,7 @@ const STATE_LABELS: Record<ItemState, string> = {
           <template v-if="readsWithAi && store.aiReading">
             {{ store.aiReading.privacy_notice }}
             <template v-if="store.aiReading.uses_subscription">
-              La lectura consume el límite de tu suscripción de Claude.
+              La lectura consume el límite de su suscripción de Claude.
             </template>
           </template>
           <template v-else>
@@ -307,7 +307,7 @@ const STATE_LABELS: Record<ItemState, string> = {
         {{ finished ? 'Cerrar' : 'Cancelar' }}
       </Button>
       <span v-if="pendingCount === 0 && !finished" class="docup__why">
-        Elegí al menos un archivo
+        Elija al menos un archivo
       </span>
       <Button
         type="submit"

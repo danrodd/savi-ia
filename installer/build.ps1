@@ -68,16 +68,16 @@ $UvLocal = Join-Path $env:USERPROFILE '.local\bin'
 if ((Test-Path (Join-Path $UvLocal 'uv.exe')) -and ($env:Path -notlike "*$UvLocal*")) {
     $env:Path = "$UvLocal;$env:Path"
 }
-Assert-Command 'uv'   'Instalalo desde https://docs.astral.sh/uv/'
-Assert-Command 'npm'  'Instalá Node.js 22 o superior desde https://nodejs.org/'
-Assert-Command 'git'  'Instalá Git desde https://git-scm.com/'
+Assert-Command 'uv'   'Instálelo desde https://docs.astral.sh/uv/'
+Assert-Command 'npm'  'Instale Node.js 22 o superior desde https://nodejs.org/'
+Assert-Command 'git'  'Instale Git desde https://git-scm.com/'
 
 $Build = Get-BuildVersion
 if ($Build.sucio -and -not $AllowDirty) {
     throw @"
 Hay cambios sin commitear. Un instalador que se entrega tiene que
-corresponder a un commit exacto: commiteá o descartá los cambios.
-Para una prueba local, repetí con -AllowDirty (la versión dirá "-sucio").
+corresponder a un commit exacto: haga commit o descarte los cambios.
+Para una prueba local, repita con -AllowDirty (la versión dirá "-sucio").
 "@
 }
 Write-Host "Versión: $($Build.version)  (commit $($Build.commit))"
@@ -100,7 +100,7 @@ if (-not $SkipInstaller) {
     )
 
     if (-not $IsccCandidates) {
-        throw 'No se encontró ISCC.exe. Instalá Inno Setup 6 desde https://jrsoftware.org/isdl.php'
+        throw 'No se encontró ISCC.exe. Instale Inno Setup 6 desde https://jrsoftware.org/isdl.php'
     }
     $Iscc = $IsccCandidates[0]
     Write-Host "Inno Setup: $Iscc"
@@ -154,7 +154,7 @@ if (-not $SkipFrontend) {
 }
 
 if (-not (Test-Path (Join-Path $Staging 'index.html'))) {
-    throw "No hay build del frontend en $Staging. Corré sin -SkipFrontend."
+    throw "No hay build del frontend en $Staging. Ejecute sin -SkipFrontend."
 }
 if ($SkipFrontend) {
     Write-Warning "Se reutiliza un build de Vue anterior: la versión que muestra la interfaz puede no ser $($Build.version)."

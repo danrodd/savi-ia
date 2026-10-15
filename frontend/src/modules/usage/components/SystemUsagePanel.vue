@@ -39,7 +39,7 @@ function userLabel(userId: number | null, databaseId: string | null): string {
   // Mismo id Y misma base de login: el id solo no alcanza, se repite entre
   // clientes (el `admin` de farmacias y el de sur_andina son el id 1).
   const isMe = userId === me?.id && databaseId === (me?.erp_database?.id ?? null)
-  return `#${userId} · ${base}${isMe ? ' · vos' : ''}`
+  return `#${userId} · ${base}${isMe ? ' · usted' : ''}`
 }
 
 onMounted(() => {
@@ -69,7 +69,7 @@ onMounted(() => {
           <p v-if="store.system.totals.untariffed_count > 0" class="su__card-warning">
             {{ store.system.totals.untariffed_count }}
             {{ store.system.totals.untariffed_count === 1 ? 'respuesta' : 'respuestas' }}
-            sin tarifa cargada: el costo real es mayor. Cargá los precios del modelo
+            sin tarifa cargada: el costo real es mayor. Cargue los precios del modelo
             en Proveedores de IA.
           </p>
         </article>

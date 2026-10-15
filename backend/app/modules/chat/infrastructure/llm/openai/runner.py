@@ -57,8 +57,8 @@ _RETRYABLE_STATUS = (429, 500, 502, 503, 504)
 _AUTH_STATUS = (401, 403)
 _SECURITY_MESSAGE = "No pude generar una respuesta para esa consulta."
 _CREDENTIAL_REMEDY = (
-    "La API key de OpenAI no es válida o no tiene permisos. Revisá la configuración "
-    "del proveedor y volvé a intentar."
+    "La API key de OpenAI no es válida o no tiene permisos. Revise la configuración "
+    "del proveedor y vuelva a intentar."
 )
 _TRUNCATED_REASONS = {"max_output_tokens", "max_tokens"}
 

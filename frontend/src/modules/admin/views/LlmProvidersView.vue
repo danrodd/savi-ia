@@ -104,10 +104,10 @@ async function testFromCard(provider: LlmProvider): Promise<void> {
 
 <template>
   <section class="providers-view">
-    <header class="providers-view__header"><div><p class="eyebrow">Administración / Integraciones</p><h1>Proveedores de IA</h1><p>Configurá la conexión que usará SAVI para responder y consultar el ERP.</p></div><button class="refresh" :disabled="store.loading" @click="store.load"><RefreshCw :size="15" :class="{ 'is-spinning': store.loading }" aria-hidden="true" /> Actualizar</button></header>
+    <header class="providers-view__header"><div><p class="eyebrow">Administración / Integraciones</p><h1>Proveedores de IA</h1><p>Configure la conexión que usará SAVI para responder y consultar el ERP.</p></div><button class="refresh" :disabled="store.loading" @click="store.load"><RefreshCw :size="15" :class="{ 'is-spinning': store.loading }" aria-hidden="true" /> Actualizar</button></header>
     <div v-if="store.error || formError" class="providers-view__error" role="alert">{{ store.error ?? formError }}</div>
     <div v-if="store.loading && store.providers.length === 0" class="providers-view__loading">Cargando proveedores…</div>
-    <div v-else class="providers-view__grid"><LlmProviderCard v-for="provider in store.providers" :key="provider.provider" :provider="provider" :can-activate="canActivate(provider)" activate-reason="Configurá la credencial y los modelos antes de activar" :testing="cardTesting === provider.provider" :test-outcome="cardOutcomes[provider.provider] ?? null" @configure="configure(provider)" @activate="requestActivation(provider)" @test="testFromCard(provider)" /></div>
+    <div v-else class="providers-view__grid"><LlmProviderCard v-for="provider in store.providers" :key="provider.provider" :provider="provider" :can-activate="canActivate(provider)" activate-reason="Configure la credencial y los modelos antes de activar" :testing="cardTesting === provider.provider" :test-outcome="cardOutcomes[provider.provider] ?? null" @configure="configure(provider)" @activate="requestActivation(provider)" @test="testFromCard(provider)" /></div>
     <LlmProviderFormDialog v-if="editing" v-model:open="formOpen" :provider="editing" :saving="store.saving" :testing="store.testing" :test-result="testResult" @save="save(editing, $event)" @test="test(editing, $event)" />
     <ActivateProviderDialog v-model:open="activationOpen" :provider="activationTarget" :activating="store.activating" @confirm="activationTarget && activate(activationTarget)" />
   </section>

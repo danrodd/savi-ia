@@ -37,7 +37,7 @@ class InvalidCredentialsKeyError(ValueError):
 def _build(keys: list[str]) -> MultiFernet:
     if not keys:
         raise InvalidCredentialsKeyError(
-            "ERP_CREDENTIALS_KEY es obligatoria. Generá una con: "
+            "ERP_CREDENTIALS_KEY es obligatoria. Genere una con: "
             "python -c \"from cryptography.fernet import Fernet; "
             'print(Fernet.generate_key().decode())"'
         )

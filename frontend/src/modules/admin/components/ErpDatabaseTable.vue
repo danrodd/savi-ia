@@ -59,7 +59,7 @@ function statusOf(db: ErpDatabase): { label: string; tone: 'ok' | 'muted' | 'dan
               {{ statusOf(db).label }}
             </span>
             <div v-if="db.credentials_unreadable" class="dbtable__sub dbtable__sub--danger">
-              Volvé a ingresar la contraseña.
+              Vuelva a ingresar la contraseña.
             </div>
           </td>
           <td class="dbtable__sub" data-label="Última conexión exitosa">

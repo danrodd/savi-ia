@@ -55,7 +55,7 @@ onMounted(() => {
       </div>
 
       <p v-if="queryCount === 0" class="mu__hint">
-        Todavía no hiciste consultas en este período.
+        Todavía no ha hecho consultas en este período.
       </p>
       <section v-else-if="bars.length > 1" class="mu__section" aria-label="Consultas por día">
         <h2 class="mu__section-title">Consultas por día</h2>

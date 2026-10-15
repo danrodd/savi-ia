@@ -121,14 +121,14 @@ def _explain_connection_error(request: DbRequest, error: BaseException) -> Outco
     if isinstance(error, socket.gaierror):
         return Outcome(
             "error",
-            f"No se encontró el servidor '{request.host}'. Revisá que el nombre o la "
+            f"No se encontró el servidor '{request.host}'. Revise que el nombre o la "
             "IP estén bien escritos y que este equipo llegue a esa red.",
         )
     if isinstance(error, ConnectionRefusedError):
         return Outcome(
             "error",
             f"El servidor '{request.host}' no acepta conexiones en el puerto "
-            f"{request.port}. Revisá el puerto (PostgreSQL usa 5432 por defecto) y que "
+            f"{request.port}. Revise el puerto (PostgreSQL usa 5432 por defecto) y que "
             "el servicio de PostgreSQL esté iniciado.",
         )
     if _is_dropped_connection(error):
@@ -137,7 +137,7 @@ def _explain_connection_error(request: DbRequest, error: BaseException) -> Outco
     if isinstance(error, TimeoutError | asyncio.CancelledError):
         return Outcome(
             "error",
-            f"{server} no respondió a tiempo. Revisá el servidor y el puerto, y que el "
+            f"{server} no respondió a tiempo. Revise el servidor y el puerto, y que el "
             "firewall permita la conexión desde este equipo.",
         )
     sqlstate = getattr(error, "sqlstate", None)
@@ -157,7 +157,7 @@ def _explain_connection_error(request: DbRequest, error: BaseException) -> Outco
     if isinstance(error, OSError):
         return Outcome(
             "error",
-            f"No se pudo llegar a {server}: {error}. Revisá el servidor, el puerto y la red.",
+            f"No se pudo llegar a {server}: {error}. Revise el servidor, el puerto y la red.",
         )
     return Outcome("error", f"No se pudo conectar a {server}: {type(error).__name__}: {error}")
 
@@ -206,7 +206,7 @@ async def _missing_database(request: DbRequest, maintenance: str) -> Outcome:
         return Outcome(
             "error",
             f"El servidor responde y el usuario es válido, pero la base "
-            f"'{request.database}' no existe. Revisá el nombre de la base del ERP.",
+            f"'{request.database}' no existe. Revise el nombre de la base del ERP.",
         )
     engine = create_async_engine(
         _url(request, maintenance), connect_args={"timeout": _CONNECT_TIMEOUT_SECONDS}
@@ -229,7 +229,7 @@ async def _missing_database(request: DbRequest, maintenance: str) -> Outcome:
         f"La base '{request.database}' no existe y el usuario '{request.user}' no tiene "
         "permiso para crearla. Pedile al administrador del servidor que la cree "
         f"(CREATE DATABASE {_quote_identifier(request.database)} OWNER "
-        f"{_quote_identifier(request.user)};) o usá un usuario con permiso CREATEDB.",
+        f"{_quote_identifier(request.user)};) o use un usuario con permiso CREATEDB.",
     )
 
 
@@ -264,7 +264,7 @@ async def _inspect_erp(connection: AsyncConnection) -> Outcome:
         return Outcome(
             "aviso",
             "La conexión funciona, pero esta base no parece la del ERP de SEO (faltan "
-            f"{', '.join(missing)}). Revisá el nombre de la base.",
+            f"{', '.join(missing)}). Revise el nombre de la base.",
         )
     if unreadable:
         return Outcome(
@@ -343,9 +343,9 @@ async def _describe_savi_data(connection: AsyncConnection, request: DbRequest) -
     if request.new_key and credentials:
         return Outcome(
             "aviso",
-            message + " Ojo: también guarda credenciales (bases del ERP o proveedores de "
-            "IA) cifradas con la clave de otra instalación. Si esta base la usa otro "
-            "equipo, copiá ERP_CREDENTIALS_KEY de su archivo .env a este después de "
+            message + " Tenga en cuenta: también guarda credenciales (bases del ERP o "
+            "proveedores de IA) cifradas con la clave de otra instalación. Si esta base la "
+            "usa otro equipo, copie ERP_CREDENTIALS_KEY de su archivo .env a este después de "
             "instalar; si no, esas credenciales hay que volver a cargarlas.",
         )
     return Outcome("ok", message)

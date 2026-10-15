@@ -200,7 +200,7 @@ def build_buscar_por_intencion_impl(
         if not query:
             return {
                 "matches": [],
-                "message": "La consulta llegó vacía. Reformulá la búsqueda.",
+                "message": "La consulta llegó vacía. Reformula la búsqueda.",
             }
         hits = catalog.search_by_intent(query, allowed_modules=allowed_modules, limit=3)
         # `intencion` es el uso POR DEFECTO de la tool, así que tiene que
@@ -215,7 +215,7 @@ def build_buscar_por_intencion_impl(
                 "message": (
                     "No encontré un formulario o concepto del ERP que matchee "
                     "esa consulta dentro de los módulos disponibles para el usuario. "
-                    "Sugerí preguntar de otra forma o aclarar el tema."
+                    "Sugiere preguntar de otra forma o aclarar el tema."
                 ),
             }
         payload: dict[str, Any] = {

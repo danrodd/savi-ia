@@ -10,12 +10,12 @@ import LandingChatMock from './LandingChatMock.vue'
       <div class="hero__copy">
         <p class="lp-eyebrow">Asistente de IA para el ERP de SEO Group</p>
         <h1 class="hero__title">
-          Preguntale a tu empresa.
-          <span class="hero__accent">SAVI responde con tus datos.</span>
+          Pregúntele a su empresa.
+          <span class="hero__accent">SAVI responde con sus datos.</span>
         </h1>
         <p class="lp-lead">
-          Ventas, cartera, documentos y tu sitio web en una sola conversación. Con cifras reales del
-          ERP, fuentes citadas y los mismos permisos que ya usa tu equipo.
+          Ventas, cartera, documentos y su sitio web en una sola conversación. Con cifras reales del
+          ERP, fuentes citadas y los mismos permisos que ya usa su equipo.
         </p>
         <div class="hero__actions">
           <a href="#demo" class="lp-button lp-button--primary">Solicitar demo</a>
