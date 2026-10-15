@@ -24,6 +24,8 @@ withDefaults(
     step?: number | string
     inputmode?: 'text' | 'numeric' | 'decimal' | 'email' | 'url' | 'search' | 'tel'
     id?: string
+    /** Nombre accesible cuando no hay etiqueta visible (por ejemplo, dentro de una tabla). */
+    ariaLabel?: string
   }>(),
   { type: 'text' },
 )
@@ -48,6 +50,7 @@ function onInput(event: Event, type: string): void {
       <input
         v-bind="field"
         class="ui-input"
+        :aria-label="ariaLabel"
         :class="{ 'ui-input--mono': mono, 'ui-text__input--prefixed': $slots.prefix, 'ui-text__input--suffixed': $slots.suffix }"
         :type="type"
         :value="model ?? ''"

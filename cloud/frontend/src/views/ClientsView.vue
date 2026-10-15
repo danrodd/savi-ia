@@ -1,23 +1,56 @@
 <script setup lang="ts">
+import {
+  Alert,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  PageHeader,
+  Select,
+  type TableColumn,
+  TextField,
+} from '@savi/ui'
+import { Building2, Plus, Search } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
+import ClientFormDialog from '@/components/ClientFormDialog.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
 import { relativeTime } from '@/lib/format'
-import { errorMessage, useAsync } from '@/lib/useAsync'
+import type { Client } from '@/lib/types'
+import { useAsync } from '@/lib/useAsync'
 import { useAuthStore } from '@/stores/authStore'
 
 const auth = useAuthStore()
+const router = useRouter()
 
 const q = ref('')
-const status = ref('')
-const sort = ref('code')
+const status = ref<string | null>(null)
+const sort = ref<string | null>('code')
+
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Activos' },
+  { value: 'suspended', label: 'Suspendidos' },
+]
+const SORT_OPTIONS = [
+  { value: 'code', label: 'Código' },
+  { value: 'name', label: 'Nombre' },
+  { value: 'last_seen', label: 'Última actividad' },
+]
+
+const COLUMNS: TableColumn[] = [
+  { key: 'code', label: 'Cliente' },
+  { key: 'status', label: 'Estado', width: '130px' },
+  { key: 'instances', label: 'En línea', align: 'right', width: '110px' },
+  { key: 'last_seen_at', label: 'Última actividad', width: '160px' },
+  { key: 'oldest_version', label: 'Versión más antigua', width: '170px', mono: true },
+]
 
 const { data, loading, error, reload } = useAsync(() =>
   consoleApi.clients({
-    q: q.value || undefined,
-    status: status.value || undefined,
-    sort: sort.value,
+    q: q.value.trim() || undefined,
+    status: status.value ?? undefined,
+    sort: sort.value ?? 'code',
   }),
 )
 
@@ -28,127 +61,118 @@ watch([q, status, sort], () => {
 })
 
 const creating = ref(false)
-const form = ref({ code: '', name: '', nit: '' })
-const formError = ref<string | null>(null)
 
-async function create(): Promise<void> {
-  formError.value = null
-  try {
-    await consoleApi.createClient({
-      code: form.value.code.trim().toUpperCase(),
-      name: form.value.name,
-      nit: form.value.nit || null,
-    })
-    form.value = { code: '', name: '', nit: '' }
-    creating.value = false
-    await reload()
-  } catch (e) {
-    formError.value = errorMessage(e)
-  }
+function open(client: Client): void {
+  void router.push(`/clientes/${client.id}`)
+}
+
+function onCreated(client: Client): void {
+  void router.push(`/clientes/${client.id}`)
 }
 </script>
 
 <template>
-  <div class="stack">
-    <div class="spread">
-      <h1>Clientes</h1>
-      <button
-        v-if="auth.can('clients.write')"
-        class="btn btn-primary"
-        type="button"
-        @click="creating = !creating"
-      >
-        Nuevo cliente
-      </button>
+  <div>
+    <PageHeader title="Clientes" description="Empresas que usan SAVI y sus instalaciones vinculadas.">
+      <template #actions>
+        <Button v-if="auth.can('clients.write')" data-test="client-new" @click="creating = true">
+          <Plus :size="15" aria-hidden="true" /> Nuevo cliente
+        </Button>
+      </template>
+    </PageHeader>
+
+    <div class="stack">
+      <Card padding="md">
+        <div class="filters">
+          <TextField v-model="q" type="search" label="Buscar" placeholder="Código o nombre" data-test="clients-search">
+            <template #prefix><Search :size="15" /></template>
+          </TextField>
+          <Select v-model="status" label="Estado" placeholder="Todos" :options="STATUS_OPTIONS" />
+          <Select v-model="sort" label="Ordenar por" :options="SORT_OPTIONS" />
+        </div>
+      </Card>
+
+      <Alert v-if="error" tone="danger">
+        {{ error }}
+        <template #action>
+          <Button size="sm" variant="secondary" @click="reload()">Reintentar</Button>
+        </template>
+      </Alert>
+
+      <Card padding="none">
+        <DataTable
+          :columns="COLUMNS"
+          :rows="data?.items ?? []"
+          row-key="id"
+          :loading="loading"
+          clickable
+          caption="Clientes"
+          @row-click="open"
+        >
+          <template #empty>
+            <EmptyState
+              :icon="Building2"
+              :title="q || status ? 'No hay clientes con esos filtros' : 'Todavía no hay clientes'"
+              :description="q || status ? 'Probá con otra búsqueda.' : 'Creá el primero para vincular sus instalaciones.'"
+            >
+              <Button v-if="!q && !status && auth.can('clients.write')" @click="creating = true">
+                Nuevo cliente
+              </Button>
+            </EmptyState>
+          </template>
+          <template #cell-code="{ row }">
+            <div class="client">
+              <strong>{{ row.name }}</strong>
+              <code>{{ row.code }}</code>
+            </div>
+          </template>
+          <template #cell-status="{ row }">
+            <StatusBadge
+              :tone="row.status === 'active' ? 'ok' : 'bad'"
+              :label="row.status === 'active' ? 'Activo' : 'Suspendido'"
+            />
+          </template>
+          <template #cell-instances="{ row }">
+            <span class="num">{{ row.instances_online }} / {{ row.instances_total }}</span>
+          </template>
+          <template #cell-last_seen_at="{ row }">{{ relativeTime(row.last_seen_at) }}</template>
+          <template #cell-oldest_version="{ row }">{{ row.oldest_version ?? '—' }}</template>
+        </DataTable>
+      </Card>
+      <p v-if="data && data.total > 0" class="muted total">
+        {{ data.total }} {{ data.total === 1 ? 'cliente' : 'clientes' }}
+      </p>
     </div>
 
-    <form v-if="creating" class="card stack" @submit.prevent="create">
-      <div class="fields">
-        <label>
-          Código (A-Z, 0-9, _)
-          <input v-model="form.code" required minlength="2" maxlength="32" />
-        </label>
-        <label>
-          Nombre
-          <input v-model="form.name" required maxlength="200" />
-        </label>
-        <label>
-          NIT (opcional)
-          <input v-model="form.nit" maxlength="32" />
-        </label>
-      </div>
-      <p v-if="formError" class="error-text" role="alert">{{ formError }}</p>
-      <div class="row">
-        <button class="btn btn-primary" type="submit">Crear cliente</button>
-        <button class="btn" type="button" @click="creating = false">Cancelar</button>
-      </div>
-    </form>
-
-    <div class="row">
-      <input v-model="q" placeholder="Buscar por código o nombre" class="search" />
-      <select v-model="status" class="select" aria-label="Estado">
-        <option value="">Todos los estados</option>
-        <option value="active">Activos</option>
-        <option value="suspended">Suspendidos</option>
-      </select>
-      <select v-model="sort" class="select" aria-label="Orden">
-        <option value="code">Ordenar por código</option>
-        <option value="name">Ordenar por nombre</option>
-        <option value="last_seen">Última actividad</option>
-      </select>
-    </div>
-
-    <p v-if="error" class="error-text" role="alert">{{ error }}</p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Estado</th>
-            <th class="num">Instancias en línea</th>
-            <th>Última actividad</th>
-            <th>Versión más antigua</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in data?.items ?? []" :key="c.id">
-            <td>
-              <RouterLink :to="`/clientes/${c.id}`">
-                <strong>{{ c.code }}</strong>
-              </RouterLink>
-            </td>
-            <td>{{ c.name }}</td>
-            <td>
-              <StatusBadge
-                :tone="c.status === 'active' ? 'ok' : 'bad'"
-                :label="c.status === 'active' ? 'Activo' : 'Suspendido'"
-              />
-            </td>
-            <td class="num">{{ c.instances_online }} / {{ c.instances_total }}</td>
-            <td>{{ relativeTime(c.last_seen_at) }}</td>
-            <td>{{ c.oldest_version ?? '—' }}</td>
-          </tr>
-          <tr v-if="!loading && !(data?.items.length ?? 0)">
-            <td colspan="6" class="empty">No hay clientes con esos filtros.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p v-if="data" class="muted">{{ data.total }} cliente(s).</p>
+    <ClientFormDialog v-model:open="creating" @saved="onCreated" />
   </div>
 </template>
 
 <style scoped>
-.fields {
+.filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
 }
-.search {
-  max-width: 320px;
+
+.client {
+  display: grid;
+  gap: 2px;
 }
-.select {
-  width: auto;
+
+.client code {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.total {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

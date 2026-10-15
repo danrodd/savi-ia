@@ -1,4 +1,16 @@
 <script setup lang="ts">
+import {
+  Alert,
+  Button,
+  Card,
+  DataTable,
+  Dialog,
+  EmptyState,
+  PageHeader,
+  type TableColumn,
+  TextField,
+} from '@savi/ui'
+import { ScrollText, Search } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { consoleApi } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
@@ -11,15 +23,24 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const actor = ref('')
 const action = ref('')
-const expanded = ref<string | null>(null)
+const viewing = ref<AuditEntry | null>(null)
+
+const COLUMNS: TableColumn[] = [
+  { key: 'occurred_at', label: 'Cuándo', width: '170px' },
+  { key: 'actor_email', label: 'Quién' },
+  { key: 'action', label: 'Acción', mono: true },
+  { key: 'target', label: 'Objeto' },
+  { key: 'ip', label: 'IP', width: '130px', mono: true },
+  { key: 'change', label: '', align: 'right', width: '120px' },
+]
 
 async function load(more = false): Promise<void> {
   loading.value = true
   error.value = null
   try {
     const page = await consoleApi.audit({
-      actor: actor.value || undefined,
-      action: action.value || undefined,
+      actor: actor.value.trim() || undefined,
+      action: action.value.trim() || undefined,
       cursor: more ? (nextCursor.value ?? undefined) : undefined,
     })
     entries.value = more ? [...entries.value, ...page.items] : page.items
@@ -32,105 +53,136 @@ async function load(more = false): Promise<void> {
 }
 void load()
 
+function clearFilters(): void {
+  actor.value = ''
+  action.value = ''
+  void load()
+}
+
 function pretty(value: Record<string, unknown> | null): string {
   return value ? JSON.stringify(value, null, 2) : '—'
 }
 </script>
 
 <template>
-  <div class="stack">
-    <h1>Auditoría</h1>
-    <p class="muted">
-      Registro de solo lectura de cada acción que modifica algo. Nunca contiene tokens ni
-      contraseñas.
-    </p>
-    <form class="row" @submit.prevent="load()">
-      <input v-model="actor" placeholder="Correo de quien actuó" type="email" class="filter" />
-      <input v-model="action" placeholder="Acción (p. ej. instance.revoke)" class="filter" />
-      <button class="btn" type="submit">Filtrar</button>
-    </form>
-    <p v-if="error" class="error-text" role="alert">{{ error }}</p>
+  <div>
+    <PageHeader
+      title="Auditoría"
+      description="Registro de solo lectura de cada acción que modifica algo. Nunca contiene tokens ni contraseñas."
+    />
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Cuándo</th>
-            <th>Quién</th>
-            <th>Acción</th>
-            <th>Objeto</th>
-            <th>IP</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          <template v-for="e in entries" :key="e.id">
-            <tr>
-              <td>{{ formatDateTime(e.occurred_at) }}</td>
-              <td>{{ e.actor_email ?? '—' }}</td>
-              <td>
-                <code>{{ e.action }}</code>
-              </td>
-              <td>
-                <span v-if="e.target_type">{{ e.target_type }}</span>
-                <span v-if="e.target_id" class="muted"> {{ e.target_id.slice(0, 8) }}…</span>
-              </td>
-              <td>{{ e.ip ?? '—' }}</td>
-              <td>
-                <button
-                  v-if="e.before || e.after"
-                  class="btn btn-small"
-                  type="button"
-                  @click="expanded = expanded === e.id ? null : e.id"
-                >
-                  {{ expanded === e.id ? 'Ocultar' : 'Ver cambio' }}
-                </button>
-              </td>
-            </tr>
-            <tr v-if="expanded === e.id">
-              <td colspan="6">
-                <div class="diff">
-                  <div>
-                    <strong>Antes</strong>
-                    <pre>{{ pretty(e.before) }}</pre>
-                  </div>
-                  <div>
-                    <strong>Después</strong>
-                    <pre>{{ pretty(e.after) }}</pre>
-                  </div>
-                </div>
-              </td>
-            </tr>
+    <div class="stack">
+      <Card padding="md">
+        <form class="filters" novalidate @submit.prevent="load()">
+          <TextField v-model="actor" type="email" label="Quién" placeholder="correo@seogroup.com" />
+          <TextField v-model="action" label="Acción" placeholder="instance.revoke" mono />
+          <div class="filters__buttons">
+            <Button type="submit" :loading="loading">
+              <Search :size="14" aria-hidden="true" /> Filtrar
+            </Button>
+            <Button v-if="actor || action" variant="ghost" @click="clearFilters">Limpiar</Button>
+          </div>
+        </form>
+      </Card>
+
+      <Alert v-if="error" tone="danger">
+        {{ error }}
+        <template #action>
+          <Button size="sm" variant="secondary" @click="load()">Reintentar</Button>
+        </template>
+      </Alert>
+
+      <Card padding="none">
+        <DataTable :columns="COLUMNS" :rows="entries" row-key="id" :loading="loading" caption="Registro de auditoría">
+          <template #empty>
+            <EmptyState :icon="ScrollText" title="No hay registros con esos filtros" />
           </template>
-          <tr v-if="!loading && !entries.length">
-            <td colspan="6" class="empty">No hay registros con esos filtros.</td>
-          </tr>
-        </tbody>
-      </table>
+          <template #cell-occurred_at="{ row }">{{ formatDateTime(row.occurred_at) }}</template>
+          <template #cell-actor_email="{ row }">{{ row.actor_email ?? 'Sistema' }}</template>
+          <template #cell-target="{ row }">
+            <span v-if="row.target_type">{{ row.target_type }}</span>
+            <code v-if="row.target_id" class="muted"> {{ row.target_id.slice(0, 8) }}…</code>
+            <span v-if="!row.target_type && !row.target_id">—</span>
+          </template>
+          <template #cell-ip="{ row }">{{ row.ip ?? '—' }}</template>
+          <template #cell-change="{ row }">
+            <Button v-if="row.before || row.after" variant="ghost" size="sm" @click="viewing = row">
+              Ver cambio
+            </Button>
+          </template>
+        </DataTable>
+        <template v-if="nextCursor" #footer>
+          <Button variant="secondary" :loading="loading" @click="load(true)">Ver más</Button>
+        </template>
+      </Card>
     </div>
-    <button v-if="nextCursor" class="btn" type="button" :disabled="loading" @click="load(true)">
-      Ver más
-    </button>
+
+    <Dialog
+      :open="viewing !== null"
+      :title="viewing?.action ?? ''"
+      :description="viewing ? `${viewing.actor_email ?? 'Sistema'} · ${formatDateTime(viewing.occurred_at)}` : ''"
+      :max-width="760"
+      @update:open="(open) => !open && (viewing = null)"
+    >
+      <div v-if="viewing" class="diff">
+        <div>
+          <p class="diff__title">Antes</p>
+          <pre>{{ pretty(viewing.before) }}</pre>
+        </div>
+        <div>
+          <p class="diff__title">Después</p>
+          <pre>{{ pretty(viewing.after) }}</pre>
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
 <style scoped>
-.filter {
-  max-width: 280px;
+.filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-4);
 }
+
+.filters__buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
 .diff {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
 }
+
+.diff__title {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle);
+}
+
 pre {
-  margin: 0.3rem 0 0;
-  padding: 0.6rem;
-  border-radius: 8px;
+  margin: 0;
+  max-height: 50vh;
+  overflow: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
   background: var(--surface-subtle);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 12px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

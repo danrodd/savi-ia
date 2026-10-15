@@ -17,6 +17,8 @@ const props = defineProps<{
   required?: boolean
   disabled?: boolean
   id?: string
+  /** Nombre accesible cuando no hay etiqueta visible (por ejemplo, dentro de una tabla). */
+  ariaLabel?: string
 }>()
 
 const model = defineModel<T | null>({ default: null })
@@ -34,6 +36,7 @@ function onChange(event: Event): void {
       <select
         v-bind="field"
         class="ui-input ui-select__control"
+        :aria-label="ariaLabel"
         :required="required"
         :disabled="disabled"
         @change="onChange"

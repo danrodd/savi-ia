@@ -97,6 +97,18 @@ describe('Select', () => {
   })
 })
 
+describe('nombre accesible sin etiqueta visible', () => {
+  it('el aria-label llega al control, no al contenedor', () => {
+    const select = mount(Select, {
+      props: { options: [{ value: 'a', label: 'A' }], ariaLabel: 'Rol de Ana' },
+    })
+    const text = mount(TextField, { props: { ariaLabel: 'Buscar' } })
+
+    expect(select.get('select').attributes('aria-label')).toBe('Rol de Ana')
+    expect(text.get('input').attributes('aria-label')).toBe('Buscar')
+  })
+})
+
 describe('Checkbox y Switch', () => {
   it('el checkbox cambia el modelo', async () => {
     const wrapper = mount(Checkbox, { props: { label: 'Permitir', modelValue: false } })
