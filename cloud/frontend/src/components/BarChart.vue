@@ -68,7 +68,7 @@ const every = computed(() => Math.max(1, Math.ceil(props.data.length / 8)))
   max-height: 220px;
 }
 .bar {
-  fill: var(--accent);
+  fill: var(--brand);
   opacity: 0.85;
 }
 .bar:hover {

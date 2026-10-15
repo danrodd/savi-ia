@@ -18,19 +18,19 @@ defineProps<{ tone: Tone; label: string }>()
   white-space: nowrap;
 }
 .tone-ok {
-  background: var(--ok-bg);
-  color: var(--ok);
+  background: var(--success-soft);
+  color: var(--success);
 }
 .tone-warn {
-  background: var(--warn-bg);
-  color: var(--warn);
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 .tone-bad {
-  background: var(--bad-bg);
-  color: var(--bad);
+  background: var(--surface-danger);
+  color: var(--danger);
 }
 .tone-muted {
-  background: var(--surface-2);
+  background: var(--surface-subtle);
   color: var(--text-muted);
 }
 </style>

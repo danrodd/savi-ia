@@ -127,8 +127,8 @@ pre {
   margin: 0.3rem 0 0;
   padding: 0.6rem;
   border-radius: 8px;
-  background: var(--surface-2);
-  font-family: var(--mono);
+  background: var(--surface-subtle);
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   white-space: pre-wrap;
   word-break: break-word;

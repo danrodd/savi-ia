@@ -1,18 +1,5 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.5;
-}
+/* Estilos propios mínimos de la consola. Los tokens, la tipografía y el reset vienen de
+   `@savi/ui/tokens.css` (los mismos de SAVI); acá solo va lo que la consola agrega. */
 
 h1,
 h2,
@@ -21,16 +8,8 @@ h3 {
   line-height: 1.25;
 }
 
-h1 {
-  font-size: 1.5rem;
-}
-
-h2 {
-  font-size: 1.15rem;
-}
-
 a {
-  color: var(--accent);
+  color: var(--brand);
   text-decoration: none;
 }
 
@@ -40,103 +19,142 @@ a:hover {
 
 code,
 .mono {
-  font-family: var(--mono);
-  font-size: 0.9em;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--accent);
+:focus-visible {
+  outline: 2px solid var(--brand-ring);
   outline-offset: 2px;
 }
 
-label {
-  display: grid;
-  gap: 0.3rem;
-  font-size: 0.85rem;
+.muted {
   color: var(--text-muted);
 }
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grilla de indicadores (KpiCard). */
+.grid-kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+/* Columna de secciones con separación uniforme. */
+.stack {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+/* Grilla de formulario: dos columnas que pasan a una en pantallas chicas. */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.form-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-grid__wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .form-grid,
+  .form-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Compatibilidad: clases de la consola anterior ──────────────────────────────────────
+   Las usan las vistas que todavía no pasaron a los componentes de @savi/ui. Se mapean a
+   los tokens de SAVI para que se vean coherentes y se eliminan cuando ya nadie las use. */
 
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.9rem;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-5);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: var(--r-md);
+  background: var(--surface-elev);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .btn:hover:not(:disabled) {
-  background: var(--surface-2);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
 }
 
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-contrast);
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--text-on-brand);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent);
-  filter: brightness(1.08);
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
 }
 
 .btn-danger {
-  color: var(--bad);
-  border-color: var(--bad);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
 }
 
 .btn-small {
-  padding: 0.25rem 0.55rem;
-  font-size: 0.85rem;
+  min-height: 28px;
+  padding: 0 var(--space-3);
+  font-size: 12px;
 }
 
 .card {
-  background: var(--surface);
+  min-width: 0;
+  padding: var(--space-6);
+  background: var(--surface-elev);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem 1.1rem;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-.stack {
-  display: grid;
-  gap: 1rem;
+.card h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: var(--fw-semibold);
 }
 
 .row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-3);
 }
 
 .spread {
@@ -144,73 +162,86 @@ label {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
-}
-
-.muted {
-  color: var(--text-muted);
+  gap: var(--space-3);
 }
 
 .error-text {
-  color: var(--bad);
-  font-size: 0.9rem;
+  color: var(--text-danger);
+  font-size: 12.5px;
+}
+
+.empty {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
 }
 
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  border-radius: var(--r-md);
+  background: var(--surface-elev);
 }
 
-table {
+.table-wrap table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 13px;
 }
 
-th,
-td {
-  padding: 0.6rem 0.8rem;
+.table-wrap th,
+.table-wrap td {
+  padding: var(--space-3) var(--space-4);
   text-align: left;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
-th {
-  font-weight: 600;
-  color: var(--text-muted);
-  font-size: 0.8rem;
+.table-wrap th {
+  font-size: 11px;
+  font-weight: var(--fw-medium);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle);
+  background: var(--surface);
   white-space: nowrap;
 }
 
-tr:last-child td {
+.table-wrap tr:last-child td {
   border-bottom: none;
 }
 
-td.num,
-th.num {
+.table-wrap td.num,
+.table-wrap th.num {
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
-.empty {
-  padding: 2rem 1rem;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.grid-kpi {
+:where(label:not([class*="ui-"])) {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 0.8rem;
+  gap: var(--space-1);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle);
 }
 
-@media (max-width: 480px) {
-  html,
-  body {
-    font-size: 14px;
-  }
+:where(input:not([class*="ui-"]):not([type="checkbox"]):not([type="radio"])),
+:where(select:not([class*="ui-"])),
+:where(textarea:not([class*="ui-"])) {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-elev);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+:where(textarea:not([class*="ui-"])) {
+  padding: var(--space-3);
 }

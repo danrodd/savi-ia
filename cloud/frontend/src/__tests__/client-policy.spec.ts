@@ -159,10 +159,7 @@ describe('política de las instalaciones del cliente', () => {
     expect(api.setClientPolicy).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Dejar las instalaciones solo con el chat')
 
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Bloquear configuración' && b.classes().includes('btn-danger'))
-      ?.trigger('click')
+    await wrapper.get('[data-test="confirm-accept"]').trigger('click')
     await flushPromises()
 
     expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { config_locked: true })
@@ -174,10 +171,7 @@ describe('política de las instalaciones del cliente', () => {
     await wrapper.get('[data-test="toggle-identity"]').trigger('click')
 
     expect(wrapper.text()).toContain('organización interna')
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Identificar personas' && b.classes().includes('btn-danger'))
-      ?.trigger('click')
+    await wrapper.get('[data-test="confirm-accept"]').trigger('click')
     await flushPromises()
     expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { identity_mode: 'named' })
   })
@@ -189,10 +183,7 @@ describe('política de las instalaciones del cliente', () => {
     expect(api.setClientPolicy).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('con su propia cuenta')
 
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Permitir CLI de Claude' && b.classes().includes('btn-danger'))
-      ?.trigger('click')
+    await wrapper.get('[data-test="confirm-accept"]').trigger('click')
     await flushPromises()
 
     expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { allow_local_cli: true })

@@ -32,6 +32,7 @@
   --success: #2f9e44;
   --success-soft: #e7f5ec;
   --warning: #d97706;
+  --warning-soft: #fdf3e2;
   --danger: #c8202b;
   --text-danger: #c8202b;
   --focus-ring: 0 0 0 3px var(--brand-ring);
@@ -123,6 +124,7 @@
   --success: #4ade80;
   --success-soft: rgba(74, 222, 128, 0.12);
   --warning: #fb923c;
+  --warning-soft: rgba(251, 146, 60, 0.12);
   --danger: #f25563;
   --text-danger: #f25563;
 

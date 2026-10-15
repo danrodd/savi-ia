@@ -32,10 +32,13 @@ withDefaults(
     description?: string
     closeOnOverlay?: boolean
     maxWidth?: number
+    /** Muestra la X de cerrar. Apagarla obliga a usar las acciones del pie. */
+    showClose?: boolean
   }>(),
   {
     closeOnOverlay: true,
     maxWidth: 440,
+    showClose: true,
   },
 )
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -77,7 +80,7 @@ function onUpdateOpen(value: boolean): void {
           <slot name="footer" :close="() => onUpdateOpen(false)" />
         </footer>
 
-        <DialogClose class="dialog-close" aria-label="Cerrar">
+        <DialogClose v-if="showClose" class="dialog-close" aria-label="Cerrar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>

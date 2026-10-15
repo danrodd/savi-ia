@@ -312,6 +312,6 @@ async function save(): Promise<void> {
 }
 .warn-text {
   margin: 0;
-  color: var(--warn, #b54708);
+  color: var(--warning, #b54708);
 }
 </style>

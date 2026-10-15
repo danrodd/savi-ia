@@ -171,7 +171,7 @@ function back(): void {
   width: min(420px, 100%);
 }
 .accent {
-  color: var(--accent);
+  color: var(--brand);
 }
 .steps {
   margin: 0;

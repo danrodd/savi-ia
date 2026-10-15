@@ -290,7 +290,7 @@ async function record(): Promise<void> {
   font-weight: 600;
 }
 .status[data-status='expiring'] {
-  color: var(--warn, #b54708);
+  color: var(--warning, #b54708);
 }
 .status[data-status='expired'] {
   color: var(--danger, #b42318);

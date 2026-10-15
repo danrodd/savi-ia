@@ -4,7 +4,17 @@ import App from './App.vue'
 import { configureHttp } from './lib/http'
 import router from './router'
 import { useAuthStore } from './stores/authStore'
-import './styles/tokens.css'
+// Fuentes servidas desde el propio build: la CSP de la consola no permite orígenes externos.
+import '@fontsource/inter/400.css'
+import '@fontsource/inter/500.css'
+import '@fontsource/inter/600.css'
+import '@fontsource/inter/700.css'
+import '@fontsource/poppins/500.css'
+import '@fontsource/poppins/600.css'
+import '@fontsource/poppins/700.css'
+import '@fontsource/jetbrains-mono/400.css'
+import '@fontsource/jetbrains-mono/500.css'
+import '@savi/ui/tokens.css'
 import './styles/base.css'
 
 const app = createApp(App)

@@ -1,6 +1,12 @@
 <script setup lang="ts">
+import { Button, Dialog, TextField } from '@savi/ui'
 import { computed, ref, watch } from 'vue'
 
+/**
+ * Confirmación de acciones sensibles de la consola, sobre el `Dialog` compartido. Agrega
+ * lo que la consola necesita: el padre controla `busy` (la acción la ejecuta él) y, para
+ * lo irreversible, `typeToConfirm` obliga a escribir una palabra exacta.
+ */
 const props = defineProps<{
   open: boolean
   title: string
@@ -25,49 +31,35 @@ watch(
 const canConfirm = computed(
   () => !props.busy && (!props.typeToConfirm || typed.value === props.typeToConfirm),
 )
+
+function onOpenChange(open: boolean): void {
+  if (!open && !props.busy) emit('cancel')
+}
 </script>
 
 <template>
-  <div v-if="open" class="overlay" @keydown.esc="emit('cancel')">
-    <div class="dialog card" role="dialog" aria-modal="true" :aria-label="title">
-      <h2>{{ title }}</h2>
-      <p>{{ message }}</p>
-      <label v-if="typeToConfirm">
-        Para continuar escribí <strong>{{ typeToConfirm }}</strong>
-        <input v-model="typed" autocomplete="off" />
-      </label>
-      <div class="row actions">
-        <button class="btn" type="button" @click="emit('cancel')">Cancelar</button>
-        <button
-          class="btn"
-          :class="danger ? 'btn-danger' : 'btn-primary'"
-          type="button"
-          :disabled="!canConfirm"
-          @click="emit('confirm')"
-        >
-          {{ confirmLabel }}
-        </button>
-      </div>
-    </div>
-  </div>
+  <Dialog :open="open" :title="title" :description="message" :max-width="460" @update:open="onOpenChange">
+    <TextField
+      v-if="typeToConfirm"
+      v-model="typed"
+      :label="`Para continuar escribí ${typeToConfirm}`"
+      autocomplete="off"
+      mono
+      data-test="type-to-confirm"
+    />
+    <template #footer>
+      <Button variant="ghost" :disabled="busy" data-test="confirm-cancel" @click="emit('cancel')">
+        Cancelar
+      </Button>
+      <Button
+        :variant="danger ? 'danger' : 'primary'"
+        :loading="busy"
+        :disabled="!canConfirm"
+        data-test="confirm-accept"
+        @click="emit('confirm')"
+      >
+        {{ confirmLabel }}
+      </Button>
+    </template>
+  </Dialog>
 </template>
-
-<style scoped>
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgb(0 0 0 / 0.45);
-}
-.dialog {
-  display: grid;
-  gap: 0.9rem;
-  width: min(440px, 100%);
-}
-.actions {
-  justify-content: flex-end;
-}
-</style>

@@ -459,7 +459,7 @@ async function runClientAction(): Promise<void> {
 }
 .tab.active {
   color: var(--text);
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--brand);
   font-weight: 600;
 }
 </style>
