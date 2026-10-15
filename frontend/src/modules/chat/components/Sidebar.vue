@@ -510,7 +510,7 @@ function goToAdmin(): void {
   height: 28px;
   display: grid;
   place-items: center;
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
   border-radius: 50%;
   font-size: 12px;

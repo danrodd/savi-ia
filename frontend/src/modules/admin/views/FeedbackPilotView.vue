@@ -303,7 +303,7 @@ async function exportXlsx(): Promise<void> {
 }
 
 .fp__btn--primary {
-  background: var(--brand);
+  background: var(--brand-solid);
   border-color: var(--brand);
   color: var(--text-on-brand);
 }

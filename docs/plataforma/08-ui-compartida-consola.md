@@ -355,13 +355,14 @@ Implementado en un commit por fase (`dc9adbd` workspaces · `9bbcc83` kit de SAV
 
 - **Docker real**: verificar las imágenes de SAVI y de Cloud con el contexto en la raíz del
   repo en el servidor (M1.5).
-- **Hallazgos preexistentes de SAVI, sin tocar** (no eran parte de este trabajo):
-  - `frontend/public/theme-init.js` hace `JSON.parse` de un valor que VueUse guarda como
-    texto plano (`dark`): falla en silencio y quien usa el modo oscuro ve un destello claro
-    al cargar. Cloud ya tiene la versión corregida.
-  - El token `--text-subtle` no llega a 4.5:1 de contraste (2.8:1 en claro, 3.6:1 en
-    oscuro) y el botón primario en oscuro queda en 4.09:1. Los componentes nuevos usan
-    `--text-muted`; cambiar los tokens alteraría SAVI y conviene decidirlo aparte.
+- **Hallazgos preexistentes de SAVI**:
+  - Corregidos después de la entrega: el destello claro del modo oscuro (`theme-init.js` hacía
+    `JSON.parse` de un valor en texto plano) y el contraste. `--text-subtle` y `--success`
+    se oscurecieron en claro, `--brand` se aclaró en oscuro para usarse como texto, y el
+    texto blanco va sobre el nuevo `--brand-solid`. También se agregaron los tokens que
+    faltaban (`--text-success`, `--text-warning`, `--surface-success`, `--surface-warning`).
+    axe-core (motor de Lighthouse): SAVI pasó de 183 problemas de contraste a 0 en 20
+    vistas, y Cloud quedó en 0 en 34.
   - Biome marca imports sin ordenar en archivos de `permisos` y `chat` y `frontend/pnpm-lock.yaml`
     quedó versionado de una etapa anterior.
 - Migrar pantallas de SAVI a los componentes nuevos (§6), de a una.

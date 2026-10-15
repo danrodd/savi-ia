@@ -207,7 +207,7 @@ onMounted(() => void store.load())
 .cl__h3 { margin: var(--space-2) 0 0; font-size: 13px; font-weight: var(--fw-semibold); color: var(--text); }
 .cl__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
 .cl__hint { margin: 0; font-size: 13px; color: var(--text-muted); }
-.cl__warn { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--r-sm); background: var(--surface-subtle); color: var(--warning); font-size: 12px; }
+.cl__warn { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--r-sm); background: var(--surface-subtle); color: var(--text-warning); font-size: 12px; }
 .cl__form { display: grid; gap: var(--space-4); max-width: 480px; }
 .cl__field { display: grid; gap: var(--space-1); font-size: 13px; color: var(--text); }
 .cl__field input[type='text'] { padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); color: var(--text); font: inherit; }

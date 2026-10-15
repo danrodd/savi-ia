@@ -14,8 +14,8 @@
 
   /* Text */
   --text: #1f1f1f;
-  --text-muted: #6b6b6b;
-  --text-subtle: #9b9b9b;
+  --text-muted: #5c5c5c;
+  --text-subtle: #6d6c69;
   --text-on-brand: #ffffff;
 
   /* Brand — SEO ERP crimson */
@@ -23,16 +23,25 @@
   --brand-strong: #a11722;
   --brand-soft: #fdecee;
   --brand-ring: rgba(200, 32, 43, 0.2);
+  /* Fondo de lo que lleva texto blanco encima (botones, burbujas, insignias). */
+  --brand-solid: #c8202b;
+  --brand-solid-hover: #a11722;
 
   /* Accent — parent company navy */
   --navy: #0f2a4a;
   --navy-soft: #e9edf4;
 
   /* Semantic */
-  --success: #2f9e44;
+  /* Verde y naranja oscurecidos para que también sirvan como texto (4.5:1). */
+  --success: #1f7a34;
   --success-soft: #e7f5ec;
-  --warning: #d97706;
+  --warning: #b45309;
   --warning-soft: #fdf3e2;
+  /* Texto y fondo de estados: varias pantallas los usaban con un respaldo fijo porque no existían. */
+  --text-success: #1b7330;
+  --text-warning: #a14a08;
+  --surface-success: #e7f5ec;
+  --surface-warning: #fdf3e2;
   --danger: #c8202b;
   --text-danger: #c8202b;
   --focus-ring: 0 0 0 3px var(--brand-ring);
@@ -107,14 +116,17 @@
   /* Text */
   --text: #f0eee9;
   --text-muted: #a8a6a0;
-  --text-subtle: #75736e;
+  --text-subtle: #8f8d89;
   --text-on-brand: #ffffff;
 
   /* Brand — lighter for dark contrast */
-  --brand: #e83a48;
+  /* Más claro que en el tema claro para que se lea como texto; el texto blanco va sobre --brand-solid. */
+  --brand: #f0606c;
   --brand-strong: #f25563;
   --brand-soft: rgba(232, 58, 72, 0.12);
   --brand-ring: rgba(232, 58, 72, 0.28);
+  --brand-solid: #d61928;
+  --brand-solid-hover: #b8131f;
 
   /* Accent navy */
   --navy: #6b8cb8;
@@ -125,6 +137,10 @@
   --success-soft: rgba(74, 222, 128, 0.12);
   --warning: #fb923c;
   --warning-soft: rgba(251, 146, 60, 0.12);
+  --text-success: #4ade80;
+  --text-warning: #fbbf24;
+  --surface-success: rgba(74, 222, 128, 0.12);
+  --surface-warning: rgba(251, 146, 60, 0.12);
   --danger: #f25563;
   --text-danger: #f25563;
 
@@ -179,7 +195,7 @@ button {
 }
 
 .dark ::selection {
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
 }
 

@@ -87,7 +87,7 @@ const currentIndex = computed(() => props.steps.findIndex((step) => step.key ===
 
 .ui-stepper__step--current .ui-stepper__marker {
   border-color: var(--brand);
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
 }
 

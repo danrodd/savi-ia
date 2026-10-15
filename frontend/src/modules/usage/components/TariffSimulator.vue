@@ -174,8 +174,8 @@ const pricePerUserCop = computed(() =>
 }
 
 .sim__result--primary {
-  background: var(--brand);
-  border-color: var(--brand);
+  background: var(--brand-solid);
+  border-color: var(--brand-solid);
 }
 
 .sim__result--primary .sim__result-label,

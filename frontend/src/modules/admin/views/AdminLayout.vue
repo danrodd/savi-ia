@@ -76,7 +76,7 @@ const NAV = [
 }
 
 .admin__identity { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-6); }
-.admin__identity-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--text-on-brand); background: var(--brand); font-family: var(--font-display); font-weight: var(--fw-bold); box-shadow: var(--shadow-brand); }
+.admin__identity-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--text-on-brand); background: var(--brand-solid); font-family: var(--font-display); font-weight: var(--fw-bold); box-shadow: var(--shadow-brand); }
 .admin__identity div { display: grid; gap: 1px; }
 .admin__identity strong { font-family: var(--font-display); letter-spacing: .05em; }
 .admin__identity small { color: var(--text-subtle); font-size: 10px; }

@@ -83,12 +83,12 @@
 }
 
 .lp-button--primary {
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
 }
 
 .lp-button--primary:hover {
-  background: var(--brand-strong);
+  background: var(--brand-solid-hover);
   transform: translateY(-1px);
 }
 

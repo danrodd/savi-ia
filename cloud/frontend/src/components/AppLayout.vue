@@ -238,7 +238,7 @@ async function logout(): Promise<void> {
   height: 34px;
   border-radius: 11px;
   color: var(--text-on-brand);
-  background: var(--brand);
+  background: var(--brand-solid);
   font-family: var(--font-display);
   font-weight: var(--fw-bold);
   box-shadow: var(--shadow-brand);

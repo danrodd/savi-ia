@@ -60,7 +60,7 @@ import { STEPS } from '../content'
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
   font-family: var(--font-display);
   font-weight: var(--fw-semibold);
@@ -123,7 +123,7 @@ import { STEPS } from '../content'
 
 .how__node--brand {
   border-color: var(--brand);
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
 }
 

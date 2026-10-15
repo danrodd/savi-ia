@@ -119,14 +119,14 @@ const classes = computed(() => [
 /* Variants */
 .btn--primary,
 .btn--danger {
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
   box-shadow: var(--shadow-inset);
 }
 
 .btn--primary:hover:not(:disabled),
 .btn--danger:hover:not(:disabled) {
-  background: var(--brand-strong);
+  background: var(--brand-solid-hover);
   transform: translateY(-0.5px);
 }
 

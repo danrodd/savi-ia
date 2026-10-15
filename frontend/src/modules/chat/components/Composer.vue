@@ -360,13 +360,13 @@ const { dragging } = useFileDrop(
 }
 
 .composer__btn--send {
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
   box-shadow: var(--shadow-inset), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .composer__btn--send:hover:not(:disabled) {
-  background: var(--brand-strong);
+  background: var(--brand-solid-hover);
   transform: translateY(-0.5px);
 }
 

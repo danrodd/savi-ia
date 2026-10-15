@@ -324,13 +324,13 @@ function next(): void {
 }
 
 .bubble__btn--primary {
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
   border-color: var(--brand);
 }
 
 .bubble__btn--primary:hover:not(:disabled) {
-  background: var(--brand-strong);
+  background: var(--brand-solid-hover);
   border-color: var(--brand-strong);
 }
 

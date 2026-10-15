@@ -260,7 +260,7 @@ onMounted(() => {
   height: 80px;
   display: grid;
   place-items: center;
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
   border-radius: 50%;
   font-size: 32px;
@@ -293,7 +293,7 @@ onMounted(() => {
 }
 
 .profile__role--admin {
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
 }
 

@@ -84,7 +84,7 @@ import { PLANS } from '../content'
 .plans__badge {
   padding: 4px 12px;
   border-radius: 999px;
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
   font-size: 12px;
   font-weight: var(--fw-semibold);

@@ -198,7 +198,7 @@ function statusOf(db: ErpDatabase): { label: string; tone: 'ok' | 'muted' | 'dan
 }
 
 .dbtable__badge--brand {
-  background: var(--brand);
+  background: var(--brand-solid);
   color: var(--text-on-brand);
 }
 
