@@ -36,6 +36,22 @@ describe('http', () => {
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
   })
 
+  it('put manda el cuerpo como JSON con el método PUT', async () => {
+    configureHttp({
+      getAccessToken: () => 'tok',
+      refresh: async () => null,
+      onSessionLost: () => undefined,
+    })
+    fetchMock.mockResolvedValue(json({ plan_name: 'Pro' }))
+
+    await http.put('/console/api/clients/c1/subscription', { plan_name: 'Pro' })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/console/api/clients/c1/subscription')
+    expect(init.method).toBe('PUT')
+    expect(init.body).toBe(JSON.stringify({ plan_name: 'Pro' }))
+  })
+
   it('renueva la sesión una vez ante un 401 y reintenta con el token nuevo', async () => {
     let token = 'viejo'
     const refresh = vi.fn(async () => {

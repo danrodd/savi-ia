@@ -8,6 +8,7 @@ export type Permission =
   | 'clients.write'
   | 'clients.suspend'
   | 'clients.policy'
+  | 'clients.billing'
   | 'instances.read'
   | 'instances.read_technical'
   | 'instances.manage'
