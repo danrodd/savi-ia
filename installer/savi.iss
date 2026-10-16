@@ -931,6 +931,55 @@ begin
   Password.Width := Password.Width - Result.Width - ScaleX(8);
 end;
 
+{ Al reconfigurar, las páginas arrancan con lo que ya tiene el .env: quien
+  solo quiere cambiar el nombre de una base no tiene por qué conocer de
+  nuevo servidores, usuarios ni contraseñas. Un valor vacío deja el
+  predeterminado de la página. }
+var
+  ConfigPrefilled: Boolean;
+  PreviousAdminLogins: String;
+
+procedure PrefillValue(Page: TInputQueryWizardPage; Index: Integer; const EnvPath, Key: String);
+var
+  Value: String;
+begin
+  Value := ReadEnvValue(EnvPath, Key);
+  if Value <> '' then
+    Page.Values[Index] := Value;
+end;
+
+procedure PrefillFromEnv();
+var
+  EnvPath: String;
+begin
+  if ConfigPrefilled then
+    Exit;
+  ConfigPrefilled := True;
+  EnvPath := AddBackslash(WizardDirValue) + '.env';
+
+  PrefillValue(ErpPage, 0, EnvPath, 'ERP_DB_HOST');
+  PrefillValue(ErpPage, 1, EnvPath, 'ERP_DB_PORT');
+  PrefillValue(ErpPage, 2, EnvPath, 'ERP_DB_NAME');
+  PrefillValue(ErpPage, 3, EnvPath, 'ERP_DB_USER');
+  PrefillValue(ErpPage, 4, EnvPath, 'ERP_DB_PASSWORD');
+
+  if ReadEnvValue(EnvPath, 'AGENT_DB_ENGINE') = 'sqlite' then
+    AgentKindPage.SelectedValueIndex := 0
+  else if ReadEnvValue(EnvPath, 'AGENT_DB_ENGINE') = 'postgresql' then
+    AgentKindPage.SelectedValueIndex := 1;
+
+  PrefillValue(AgentPgPage, 0, EnvPath, 'AGENT_DB_HOST');
+  PrefillValue(AgentPgPage, 1, EnvPath, 'AGENT_DB_PORT');
+  PrefillValue(AgentPgPage, 2, EnvPath, 'AGENT_DB_NAME');
+  PrefillValue(AgentPgPage, 3, EnvPath, 'AGENT_DB_USER');
+  PrefillValue(AgentPgPage, 4, EnvPath, 'AGENT_DB_PASSWORD');
+
+  PrefillValue(ClaudePage, 0, EnvPath, 'CLAUDE_CODE_OAUTH_TOKEN');
+  PrefillValue(ClaudePage, 1, EnvPath, 'ANTHROPIC_API_KEY');
+  PrefillValue(ClaudePage, 2, EnvPath, 'APP_PORT');
+  PreviousAdminLogins := ReadEnvValue(EnvPath, 'SAVI_ADMIN_LOGINS');
+end;
+
 { ── Páginas del asistente ───────────────────────────────────────────── }
 
 procedure InitializeWizard();
@@ -946,10 +995,11 @@ begin
     'Configuración existente',
     'Este equipo ya tiene SAVI configurado',
     'Se detectó un archivo de configuración de una instalación anterior. ' +
-    'Puede conservarlo o volver a cargar los datos desde cero.',
+    'Puede conservarlo o cambiar solo lo que necesite: las pantallas siguientes ' +
+    'traen los datos actuales ya cargados.',
     True, False);
   ReconfigPage.Add('Conservar la configuración actual (recomendado)');
-  ReconfigPage.Add('Volver a configurar: bases de datos, autenticación y puerto');
+  ReconfigPage.Add('Modificar la configuración: bases de datos, autenticación y puerto');
   ReconfigPage.SelectedValueIndex := 0;
 
   ErpPage := CreateInputQueryPage(ReconfigPage.ID,
@@ -1052,7 +1102,7 @@ begin
   if WantsReconfigure() then
     Result := Result + NewLine + NewLine +
       'Reconfiguración:' + NewLine +
-      Space + 'Se reemplaza el archivo .env con los datos que cargaste' + NewLine +
+      Space + 'Se reemplaza el archivo .env con los datos que se cargaron' + NewLine +
       Space + 'El anterior queda como .env.anterior por si hay que volver' + NewLine +
       Space + 'Se cierran las sesiones abiertas (cambia la clave de firma)' + NewLine +
       Space + 'Se conservan los datos y la clave de cifrado: nada se borra'
@@ -1100,11 +1150,14 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
 
-  if CurPageID = ErpPage.ID then
+  if (CurPageID = ReconfigPage.ID) and WantsReconfigure() then
+    PrefillFromEnv()
+
+  else if CurPageID = ErpPage.ID then
     Result := TestDbPage(ErpPage, 'erp', 'el ERP', True, LastOkErp)
 
   else if (CurPageID = AgentKindPage.ID) and (AgentKindPage.SelectedValueIndex = 0) then
-    Result := MsgBox('Elegiste guardar los datos de SAVI en un archivo local.' + #13#10#13#10 +
+    Result := MsgBox('Eligió guardar los datos de SAVI en un archivo local.' + #13#10#13#10 +
                      'Sirve para pruebas o para un único usuario: si varias personas ' +
                      'usan el chat al mismo tiempo, las respuestas se traban o fallan, ' +
                      'y el historial queda solo en este equipo, sin respaldo del servidor.' + #13#10#13#10 +
@@ -1125,7 +1178,7 @@ begin
     if (not AlreadyLoggedIn) and (Trim(ClaudePage.Values[0]) = '') and
        (Trim(ClaudePage.Values[1]) = '') then
     begin
-      Result := MsgBox('No cargaste ningún token ni clave de API.' + #13#10#13#10 +
+      Result := MsgBox('No cargó ningún token ni clave de API.' + #13#10#13#10 +
                        'Al terminar la instalación se le va a ofrecer iniciar ' +
                        'sesión con la cuenta de Claude del cliente, que es la ' +
                        'forma recomendada.' + #13#10#13#10 +
@@ -1456,13 +1509,14 @@ begin
   end;
   ReplaceEnvToken(Lines, '{{ERP_CREDENTIALS_KEY}}', FernetKey);
 
-  { Vacío a propósito: un administrador del ERP ya queda habilitado para
+  { Vacío en una instalación nueva; al reconfigurar se conserva el valor
+    que se había completado a mano. Un administrador del ERP ya queda habilitado para
     la sección de administración por su propio flag. Este campo es el
     escape para dar acceso a un usuario que NO es admin en el ERP, y su
     valor es un `codigo` de Seguridad.Usuario — no el usuario de conexión
     a Postgres que se cargó en el asistente. Se completa a mano en el
     .env cuando hace falta. }
-  ReplaceEnvToken(Lines, '{{SAVI_ADMIN_LOGINS}}', '');
+  ReplaceEnvToken(Lines, '{{SAVI_ADMIN_LOGINS}}', PreviousAdminLogins);
 
   { Sin BOM: pydantic-settings lee el .env como UTF-8 y un BOM le
     convertiria la primera clave en "﻿APP_NAME". }
