@@ -2,6 +2,7 @@ import logging
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -257,6 +258,33 @@ def _belongs_to_the_api(path: str) -> bool:
     )
 
 
+# Tipos fijos para los archivos del build. `FileResponse` los deduce con
+# `mimetypes`, que en Windows lee el registro: si otro programa dejó `.js`
+# como `text/plain`, el navegador (con `nosniff`) no ejecuta los scripts y la
+# pantalla queda en blanco.
+_SPA_MEDIA_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json",
+    ".map": "application/json",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".ico": "image/x-icon",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".txt": "text/plain; charset=utf-8",
+}
+
+
+def _spa_file(path: Path) -> FileResponse:
+    return FileResponse(path, media_type=_SPA_MEDIA_TYPES.get(path.suffix.lower()))
+
+
 def _mount_frontend(app: FastAPI) -> None:
     """Sirve el build de Vue desde el mismo origen que el API.
 
@@ -278,11 +306,11 @@ def _mount_frontend(app: FastAPI) -> None:
         # `../../.env` serviría archivos fuera del build.
         candidate = (dist / spa_path).resolve()
         if spa_path and candidate.is_file() and candidate.is_relative_to(dist.resolve()):
-            return FileResponse(candidate)
+            return _spa_file(candidate)
 
         # Cualquier otra ruta la resuelve vue-router en el cliente
         # (`createWebHistory` necesita este fallback).
-        return FileResponse(index)
+        return _spa_file(index)
 
 
 app = create_app()
