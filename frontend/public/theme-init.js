@@ -8,8 +8,11 @@
  */
 ;(() => {
   try {
+    // `useTheme` (VueUse) guarda el modo como texto plano: `dark`, no `"dark"`. El
+    // `JSON.parse` de antes fallaba en silencio y el modo oscuro arrancaba en claro. Se
+    // toleran las comillas por si quedó un valor viejo serializado como JSON.
     const stored = localStorage.getItem('savi-agent-theme-mode')
-    const mode = stored ? JSON.parse(stored) : 'system'
+    const mode = stored ? stored.replace(/^"|"$/g, '') : 'system'
     const isDark =
       mode === 'dark' ||
       (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
