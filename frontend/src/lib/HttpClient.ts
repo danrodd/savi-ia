@@ -70,7 +70,7 @@ async function readJson<T>(res: Response): Promise<T> {
     // Un proxy o un backend desactualizado pueden contestar HTML con 200: sin
     // esto el usuario veía "Unexpected token '<'..." en lugar de un mensaje útil.
     throw new HttpRequestError(
-      'El servidor respondió algo inesperado. Probá de nuevo en un momento.',
+      'El servidor respondió algo inesperado. Intente de nuevo en un momento.',
       res.status,
     )
   }
