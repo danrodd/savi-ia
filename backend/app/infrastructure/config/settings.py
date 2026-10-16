@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     # cifra con la nueva. Vacía fuera de una rotación.
     erp_credentials_key_old: str = Field(default="")
     # Revisión de la configuración del ERP que escribió el instalador (una
-    # marca de tiempo nueva en cada instalación o "Volver a configurar").
+    # marca de tiempo nueva en cada instalación o "Modificar la configuración").
     # Cuando difiere de la de la base default, el arranque la actualiza con
     # `ERP_DB_*`; vacía = nunca se toca una base ya sembrada. Ver
     # `modules/erp_databases/infrastructure/seed.py`.
@@ -347,7 +347,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 "JWT_SECRET sigue con el marcador 'CAMBIAR-ESTE-VALOR': el instalador "
                 "no pudo generar la clave. Vuelva a ejecutar el instalador y elija "
-                '"Volver a configurar", o genere una con '
+                '"Modificar la configuración", o genere una con '
                 '`python -c "import secrets; print(secrets.token_urlsafe(48))"` '
                 "y guárdela en el .env."
             )
@@ -374,7 +374,7 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"{label} no es una clave de cifrado válida (se esperan 44 "
                     "caracteres en base64 url-safe). Si la generó el instalador, "
-                    'vuelva a ejecutarlo y elija "Volver a configurar" para '
+                    'vuelva a ejecutarlo y elija "Modificar la configuración" para '
                     "regenerarla; o cree una con "
                     '`python -c "from cryptography.fernet import Fernet; '
                     'print(Fernet.generate_key().decode())"`.'

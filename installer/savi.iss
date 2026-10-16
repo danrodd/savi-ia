@@ -1653,7 +1653,7 @@ begin
     ShowDiagnosticReport('SAVI quedó instalado, pero la verificación encontró problemas y ' +
                          'no va a funcionar hasta corregirlos. Abajo está qué falló y qué ' +
                          'hacer (las líneas [FALLA]). Para corregir los datos, vuelva a ' +
-                         'ejecutar este instalador y elija "Volver a configurar".');
+                         'ejecutar este instalador y elija "Modificar la configuración".');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

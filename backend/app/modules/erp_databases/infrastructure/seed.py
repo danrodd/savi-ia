@@ -67,7 +67,7 @@ async def _resync_default_database(
 ) -> None:
     """Aplica un `.env` reconfigurado a la base default ya sembrada.
 
-    "Volver a configurar" del instalador escribe un `ERP_SEED_REVISION`
+    "Modificar la configuración" del instalador escribe un `ERP_SEED_REVISION`
     nuevo. Si difiere del guardado en la fila, el administrador pidió
     cambiar el ERP desde el instalador y se actualiza la conexión. Con la
     misma revisión (o sin revisión, como en un `.env` anterior) no se toca

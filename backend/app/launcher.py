@@ -659,7 +659,8 @@ def _login() -> int:
 
 
 _RECONFIGURE_HINT = (
-    "Vuelva a ejecutar el instalador de SAVI y elija 'Volver a configurar' para corregir los datos."
+    "Vuelva a ejecutar el instalador de SAVI y elija 'Modificar la configuración' "
+    "para corregir los datos."
 )
 
 

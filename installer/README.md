@@ -65,8 +65,10 @@ Opciones útiles al iterar:
    contraseña. Obligatoria: es la fuente de datos que SAVI interpreta.
    SAVI la abre en modo solo lectura forzado.
 3. **Base de datos de SAVI** — dónde vive el historial de conversaciones:
-   - *Archivo local* (por defecto): SQLite, sin nada que administrar.
-   - *Servidor PostgreSQL*: para compartir el historial entre equipos.
+   - *Servidor PostgreSQL* (por defecto y recomendado): varios usuarios,
+     historial compartido y con respaldo. Ver *"Credencial ilegible"* en
+     Diagnóstico antes de apuntar dos instalaciones a la misma base.
+   - *Archivo local*: SQLite, solo para pruebas o un único usuario.
 4. **Autenticación de Claude y puerto** — el puerto viene precargado en
    **31900** y casi nunca hay que cambiarlo (ver *Puerto local* abajo).
    Normalmente se dejan los dos
@@ -76,6 +78,15 @@ Opciones útiles al iterar:
 Al terminar descarga e instala los prerrequisitos faltantes, genera el
 archivo `.env`, crea los accesos directos y ofrece iniciar sesión con la
 cuenta de Claude del cliente.
+
+Si el equipo ya tiene SAVI, antes de estos pasos aparece **Configuración
+existente**: *Conservar la configuración actual* (actualiza sin preguntar
+nada) o *Modificar la configuración*. Al modificar, las páginas traen los
+valores del `.env` actual —servidores, puertos, usuarios, contraseñas y
+tokens—, así que se cambia solo lo necesario (por ejemplo, el nombre de la
+base de SAVI) sin conocer de nuevo las credenciales. Se conservan
+`ERP_CREDENTIALS_KEY` y `SAVI_ADMIN_LOGINS`; el `.env` anterior queda como
+`.env.anterior`.
 
 ## Puerto local
 
@@ -306,6 +317,60 @@ y después *Reintentar*. **Nunca elijas "Ignorar el error y continuar"**:
 deja el ejecutable viejo en su lugar, así que la instalación dice ser la
 versión nueva y corre código viejo — el peor de los dos mundos para
 diagnosticar después.
+
+### Pantalla en blanco: los scripts llegan como `text/plain`
+
+**Síntoma:** SAVI arranca (el log muestra `GET /` y los `/assets/*.js`
+con 200) pero el navegador queda en blanco. La consola (`F12`) dice:
+
+```
+Refused to execute script from '.../theme-init.js' because its MIME type ('text/plain') is not executable
+Failed to load module script: ... the server responded with a MIME type of "text/plain"
+```
+
+**Causa:** `FileResponse` deduce el tipo con `mimetypes`, que en Windows
+lee `HKEY_CLASSES_ROOT\.js` → `Content Type`. Algunos programas (editores,
+entornos de desarrollo, instaladores) lo dejan en `text/plain`. Con
+`X-Content-Type-Options: nosniff`, Chrome y Firefox se niegan a ejecutar
+el script. Depende del equipo, no de la versión de SAVI: por eso los
+demás equipos funcionan.
+
+**Desde v1.3.1** el build se sirve con tipos fijos (`_SPA_MEDIA_TYPES` en
+`backend/app/main.py`) y ya no depende del registro; lo cubre
+`tests/unit/test_spa_media_types.py`. En versiones anteriores, se
+comprueba con `reg query "HKCR\.js" /v "Content Type"` y se corrige en
+PowerShell como administrador, sin reinstalar:
+
+```
+reg add "HKCR\.js" /v "Content Type" /t REG_SZ /d "text/javascript" /f
+reg add "HKCR\.css" /v "Content Type" /t REG_SZ /d "text/css" /f
+```
+
+Después, reiniciar SAVI desde la bandeja y recargar con `Ctrl+F5`.
+
+### "Credencial ilegible: ERP_CREDENTIALS_KEY no coincide"
+
+**Síntoma:** el diagnóstico marca `[FALLA] Proveedor de IA: ... La
+credencial falta o no se puede leer` y el log repite `Credencial
+ilegible para el proveedor de IA ...: ERP_CREDENTIALS_KEY no coincide`
+(o lo mismo para una base del ERP).
+
+**Causa:** las claves de proveedores y las contraseñas de las bases se
+guardan **cifradas en la base de SAVI**, pero la llave
+(`ERP_CREDENTIALS_KEY`) vive en el `.env` de **cada equipo** y el
+instalador genera una por instalación. Si dos instalaciones apuntan a la
+misma base de SAVI en PostgreSQL, lo que cifró una no lo puede leer la
+otra.
+
+**Solución**, una de dos:
+
+- **Base propia por instalación:** *Modificar la configuración* y cambiar
+  solo el nombre de la base en *PostgreSQL de SAVI*. SAVI la crea si no
+  existe (el usuario necesita permiso para crear bases). Arranca vacía:
+  hay que cargar de nuevo la clave del proveedor de IA.
+- **Base compartida:** copiar `ERP_CREDENTIALS_KEY` del `.env` del primer
+  equipo al de los demás y reiniciar SAVI. No recargar la clave desde el
+  segundo equipo: quedaría cifrada con su llave y fallaría en el primero.
 
 ### El log
 
