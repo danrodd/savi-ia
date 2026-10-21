@@ -27,8 +27,8 @@ TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv 
 - [x] **T2. Firma y verificación** (inline): verificación Ed25519 del manifiesto y SHA-256 del instalador en infraestructura. Clave pública incrustada; si está vacía, el chequeo queda desactivado con un aviso en el log. Tests con un par de claves generado en el test.
 - [x] **T3. `scripts/publish-release.py`** (inline): `keygen`, armado del manifiesto con `min_version_from` (72 h por defecto, `now`), firma, `--out` local para pruebas y subida por SSH (`.exe` primero, manifiesto con nombre temporal y renombre). Tests del armado y la firma.
 - [x] **T4. Chequeo periódico y endpoints** (inline): `UPDATE_URL` y `UPDATE_CHANNEL` en Settings; chequeo al arrancar y cada 6 h; `GET /updates/status`; `POST /updates/apply` (descarga, verificación, espera de turnos, lanzamiento silencioso). Modo servidor: aplicar solo desde `127.0.0.1`. Tests.
-- [ ] **T5. Instalador** (inline): entrada `[Run]` que relanza SAVI en modo silencioso. Sin compilar.
-- [ ] **T6. Frontend** (inline): barra de aviso, plazo, diálogo obligatorio y pantalla "Actualizando…" que espera `/health`. Tests.
+- [x] **T5. Instalador** (inline): entrada `[Run]` que relanza SAVI en modo silencioso. Sin compilar.
+- [x] **T6. Frontend** (inline): barra de aviso, plazo, diálogo obligatorio y pantalla "Actualizando…" que espera `/health`. Tests.
 - [ ] **T7. Prueba de punta a punta en local**: manifiesto firmado servido con `python -m http.server`, SAVI en desarrollo detecta, verifica y rechaza manipulaciones. Documentar los pasos de despliegue que quedan para el servidor.
 
 ## Criterios de aceptación
@@ -50,3 +50,6 @@ TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv 
 - Falla conocida, previa a esta rama: `test_logging_survives_migrations.py::test_log_still_works_after_ensure_schema` también falla en la base (BD local en la revisión de `develop`).
 - La descarga queda en `%LOCALAPPDATA%\SAVI\updates\` (`data_dir()`), no en `%ProgramData%` como decía la spec, porque es escribible sin administrador. Ajustar la spec en T7.
 - `.env.example` no se tocó (sin permiso de lectura en esta sesión): documentar las variables en T7.
+- Commit T4: `fb3bf8a`. T5: `2cb93e1` (entrada `[Run]` con `Check: WizardSilent` y `runasoriginaluser`; revisada, sin compilar).
+- T6: módulo `frontend/src/modules/updates` (servicio, `useUpdateStatus`, reglas puras en `utils/updateView.ts`, `UpdateNotice.vue`), montado en `App.vue` solo con sesión. `Dialog.vue` suma `dismissible` para los diálogos que no se cierran. "Más tarde" se guarda 24 h en `localStorage` (con try/catch).
+- Verificación T6: vue-tsc sin errores, Biome limpio en lo tocado, 17 tests nuevos y 315 en toda la suite del frontend. Guarda de usted: 12/12.

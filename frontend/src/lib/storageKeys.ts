@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   PERMISOS_MODULES: `${STORAGE_PREFIX}-permisos-modules`,
   PERMISOS_VERSION: `${STORAGE_PREFIX}-permisos-version`,
   LOGIN_DATABASE_CODES: `${STORAGE_PREFIX}-login-database-codes`,
+  UPDATE_SNOOZED_UNTIL: `${STORAGE_PREFIX}-update-snoozed-until`,
 } as const
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
