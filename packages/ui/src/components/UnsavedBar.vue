@@ -14,7 +14,7 @@ withDefaults(
     message?: string
     saveLabel?: string
   }>(),
-  { canSave: true, message: 'Tenés cambios sin guardar', saveLabel: 'Guardar cambios' },
+  { canSave: true, message: 'Tiene cambios sin guardar', saveLabel: 'Guardar cambios' },
 )
 
 const emit = defineEmits<{ save: []; discard: [] }>()

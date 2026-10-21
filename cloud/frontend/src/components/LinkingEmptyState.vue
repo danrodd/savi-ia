@@ -42,7 +42,7 @@ function go(section: ClientSection): void {
       Vincular una instalación
     </Button>
     <p v-else class="empty-hint" data-test="empty-role-hint">
-      Pide a Soporte que vincule una instalación.
+      Pida a Soporte que vincule una instalación.
     </p>
   </EmptyState>
 </template>

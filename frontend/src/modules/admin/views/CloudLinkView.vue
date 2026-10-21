@@ -79,8 +79,8 @@ onMounted(() => void store.load())
     <header class="cl__header">
       <h1 class="cl__title">SAVI Cloud</h1>
       <p class="cl__subtitle">
-        Conectá esta instalación con SAVI Cloud para que SEO Group pueda acompañarte y dar soporte.
-        Siempre podés ver qué datos se envían y desvincular cuando quieras.
+        Conecte esta instalación con SAVI Cloud para que SEO Group pueda acompañarlo y darle soporte.
+        Siempre puede ver qué datos se envían y desvincularla cuando quiera.
       </p>
     </header>
 
@@ -94,7 +94,7 @@ onMounted(() => void store.load())
       <section v-if="!linked" class="cl__card" data-testid="cloud-unlinked">
         <h2 class="cl__h2">Vincular esta instalación</h2>
         <p v-if="!state.cloud_configured" class="cl__warn" role="status">
-          Esta instalación todavía no tiene la dirección de SAVI Cloud configurada. Consultá con
+          Esta instalación todavía no tiene la dirección de SAVI Cloud configurada. Consulte con
           SEO Group.
         </p>
         <form class="cl__form" @submit.prevent="onLink">
@@ -109,7 +109,7 @@ onMounted(() => void store.load())
               :disabled="linking"
               data-testid="cloud-token"
             />
-            <small>Te lo entrega SEO Group.</small>
+            <small>Se lo entrega SEO Group.</small>
           </label>
 
           <fieldset class="cl__field cl__radios">
@@ -190,7 +190,7 @@ onMounted(() => void store.load())
     <ConfirmDialog
       v-model:open="unlinkOpen"
       title="Desvincular de SAVI Cloud"
-      description="SAVI dejará de enviar datos a SAVI Cloud. Para volver a conectarla vas a necesitar un token nuevo de SEO Group."
+      description="SAVI dejará de enviar datos a SAVI Cloud. Para volver a conectarla va a necesitar un token nuevo de SEO Group."
       confirm-label="Desvincular"
       variant="danger"
       :on-confirm="onUnlink"

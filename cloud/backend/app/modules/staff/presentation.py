@@ -116,7 +116,7 @@ def _enforce_auth_limit(request: Request) -> None:
         raise ApiError(
             429,
             "too_many_requests",
-            "Demasiados intentos; esperá unos minutos.",
+            "Demasiados intentos; espere unos minutos.",
             {"Retry-After": str(retry_after)},
         )
 
@@ -216,7 +216,7 @@ async def refresh(request: Request, response: Response) -> TokenResponse | JSONR
     token = request.cookies.get(REFRESH_COOKIE)
     if not token:
         return _failure_response(
-            AuthFailure("invalid_session_token", "La sesión venció; iniciá sesión de nuevo.")
+            AuthFailure("invalid_session_token", "La sesión venció; inicie sesión de nuevo.")
         )
     async with transaction(request) as session:
         result = await RefreshSessionUseCase(build_auth_deps(request, session)).execute(

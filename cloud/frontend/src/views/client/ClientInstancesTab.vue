@@ -45,7 +45,7 @@ function open(instance: Instance): void {
           :client-id="id"
           :icon="Server"
           title="Todavía no hay instalaciones vinculadas"
-          description="Una instalación aparece aquí cuando se vincula con un token de este cliente. Genera el token, instala SAVI y pégalo."
+          description="Una instalación aparece aquí cuando se vincula con un token de este cliente. Genere el token, instale SAVI y péguelo."
         />
       </template>
       <template #cell-name="{ row }">

@@ -67,7 +67,7 @@ def _enforce(limiter: SlidingWindowLimiter, key: str) -> None:
         raise ApiError(
             429,
             "too_many_requests",
-            "Demasiadas solicitudes; reintentá más tarde.",
+            "Demasiadas solicitudes; intente de nuevo más tarde.",
             {"Retry-After": str(retry_after)},
         )
 

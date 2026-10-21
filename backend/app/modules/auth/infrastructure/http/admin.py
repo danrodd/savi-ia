@@ -38,7 +38,7 @@ from app.shared.exceptions import ConfigLockedError, ForbiddenError
 
 CONFIG_LOCKED_MESSAGE = (
     "Esta instalación la administra SEO Group: la configuración está bloqueada. "
-    "Si necesitás un cambio, pedíselo a soporte."
+    "Si necesita un cambio, pídaselo a soporte."
 )
 
 

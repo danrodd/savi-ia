@@ -24,8 +24,8 @@ class DatabaseAccessPolicy(ABC):
         )
         if allowed is not None and database_id not in allowed:
             raise DatabaseNotAssignedError(
-                "SEO Group no te asignó esta base de datos. "
-                "Si la necesitás, pedíselo a soporte."
+                "SEO Group no le asignó esta base de datos. "
+                "Si la necesita, pídasela a soporte."
             )
 
 

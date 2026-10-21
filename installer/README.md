@@ -107,7 +107,7 @@ Página opcional del asistente, después de *Cuenta de Claude y puerto*. Hay
 un único instalador (no hay uno de Servidor y otro de Escritorio), así que
 la página sirve para las dos formas de uso.
 
-- **Texto**: "Te lo entrega SEO Group. Podés hacerlo después desde
+- **Texto**: "Se lo entrega SEO Group. Puede hacerlo después desde
   Administración."
 - **Campo vacío** (lo normal): no se escribe nada en el `.env`.
 - **Con token**: se valida el formato (empieza con `svk_enr_`, sin

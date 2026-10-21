@@ -19,9 +19,9 @@ export const DATABASE_UNREACHABLE_MESSAGE =
   'No pudimos conectar con la base de ese cliente. Pruebe de nuevo en unos minutos o avise a su administrador.'
 
 export const INVALID_MFA_CODE_MESSAGE =
-  'El código no es válido. Revisá el de tu aplicación e intentá de nuevo.'
+  'El código no es válido. Revise el de su aplicación e intente de nuevo.'
 
-export const MFA_EXPIRED_MESSAGE = 'La verificación venció. Volvé a iniciar sesión.'
+export const MFA_EXPIRED_MESSAGE = 'La verificación venció. Vuelva a iniciar sesión.'
 
 export const GENERIC_LOGIN_MESSAGE =
   'No pudimos entrar. Revise el usuario, la contraseña y el código del cliente.'

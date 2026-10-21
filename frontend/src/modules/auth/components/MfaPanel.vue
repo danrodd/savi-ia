@@ -61,7 +61,7 @@ async function onSubmit(): Promise<void> {
   error.value = null
   const clean = code.value.replace(/\s+/g, '')
   if (clean.length < 6) {
-    error.value = 'Ingresá los 6 dígitos de tu aplicación.'
+    error.value = 'Ingrese los 6 dígitos de su aplicación.'
     return
   }
   busy.value = true
@@ -85,14 +85,14 @@ onMounted(() => {
 <template>
   <form class="mfa" data-testid="mfa-panel" @submit.prevent="onSubmit">
     <template v-if="isSetup">
-      <h2 class="mfa__title">Activá la verificación en dos pasos</h2>
+      <h2 class="mfa__title">Active la verificación en dos pasos</h2>
       <p class="mfa__text">
-        Tu cuenta administra SAVI, así que necesita un segundo paso al entrar. Es una sola vez.
+        Su cuenta administra SAVI, así que necesita un segundo paso al entrar. Es una sola vez.
       </p>
       <ol class="mfa__steps">
-        <li>Instalá una aplicación de autenticación (Google Authenticator, Microsoft Authenticator o similar).</li>
-        <li>Escaneá este código con la aplicación.</li>
-        <li>Escribí abajo el código de 6 dígitos que te muestra.</li>
+        <li>Instale una aplicación de autenticación (Google Authenticator, Microsoft Authenticator o similar).</li>
+        <li>Escanee este código con la aplicación.</li>
+        <li>Escriba abajo el código de 6 dígitos que le muestra.</li>
       </ol>
       <p v-if="loading" class="mfa__text" role="status">Preparando el código…</p>
       <img
@@ -106,13 +106,13 @@ onMounted(() => {
       >
       <details v-if="setup" class="mfa__manual">
         <summary>No puedo escanear el código</summary>
-        <p class="mfa__text">Cargá esta clave a mano en la aplicación:</p>
+        <p class="mfa__text">Cargue esta clave a mano en la aplicación:</p>
         <code class="mfa__secret" data-testid="mfa-secret">{{ setup.secret }}</code>
       </details>
     </template>
     <template v-else>
       <h2 class="mfa__title">Verificación en dos pasos</h2>
-      <p class="mfa__text">Ingresá el código de 6 dígitos de tu aplicación de autenticación.</p>
+      <p class="mfa__text">Ingrese el código de 6 dígitos de su aplicación de autenticación.</p>
     </template>
 
     <label class="mfa__field">

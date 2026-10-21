@@ -38,7 +38,7 @@ from app.shared.exceptions import ValidationError
 
 LOCAL_CLI_NOT_ALLOWED_MESSAGE = (
     "Usar la sesión del CLI de Claude no está habilitado para esta instalación. "
-    "Si lo necesitás, pedíselo a SEO Group."
+    "Si lo necesita, pídaselo a SEO Group."
 )
 
 

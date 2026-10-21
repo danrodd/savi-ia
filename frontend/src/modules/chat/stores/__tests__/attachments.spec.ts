@@ -229,7 +229,7 @@ describe('chatStore · imágenes adjuntas', () => {
 
   it('si la política de IA lo rechaza, el texto vuelve y se muestra el motivo', async () => {
     const { HttpRequestError } = await import('@/lib/HttpClient')
-    const reason = 'Llegaste al tope mensual de IA (USD 5.00).'
+    const reason = 'Llegó al tope mensual de IA (USD 5.00).'
     agentMock.stream.mockImplementation(() => ({
       [Symbol.asyncIterator]() {
         return {
@@ -254,7 +254,7 @@ describe('chatStore · imágenes adjuntas', () => {
 
   it('si SEO Group no le asignó la base, el texto vuelve y se muestra el motivo', async () => {
     const { HttpRequestError } = await import('@/lib/HttpClient')
-    const reason = 'SEO Group no te asignó esta base de datos.'
+    const reason = 'SEO Group no le asignó esta base de datos.'
     agentMock.stream.mockImplementation(() => ({
       [Symbol.asyncIterator]() {
         return {

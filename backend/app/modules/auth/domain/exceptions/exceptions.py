@@ -86,7 +86,7 @@ class InvalidMfaCodeError(AuthError):
     """El código del segundo factor no es válido (o ya se usó)."""
 
     def __init__(self) -> None:
-        super().__init__("El código no es válido. Revisá el de tu aplicación e intentá de nuevo.")
+        super().__init__("El código no es válido. Revise el de su aplicación e intente de nuevo.")
 
 
 class MfaUnavailableError(AuthError):

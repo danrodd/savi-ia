@@ -255,7 +255,7 @@ async function run(): Promise<void> {
           title="La huella de la máquina cambió"
         >
           Puede ser una copia de la instalación o un cambio de hardware. Si es la misma máquina,
-          confirmalo para reactivarla.
+          confírmelo para reactivarla.
           <template v-if="auth.can('instances.manage')" #action>
             <Button size="sm" @click="pending = 'confirm-fingerprint'">
               <ShieldCheck :size="14" aria-hidden="true" /> Es la misma máquina

@@ -27,9 +27,9 @@ router = APIRouter(prefix="/admin/cloud-link", tags=["cloud-link"])
 _ENROLL_MESSAGES = {
     "enrollment_token_invalid": "El token no existe, venció o ya se usó.",
     "client_suspended": "El cliente está suspendido en SAVI Cloud.",
-    "too_many_requests": "Demasiados intentos. Probá de nuevo en unos minutos.",
+    "too_many_requests": "Demasiados intentos. Intente de nuevo en unos minutos.",
     "timeout": "SAVI Cloud no respondió a tiempo.",
-    "network_error": "No se pudo conectar con SAVI Cloud. Revisá la conexión a internet.",
+    "network_error": "No se pudo conectar con SAVI Cloud. Revise la conexión a internet.",
 }
 
 

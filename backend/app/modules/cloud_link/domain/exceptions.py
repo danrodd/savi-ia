@@ -37,7 +37,7 @@ class CloudApiError(DomainError):
 
 class AlreadyLinkedError(ValidationError):
     def __init__(self) -> None:
-        super().__init__("Esta instalación ya está vinculada con SAVI Cloud. Desvinculá primero.")
+        super().__init__("Esta instalación ya está vinculada con SAVI Cloud. Desvincúlela primero.")
 
 
 class NotLinkedError(ValidationError):

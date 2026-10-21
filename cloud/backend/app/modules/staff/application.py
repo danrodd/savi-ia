@@ -195,7 +195,7 @@ class VerifyMfaUseCase:
             payload = d.security.decode(mfa_token, "mfa")
         except InvalidSessionToken:
             return AuthFailure(
-                "invalid_session_token", "La verificación venció; iniciá sesión de nuevo."
+                "invalid_session_token", "La verificación venció; inicie sesión de nuevo."
             )
         user = await d.users.get_by_id(UUID(str(payload["sub"])))
         if (
@@ -259,7 +259,7 @@ class ConfirmMfaSetupUseCase:
             payload = d.security.decode(setup_token, "mfa_setup")
         except InvalidSessionToken:
             return AuthFailure(
-                "invalid_session_token", "La configuración venció; iniciá sesión de nuevo."
+                "invalid_session_token", "La configuración venció; inicie sesión de nuevo."
             )
         user = await d.users.get_by_id(UUID(str(payload["sub"])))
         if (
@@ -274,7 +274,7 @@ class ConfirmMfaSetupUseCase:
         if user.must_change_password:
             if not new_password:
                 return AuthFailure(
-                    "weak_password", "Elegí una contraseña nueva para terminar la configuración."
+                    "weak_password", "Elija una contraseña nueva para terminar la configuración."
                 )
             try:
                 validate_password_policy(new_password, email=user.email)
@@ -321,7 +321,7 @@ class RefreshSessionUseCase:
     async def execute(self, refresh_token: str, ctx: RequestContext) -> TokenPair | AuthFailure:
         d = self._d
         now = d.clock()
-        invalid = AuthFailure("invalid_session_token", "La sesión venció; iniciá sesión de nuevo.")
+        invalid = AuthFailure("invalid_session_token", "La sesión venció; inicie sesión de nuevo.")
         try:
             payload = d.security.decode(refresh_token, "refresh")
             jti = UUID(str(payload["jti"]))

@@ -146,7 +146,7 @@ function onCreated(client: Client): void {
             <EmptyState
               :icon="Building2"
               :title="q || status ? 'No hay clientes con esos filtros' : 'Todavía no hay clientes'"
-              :description="q || status ? 'Probá con otra búsqueda.' : 'Creá el primero para vincular sus instalaciones.'"
+              :description="q || status ? 'Intente con otra búsqueda.' : 'Cree el primero para vincular sus instalaciones.'"
             >
               <Button v-if="!q && !status && auth.can('clients.write')" @click="creating = true">
                 Nuevo cliente

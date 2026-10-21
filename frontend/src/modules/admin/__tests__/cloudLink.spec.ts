@@ -100,7 +100,7 @@ describe('cloudLinkErrorMessage', () => {
   it('reconoce "ya vinculada" (422) y usa el mensaje como último recurso', () => {
     expect(
       cloudLinkErrorMessage(httpError(422, undefined, 'Esta instalación ya está vinculada.')),
-    ).toContain('Desvinculala')
+    ).toContain('Desvincúlela')
     expect(cloudLinkErrorMessage(httpError(400, undefined, 'Algo raro'))).toBe('Algo raro')
   })
 })

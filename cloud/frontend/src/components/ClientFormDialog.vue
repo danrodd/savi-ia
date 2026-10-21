@@ -75,7 +75,7 @@ async function submit(): Promise<void> {
     :description="
       isEdit
         ? 'El código no se puede cambiar: lo usan las instalaciones vinculadas.'
-        : 'Una empresa que usa SAVI. Después vas a poder vincular sus instalaciones.'
+        : 'Una empresa que usa SAVI. Después va a poder vincular sus instalaciones.'
     "
     :max-width="480"
     @update:open="emit('update:open', $event)"

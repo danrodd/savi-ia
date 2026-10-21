@@ -32,7 +32,7 @@ MFA_TOKEN_TTL_SECONDS = 5 * 60
 MFA_SETUP_TOKEN_TTL_SECONDS = 10 * 60
 
 _UNAVAILABLE = (
-    "Tu verificación en dos pasos no se puede usar. Pedile a un administrador que la restablezca."
+    "Su verificación en dos pasos no se puede usar. Pídale a un administrador que la restablezca."
 )
 
 
@@ -112,8 +112,8 @@ class MfaService:
         record = await self._totp.get(erp_database_id=_database(user), user_id=user.id)
         if record is not None and (record.enabled or record.unreadable):
             raise MfaUnavailableError(
-                "Ya tenés la verificación en dos pasos configurada. "
-                "Si perdiste el acceso, pedile a un administrador que la restablezca."
+                "Ya tiene la verificación en dos pasos configurada. "
+                "Si perdió el acceso, pídale a un administrador que la restablezca."
             )
         secret = totp.generate_secret()
         await self._totp.save_pending(
@@ -149,7 +149,7 @@ class MfaService:
         record = await self._totp.get(erp_database_id=_database(user), user_id=user.id)
         if record is None or not record.enabled:
             # Lo restablecieron entre el login y este paso: que vuelva a entrar.
-            raise InvalidTokenError("La verificación venció. Iniciá sesión de nuevo.")
+            raise InvalidTokenError("La verificación venció. Inicie sesión de nuevo.")
         if record.unreadable or record.secret is None:
             raise MfaUnavailableError(_UNAVAILABLE)
         step = totp.verify(record.secret, code, self._now(), record.last_step)

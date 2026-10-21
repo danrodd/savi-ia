@@ -1106,15 +1106,15 @@ begin
     CloudPage := CreateInputQueryPage(ClaudePage.ID,
       'Conectar con SAVI Cloud',
       'Obligatorio: esta instalación la administra SEO Group',
-      'Pegá el token de vinculación que te entregó SEO Group. Sin él no se ' +
+      'Pegue el token de vinculación que le entregó SEO Group. Sin él no se ' +
       'puede continuar: así cada equipo queda registrado y SEO Group puede ' +
-      'darte soporte y administrar tu acceso.')
+      'brindarle soporte y administrar su acceso.')
   else
     CloudPage := CreateInputQueryPage(ClaudePage.ID,
       'Conectar con SAVI Cloud',
       'Opcional: vincular esta instalación con SEO Group',
-      'Te lo entrega SEO Group. Podés hacerlo después desde Administración.' + #13#10#13#10 +
-      'Si tenés el token de vinculación, pegalo acá. Si lo dejás vacío, no se ' +
+      'Se lo entrega SEO Group. Puede hacerlo después desde Administración.' + #13#10#13#10 +
+      'Si tiene el token de vinculación, péguelo aquí. Si lo deja vacío, no se ' +
       'conecta nada ahora.');
   CloudPage.Add('Token de vinculación (empieza con svk_enr_):', True);
 
@@ -1270,8 +1270,8 @@ begin
       token que se escribió. }
     if CloudRequired() and (Trim(CloudPage.Values[0]) = '') then
     begin
-      MsgBox('Este instalador requiere el token de vinculación que te entregó ' +
-             'SEO Group. Pedilo a soporte y pegalo para continuar.',
+      MsgBox('Este instalador requiere el token de vinculación que le entregó ' +
+             'SEO Group. Pídalo a soporte y péguelo para continuar.',
              mbError, MB_OK);
       Result := False;
     end
@@ -1279,7 +1279,7 @@ begin
        (not IsValidCloudToken(Trim(CloudPage.Values[0]))) then
     begin
       MsgBox('El token no tiene el formato esperado: tiene que empezar con ' +
-             'svk_enr_ y no llevar espacios. Revisá que esté completo o dejá ' +
+             'svk_enr_ y no llevar espacios. Revise que esté completo o deje ' +
              'el campo vacío para hacerlo después desde Administración.',
              mbError, MB_OK);
       Result := False;

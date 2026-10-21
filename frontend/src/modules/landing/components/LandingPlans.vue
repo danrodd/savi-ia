@@ -10,7 +10,7 @@ import { PLANS } from '../content'
       <p class="lp-eyebrow">Modelos de IA</p>
       <h2 class="lp-title">Elija cómo pagar la inteligencia artificial</h2>
       <p class="lp-lead">
-        SAVI funciona con Claude, OpenAI o Gemini. Cambia de proveedor desde la administración, sin
+        SAVI funciona con Claude, OpenAI o Gemini. Cambie de proveedor desde la administración, sin
         reinstalar nada.
       </p>
       <ul class="plans__grid">

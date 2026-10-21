@@ -57,7 +57,7 @@ const candidates = computed(() =>
 
 function addOverride(): void {
   newError.value = {}
-  if (!newRef.value) newError.value.person = 'Elegí una persona.'
+  if (!newRef.value) newError.value.person = 'Elija una persona.'
   if (!AMOUNT.test(newAmount.value.trim())) newError.value.amount = AMOUNT_HINT
   if (!newRef.value || newError.value.amount) return
   form.values.overrides.push({ user_ref: newRef.value, amount: newAmount.value.trim() })
@@ -210,7 +210,7 @@ async function save(): Promise<void> {
         <Select
           v-model="newRef"
           label="Persona"
-          placeholder="Elegí una persona"
+          placeholder="Elija una persona"
           :options="candidates"
           :error="newError.person"
           data-test="ai-override-person"

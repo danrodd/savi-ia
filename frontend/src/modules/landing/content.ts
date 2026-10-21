@@ -130,7 +130,7 @@ export const PLANS: Plan[] = [
     points: [
       'Elija el proveedor y el modelo',
       'Consumo visible por usuario y por empresa',
-      'Cambia de proveedor cuando quiera',
+      'Cambie de proveedor cuando quiera',
     ],
   },
   {

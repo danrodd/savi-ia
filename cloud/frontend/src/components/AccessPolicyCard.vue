@@ -73,7 +73,7 @@ function addGroup(): void {
   const name = newGroupName.value.trim()
   groupError.value = null
   if (!name) {
-    groupError.value = 'Escribí un nombre para el grupo.'
+    groupError.value = 'Escriba un nombre para el grupo.'
     return
   }
   if (form.values.groups.some((g) => g.name.toLowerCase() === name.toLowerCase())) {
@@ -163,7 +163,7 @@ async function save(): Promise<void> {
 
     <Card
       title="Grupos"
-      description="Personas que comparten bases y, si querés, un tope mensual de IA. Quien está en varios grupos recibe la unión de sus bases y el mayor de sus topes."
+      description="Personas que comparten bases y, si quiere, un tope mensual de IA. Quien está en varios grupos recibe la unión de sus bases y el mayor de sus topes."
     >
       <div v-if="form.values.groups.length" class="access__items">
         <article
@@ -231,7 +231,7 @@ async function save(): Promise<void> {
           </div>
         </article>
       </div>
-      <EmptyState v-else title="Sin grupos" description="Creá uno para asignar bases a varias personas juntas." />
+      <EmptyState v-else title="Sin grupos" description="Cree uno para asignar bases a varias personas juntas." />
       <form class="access__add" novalidate @submit.prevent="addGroup">
         <TextField
           v-model="newGroupName"
@@ -289,7 +289,7 @@ async function save(): Promise<void> {
         <Select
           v-model="newRef"
           label="Persona"
-          placeholder="Elegí una persona"
+          placeholder="Elija una persona"
           :options="candidates"
           data-test="access-rule-person"
         />

@@ -134,7 +134,7 @@ describe('vinculación guiada', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain(window.location.origin)
-    expect(wrapper.text()).toContain('Pégalo')
+    expect(wrapper.text()).toContain('Péguelo')
     expect(wrapper.find('[data-test="link-step-install"]').exists()).toBe(true)
   })
 

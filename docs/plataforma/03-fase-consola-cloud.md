@@ -286,7 +286,7 @@ entre las dos aplicaciones.
 ### 7.3 Detalles de interacción
 
 - **Generar token:** diálogo que muestra el token **una vez**, con botón
-  copiar e instrucción "Pegalo en SAVI → Administración → SAVI Cloud, o
+  copiar e instrucción "Péguelo en SAVI → Administración → SAVI Cloud, o
   en el instalador". Al cerrar, no se puede volver a ver.
 - **Revocar instancia:** hay que escribir `REVOCAR` y se explica que la
   instancia deja de enviar métricas y tendrá que vincularse con un token

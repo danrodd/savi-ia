@@ -42,7 +42,7 @@ function onOpenChange(open: boolean): void {
     <TextField
       v-if="typeToConfirm"
       v-model="typed"
-      :label="`Para continuar escribí ${typeToConfirm}`"
+      :label="`Para continuar escriba ${typeToConfirm}`"
       autocomplete="off"
       mono
       data-test="type-to-confirm"

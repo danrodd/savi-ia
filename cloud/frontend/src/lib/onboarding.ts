@@ -29,7 +29,7 @@ const DEFINITIONS: StepDefinition[] = [
   {
     key: 'plan_loaded',
     label: 'Plan cargado',
-    hint: 'Registra el plan contratado y hasta cuándo está vigente.',
+    hint: 'Registre el plan contratado y hasta cuándo está vigente.',
     tab: 'plan',
     permission: 'clients.billing',
     role: 'comercial',
@@ -37,7 +37,7 @@ const DEFINITIONS: StepDefinition[] = [
   {
     key: 'policy_defined',
     label: 'Política definida',
-    hint: 'Decide cómo se identifica a las personas y qué bases puede consultar cada una.',
+    hint: 'Decida cómo se identifica a las personas y qué bases puede consultar cada una.',
     tab: 'instalaciones',
     permission: 'clients.policy',
     role: 'admin',
@@ -45,7 +45,7 @@ const DEFINITIONS: StepDefinition[] = [
   {
     key: 'ai_defined',
     label: 'Límites de IA definidos',
-    hint: 'Elige los proveedores permitidos y los topes mensuales.',
+    hint: 'Elija los proveedores permitidos y los topes mensuales.',
     tab: 'ia',
     permission: 'clients.policy',
     role: 'admin',
@@ -53,7 +53,7 @@ const DEFINITIONS: StepDefinition[] = [
   {
     key: 'token_created',
     label: 'Token de vinculación generado',
-    hint: 'Genera el token que se pega en la instalación de SAVI.',
+    hint: 'Genere el token que se pega en la instalación de SAVI.',
     tab: 'vinculacion',
     permission: 'tokens.manage',
     role: 'soporte',

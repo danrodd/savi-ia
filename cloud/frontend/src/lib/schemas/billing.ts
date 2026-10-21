@@ -22,7 +22,7 @@ const optionalText = (max: number, message: string) =>
 const optionalDay = z
   .string()
   .trim()
-  .refine((value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value), 'Elegí una fecha válida.')
+  .refine((value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value), 'Elija una fecha válida.')
   .transform((value) => value || null)
 
 export const planSchema = z.object({
@@ -47,11 +47,11 @@ export type PlanInput = z.input<typeof planSchema>
 export const ledgerEntrySchema = z
   .object({
     kind: z.enum(['payment', 'adjustment']),
-    amount_usd: z.string().trim().min(1, 'Ingresá el monto.'),
+    amount_usd: z.string().trim().min(1, 'Ingrese el monto.'),
     note: z
       .string()
       .trim()
-      .min(1, 'Anotá la referencia (por ejemplo, el número de transferencia).')
+      .min(1, 'Anote la referencia (por ejemplo, el número de transferencia).')
       .max(MAX_NOTE, `La referencia admite hasta ${MAX_NOTE} caracteres.`),
     extends_until: optionalDay,
   })
@@ -64,7 +64,7 @@ export const ledgerEntrySchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['amount_usd'],
-        message: 'Un pago no puede ser negativo: para descontar, registrá un ajuste.',
+        message: 'Un pago no puede ser negativo: para descontar, registre un ajuste.',
       })
     } else if (value.kind === 'payment' && Number(amount) === 0) {
       ctx.addIssue({

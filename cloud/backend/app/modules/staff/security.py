@@ -86,7 +86,7 @@ def validate_password_policy(password: str, *, email: str | None = None) -> None
     if email:
         local = email.split("@", 1)[0].lower()
         if len(local) >= 4 and local in lowered:
-            raise WeakPassword("La contraseña no debe contener tu correo.")
+            raise WeakPassword("La contraseña no debe contener su correo.")
 
 
 def generate_temporary_password() -> str:

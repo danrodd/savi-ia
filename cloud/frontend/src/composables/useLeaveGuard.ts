@@ -9,7 +9,7 @@ import { matchedRouteKey, onBeforeRouteLeave } from 'vue-router'
  */
 const approved = new WeakSet<object>()
 
-export const LEAVE_MESSAGE = 'Tenés cambios sin guardar. Si salís ahora, se pierden.'
+export const LEAVE_MESSAGE = 'Tiene cambios sin guardar. Si sale ahora, se pierden.'
 
 /**
  * Avisa antes de perder cambios sin guardar: al cambiar de pantalla o de pestaña dentro de

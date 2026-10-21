@@ -174,7 +174,7 @@ describe('MfaPanel', () => {
     await flushPromises()
 
     expect(wrapper.emitted('cancel')?.[0]).toEqual([
-      'La verificación venció. Volvé a iniciar sesión.',
+      'La verificación venció. Vuelva a iniciar sesión.',
     ])
   })
 
@@ -214,7 +214,7 @@ describe('mensajes de error del segundo factor', () => {
   it('traduce el código inválido y deja pasar el mensaje del backend en 403 y 429', () => {
     expect(loginErrorMessage(rejected(401, 'invalid_mfa_code'))).toContain('El código no es válido')
     expect(
-      loginErrorMessage(new AuthRequestError('Pedile a un administrador', 403, 'mfa_unavailable')),
-    ).toBe('Pedile a un administrador')
+      loginErrorMessage(new AuthRequestError('Pídale a un administrador', 403, 'mfa_unavailable')),
+    ).toBe('Pídale a un administrador')
   })
 })

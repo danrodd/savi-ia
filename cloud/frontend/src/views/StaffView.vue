@@ -62,7 +62,7 @@ const COLUMNS: TableColumn[] = [
 
 // --- alta
 const staffSchema = z.object({
-  email: z.email('Ingresá un correo válido.'),
+  email: z.email('Ingrese un correo válido.'),
   full_name: z
     .string()
     .trim()
@@ -209,7 +209,7 @@ async function run(): Promise<void> {
               :aria-label="`Rol de ${row.full_name}`"
               @update:model-value="(role) => role && role !== row.role && (roleChange = { member: row, role })"
             />
-            <span v-else>{{ roleLabel(row.role) }} <Badge tone="info">Vos</Badge></span>
+            <span v-else>{{ roleLabel(row.role) }} <Badge tone="info">Usted</Badge></span>
           </template>
           <template #cell-status="{ row }">
             <div class="badges">

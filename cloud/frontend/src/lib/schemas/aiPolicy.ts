@@ -37,7 +37,7 @@ export const aiPolicySchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['allowed'],
-        message: 'Dejá al menos un proveedor habilitado.',
+        message: 'Deje al menos un proveedor habilitado.',
       })
     }
   })

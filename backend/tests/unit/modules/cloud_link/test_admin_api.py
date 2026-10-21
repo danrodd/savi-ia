@@ -153,7 +153,7 @@ async def test_link_twice_is_422(admin: httpx.AsyncClient) -> None:
     again = await admin.post("/admin/cloud-link", json={"token": TOKEN})
 
     assert again.status_code == 422
-    assert "Desvinculá" in again.json()["detail"]
+    assert "Desvincúlela" in again.json()["detail"]
 
 
 async def test_link_from_now_only_sends_what_comes_after(

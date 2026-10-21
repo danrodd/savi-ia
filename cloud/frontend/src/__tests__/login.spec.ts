@@ -74,8 +74,8 @@ describe('ingreso a la consola', () => {
     await flushPromises()
 
     expect(authApi.login).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Ingresá un correo válido.')
-    expect(wrapper.text()).toContain('Ingresá tu contraseña.')
+    expect(wrapper.text()).toContain('Ingrese un correo válido.')
+    expect(wrapper.text()).toContain('Ingrese su contraseña.')
   })
 
   it('con el segundo factor configurado pide el código y entra al completarlo', async () => {
@@ -129,7 +129,7 @@ describe('primer ingreso', () => {
 
     await enterCredentials(wrapper)
 
-    expect(wrapper.text()).toContain('Elegí tu contraseña')
+    expect(wrapper.text()).toContain('Elija su contraseña')
     expect(wrapper.findComponent(OtpInput).exists()).toBe(false)
     expect(authApi.confirmSetup).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Al menos 12 caracteres')
@@ -183,7 +183,7 @@ describe('primer ingreso', () => {
 
     await completeCode(wrapper, '654321')
 
-    expect(wrapper.text()).toContain('Elegí tu contraseña')
+    expect(wrapper.text()).toContain('Elija su contraseña')
     expect(wrapper.text()).toContain('Esa contraseña es demasiado común.')
   })
 

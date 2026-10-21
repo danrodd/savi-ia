@@ -226,7 +226,7 @@ describe('IA: proveedores y topes del cliente', () => {
     await control(wrapper, 'ai-override-amount').setValue('veinte')
     await wrapper.get('[data-test="ai-override-add"]').trigger('click')
 
-    expect(wrapper.get('[data-test="ai-override-person"]').text()).toContain('Elegí una persona')
+    expect(wrapper.get('[data-test="ai-override-person"]').text()).toContain('Elija una persona')
     expect(wrapper.get('[data-test="ai-override-amount"]').text()).toContain('USD')
     expect(wrapper.find('[data-test="ai-override"]').exists()).toBe(false)
   })

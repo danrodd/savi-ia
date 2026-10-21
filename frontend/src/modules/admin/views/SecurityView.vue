@@ -58,7 +58,7 @@ async function onReset(): Promise<void> {
             placeholder="USUARIO@CODIGO"
             data-testid="mfa-reset-login"
           >
-          <small>Con el código del cliente si atendés varios: <code>USUARIO@CODIGO</code>.</small>
+          <small>Con el código del cliente si atiende varios: <code>USUARIO@CODIGO</code>.</small>
         </label>
         <div>
           <Button type="submit" :disabled="!clean" variant="secondary">Restablecer</Button>

@@ -3,8 +3,8 @@ import { z } from 'zod'
 
 /** Ingreso con correo y contraseña. */
 export const credentialsSchema = z.object({
-  email: z.email('Ingresá un correo válido.'),
-  password: z.string().min(1, 'Ingresá tu contraseña.'),
+  email: z.email('Ingrese un correo válido.'),
+  password: z.string().min(1, 'Ingrese su contraseña.'),
 })
 
 export const MIN_PASSWORD_LENGTH = 12
@@ -29,7 +29,7 @@ export function passwordRules(email: string): PasswordRule[] {
   ]
   if (local.length >= 4) {
     rules.push({
-      label: 'Que no contenga tu correo',
+      label: 'Que no contenga su correo',
       test: (value) => value.length > 0 && !value.toLowerCase().includes(local),
     })
   }

@@ -32,26 +32,26 @@ export const CLOUD_STATUS_HINTS: Partial<Record<CloudLinkStatus, string>> = {
   offline:
     'SAVI no logra comunicarse con SAVI Cloud. Cuando vuelva la conexión se retoma solo y no se pierde nada.',
   suspended:
-    'SEO Group suspendió a tu empresa en SAVI Cloud. Comunicate con SEO Group para reactivarla.',
+    'SEO Group suspendió a su empresa en SAVI Cloud. Comuníquese con SEO Group para reactivarla.',
   unauthorized:
-    'SAVI Cloud no reconoce las credenciales de esta instalación. Comunicate con SEO Group.',
+    'SAVI Cloud no reconoce las credenciales de esta instalación. Comuníquese con SEO Group.',
   revoked:
-    'SEO Group revocó esta instalación en SAVI Cloud. Desvinculá y pedí un token nuevo para volver a conectarla.',
+    'SEO Group revocó esta instalación en SAVI Cloud. Desvincúlela y pida un token nuevo para volver a conectarla.',
 }
 
 /** Mensajes amigables por `errorCode` del backend (y por status HTTP). */
 const ERROR_MESSAGES: Record<string, string> = {
-  enrollment_token_invalid: 'El token no existe, venció o ya se usó. Pedí uno nuevo a SEO Group.',
-  client_suspended: 'La empresa está suspendida en SAVI Cloud. Comunicate con SEO Group.',
-  too_many_requests: 'Hubo demasiados intentos. Esperá unos minutos y probá de nuevo.',
-  timeout: 'SAVI Cloud no respondió a tiempo. Probá de nuevo en un momento.',
-  network_error: 'No se pudo conectar con SAVI Cloud. Revisá la conexión a internet.',
+  enrollment_token_invalid: 'El token no existe, venció o ya se usó. Pida uno nuevo a SEO Group.',
+  client_suspended: 'La empresa está suspendida en SAVI Cloud. Comuníquese con SEO Group.',
+  too_many_requests: 'Hubo demasiados intentos. Espere unos minutos e intente de nuevo.',
+  timeout: 'SAVI Cloud no respondió a tiempo. Intente de nuevo en un momento.',
+  network_error: 'No se pudo conectar con SAVI Cloud. Revise la conexión a internet.',
   contract_rejected:
-    'SAVI Cloud no aceptó la vinculación. Avisale a SEO Group para que revise esta instalación.',
+    'SAVI Cloud no aceptó la vinculación. Avísele a SEO Group para que revise esta instalación.',
 }
 
 const ALREADY_LINKED =
-  'Esta instalación ya está vinculada. Desvinculala primero para usar otro token.'
+  'Esta instalación ya está vinculada. Desvincúlela primero para usar otro token.'
 
 export function cloudLinkErrorMessage(
   error: unknown,
@@ -110,15 +110,15 @@ export function needsGlobalAlert(state: CloudLinkState | null, now: Date = new D
 
 export function globalAlertText(state: CloudLinkState): string {
   if (state.status === 'offline') {
-    return `SAVI lleva más de ${OFFLINE_ALERT_HOURS} horas sin comunicarse con SAVI Cloud. Revisá la conexión a internet de este equipo.`
+    return `SAVI lleva más de ${OFFLINE_ALERT_HOURS} horas sin comunicarse con SAVI Cloud. Revise la conexión a internet de este equipo.`
   }
   if (state.status === 'suspended') {
-    return 'La empresa está suspendida en SAVI Cloud. Comunicate con SEO Group.'
+    return 'La empresa está suspendida en SAVI Cloud. Comuníquese con SEO Group.'
   }
   if (state.status === 'revoked') {
-    return 'SEO Group revocó la vinculación de esta instalación con SAVI Cloud. Pedí un token nuevo.'
+    return 'SEO Group revocó la vinculación de esta instalación con SAVI Cloud. Pida un token nuevo.'
   }
-  return 'SAVI Cloud no reconoce las credenciales de esta instalación. Comunicate con SEO Group.'
+  return 'SAVI Cloud no reconoce las credenciales de esta instalación. Comuníquese con SEO Group.'
 }
 
 export interface FieldHelp {

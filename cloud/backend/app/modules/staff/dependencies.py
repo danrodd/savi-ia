@@ -54,14 +54,14 @@ def build_auth_deps(request: Request, session: AsyncSession) -> AuthDeps:
 async def authenticate(request: Request) -> Principal:
     scheme, _, token = request.headers.get("authorization", "").partition(" ")
     if scheme.lower() != BEARER_SCHEME or not token.strip():
-        raise ApiError(401, "unauthorized", "Iniciá sesión para continuar.")
+        raise ApiError(401, "unauthorized", "Inicie sesión para continuar.")
     async with transaction(request) as session:
         try:
             return await AuthenticateStaffUseCase(build_auth_deps(request, session)).execute(
                 token.strip()
             )
         except InvalidSessionToken as exc:
-            raise ApiError(401, "unauthorized", "Iniciá sesión para continuar.") from exc
+            raise ApiError(401, "unauthorized", "Inicie sesión para continuar.") from exc
 
 
 class RequirePermission:
@@ -76,5 +76,5 @@ class RequirePermission:
     async def __call__(self, request: Request) -> Principal:
         principal = await authenticate(request)
         if not has_permission(principal.user.role, self.permission):
-            raise ApiError(403, "forbidden", "No tenés permiso para esta acción.")
+            raise ApiError(403, "forbidden", "No tiene permiso para esta acción.")
         return principal

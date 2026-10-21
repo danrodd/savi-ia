@@ -114,7 +114,7 @@ async function acknowledgeSelected(): Promise<void> {
   <div>
     <PageHeader
       title="Alertas"
-      description="Problemas detectados en las instalaciones y los clientes. Reconocé una alerta cuando alguien la esté atendiendo."
+      description="Problemas detectados en las instalaciones y los clientes. Reconozca una alerta cuando alguien la esté atendiendo."
     />
 
     <div class="stack">

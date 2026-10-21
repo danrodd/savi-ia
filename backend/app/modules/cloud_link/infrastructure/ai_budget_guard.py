@@ -106,7 +106,7 @@ class CloudAiBudgetGuard(AiBudgetGuard):
         self._check_priced(provider)
         if user_cap is not None and user_cap == 0:
             raise AiAccessDeniedError(
-                BUDGET_EXCEEDED, "SEO Group no habilitó el uso de IA para tu usuario."
+                BUDGET_EXCEEDED, "SEO Group no habilitó el uso de IA para su usuario."
             )
 
         period = month_period(datetime.now(UTC), self._timezone)
@@ -119,9 +119,9 @@ class CloudAiBudgetGuard(AiBudgetGuard):
                 if spent >= user_cap:
                     raise AiAccessDeniedError(
                         BUDGET_EXCEEDED,
-                        f"Llegaste al tope mensual de IA ({_usd(user_cap)}). "
-                        "Se renueva el primer día del mes; si lo necesitás antes, "
-                        "pedíselo a SEO Group.",
+                        f"Llegó al tope mensual de IA ({_usd(user_cap)}). "
+                        "Se renueva el primer día del mes; si lo necesita antes, "
+                        "pídaselo a SEO Group.",
                     )
             if provider_cap is not None:
                 system = await usage.provider_totals_system(period)

@@ -174,7 +174,7 @@ function open(instance: Instance): void {
               :title="filtered ? 'No hay instancias con esos filtros' : 'Todavía no hay instancias vinculadas'"
               :description="
                 filtered
-                  ? 'Probá quitando algún filtro.'
+                  ? 'Intente quitando algún filtro.'
                   : 'Se vinculan desde el detalle de un cliente, en la pestaña Vinculación.'
               "
             />

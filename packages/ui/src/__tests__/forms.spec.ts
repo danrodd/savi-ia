@@ -72,13 +72,13 @@ describe('Select', () => {
   ]
 
   it('emite el valor de la opción elegida, no su índice', async () => {
-    const wrapper = mount(Select, { props: { options, placeholder: 'Elegí un rol' } })
+    const wrapper = mount(Select, { props: { options, placeholder: 'Elija un rol' } })
     await wrapper.get('select').setValue('soporte')
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['soporte'])
   })
 
   it('la opción vacía vuelve a null', async () => {
-    const wrapper = mount(Select, { props: { options, placeholder: 'Elegí', modelValue: 'admin' } })
+    const wrapper = mount(Select, { props: { options, placeholder: 'Elija', modelValue: 'admin' } })
     await wrapper.get('select').setValue('')
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([null])
   })

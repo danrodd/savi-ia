@@ -27,11 +27,11 @@ describe('Badge, Alert y EmptyState', () => {
 
   it('el estado vacío muestra título, descripción y acción', () => {
     const wrapper = mount(EmptyState, {
-      props: { title: 'Sin clientes', description: 'Creá el primero' },
+      props: { title: 'Sin clientes', description: 'Cree el primero' },
       slots: { default: '<button>Nuevo cliente</button>' },
     })
     expect(wrapper.text()).toContain('Sin clientes')
-    expect(wrapper.text()).toContain('Creá el primero')
+    expect(wrapper.text()).toContain('Cree el primero')
     expect(wrapper.find('button').exists()).toBe(true)
   })
 })

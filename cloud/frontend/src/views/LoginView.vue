@@ -126,7 +126,7 @@ function confirmPassword(): void {
 
 function onCodeRejected(e: unknown): void {
   if (e instanceof ApiError && e.code === 'invalid_session_token') {
-    backToCredentials('Pasó demasiado tiempo y la verificación venció. Ingresá de nuevo.')
+    backToCredentials('Pasó demasiado tiempo y la verificación venció. Ingrese de nuevo.')
     return
   }
   error.value = errorMessage(e)
@@ -217,8 +217,8 @@ async function submitCode(value: string): Promise<void> {
         @submit.prevent="confirmPassword"
       >
         <div class="login__intro">
-          <h1>Elegí tu contraseña</h1>
-          <p>Reemplaza la temporal que te pasaron. La vas a usar en cada ingreso.</p>
+          <h1>Elija su contraseña</h1>
+          <p>Reemplaza la temporal que le entregaron. La va a usar en cada ingreso.</p>
         </div>
         <PasswordField
           v-model="passwordForm.values.password"
@@ -230,7 +230,7 @@ async function submitCode(value: string): Promise<void> {
         />
         <PasswordField
           v-model="passwordForm.values.repeat"
-          label="Repetí la contraseña"
+          label="Repita la contraseña"
           autocomplete="new-password"
           :error="passwordForm.errors.value.repeat"
           @blur="passwordForm.touch('repeat')"
@@ -247,12 +247,12 @@ async function submitCode(value: string): Promise<void> {
       <div v-else-if="step.kind === 'setup'" class="login__form">
         <div class="login__intro">
           <h1><ShieldCheck :size="18" aria-hidden="true" /> Verificación en dos pasos</h1>
-          <p>Es obligatoria para entrar a la consola. Te lleva un minuto.</p>
+          <p>Es obligatoria para entrar a la consola. Le toma un minuto.</p>
         </div>
         <ol class="login__steps">
-          <li>Abrí tu aplicación de autenticación (Google Authenticator, Microsoft Authenticator…).</li>
-          <li>Escaneá este código, o cargá la clave a mano.</li>
-          <li>Escribí el código de 6 dígitos que muestra la aplicación.</li>
+          <li>Abra su aplicación de autenticación (Google Authenticator, Microsoft Authenticator…).</li>
+          <li>Escanee este código, o cargue la clave a mano.</li>
+          <li>Escriba el código de 6 dígitos que muestra la aplicación.</li>
         </ol>
         <div class="login__qr">
           <img v-if="qr" :src="qr" alt="Código QR para la aplicación de autenticación" width="168" height="168" />
@@ -279,7 +279,7 @@ async function submitCode(value: string): Promise<void> {
       <div v-else class="login__form">
         <div class="login__intro">
           <h1><ShieldCheck :size="18" aria-hidden="true" /> Código de verificación</h1>
-          <p>Escribí el código de 6 dígitos de tu aplicación de autenticación.</p>
+          <p>Escriba el código de 6 dígitos de su aplicación de autenticación.</p>
         </div>
         <OtpInput
           ref="otp"

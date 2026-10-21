@@ -143,7 +143,7 @@ async def revoke_instance(
 ) -> InstanceOut:
     if body.confirm != REVOKE_CONFIRMATION:
         raise ApiError(
-            422, "confirmation_required", f'Para revocar escribí "{REVOKE_CONFIRMATION}".'
+            422, "confirmation_required", f'Para revocar escriba "{REVOKE_CONFIRMATION}".'
         )
     return await _instance_action(request, instance_id, principal, "revoke")
 

@@ -456,7 +456,7 @@ class StaffActions:
         new_role = user.role
         if role is not None and role is not user.role:
             if staff_id == ctx.actor_staff_id:
-                raise InvalidStaffData("No podés cambiar tu propio rol.")
+                raise InvalidStaffData("No puede cambiar su propio rol.")
             await self._ensure_another_admin(user)
             new_role = role  # los permisos se leen de la BD en cada request
         updated = replace(user, full_name=new_name, role=new_role, updated_at=self.deps.clock())
@@ -474,7 +474,7 @@ class StaffActions:
     async def deactivate(self, staff_id: UUID, ctx: RequestContext) -> StaffUser:
         user = await self._get(staff_id)
         if staff_id == ctx.actor_staff_id:
-            raise InvalidStaffData("No podés desactivar tu propia cuenta.")
+            raise InvalidStaffData("No puede desactivar su propia cuenta.")
         if not user.is_active:
             return user
         await self._ensure_another_admin(user)

@@ -74,7 +74,7 @@ describe('http', () => {
   it('avisa que se perdió la sesión si no se puede renovar', async () => {
     const onSessionLost = vi.fn()
     configureHttp({ getAccessToken: () => 'tok', refresh: async () => null, onSessionLost })
-    fetchMock.mockResolvedValue(json({ errorCode: 'unauthorized', message: 'Iniciá sesión' }, 401))
+    fetchMock.mockResolvedValue(json({ errorCode: 'unauthorized', message: 'Inicie sesión' }, 401))
 
     await expect(http.get('/console/api/overview')).rejects.toMatchObject({
       status: 401,

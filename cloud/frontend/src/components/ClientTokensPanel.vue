@@ -141,7 +141,7 @@ async function revokeToken(): Promise<void> {
 <template>
   <div class="tokens">
     <Alert v-if="!canManage" tone="info">
-      Generar y revocar tokens es tarea de Soporte. Aquí puedes ver los que ya existen.
+      Generar y revocar tokens es tarea de Soporte. Aquí puede ver los que ya existen.
     </Alert>
 
     <Card
@@ -160,13 +160,13 @@ async function revokeToken(): Promise<void> {
       </div>
 
       <div v-else-if="current === 'install'" class="tokens__step" data-test="link-step-install">
-        <p>Copia el token de la ventana y pégalo en la instalación de SAVI.</p>
+        <p>Copie el token de la ventana y péguelo en la instalación de SAVI.</p>
       </div>
 
       <div v-else-if="current === 'waiting'" class="tokens__step" data-test="link-step-waiting">
         <template v-if="watcher.state.value === 'timeout'">
           <Alert tone="warning">
-            No se detectó ninguna conexión en 10 minutos. Revisa que la instalación tenga salida a
+            No se detectó ninguna conexión en 10 minutos. Revise que la instalación tenga salida a
             internet y que el token no haya vencido.
           </Alert>
           <div class="tokens__actions">
@@ -184,9 +184,9 @@ async function revokeToken(): Promise<void> {
             Esperando a que la instalación se conecte. Esta pantalla se actualiza sola.
           </p>
           <ol class="tokens__howto">
-            <li>Instala SAVI en el equipo o servidor del cliente.</li>
+            <li>Instale SAVI en el equipo o servidor del cliente.</li>
             <li>
-              En SAVI → Administración → SAVI Cloud, o en el instalador, pega el token y confirma
+              En SAVI → Administración → SAVI Cloud, o en el instalador, pegue el token y confirme
               la dirección de SAVI Cloud.
             </li>
           </ol>
@@ -252,7 +252,7 @@ async function revokeToken(): Promise<void> {
     :open="createdToken !== null"
     title="Token de vinculación"
     :secret="createdToken ?? ''"
-    instructions="Pégalo en SAVI → Administración → SAVI Cloud, o en el instalador."
+    instructions="Péguelo en SAVI → Administración → SAVI Cloud, o en el instalador."
     @close="closeToken"
   >
     <CopyField :value="cloudUrl" label="Dirección de SAVI Cloud" hint="La que usa el instalador (-SaviCloudUrl)." />
@@ -261,7 +261,7 @@ async function revokeToken(): Promise<void> {
   <ConfirmDialog
     :open="revoking !== null"
     title="Revocar el token"
-    message="La instalación que todavía no lo usó ya no podrá vincularse con este token. Si hace falta, generá uno nuevo."
+    message="La instalación que todavía no lo usó ya no podrá vincularse con este token. Si hace falta, genere uno nuevo."
     confirm-label="Revocar"
     danger
     :busy="busy"
