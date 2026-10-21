@@ -90,8 +90,14 @@ Instalador: `installer/output/SAVI-Setup-v1.3.1.exe` (162 MB, no se versiona).
      - No se corrió la suite completa.
    - Deuda heredada de `develop`, sin tocar: 9 avisos de Ruff y unos 120 archivos sin el formato de Ruff.
 5. **Actualización automática** ([spec 09](plataforma/09-actualizacion-automatica.md)). Es un requisito antes del SaaS.
-   - Decisiones abiertas D1–D5: dónde se aloja, cuándo pasar al servicio sin UAC, el certificado de firma de código, el plazo de la actualización obligatoria y el canal por cliente.
-   - Falta incorporar a la spec una fase previa propuesta:
+   - **Decisiones D1–D5 cerradas el 2026-10-21** (sección 10 de la spec):
+     - **D1:** en el servidor Linux de SEO, como un dominio más del Caddy de SAVI Master.
+     - **D2:** instalador de dos modos y sin servicio `SAVIUpdate`.
+     - **D3:** sin certificado de firma por ahora.
+     - **D4:** el plazo se decide en cada versión, 72 h por defecto.
+     - **D5:** `UPDATE_CHANNEL`, con `beta` solo para SEO.
+   - Para desplegar falta el acceso SSH con llave al servidor, que tiene que conseguir el usuario. El código (U0 y U1) se puede escribir y probar en local sin ese acceso.
+   - Falta incorporar a la spec una fase previa propuesta. El modo por usuario de D2 cubre en parte el instalador sin administrador:
      - Claude con clave de API directo por la API. Hoy todo Claude pasa por `claude-agent-sdk`/`claude.exe`.
      - Instalador por usuario sin administrador por defecto (`PrivilegesRequired=lowest` + diálogo).
      - Claude Code opcional, instalable desde Administración → Proveedores de IA.
