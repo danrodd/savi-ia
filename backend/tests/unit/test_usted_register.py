@@ -4,10 +4,11 @@ SAVI habla en español colombiano formal. Este test recorre las fuentes que
 llegan al usuario o al modelo y falla si encuentra formas de voseo
 rioplatense ("podés", "revisá", "volvé", "vos"...). Revisa:
 
-- `backend/app/**/*.py`: solo literales de texto (ast), sin comentarios ni
-  docstrings, porque lo interno no llega al usuario.
-- `frontend/src`: plantillas y literales de `.vue` y `.ts`, sin comentarios
-  ni archivos de prueba.
+- `backend/app/**/*.py` y `cloud/backend/app/**/*.py`: solo literales de
+  texto (ast), sin comentarios ni docstrings, porque lo interno no llega al
+  usuario.
+- `frontend/src`, `cloud/frontend/src` y `packages/ui/src`: plantillas y
+  literales de `.vue` y `.ts`, sin comentarios ni archivos de prueba.
 - `installer/` (`.iss`, `.ps1`, `.html`) y `docs/manuales/` (`.html`, `.md`).
 
 Lista de formas: ver `_VOSEO_WORDS` y `_voseo_imperatives`. Es una lista
@@ -116,6 +117,9 @@ _VOSEO_WORDS = {
     "consumís",
     "preguntás",
     "pegás",
+    "comunicate",
+    "pedíselo",
+    "pedísela",
 }
 
 # Raíces de verbos cuyo imperativo voseante se genera: -ar -> -á, -er -> -é,
@@ -202,6 +206,10 @@ _AR = [
     "achic",
     "descart",
     "commite",
+    "esper",
+    "conect",
+    "escane",
+    "anot",
 ]
 _ER = [
     "volv",
@@ -220,6 +228,7 @@ _ER = [
     "devolv",
     "obten",
     "resolv",
+    "reconoc",
 ]
 _IR = ["eleg", "abr", "cerr", "escrib", "ped", "sub", "ven", "recib", "dec", "repet", "suger"]
 # Sin "se" ni "les": chocan con "usase", "generales" y otras palabras reales.
@@ -304,8 +313,8 @@ def _strip_script_comments(text: str, marker: str) -> str:
 # ------------------------------------------------------------------ Colección
 
 
-def _frontend_files() -> list[Path]:
-    base = ROOT / "frontend" / "src"
+def _frontend_files(folder: str) -> list[Path]:
+    base = ROOT / folder
     files = [
         p
         for ext in ("*.vue", "*.ts")
@@ -337,15 +346,17 @@ def _collect() -> list[tuple[str, int, str]]:
         if word not in ALLOWED.get(rel, set()):
             found.append((rel, number, word))
 
-    for path in sorted((ROOT / "backend" / "app").rglob("*.py")):
-        for line_no, value in _python_strings(path):
-            for offset, word in _hits(value):
-                add(path, line_no + offset - 1, word)
+    for folder in ("backend/app", "cloud/backend/app"):
+        for path in sorted((ROOT / folder).rglob("*.py")):
+            for line_no, value in _python_strings(path):
+                for offset, word in _hits(value):
+                    add(path, line_no + offset - 1, word)
 
-    for path in _frontend_files():
-        text = _strip_frontend_comments(path.read_text(encoding="utf-8"))
-        for number, word in _hits(text):
-            add(path, number, word)
+    for folder in ("frontend/src", "cloud/frontend/src", "packages/ui/src"):
+        for path in _frontend_files(folder):
+            text = _strip_frontend_comments(path.read_text(encoding="utf-8"))
+            for number, word in _hits(text):
+                add(path, number, word)
 
     for path in _text_files("installer", (".iss", ".ps1", ".html")):
         raw = path.read_text(encoding="utf-8-sig")
