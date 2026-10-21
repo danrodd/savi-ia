@@ -64,6 +64,8 @@ from app.modules.llm_providers.infrastructure.http.dependencies import (
     build_llm_provider_repository,
 )
 from app.modules.llm_providers.infrastructure.seed import seed_llm_providers
+from app.modules.updates.infrastructure.http import router as updates_router
+from app.modules.updates.infrastructure.provider import start_updates, stop_updates
 from app.modules.usage.infrastructure.http import router as usage_router
 from app.paths import resource_dir
 from app.shared.exceptions import register_exception_handlers
@@ -151,9 +153,12 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     # Documentos de la empresa: worker de ingesta + índice en memoria. La
     # carga del índice corre en segundo plano y no demora el arranque.
     await start_company_knowledge(settings)
+    # Chequeo de versiones nuevas: al arrancar y cada 6 h, en segundo plano.
+    await start_updates(settings)
     try:
         yield
     finally:
+        await stop_updates()
         await stop_company_knowledge()
         await close_engine_registry()
         await close_engines()
@@ -227,6 +232,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(attachments_router)
     app.include_router(usage_router)
+    app.include_router(updates_router)
     app.include_router(erp_databases_router)
     app.include_router(erp_databases_public_router)
     app.include_router(llm_providers_router)

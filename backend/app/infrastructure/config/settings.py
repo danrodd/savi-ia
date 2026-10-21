@@ -283,6 +283,16 @@ class Settings(BaseSettings):
     # UTC-5; agrupar en UTC partiría los días a las 19:00 hora local.
     reporting_timezone: str = Field(default="America/Bogota")
 
+    # ── Actualización automática ─────────────────────────────────────────
+    # Spec: docs/plataforma/09-actualizacion-automatica.md. Carpeta servida
+    # por HTTPS donde están `<canal>.json`, su `.sig` y `releases/`. Vacío
+    # desactiva el chequeo. Sin la clave pública incrustada en
+    # `modules/updates/infrastructure/trust.py` tampoco se chequea.
+    update_url: str = Field(default="")
+    # `beta` solo para los equipos de SEO (D5).
+    update_channel: Literal["stable", "beta"] = Field(default="stable")
+    update_check_interval_hours: float = Field(default=6.0, gt=0)
+
     @model_validator(mode="after")
     def _require_agent_pg_credentials(self) -> "Settings":
         """En modo `postgresql` las credenciales dejan de ser opcionales.
