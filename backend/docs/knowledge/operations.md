@@ -46,7 +46,7 @@ description
   Field required [type=missing, input_value={'name': 'frmTest', ...}, input_type=dict]
 ```
 
-→ Falta el campo `description`. Lo agregás en el JSON y reiniciás.
+→ Falta el campo `description`. Lo agregas en el JSON y reinicias.
 
 ### Ejemplo 2: JSON malformado
 
@@ -54,7 +54,7 @@ description
 KnowledgeLoadError: JSON inválido en .../forms/frmTest.json: Expecting ',' delimiter: line 8 column 3 (char 124)
 ```
 
-→ Probablemente trailing comma o comilla sin cerrar. Validá con un linter de JSON (cualquier editor moderno lo destaca).
+→ Probablemente trailing comma o comilla sin cerrar. Valida con un linter de JSON (cualquier editor moderno lo destaca).
 
 ### Ejemplo 3: enum inválido
 
@@ -65,7 +65,7 @@ module
   Input should be 'CONTABILIDAD', 'NÓMINA', 'INVENTARIO', ... [type=enum, input_value='CONTABILDIAD']
 ```
 
-→ Typo en `module`. Notá el detalle: `NÓMINA` tiene tilde, no `NOMINA`.
+→ Typo en `module`. Nota el detalle: `NÓMINA` tiene tilde, no `NOMINA`.
 
 ### Ejemplo 4: campo extra no declarado
 
@@ -84,7 +84,7 @@ descritpion
 KnowledgeLoadError: Knowledge root no existe: .../data
 ```
 
-→ Alguien borró la carpeta `data/` o el path resolution se rompió. Verificá que `app/modules/knowledge/data/` exista.
+→ Alguien borró la carpeta `data/` o el path resolution se rompió. Verifica que `app/modules/knowledge/data/` exista.
 
 ## El script de bootstrap — cuándo y cómo se usa
 
@@ -93,7 +93,7 @@ Hay un script one-shot en `backend/scripts/bootstrap_knowledge.py` que regenera 
 ### Cuándo correrlo
 
 - **La primera vez** (ya se corrió al implementar el sistema).
-- **Si recibís una versión nueva del v2** desde el equipo SEO y querés re-bootstrappear desde cero (entendiendo que perdés los cambios manuales — ver advertencia).
+- **Si recibes una versión nueva del v2** desde el equipo SEO y quieres re-bootstrappear desde cero (entendiendo que pierdes los cambios manuales — ver advertencia).
 - **Nunca en CI ni en producción**. Es manual y opcional.
 
 ### Cómo correrlo
@@ -122,12 +122,12 @@ Salida típica:
 
 ### ⚠️ Advertencia importante
 
-El script **PISA** los archivos existentes. Si vos enriqueciste manualmente `frmConciliacionBancaria.json` con `how_to` y `navigation_path`, y después corrés el bootstrap, esos campos se pierden — vuelve a la versión mínima del v2.
+El script **PISA** los archivos existentes. Si tú enriqueciste manualmente `frmConciliacionBancaria.json` con `how_to` y `navigation_path`, y después corres el bootstrap, esos campos se pierden — vuelve a la versión mínima del v2.
 
 **Buena práctica**:
-- Antes de re-bootstrappear, hacé `git status` y verificá que todo esté commiteado.
-- Después del bootstrap, hacé `git diff` para ver qué se perdió.
-- Si se perdió trabajo, hacés `git restore` selectivo de los archivos que enriqueciste y dejás los nuevos del bootstrap.
+- Antes de re-bootstrappear, haz `git status` y verifica que todo esté commiteado.
+- Después del bootstrap, haz `git diff` para ver qué se perdió.
+- Si se perdió trabajo, haces `git restore` selectivo de los archivos que enriqueciste y dejas los nuevos del bootstrap.
 
 ### Una alternativa más segura
 
@@ -158,7 +158,7 @@ _V2_MODULE_TO_CODE = {
 }
 ```
 
-Si el v2 trae un módulo nuevo (poco probable), agregás la entrada al diccionario.
+Si el v2 trae un módulo nuevo (poco probable), agregas la entrada al diccionario.
 
 ## Tests — qué cubren
 
@@ -172,22 +172,22 @@ Si el v2 trae un módulo nuevo (poco probable), agregás la entrada al diccionar
 - Filtrado por intersección de módulos en workflows.
 - **Smoke test sobre el catálogo real** generado por bootstrap (ejecuta `buscar_por_intencion` y verifica que el top hit es el esperado).
 
-### Cómo corrés los tests
+### Cómo corres los tests
 
 ```bash
 cd backend
 uv run pytest tests/unit/modules/knowledge/ -v
 ```
 
-Si el smoke test falla, significa que algo en los archivos reales se corrompió. Es buen gate de regresión cada vez que hacés cambios masivos.
+Si el smoke test falla, significa que algo en los archivos reales se corrompió. Es buen gate de regresión cada vez que haces cambios masivos.
 
 ## Performance — qué medir si crece el catálogo
 
 Si en el futuro tenemos 5k+ archivos en `data/`, las métricas a vigilar son:
 
-- **Tiempo de boot**: el loader recorre todo serialmente. Si pasa de ~5s, considerá paralelizar la carga.
+- **Tiempo de boot**: el loader recorre todo serialmente. Si pasa de ~5s, considera paralelizar la carga.
 - **Memoria**: ~2 MB hoy, ~100 MB con 5k forms es esperable.
-- **Tiempo per-tool call**: `buscar_por_intencion` es O(n) sobre los forms. Si pasa de 10ms, considerá:
+- **Tiempo per-tool call**: `buscar_por_intencion` es O(n) sobre los forms. Si pasa de 10ms, considera:
   - Cache LRU de búsquedas recientes.
   - Pre-índice invertido (palabra → forms que la contienen).
   - O directamente saltar a Capa 2 con embeddings.
@@ -196,7 +196,7 @@ Hoy nada de esto es necesario.
 
 ## Logs útiles
 
-El backend no loguea cada carga del catálogo (sería ruidoso). Pero podés agregar un log estructurado en `init_catalog` si querés verificar qué se cargó en deploy:
+El backend no loguea cada carga del catálogo (sería ruidoso). Pero puedes agregar un log estructurado en `init_catalog` si quieres verificar qué se cargó en deploy:
 
 ```python
 log.info(
@@ -215,8 +215,8 @@ log.info(
 
 ```
 ¿El backend no arranca?
-  └→ Mirá el último error en stderr.
-     ├→ "KnowledgeLoadError" → el problema está en knowledge/data/. Mirá el archivo que indica.
+  └→ Mira el último error en stderr.
+     ├→ "KnowledgeLoadError" → el problema está en knowledge/data/. Mira el archivo que indica.
      │  ├→ "JSON inválido" → editor de JSON para encontrar el char roto.
      │  ├→ "Field required" → falta un campo requerido.
      │  ├→ "Extra inputs not permitted" → typo en nombre de campo.
@@ -224,17 +224,17 @@ log.info(
      └→ Otro error → no es del knowledge.
 
 ¿El backend arranca pero el chat no usa el catálogo?
-  ├→ Verificá que las tools estén en ALLOWED_TOOLS de server.py.
-  ├→ Verificá que el system prompt mencione cuándo usarlas.
-  └→ Mirá los eventos SSE en el frontend: ¿el LLM llama tool_use con nombres del knowledge?
+  ├→ Verifica que las tools estén en ALLOWED_TOOLS de server.py.
+  ├→ Verifica que el system prompt mencione cuándo usarlas.
+  └→ Mira los eventos SSE en el frontend: ¿el LLM llama tool_use con nombres del knowledge?
 
 ¿El LLM filtra mal por módulos?
-  ├→ Verificá que la ruta /chat resuelva user.modules correctamente.
-  ├→ Verificá que allowed_modules viaje por todo el pipeline (route → use case → runner → server).
-  └→ Verificá que cada tool reciba el set correcto (logs de debug).
+  ├→ Verifica que la ruta /chat resuelva user.modules correctamente.
+  ├→ Verifica que allowed_modules viaje por todo el pipeline (route → use case → runner → server).
+  └→ Verifica que cada tool reciba el set correcto (logs de debug).
 
 ¿Las búsquedas no traen lo esperado?
-  ├→ Verificá synonyms y keywords del form objetivo.
-  ├→ Probá la búsqueda en un test unitario con la query exacta.
+  ├→ Verifica synonyms y keywords del form objetivo.
+  ├→ Prueba la búsqueda en un test unitario con la query exacta.
   └→ Si el form no tiene synonyms enriquecidos, la búsqueda solo matchea por description.
 ```

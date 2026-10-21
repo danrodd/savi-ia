@@ -6,10 +6,10 @@ import { FEATURES, VERTICALS } from '../content'
   <section id="que-hace" class="lp-section features">
     <div class="lp-container">
       <p class="lp-eyebrow">Qué hace</p>
-      <h2 class="lp-title">Todo lo que tu empresa sabe, en una conversación</h2>
+      <h2 class="lp-title">Todo lo que su empresa sabe, en una conversación</h2>
       <p class="lp-lead">
-        Tu equipo deja de buscar entre reportes, carpetas y páginas. Preguntá como le preguntarías a un
-        compañero y recibí la respuesta con su fuente.
+        Su equipo deja de buscar entre reportes, carpetas y páginas. Pregunte como le preguntaría a un
+        compañero y reciba la respuesta con su fuente.
       </p>
 
       <ul class="features__grid">

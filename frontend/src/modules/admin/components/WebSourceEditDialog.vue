@@ -181,14 +181,14 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <p v-if="scopeChanged" class="wedit__note">
-        Cambiaste el alcance: al guardar, el sitio se vuelve a leer.
+        Cambió el alcance: al guardar, el sitio se vuelve a leer.
       </p>
 
       <CompanyDocumentPermissionsFields v-model="permissions" :databases="databases" />
 
       <p v-if="confirmingNarrowing" class="wedit__warning" role="alert">
         Este cambio puede dejar sin acceso a algunos usuarios. Las respuestas que ya citaron este
-        sitio se les mostrarán como no disponibles. Presioná Guardar otra vez para confirmar.
+        sitio se les mostrarán como no disponibles. Presione Guardar otra vez para confirmar.
       </p>
       <p v-if="formError" class="wedit__error" role="alert">{{ formError }}</p>
     </form>

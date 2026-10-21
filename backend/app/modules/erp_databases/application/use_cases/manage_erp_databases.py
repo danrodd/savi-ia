@@ -162,7 +162,7 @@ class ManageErpDatabasesUseCase:
     def _forbid_if_default(self, database: ErpDatabase, action: str) -> None:
         if database.is_default:
             raise ValidationError(
-                f"No se puede {action} la base predeterminada. Marcá otra como "
+                f"No se puede {action} la base predeterminada. Marque otra como "
                 "predeterminada primero."
             )
 
@@ -179,7 +179,7 @@ class ManageErpDatabasesUseCase:
             stored = await self._require(database_id)
             if stored.credentials_unreadable:
                 raise ValidationError(
-                    "Las credenciales guardadas no se pueden leer. Ingresá la "
+                    "Las credenciales guardadas no se pueden leer. Ingrese la "
                     "contraseña de nuevo."
                 )
             password = stored.password

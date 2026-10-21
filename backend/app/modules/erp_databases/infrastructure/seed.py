@@ -67,7 +67,7 @@ async def _resync_default_database(
 ) -> None:
     """Aplica un `.env` reconfigurado a la base default ya sembrada.
 
-    "Volver a configurar" del instalador escribe un `ERP_SEED_REVISION`
+    "Modificar la configuración" del instalador escribe un `ERP_SEED_REVISION`
     nuevo. Si difiere del guardado en la fila, el administrador pidió
     cambiar el ERP desde el instalador y se actualiza la conexión. Con la
     misma revisión (o sin revisión, como en un `.env` anterior) no se toca
@@ -117,7 +117,7 @@ async def seed_default_database(
         # sección de administración.
         logger.info(
             "No hay bases del ERP registradas y ERP_DB_* está vacío: "
-            "registrá la primera desde la sección de administración."
+            "registre la primera desde la sección de administración."
         )
         return
 

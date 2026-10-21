@@ -118,7 +118,7 @@ async function onSubmit(): Promise<void> {
           Se escribe después de la @ al iniciar sesión (ej. USUARIO@{{ values.code.toUpperCase() || 'CODIGO' }}).
         </p>
         <p :id="`${uid}-name`" class="dbform__hint">
-          Si lo dejás vacío, se propone la razón social al probar la conexión.
+          Si lo deja vacío, se propone la razón social al probar la conexión.
         </p>
         <label class="dbform__field dbform__field--wide">
           <span class="dbform__label">Servidor</span>
@@ -143,7 +143,7 @@ async function onSubmit(): Promise<void> {
             type="password"
             class="dbform__input"
             autocomplete="new-password"
-            :placeholder="isEdit ? 'Dejala vacía para conservar la actual' : ''"
+            :placeholder="isEdit ? 'Déjela vacía para conservar la actual' : ''"
           />
         </label>
         <label class="dbform__field">

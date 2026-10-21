@@ -35,7 +35,7 @@ class UnknownDatabaseError(InvalidCredentialsError):
     """
 
     def __init__(self) -> None:
-        super().__init__("No encontramos ese cliente. Revisá el código después de la @.")
+        super().__init__("No encontramos ese cliente. Revise el código después de la @.")
 
 
 class DatabaseDisabledError(InvalidCredentialsError):
@@ -48,7 +48,7 @@ class DatabaseDisabledError(InvalidCredentialsError):
     """
 
     def __init__(self) -> None:
-        super().__init__("Ese cliente está desactivado en SAVI. Avisale a tu administrador.")
+        super().__init__("Ese cliente está desactivado en SAVI. Avise a su administrador.")
 
 
 class DatabaseUnreachableError(AuthError):
@@ -63,7 +63,7 @@ class DatabaseUnreachableError(AuthError):
     def __init__(self) -> None:
         super().__init__(
             "No pudimos conectar con la base de ese cliente. "
-            "Probá de nuevo en unos minutos o avisale a tu administrador."
+            "Pruebe de nuevo en unos minutos o avise a su administrador."
         )
 
 
@@ -79,7 +79,7 @@ class UserDisabledError(AuthError):
 
 class RefreshTokenRevokedError(AuthError):
     def __init__(self) -> None:
-        super().__init__("La sesión expiró. Iniciá sesión nuevamente.")
+        super().__init__("La sesión expiró. Inicie sesión nuevamente.")
 
 
 class InvalidMfaCodeError(AuthError):

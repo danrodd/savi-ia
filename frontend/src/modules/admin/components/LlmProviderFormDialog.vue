@@ -37,7 +37,7 @@ const CREDENTIAL_KIND_LABELS: Record<LlmCredentialKind, string> = {
 // Una línea bajo la opción elegida: el administrador no tiene por qué saber
 // qué es un "token OAuth" ni de dónde sale.
 const CREDENTIAL_KIND_HELP: Record<LlmCredentialKind, string> = {
-  api_key: 'La forma más simple: pegá la clave que te dio el proveedor.',
+  api_key: 'La forma más simple: pegue la clave que le dio el proveedor.',
   oauth_token: "Token generado con 'claude setup-token' (cuenta de Claude).",
   local_session: 'Usa la sesión de Claude iniciada en esta PC.',
 }
@@ -97,12 +97,12 @@ const modelSuggestions = computed<string[]>(() => {
 
 const modelFallbackHint = computed(() => {
   if (props.provider?.provider === 'claude' && credentialKind.value === 'local_session') {
-    return 'La sesión de Claude de este equipo no expone un catálogo de modelos. Escribí el identificador o elegí una de las sugerencias del campo.'
+    return 'La sesión de Claude de este equipo no expone un catálogo de modelos. Escriba el identificador o elija una de las sugerencias del campo.'
   }
   if (props.provider?.provider === 'claude' && props.provider.supports_model_listing) {
-    return 'No se pudieron obtener los modelos de Anthropic. Podés escribir sus identificadores a mano.'
+    return 'No se pudieron obtener los modelos de Anthropic. Puede escribir sus identificadores a mano.'
   }
-  return 'Este proveedor no lista modelos. Escribí sus identificadores a mano.'
+  return 'Este proveedor no lista modelos. Escriba sus identificadores a mano.'
 })
 // El proveedor puede haber dado de baja el modelo que ya estaba guardado
 // (nos pasó con Gemini 2.5): si el catálogo nuevo no lo trae, lo agregamos
@@ -221,9 +221,9 @@ const needsCredential = computed(
   () => !isLocalSession.value && !props.provider?.has_credential && !credential.value.trim(),
 )
 const errors = computed(() => ({
-  credential: needsCredential.value ? 'Pegá la clave del proveedor para poder guardar.' : '',
-  chatModel: chatModel.value.trim() ? '' : 'Elegí el modelo que usará el chat.',
-  titleModel: titleModel.value.trim() ? '' : 'Elegí el modelo para nombrar las conversaciones.',
+  credential: needsCredential.value ? 'Pegue la clave del proveedor para poder guardar.' : '',
+  chatModel: chatModel.value.trim() ? '' : 'Elija el modelo que usará el chat.',
+  titleModel: titleModel.value.trim() ? '' : 'Elija el modelo para nombrar las conversaciones.',
 }))
 const hasErrors = computed(() => Object.values(errors.value).some(Boolean))
 
@@ -255,19 +255,19 @@ defineExpose({ applyTestResult })
         <label>Tipo de credencial<select v-model="credentialKind"><option v-for="kind in provider?.credential_kinds" :key="kind" :value="kind">{{ CREDENTIAL_KIND_LABELS[kind] ?? kind }}</option></select></label>
         <p class="form__help">{{ CREDENTIAL_KIND_HELP[credentialKind] }}</p>
       </div>
-      <div v-if="isLocalSession" class="form__note">Claude usará la sesión iniciada en esta PC. No hace falta cargar una credencial acá.</div>
+      <div v-if="isLocalSession" class="form__note">Claude usará la sesión iniciada en esta PC. No hace falta cargar una credencial aquí.</div>
       <div v-else class="form__field">
-        <label>Credencial<input v-model="credential" type="password" autocomplete="new-password" :aria-invalid="attempted && !!errors.credential" :placeholder="provider?.has_credential ? 'Ya hay una guardada — dejala vacía para conservarla' : 'Pegá la API key'" /></label>
+        <label>Credencial<input v-model="credential" type="password" autocomplete="new-password" :aria-invalid="attempted && !!errors.credential" :placeholder="provider?.has_credential ? 'Ya hay una guardada — déjela vacía para conservarla' : 'Pegue la API key'" /></label>
         <p v-if="attempted && errors.credential" class="form__error" role="alert">{{ errors.credential }}</p>
       </div>
-      <p v-if="provider?.has_credential && !credential" class="form__note">🔒 Ya hay una credencial guardada. Podés cambiar solo el modelo sin volver a pegarla.</p>
+      <p v-if="provider?.has_credential && !credential" class="form__note">🔒 Ya hay una credencial guardada. Puede cambiar solo el modelo sin volver a pegarla.</p>
        <div class="form__test"><Button type="button" variant="secondary" :loading="testing" :disabled="!provider?.implemented" @click="handleTest()"><FlaskConical :size="15" aria-hidden="true" /> Probar conexión</Button><span v-if="testDetail && showTestDetail" data-testid="provider-test-detail" :class="{ 'form__ok': testResult?.ok }">{{ testDetail }}</span></div>
       <div v-if="models.length > 0" class="form__models">
         <div class="form__catalog-head">
           <div><strong>Catálogo de modelos</strong><span>{{ models.length }} disponibles</span></div>
           <input v-model="modelSearch" class="form__search" type="search" placeholder="Buscar modelo…" aria-label="Buscar modelo" />
         </div>
-        <p v-if="recommendedModel" class="form__recommendation">Recomendado: <strong>{{ recommendedModel.display_name }}</strong> ({{ recommendedModel.id }}). Podés cambiarlo a mano.</p>
+        <p v-if="recommendedModel" class="form__recommendation">Recomendado: <strong>{{ recommendedModel.display_name }}</strong> ({{ recommendedModel.id }}). Puede cambiarlo a mano.</p>
         <label>Modelo de chat<select v-model="chatModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
         <label>Modelo para nombres de conversación<select v-model="titleModel"><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }}{{ model.id === recommendedModel?.id ? ' · recomendado' : '' }} ({{ model.id }})</option></select></label>
         <label>Modelo para leer PDF<select v-model="documentModel"><option value="">El mismo del chat</option><option v-for="model in filteredModels" :key="model.id" :value="model.id">{{ model.display_name }} ({{ model.id }})</option></select></label>

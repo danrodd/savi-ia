@@ -4,7 +4,7 @@ Acá vive **toda la documentación** del subsistema `app/modules/knowledge/`: el
 
 ## Qué leer según qué necesites hacer
 
-| Si querés... | Leé |
+| Si quieres... | Lee |
 |---|---|
 | Entender de qué se trata todo esto (5 minutos) | [Quick start](#quick-start) más abajo |
 | Conocer el porqué del diseño (3 capas, por qué híbrido) | [`architecture.md`](./architecture.md) |
@@ -51,13 +51,13 @@ Hay un archivo por concepto. Editar uno NO toca a los demás. Agregar uno nuevo 
 
 ### Cómo se modifica algo en 3 pasos
 
-1. Abrís el archivo JSON correspondiente. Ejemplo: `data/modules/contabilidad/forms/frmConciliacionBancaria.json`.
-2. Editás los campos que querés enriquecer (todos opcionales salvo `name`, `module`, `type`, `description`).
+1. Abres el archivo JSON correspondiente. Ejemplo: `data/modules/contabilidad/forms/frmConciliacionBancaria.json`.
+2. Editas los campos que quieres enriquecer (todos opcionales salvo `name`, `module`, `type`, `description`).
 3. PR + reiniciar backend. **Si dejaste un campo inválido**, el backend falla al boot con un mensaje claro indicando el archivo y el error.
 
 ### Cómo se agrega un formulario nuevo
 
-1. Creás `data/modules/<modulo>/forms/frmNuevo.json` siguiendo el schema (mínimo 4 campos).
+1. Creas `data/modules/<modulo>/forms/frmNuevo.json` siguiendo el schema (mínimo 4 campos).
 2. PR + reiniciar backend.
 3. Listo. Aparece automáticamente en `buscar_por_intencion` y en todos los listados del módulo.
 
@@ -73,4 +73,4 @@ Lo cubrimos en detalle en [`extending-guide.md`](./extending-guide.md). Resumen 
 
 ---
 
-Si esto te dejó con preguntas, andá al doc específico de la tabla de arriba. Si todavía no te queda claro, decímelo en la próxima conversación y refinamos.
+Si esto te dejó con preguntas, ve al doc específico de la tabla de arriba. Si todavía no te queda claro, dímelo en la próxima conversación y refinamos.

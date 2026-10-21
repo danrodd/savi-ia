@@ -87,7 +87,7 @@ onUnmounted(() => store.stopPolling())
     <p v-else-if="!store.loaded" class="wpanel__hint">Cargando…</p>
     <div v-else-if="store.sources.length === 0" class="wpanel__empty">
       <p>
-        Aún no hay sitios web. Agregá la página de la empresa para que SAVI responda con lo que
+        Aún no hay sitios web. Agregue la página de la empresa para que SAVI responda con lo que
         publica —precios, horarios, políticas— y cite el link.
       </p>
       <!-- Texto distinto al del encabezado: dos botones con el mismo nombre

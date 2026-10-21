@@ -18,7 +18,7 @@ class RateLimitExceededError(DomainError):
     def __init__(self, *, retry_after_seconds: int, detail: str | None = None) -> None:
         self.retry_after_seconds = retry_after_seconds
         self.detail = detail or (
-            f"Demasiados intentos. Probá de nuevo en {retry_after_seconds} segundos."
+            f"Demasiados intentos. Pruebe de nuevo en {retry_after_seconds} segundos."
         )
         super().__init__(self.detail)
 

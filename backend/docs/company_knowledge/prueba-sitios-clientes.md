@@ -67,7 +67,7 @@ guardaba el primero como metadato del fragmento. Dos efectos:
 - Un título **sin párrafo debajo** se perdía entero. El contrato de
   transporte de Sur Andina tiene cada cláusula escrita como título ("hasta
   15 kilos de equipaje…"), y las sedes también: **nada de eso llegaba al
-  índice**. SAVI buscaba, no encontraba y respondía "solo puedo ayudarte
+  índice**. SAVI buscaba, no encontraba y respondía "solo puedo ayudarle
   con temas del ERP".
 
 Afectaba también a los documentos Markdown subidos a mano. Corregido: el
@@ -90,7 +90,7 @@ compra.
 
 "¿Cuántos despachos diarios hacen?" hizo 10 consultas al ERP buscando
 remisiones y nunca miró los documentos. La regla "si no aparece en el
-ERP, buscá en los documentos" valía solo para productos; ahora vale para
+ERP, busca en los documentos" valía solo para productos; ahora vale para
 cualquier dato (despachos, rutas, tarifas, horarios).
 
 ## 4. Preguntas (corrida final)
@@ -128,7 +128,7 @@ cualquier dato (despachos, rutas, tarifas, horarios).
 MXN; solo cada producto. SAVI no inventó.
 ³ Observación: respondió con los productos de SEO Group ("venden
 software, no llantas"), porque el sitio de SEO es visible en todas las
-bases. Para el usuario de una farmacia, "tu empresa" es la farmacia, no
+bases. Para el usuario de una farmacia, "su empresa" es la farmacia, no
 el proveedor del ERP. Ver §5.
 
 ## 5. Qué entra en la especificación

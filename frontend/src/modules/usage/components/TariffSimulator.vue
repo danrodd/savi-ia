@@ -46,7 +46,7 @@ const pricePerUserCop = computed(() =>
   <section class="sim" aria-label="Simulador de tarifa">
     <h2 class="sim__title">Simulador de tarifa</h2>
     <p class="sim__hint">
-      Proyectá el gasto y un piso de tarifa a partir del costo real medido.
+      Proyecte el gasto y un piso de tarifa a partir del costo real medido.
     </p>
 
     <div class="sim__grid">

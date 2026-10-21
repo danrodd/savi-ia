@@ -43,13 +43,13 @@ function goHome(): void {
       <h1 class="no-access__title">Sin acceso</h1>
       <p v-if="requiredLabel" class="no-access__msg">
         Esta sección requiere acceso al módulo <strong>{{ requiredLabel }}</strong>,
-        que no está habilitado para tu usuario.
+        que no está habilitado para su usuario.
       </p>
       <p v-else class="no-access__msg">
-        Tu usuario no tiene acceso a esta sección.
+        Su usuario no tiene acceso a esta sección.
       </p>
       <p class="no-access__hint">
-        Si necesitás acceso, contactá al administrador del ERP.
+        Si necesita acceso, contacte al administrador del ERP.
       </p>
       <div class="no-access__actions">
         <Button @click="goHome">Volver al inicio</Button>

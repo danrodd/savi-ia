@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     # cifra con la nueva. Vacía fuera de una rotación.
     erp_credentials_key_old: str = Field(default="")
     # Revisión de la configuración del ERP que escribió el instalador (una
-    # marca de tiempo nueva en cada instalación o "Volver a configurar").
+    # marca de tiempo nueva en cada instalación o "Modificar la configuración").
     # Cuando difiere de la de la base default, el arranque la actualiza con
     # `ERP_DB_*`; vacía = nunca se toca una base ya sembrada. Ver
     # `modules/erp_databases/infrastructure/seed.py`.
@@ -323,7 +323,7 @@ class Settings(BaseSettings):
         if missing:
             raise ValueError(
                 f"agent_db_engine='postgresql' requiere: {', '.join(missing)}. "
-                "Usá agent_db_engine='sqlite' para una instalación sin servidor de BD."
+                "Use agent_db_engine='sqlite' para una instalación sin servidor de BD."
             )
         return self
 
@@ -348,7 +348,7 @@ class Settings(BaseSettings):
             raise ValueError(
                 "AGENT_DB_ENGINE='sqlite' no soporta varios usuarios simultáneos: "
                 "un turno de chat retiene la transacción mientras el modelo responde. "
-                "Usá 'postgresql' fuera de desarrollo, o APP_ENV='development' si es "
+                "Use 'postgresql' fuera de desarrollo, o APP_ENV='development' si es "
                 "una instalación de escritorio de un solo usuario."
             )
         return self
@@ -361,17 +361,17 @@ class Settings(BaseSettings):
         if self.app_env != "development" and self.jwt_secret.strip() == INSECURE_JWT_SECRET:
             raise ValueError(
                 "JWT_SECRET tiene el valor de fábrica y APP_ENV no es 'development'. "
-                "Generá uno nuevo (por ejemplo con "
+                "Genere uno nuevo (por ejemplo con "
                 '`python -c "import secrets; print(secrets.token_urlsafe(48))"`) '
-                "y guardalo en el .env antes de usar SAVI."
+                "y guárdelo en el .env antes de usar SAVI."
             )
         if self.app_env != "development" and self.jwt_secret.strip() == INSTALLER_PLACEHOLDER:
             raise ValueError(
                 "JWT_SECRET sigue con el marcador 'CAMBIAR-ESTE-VALOR': el instalador "
-                "no pudo generar la clave. Volvé a ejecutar el instalador y elegí "
-                '"Volver a configurar", o generá una con '
+                "no pudo generar la clave. Vuelva a ejecutar el instalador y elija "
+                '"Modificar la configuración", o genere una con '
                 '`python -c "import secrets; print(secrets.token_urlsafe(48))"` '
-                "y guardala en el .env."
+                "y guárdela en el .env."
             )
         return self
 
@@ -396,8 +396,8 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"{label} no es una clave de cifrado válida (se esperan 44 "
                     "caracteres en base64 url-safe). Si la generó el instalador, "
-                    'volvé a ejecutarlo y elegí "Volver a configurar" para '
-                    "regenerarla; o creá una con "
+                    'vuelva a ejecutarlo y elija "Modificar la configuración" para '
+                    "regenerarla; o cree una con "
                     '`python -c "from cryptography.fernet import Fernet; '
                     'print(Fernet.generate_key().decode())"`.'
                 ) from None

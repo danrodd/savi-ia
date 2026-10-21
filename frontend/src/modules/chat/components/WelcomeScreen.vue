@@ -31,7 +31,7 @@ const { greeting, subtitle, suggestions, reshuffle } = useWelcome()
 
       <div v-if="suggestions.length > 0" class="welcome__suggestions">
         <div class="welcome__suggestions-head">
-          <h2 class="welcome__suggestions-title">Probá con alguna de estas</h2>
+          <h2 class="welcome__suggestions-title">Pruebe con alguna de estas</h2>
           <button
             type="button"
             class="welcome__refresh"

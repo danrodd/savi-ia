@@ -26,7 +26,7 @@ const RUNNING_LABELS: Record<ToolKind, string> = {
   documents: 'Buscando en los documentos de la empresa…',
   knowledge: 'Buscando en el conocimiento del ERP…',
   company: 'Revisando los datos de la empresa…',
-  other: 'Trabajando en tu consulta…',
+  other: 'Trabajando en su consulta…',
 }
 
 const DONE_LABELS: Record<ToolKind, string> = {

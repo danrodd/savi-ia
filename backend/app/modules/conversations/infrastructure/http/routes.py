@@ -80,7 +80,7 @@ async def create_conversation(
     if not access.has_access:
         raise ErpDatabaseUnavailableError(
             str(database_id),
-            "No tenés acceso a esa base de datos, o no está disponible.",
+            "No tiene acceso a esa base de datos, o no está disponible.",
         )
 
     dto = CreateConversationDTO(

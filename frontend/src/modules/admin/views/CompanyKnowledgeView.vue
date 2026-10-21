@@ -304,7 +304,7 @@ onUnmounted(() => store.stopPolling())
       <div v-if="aiFailures.length > 1" class="kview__banner" role="status">
         <p class="kview__banner-text">
           <strong>{{ aiFailures.length }} documentos no se pudieron leer con IA.</strong>
-          Revisá el proveedor de IA.
+          Revise el proveedor de IA.
         </p>
         <div class="kview__banner-actions">
           <RouterLink class="kview__banner-link" :to="{ name: 'admin-llm-providers' }">
@@ -328,7 +328,7 @@ onUnmounted(() => store.stopPolling())
       </p>
       <p v-else-if="store.loading && store.documents.length === 0" class="kview__hint">Cargando…</p>
       <div v-else-if="store.documents.length === 0" class="kview__empty">
-        <p>Aún no hay documentos. Subí el primero para que SAVI pueda consultarlo.</p>
+        <p>Aún no hay documentos. Suba el primero para que SAVI pueda consultarlo.</p>
         <!-- El botón acá y no solo arriba: quien llega a una pantalla vacía
              busca la acción en la pantalla vacía.
              Texto distinto al del encabezado a propósito: dos botones con el

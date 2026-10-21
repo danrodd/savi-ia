@@ -211,7 +211,7 @@ En `system_prompt.py` hay una sección dedicada al uso del catálogo. Las reglas
 
 ## Cómo modificar una tool existente
 
-Si querés que `buscar_por_intencion` devuelva 5 matches en vez de 3, cambiás el `limit=3` en `build_buscar_por_intencion_impl`. Pero pensá:
+Si quieres que `buscar_por_intencion` devuelva 5 matches en vez de 3, cambias el `limit=3` en `build_buscar_por_intencion_impl`. Pero piensa:
 
 - ¿Más matches = más tokens al LLM = más caro y lento?
 - ¿O es porque el ranking actual es flojo?
@@ -222,7 +222,7 @@ Si es lo segundo, mejor afinar el scoring de `matches_query` en `FormEntry` que 
 
 El runner emite eventos SSE tipo `tool_use`. El frontend los muestra como pills en la UI ("Pensando…", "Consultando datos…", etc.). En el backend, los logs estructurados incluyen el nombre de la tool y los args.
 
-Para debug local, mirá los logs de uvicorn — cada tool call deja rastro.
+Para debug local, mira los logs de uvicorn — cada tool call deja rastro.
 
 ## ⚠️ Regla crítica del MCP: máximo 4 tools
 

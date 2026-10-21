@@ -8,7 +8,7 @@
 
 ## Error map global (i18n centralizado)
 
-Definí un mapa de errores que traduce códigos nativos de zod (`too_small`, `invalid_type`, etc.) a mensajes localizados. Centraliza la internacionalización de validaciones en un único punto.
+Define un mapa de errores que traduce códigos nativos de zod (`too_small`, `invalid_type`, etc.) a mensajes localizados. Centraliza la internacionalización de validaciones en un único punto.
 
 ```ts
 // src/validation/zod-error-map.ts

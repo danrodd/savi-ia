@@ -146,7 +146,7 @@ def _show_fatal_error(message: str) -> None:
 
     full_message = (
         f"{message}\n\nDetalle completo en:\n{data_dir() / _LOG_FILENAME}\n\n"
-        "Podés diagnosticar desde el acceso directo 'Diagnosticar SAVI'."
+        "Puede diagnosticar desde el acceso directo 'Diagnosticar SAVI'."
     )
     ctypes.windll.user32.MessageBoxW(0, full_message, "SAVI — Error de arranque", 0x10)  # type: ignore[attr-defined]
 
@@ -359,7 +359,7 @@ def _open_browser_when_ready(url: str) -> None:
         except (urllib.error.URLError, OSError, TimeoutError):
             threading.Event().wait(0.5)
     _splash(close=True)
-    logging.getLogger(__name__).warning("El servidor no respondió a tiempo; abrí %s a mano.", url)
+    logging.getLogger(__name__).warning("El servidor no respondió a tiempo; abra %s a mano.", url)
 
 
 def _claude_auth_status(settings: Settings) -> str:
@@ -458,8 +458,8 @@ def _write_oauth_token(token: str) -> bool:
         # escribir, y el mensaje del sistema por sí solo no dice qué hacer.
         print(f"[FALLA] No se pudo escribir {env_path}: {error}")
         print(
-            "\nEse archivo está en una carpeta protegida de Windows. Cerrá esta "
-            "ventana y volvé a abrir 'Iniciar sesión en Claude' con clic derecho "
+            "\nEse archivo está en una carpeta protegida de Windows. Cierre esta "
+            "ventana y vuelva a abrir 'Iniciar sesión en Claude' con clic derecho "
             "> Ejecutar como administrador."
         )
         return False
@@ -565,8 +565,8 @@ def _login() -> int:
     if claude is None:
         print(
             "[FALLA] No se encontró el CLI de Claude en este equipo.\n\n"
-            "Instalalo con:  npm install -g @anthropic-ai/claude-code\n"
-            "y volvé a abrir 'Iniciar sesión en Claude'."
+            "Instálelo con:  npm install -g @anthropic-ai/claude-code\n"
+            "y vuelva a abrir 'Iniciar sesión en Claude'."
         )
         input("\nEnter para cerrar...")
         return 1
@@ -586,23 +586,23 @@ def _login() -> int:
             "\n[AVISO] No se encontró Node.js. El CLI instalado con npm es un\n"
             "        script que lo necesita: sin Node, falla con un error del\n"
             "        sistema que no menciona ni a SAVI ni a Node.\n"
-            "        Instalalo desde https://nodejs.org/ y volvé a intentar."
+            "        Instálelo desde https://nodejs.org/ y vuelva a intentar."
         )
     if not _cli_runs(claude):
         print(
             "\n[FALLA] El CLI de Claude está instalado pero no se puede ejecutar.\n"
             "        El detalle está arriba. Suele ser Node.js faltante o una\n"
-            "        instalación del CLI a medio hacer; reinstalalo con:\n"
+            "        instalación del CLI a medio hacer; reinstálelo con:\n"
             "        npm install -g @anthropic-ai/claude-code"
         )
         input("\nEnter para cerrar...")
         return 1
 
     print(
-        "\nSe va a abrir el navegador para que inicies sesión con tu cuenta\n"
-        "de Claude (Pro o Max). Seguí los pasos que aparezcan ahí y volvé\n"
-        "a esta ventana cuando termines.\n"
-        "\nOjo: la sesión de la aplicación Claude Desktop NO sirve acá. El\n"
+        "\nSe va a abrir el navegador para que inicie sesión con su cuenta\n"
+        "de Claude (Pro o Max). Siga los pasos que aparezcan ahí y vuelva\n"
+        "a esta ventana cuando termine.\n"
+        "\nTenga en cuenta: la sesión de la aplicación Claude Desktop NO sirve aquí. El\n"
         "CLI guarda sus credenciales aparte y necesita su propio inicio de\n"
         "sesión, aunque sea la misma cuenta.\n"
     )
@@ -615,13 +615,13 @@ def _login() -> int:
     print("\nVerificando con una consulta de prueba (puede tardar unos segundos)...")
     logged_in, probe_detail = _auth_probe(claude)
     if logged_in:
-        print("\n[OK] Sesión iniciada y verificada. Ya podés usar SAVI.")
+        print("\n[OK] Sesión iniciada y verificada. Ya puede usar SAVI.")
         print(
             "\nNota: la sesión queda guardada para esta cuenta de Windows. Si SAVI\n"
-            "se va a usar desde otra cuenta o como servicio, elegí 'n' abajo y\n"
-            "generá un token en su lugar."
+            "se va a usar desde otra cuenta o como servicio, elija 'n' abajo y\n"
+            "genere un token en su lugar."
         )
-        if input("\n¿Terminaste? [S/n]: ").strip().lower() not in ("n", "no"):
+        if input("\n¿Terminó? [S/n]: ").strip().lower() not in ("n", "no"):
             return 0
     else:
         # Se distingue "no hay sesión" de "hay una sesión que no sirve".
@@ -630,10 +630,10 @@ def _login() -> int:
         print(f"\n[FALLA] La sesión no quedó usable: {probe_detail}")
 
     print("\n" + "-" * 62)
-    print("Vamos por el token de larga duración.")
+    print("Ahora se generará el token de larga duración.")
     print(
         "\nSe va a abrir el navegador otra vez. Al final, el CLI va a mostrar\n"
-        "un token largo en pantalla: copialo y pegalo acá abajo.\n"
+        "un token largo en pantalla: cópielo y péguelo aquí abajo.\n"
     )
 
     try:
@@ -643,7 +643,7 @@ def _login() -> int:
         input("\nEnter para cerrar...")
         return 1
 
-    token = input("\nPegá el token acá y presioná Enter: ").strip()
+    token = input("\nPegue el token aquí y presione Enter: ").strip()
     if not token:
         print("[FALLA] No se cargó ningún token. No se cambió nada.")
         input("\nEnter para cerrar...")
@@ -653,13 +653,14 @@ def _login() -> int:
         input("\nEnter para cerrar...")
         return 1
 
-    print(f"\n[OK] Token guardado en {app_dir() / '.env'}. Ya podés usar SAVI.")
+    print(f"\n[OK] Token guardado en {app_dir() / '.env'}. Ya puede usar SAVI.")
     input("\nEnter para cerrar...")
     return 0
 
 
 _RECONFIGURE_HINT = (
-    "Volvé a ejecutar el instalador de SAVI y elegí 'Volver a configurar' para corregir los datos."
+    "Vuelva a ejecutar el instalador de SAVI y elija 'Modificar la configuración' "
+    "para corregir los datos."
 )
 
 
@@ -674,14 +675,14 @@ def _connection_remedy(label: str, error: Exception) -> str:
     if isinstance(error, socket.gaierror):
         return (
             f"No se pudo resolver el nombre del servidor de {label}. "
-            f"Revisá que esté bien escrito y que este equipo lo alcance. " + _RECONFIGURE_HINT
+            f"Revise que esté bien escrito y que este equipo lo alcance. " + _RECONFIGURE_HINT
         )
     if isinstance(error, (ConnectionRefusedError, TimeoutError, OSError)):
         return (
-            f"El servidor de {label} no aceptó la conexión. Revisá el puerto, "
+            f"El servidor de {label} no aceptó la conexión. Revise el puerto, "
             f"que el servicio esté levantado y que el firewall lo permita. " + _RECONFIGURE_HINT
         )
-    return f"Revisá los datos de conexión de {label}. " + _RECONFIGURE_HINT
+    return f"Revise los datos de conexión de {label}. " + _RECONFIGURE_HINT
 
 
 def _embedding_model_check(settings: Settings) -> CheckResult:
@@ -715,7 +716,7 @@ def _embedding_model_check(settings: Settings) -> CheckResult:
         ok=False,
         detail=f"No se pudo cargar {embedder.model_name} desde {model_dir}.",
         remedy="Los documentos de la empresa quedan en cola hasta resolverlo; el chat "
-        "funciona igual. Reinstalá SAVI para restaurar el modelo.",
+        "funciona igual. Reinstale SAVI para restaurar el modelo.",
     )
 
 
@@ -790,7 +791,7 @@ def _collect_report() -> Report:
                     label="La base de datos de SAVI",
                     ok=False,
                     detail=str(error),
-                    remedy="Con la base creada, volvé a abrir SAVI: las tablas se "
+                    remedy="Con la base creada, vuelva a abrir SAVI: las tablas se "
                     "crean solas al arrancar.",
                 )
             )
@@ -900,7 +901,7 @@ def _collect_report() -> Report:
                         ok=probe_result.ok,
                         detail=probe_result.detail,
                         remedy=(
-                            "Probá la credencial desde Administración → Proveedores de IA."
+                            "Pruebe la credencial desde Administración → Proveedores de IA."
                             if not probe_result.ok
                             else ""
                         ),
@@ -914,7 +915,7 @@ def _collect_report() -> Report:
                         ok=openai_result.ok,
                         detail=openai_result.detail,
                         remedy=(
-                            "Probá la credencial desde Administración → Proveedores de IA."
+                            "Pruebe la credencial desde Administración → Proveedores de IA."
                             if not openai_result.ok
                             else ""
                         ),
@@ -949,7 +950,7 @@ def _collect_report() -> Report:
             label="Puerto local",
             ok=port_ok,
             detail=port_detail,
-            remedy="Cerrá la aplicación que está usando esos puertos, o cambiá "
+            remedy="Cierre la aplicación que está usando esos puertos, o cambie "
             "APP_PORT en el archivo .env.",
         )
     )
@@ -980,7 +981,7 @@ def _collect_report() -> Report:
                 ok=False,
                 detail="No está instalado en este equipo.",
                 remedy=(
-                    "Volvé a correr el instalador de SAVI: instala el CLI "
+                    "Vuelva a correr el instalador de SAVI: instala el CLI "
                     "de Claude y todo lo que necesita."
                 ),
             )
@@ -999,7 +1000,7 @@ def _collect_report() -> Report:
                 # hace las dos cosas sin pedirle nada a quien lo corre.
                 remedy=(
                     "El CLI quedó a medio instalar y le falta su binario. "
-                    "Volvé a correr el instalador de SAVI: detecta el CLI "
+                    "Vuelva a correr el instalador de SAVI: detecta el CLI "
                     "roto y lo reinstala."
                 ),
             )
@@ -1016,7 +1017,7 @@ def _collect_report() -> Report:
                 label="Autenticación de Claude",
                 ok=False,
                 detail=auth_status or "Este equipo no tiene ninguna forma de autenticarse.",
-                remedy="Abrí el acceso directo 'Iniciar sesión en Claude' e iniciá sesión "
+                remedy="Abra el acceso directo 'Iniciar sesión en Claude' e inicie sesión "
                 "con la cuenta de Claude (Pro o Max) del cliente.",
             )
         )
@@ -1029,7 +1030,7 @@ def _collect_report() -> Report:
             ok=works,
             detail=f"{auth_status}. {detail}",
             remedy="La credencial existe pero no sirve — lo más común es que el "
-            "token haya vencido. Abrí el acceso directo 'Iniciar sesión en "
+            "token haya vencido. Abra el acceso directo 'Iniciar sesión en "
             "Claude' para renovarla.",
         )
     )
@@ -1173,7 +1174,7 @@ def main() -> None:
     try:
         settings = get_settings()
     except Exception:
-        logger.exception("Configuración inválida. Revisá el archivo .env en %s", app_dir())
+        logger.exception("Configuración inválida. Revise el archivo .env en %s", app_dir())
         _show_fatal_error(
             f"El archivo .env es inválido o le falta un valor obligatorio.\n"
             f"Ubicación: {app_dir() / '.env'}"
@@ -1207,7 +1208,7 @@ def main() -> None:
             _show_fatal_error(
                 f"El puerto {port} está ocupado por otra aplicación, y tampoco "
                 f"hay ninguno libre en los {_PORT_SCAN_RANGE} siguientes.\n\n"
-                "Cerrá la aplicación que los está usando, o cambiá APP_PORT en "
+                "Cierre la aplicación que los está usando, o cambie APP_PORT en "
                 "el archivo .env."
             )
             raise SystemExit(1)
@@ -1239,7 +1240,7 @@ def main() -> None:
         logger.exception("No se pudo preparar la base de datos de SAVI.")
         _show_fatal_error(
             "No se pudo preparar la base de datos de SAVI.\n"
-            "Revisá la conexión configurada en el archivo .env."
+            "Revise la conexión configurada en el archivo .env."
         )
         raise SystemExit(1) from None
 

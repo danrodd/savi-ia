@@ -164,7 +164,7 @@ def _parse_subject(sub: str) -> tuple[UUID, int]:
     raw_database_id, separator, raw_user_id = sub.partition(_SUB_SEPARATOR)
     if not separator:
         raise InvalidTokenError(
-            "Token emitido antes del soporte multi-base. Iniciá sesión de nuevo."
+            "Token emitido antes del soporte multi-base. Inicie sesión de nuevo."
         )
     try:
         return UUID(raw_database_id), int(raw_user_id)

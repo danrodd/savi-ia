@@ -57,8 +57,8 @@ from app.modules.company_knowledge.domain.services import TurnDocumentContext
 log = logging.getLogger(__name__)
 
 CREDENTIAL_REMEDY = (
-    "La credencial de Claude venció o no es válida. Para renovarla, abrí "
-    "'Iniciar sesión en Claude' desde el menú Inicio y volvé a intentar."
+    "La credencial de Claude venció o no es válida. Para renovarla, abra "
+    "'Iniciar sesión en Claude' desde el menú Inicio y vuelva a intentar."
 )
 
 # El CLI no lanza una excepción cuando Anthropic rechaza el pedido: manda un
@@ -72,7 +72,7 @@ _PROVIDER_ERRORS = {
     "authentication_failed": CREDENTIAL_REMEDY,
     "rate_limit": (
         "Claude está recibiendo demasiadas solicitudes en este momento. "
-        "Probá de nuevo en unos minutos."
+        "Pruebe de nuevo en unos minutos."
     ),
 }
 
@@ -85,7 +85,7 @@ def provider_error_message(error: str | None, text: str) -> str | None:
     if known is not None:
         return known
     detail = f" ({text.strip()})" if text.strip() else ""
-    return f"Claude no pudo responder{detail}. Probá de nuevo en unos minutos."
+    return f"Claude no pudo responder{detail}. Pruebe de nuevo en unos minutos."
 
 
 def _log_cli_stderr(line: str) -> None:

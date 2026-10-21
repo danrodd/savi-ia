@@ -7,16 +7,16 @@
  */
 import { AuthRequestError } from '../services/authService'
 
-export const MISSING_CREDENTIALS_MESSAGE = 'Ingresá usuario y contraseña.'
+export const MISSING_CREDENTIALS_MESSAGE = 'Ingrese usuario y contraseña.'
 
 export const UNKNOWN_DATABASE_MESSAGE =
-  'No encontramos ese cliente. Revisá el código después de la @.'
+  'No encontramos ese cliente. Revise el código después de la @.'
 
 export const DATABASE_DISABLED_MESSAGE =
-  'Ese cliente está desactivado en SAVI. Avisale a tu administrador.'
+  'Ese cliente está desactivado en SAVI. Avise a su administrador.'
 
 export const DATABASE_UNREACHABLE_MESSAGE =
-  'No pudimos conectar con la base de ese cliente. Probá de nuevo en unos minutos o avisale a tu administrador.'
+  'No pudimos conectar con la base de ese cliente. Pruebe de nuevo en unos minutos o avise a su administrador.'
 
 export const INVALID_MFA_CODE_MESSAGE =
   'El código no es válido. Revisá el de tu aplicación e intentá de nuevo.'
@@ -24,10 +24,10 @@ export const INVALID_MFA_CODE_MESSAGE =
 export const MFA_EXPIRED_MESSAGE = 'La verificación venció. Volvé a iniciar sesión.'
 
 export const GENERIC_LOGIN_MESSAGE =
-  'No pudimos entrar. Revisá el usuario, la contraseña y el código del cliente.'
+  'No pudimos entrar. Revise el usuario, la contraseña y el código del cliente.'
 
 export const NETWORK_LOGIN_MESSAGE =
-  'No pudimos conectarnos con SAVI. Revisá tu conexión e intentá de nuevo.'
+  'No pudimos conectarnos con SAVI. Revise su conexión e intente de nuevo.'
 
 /**
  * ¿El error del segundo factor es que el desafío venció (o ya no sirve)? Entonces la persona
@@ -51,7 +51,7 @@ export function loginErrorMessage(err: unknown): string {
     // motivo (con la espera, si corresponde) y no hay un dato que corregir.
     if (err.status === 403 || err.status === 429) return err.message
     if (err.status >= 500)
-      return 'SAVI no está respondiendo en este momento. Probá de nuevo en unos minutos.'
+      return 'SAVI no está respondiendo en este momento. Pruebe de nuevo en unos minutos.'
     return GENERIC_LOGIN_MESSAGE
   }
   if (err instanceof TypeError) return NETWORK_LOGIN_MESSAGE

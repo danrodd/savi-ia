@@ -74,6 +74,7 @@ src/
 - No copies componentes generados al componente de feature y los dejes como una implementación aislada.
 - Extrae los componentes a `shared/ui/` para que el diseño sea coherente en toda la app.
 - Adapta los nombres, variantes y tokens a tu sistema de diseño.
+- Todo texto visible (labels, errores, placeholders, toasts) va en español colombiano formal, tratando de usted; nunca voseo ni tuteo (ver `CLAUDE.md` §14).
 
 ### Regla 2: no mezcles estilos propios sin orden
 

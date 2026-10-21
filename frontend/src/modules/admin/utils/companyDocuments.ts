@@ -29,10 +29,10 @@ export const permissionsSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.visibility === 'modules' && value.modules.length === 0) {
-      ctx.addIssue({ code: 'custom', path: ['modules'], message: 'Elegí al menos un módulo.' })
+      ctx.addIssue({ code: 'custom', path: ['modules'], message: 'Elija al menos un módulo.' })
     }
     if (!value.all_databases && value.database_ids.length === 0) {
-      ctx.addIssue({ code: 'custom', path: ['database_ids'], message: 'Elegí al menos una base.' })
+      ctx.addIssue({ code: 'custom', path: ['database_ids'], message: 'Elija al menos una base.' })
     }
   })
 
@@ -133,16 +133,16 @@ export function isAiProviderFailure(
 // Una línea que dice qué hacer, no qué pasó por dentro. El mensaje largo del
 // backend queda como tooltip para soporte.
 const FAILURE_HINTS: Record<string, string> = {
-  ai_failed: 'Revisá el proveedor de IA.',
-  ai_no_credits: 'Revisá el proveedor de IA.',
-  ai_daily_quota: 'Revisá el proveedor de IA.',
-  ai_unreadable: 'La IA no pudo leer las páginas. Probá con un escaneo más nítido.',
-  pdf_encrypted: 'Quitale la contraseña al PDF y subilo de nuevo.',
-  pdf_unreadable: 'El PDF parece dañado. Probá subirlo de nuevo.',
-  encoding_unsupported: 'Guardalo como texto UTF-8 y subilo de nuevo.',
+  ai_failed: 'Revise el proveedor de IA.',
+  ai_no_credits: 'Revise el proveedor de IA.',
+  ai_daily_quota: 'Revise el proveedor de IA.',
+  ai_unreadable: 'La IA no pudo leer las páginas. Pruebe con un escaneo más nítido.',
+  pdf_encrypted: 'Quítele la contraseña al PDF y súbalo de nuevo.',
+  pdf_unreadable: 'El PDF parece dañado. Pruebe subirlo de nuevo.',
+  encoding_unsupported: 'Guárdelo como texto UTF-8 y súbalo de nuevo.',
   too_many_pages: 'Es demasiado largo. Dividilo en partes más chicas.',
   too_many_chunks: 'Es demasiado largo. Dividilo en partes más chicas.',
-  index_limit_reached: 'Se llenó el espacio de búsqueda. Eliminá documentos que ya no uses.',
+  index_limit_reached: 'Se llenó el espacio de búsqueda. Elimine documentos que ya no use.',
 }
 
 export interface DocumentStatusView {
@@ -170,11 +170,11 @@ export function documentStatusView(
     return {
       ...base,
       hint: context.aiReadingAvailable
-        ? 'Probá «Leer con IA» desde el menú ⋯.'
-        : 'Probá activar la lectura con IA en Configuración.',
+        ? 'Pruebe «Leer con IA» desde el menú ⋯.'
+        : 'Pruebe activar la lectura con IA en Configuración.',
     }
   }
-  return { ...base, hint: 'Probá reprocesarlo desde el menú ⋯.' }
+  return { ...base, hint: 'Pruebe reprocesarlo desde el menú ⋯.' }
 }
 
 export function isInProgress(status: DocumentStatus): boolean {

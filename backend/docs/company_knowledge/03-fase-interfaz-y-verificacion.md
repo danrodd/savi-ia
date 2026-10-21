@@ -223,11 +223,11 @@ Fuentes
   2. `URL.createObjectURL(blob)` → `window.open` en pestaña nueva. Para
      PDF con `#page=<primera página>`.
   3. `revokeObjectURL` a los 60 s.
-  4. `404` → toast *"Este documento ya no está disponible para ti."* y la
+  4. `404` → toast *"Este documento ya no está disponible."* y la
      fuente se marca no disponible en la vista.
 - Clic en la marca `¹` del texto → desplaza y resalta la fuente.
 - Fuente no disponible: texto atenuado, sin acción, con tooltip
-  ("Documento eliminado" / "No tienes acceso a este documento").
+  ("Documento eliminado" / "No tiene acceso a este documento").
 - Vista compartida (`/share/:id`) de una conversación ajena: fuentes
   visibles como lista, sin acción de abrir.
 - Accesible: lista `<ol>`, botones con `aria-label="Abrir Manual de caja,

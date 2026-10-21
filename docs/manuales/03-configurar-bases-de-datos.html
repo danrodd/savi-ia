@@ -200,8 +200,8 @@ table.larga { break-inside: auto; page-break-inside: auto; }
     <div class="fecha">Octubre de 2026<div class="para">Para administradores y personal de soporte.</div></div>
   </section>
 <main class="contenido">
-<section class="indice"><h2>Qué vas a encontrar</h2>
-    <p class="intro">Tocá o hacé clic en un título para ir directo a esa parte.</p>
+<section class="indice"><h2>Qué va a encontrar</h2>
+    <p class="intro">Toque o haga clic en un título para ir directo a esa parte.</p>
     <ol><li><a href="#s1">1. Las dos bases de datos que usa SAVI</a></li><li><a href="#s2">2. Un cliente, una base, un código</a></li><li><a href="#s3">3. La pantalla Administración → Bases de datos</a></li><li><a href="#s4">4. Agregar una base nueva</a></li><li><a href="#s5">5. Probar la conexión</a></li><li><a href="#s6">6. Administrar las bases ya registradas</a></li><li><a href="#s7">7. Qué pide el instalador</a></li><li><a href="#s8">8. Si la base del ERP está en otro equipo</a></li><li><a href="#s9">9. Cómo obtienen acceso las personas</a></li><li><a href="#s10">10. Consejos y resolución de problemas</a></li></ol></section>
 <section>
 <h2 id="s1">1. Las dos bases de datos que usa SAVI</h2>
@@ -216,7 +216,7 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tr><td><strong>Tipo</strong></td><td>PostgreSQL.</td><td><strong>PostgreSQL (recomendado)</strong> o archivo local (solo para pruebas o un único usuario).</td></tr>
 </tbody></table>
 <div class="nota importante"><strong>Importante</strong>
-<p>Con el <strong>archivo local</strong>, SAVI atiende bien a <em>un</em> usuario a la vez: si varias personas chatean al mismo tiempo, las respuestas se traban o fallan, y el historial queda solo en ese equipo, sin respaldo. Para el uso normal en una empresa, elegí <strong>PostgreSQL</strong>.</p></div>
+<p>Con el <strong>archivo local</strong>, SAVI atiende bien a <em>un</em> usuario a la vez: si varias personas chatean al mismo tiempo, las respuestas se traban o fallan, y el historial queda solo en ese equipo, sin respaldo. Para el uso normal en una empresa, elija <strong>PostgreSQL</strong>.</p></div>
 <p>Esta guía explica cómo registrar las bases del <strong>ERP</strong> de cada cliente desde la pantalla de administración, y cómo se piden los datos al instalar.</p>
 </section>
 
@@ -233,9 +233,9 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <section>
 <h2 id="s3">3. La pantalla Administración → Bases de datos</h2>
 <ol class="pasos">
-  <li>Entrá a SAVI con un usuario administrador.</li>
-  <li>Tocá <span class="btn">Administración</span> en el menú de la izquierda.</li>
-  <li>Elegí <span class="btn">Bases de datos</span>.</li>
+  <li>Entre a SAVI con un usuario administrador.</li>
+  <li>Toque <span class="btn">Administración</span> en el menú de la izquierda.</li>
+  <li>Elija <span class="btn">Bases de datos</span>.</li>
 </ol>
 <figure><img src="imagenes/bases-01-lista.png" alt="Lista de bases de datos con botones Importar, Exportar y Nueva base"><figcaption>Lista de bases de datos registradas.</figcaption></figure>
 <ul class="leyenda">
@@ -251,55 +251,55 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <tbody>
 <tr><td><strong>Activa</strong></td><td>Se puede usar normalmente.</td></tr>
 <tr><td><strong>Desactivada</strong></td><td>No se pueden iniciar conversaciones nuevas ni enviar mensajes contra esta base. El historial se sigue viendo.</td></tr>
-<tr><td><strong>Credenciales ilegibles</strong></td><td>No se pudo leer la contraseña guardada. Editá la base y volvé a ingresarla.</td></tr>
+<tr><td><strong>Credenciales ilegibles</strong></td><td>No se pudo leer la contraseña guardada. Edite la base y vuelva a ingresarla.</td></tr>
 <tr><td><span class="btn">Predeterminada</span> (etiqueta)</td><td>Es la base que se usa por defecto.</td></tr>
 </tbody></table>
 </section>
 
 <section>
 <h2 id="s4">4. Agregar una base nueva</h2>
-<p>Antes de empezar, tené a mano los datos de conexión de la base del ERP del cliente (los entrega quien administra el servidor de base de datos).</p>
+<p>Antes de empezar, tenga a mano los datos de conexión de la base del ERP del cliente (los entrega quien administra el servidor de base de datos).</p>
 <ol class="pasos">
-  <li>Tocá <span class="btn">Nueva base</span>. Se abre el formulario <strong>Nueva base de datos</strong>.</li>
-  <li>Completá los campos, uno por uno (tabla de abajo).</li>
-  <li>Tocá <span class="btn">Probar conexión</span> y esperá el resultado (sección 5).</li>
-  <li>Si salió bien, tocá <span class="btn">Guardar</span>. Si no, corregí lo que indica el mensaje.</li>
+  <li>Toque <span class="btn">Nueva base</span>. Se abre el formulario <strong>Nueva base de datos</strong>.</li>
+  <li>Complete los campos, uno por uno (tabla de abajo).</li>
+  <li>Toque <span class="btn">Probar conexión</span> y espere el resultado (sección 5).</li>
+  <li>Si salió bien, toque <span class="btn">Guardar</span>. Si no, corrija lo que indica el mensaje.</li>
 </ol>
 <figure class="dialogo"><img src="imagenes/bases-02-nueva.png" alt="Formulario Nueva base de datos con todos los campos numerados"><figcaption>Formulario con datos de ejemplo. Los valores son ficticios.</figcaption></figure>
 <table>
 <thead><tr><th style="width:5%">N.º</th><th style="width:20%">Campo</th><th>Qué poner</th><th style="width:24%">Ejemplo</th></tr></thead>
 <tbody>
 <tr><td><span class="n">1</span></td><td><strong>Código</strong></td><td>Una sigla corta del cliente, de 2 a 32 caracteres: letras, números, guion o guion bajo. Se guarda en mayúsculas. Es lo que se escribe después de la arroba al entrar.</td><td><code>CLIENTE01</code></td></tr>
-<tr><td><span class="n">2</span></td><td><strong>Nombre</strong></td><td>El nombre que verán los usuarios en el selector. Si lo dejás vacío, se propone la razón social de la empresa al probar la conexión.</td><td>Empresa de ejemplo S.A.S.</td></tr>
+<tr><td><span class="n">2</span></td><td><strong>Nombre</strong></td><td>El nombre que verán los usuarios en el selector. Si lo deja vacío, se propone la razón social de la empresa al probar la conexión.</td><td>Empresa de ejemplo S.A.S.</td></tr>
 <tr><td><span class="n">3</span></td><td><strong>Servidor</strong></td><td>La dirección del servidor donde está la base. Es el mismo dato que el "servidor" del instalador. Si SAVI y la base están en el mismo equipo, <code>localhost</code>. Si no, la dirección IP o el nombre del servidor.</td><td><code>192.168.1.50</code></td></tr>
 <tr><td><span class="n">4</span></td><td><strong>Puerto</strong></td><td>El puerto de PostgreSQL. Casi siempre <code>5432</code>.</td><td><code>5432</code></td></tr>
 <tr><td><span class="n">5</span></td><td><strong>Base de datos</strong></td><td>El nombre de la base del ERP dentro del servidor.</td><td><code>erp_cliente</code></td></tr>
 <tr><td><span class="n">6</span></td><td><strong>Usuario</strong></td><td>El usuario de PostgreSQL con el que SAVI se conecta. Conviene uno de <strong>solo lectura</strong>, creado para SAVI. No es el usuario con el que las personas entran a SAVI.</td><td><code>savi_lectura</code></td></tr>
-<tr><td><span class="n">7</span></td><td><strong>Contraseña</strong></td><td>La contraseña de ese usuario de PostgreSQL. Se muestra con puntos. Al editar una base, dejala vacía para conservar la actual.</td><td>(puntos)</td></tr>
+<tr><td><span class="n">7</span></td><td><strong>Contraseña</strong></td><td>La contraseña de ese usuario de PostgreSQL. Se muestra con puntos. Al editar una base, déjela vacía para conservar la actual.</td><td>(puntos)</td></tr>
 <tr><td><span class="n">8</span></td><td><strong>Tiempo máximo de consulta (ms)</strong></td><td>Cuánto puede tardar una consulta antes de cortarla, en milisegundos. Entre 1000 y 600000. Normalmente no se toca.</td><td><code>60000</code> (un minuto)</td></tr>
 </tbody></table>
-<div class="nota consejo"><strong>Consejo</strong><p>Pedile a quien administra el servidor un usuario de PostgreSQL exclusivo para SAVI con permisos de <strong>solo lectura</strong>. Si usás el superusuario (<em>postgres</em>), la prueba de conexión te avisa que no es lo recomendable: SAVI solo necesita leer.</p></div>
+<div class="nota consejo"><strong>Consejo</strong><p>Pídale a quien administra el servidor un usuario de PostgreSQL exclusivo para SAVI con permisos de <strong>solo lectura</strong>. Si usa el superusuario (<em>postgres</em>), la prueba de conexión le avisa que no es lo recomendable: SAVI solo necesita leer.</p></div>
 </section>
 
 <section>
 <h2 id="s5">5. Probar la conexión</h2>
 <p><span class="btn">Probar conexión</span> intenta entrar a la base con los datos del formulario y verifica que sea realmente el ERP de SEO (que tenga sus tablas). <strong>No guarda nada</strong>, y la prueba también es de solo lectura.</p>
 <h3>Cuando sale bien</h3>
-<p>Aparece un mensaje verde: <strong>Conexión exitosa.</strong> y el nombre de la empresa (<em>Empresa: …</em>). Si el nombre estaba vacío, se completa solo. Si el usuario es superusuario de PostgreSQL, además te avisa que conviene un rol de solo lectura.</p>
+<p>Aparece un mensaje verde: <strong>Conexión exitosa.</strong> y el nombre de la empresa (<em>Empresa: …</em>). Si el nombre estaba vacío, se completa solo. Si el usuario es superusuario de PostgreSQL, además le avisa que conviene un rol de solo lectura.</p>
 <h3>Cuando falla</h3>
 <p>Aparece un recuadro rojo con el motivo, en una sola frase que dice qué revisar.</p>
 <figure class="dialogo"><img src="imagenes/bases-03-error-servidor.png" alt="Formulario con el error de conexión al servidor"><figcaption>Prueba contra un servidor que no responde: botón <span class="n">1</span> y resultado <span class="n">2</span>.</figcaption></figure>
 <table class="larga">
 <thead><tr><th style="width:42%">Mensaje</th><th>Qué significa</th><th>Qué revisar</th></tr></thead>
 <tbody>
-<tr><td>No encontramos ese servidor. Revisá que el nombre o la dirección estén bien escritos.</td><td>El nombre o la dirección del servidor no existe en la red.</td><td>El campo <em>Servidor</em>: que esté bien escrito, sin espacios ni errores de tipeo.</td></tr>
-<tr><td>No se pudo conectar al servidor. Revisá el servidor y el puerto, y que PostgreSQL esté aceptando conexiones.</td><td>El servidor rechazó la conexión o no está ahí.</td><td>Servidor y puerto bien escritos; que PostgreSQL esté encendido; que acepte conexiones de red (sección 8).</td></tr>
-<tr><td>El servidor no respondió a tiempo. Revisá el servidor, el puerto y que el firewall permita la conexión.</td><td>Se esperó y no hubo respuesta (tiempo agotado).</td><td>Que la IP sea correcta, que el servidor esté encendido y que el firewall deje pasar el puerto 5432.</td></tr>
-<tr><td>No se pudo conectar. Revisá los datos de conexión.</td><td>Mensaje general: algún dato de conexión no es correcto (suele ser el servidor o el puerto).</td><td>Revisá servidor y puerto; probá desde otro equipo con el mismo dato.</td></tr>
-<tr><td>Usuario o contraseña incorrectos para esa base de datos.</td><td>PostgreSQL rechazó el usuario o la clave.</td><td>Usuario y contraseña. Cuidá mayúsculas y espacios.</td></tr>
-<tr><td>No se pudo conectar. Revisá el usuario y la contraseña, y que el servidor acepte conexiones desde este equipo.</td><td>El usuario no existe, la clave no coincide, o el servidor no permite conexiones desde la IP de este equipo.</td><td>Usuario y contraseña; y la regla de acceso del servidor (sección 8).</td></tr>
-<tr><td>La base de datos no existe en ese servidor. Revisá el nombre. / El servidor responde y las credenciales son válidas, pero la base '…' no existe ahí. Revisá el nombre.</td><td>El servidor y el usuario están bien, pero el nombre de la base no.</td><td>El campo <em>Base de datos</em>.</td></tr>
-<tr><td>La conexión funciona, pero la base no parece ser un ERP de SEO: faltan las tablas … Revisá que el nombre de la base sea el correcto.</td><td>Conectó, pero es otra base. Debajo aparece <em>Tablas faltantes</em>.</td><td>Que sea la base del ERP y no otra del mismo servidor.</td></tr>
+<tr><td>No encontramos ese servidor. Revise que el nombre o la dirección estén bien escritos.</td><td>El nombre o la dirección del servidor no existe en la red.</td><td>El campo <em>Servidor</em>: que esté bien escrito, sin espacios ni errores de tipeo.</td></tr>
+<tr><td>No se pudo conectar al servidor. Revise el servidor y el puerto, y que PostgreSQL esté aceptando conexiones.</td><td>El servidor rechazó la conexión o no está ahí.</td><td>Servidor y puerto bien escritos; que PostgreSQL esté encendido; que acepte conexiones de red (sección 8).</td></tr>
+<tr><td>El servidor no respondió a tiempo. Revise el servidor, el puerto y que el firewall permita la conexión.</td><td>Se esperó y no hubo respuesta (tiempo agotado).</td><td>Que la IP sea correcta, que el servidor esté encendido y que el firewall deje pasar el puerto 5432.</td></tr>
+<tr><td>No se pudo conectar. Revise los datos de conexión.</td><td>Mensaje general: algún dato de conexión no es correcto (suele ser el servidor o el puerto).</td><td>Revise servidor y puerto; pruebe desde otro equipo con el mismo dato.</td></tr>
+<tr><td>Usuario o contraseña incorrectos para esa base de datos.</td><td>PostgreSQL rechazó el usuario o la clave.</td><td>Usuario y contraseña. Cuide mayúsculas y espacios.</td></tr>
+<tr><td>No se pudo conectar. Revise el usuario y la contraseña, y que el servidor acepte conexiones desde este equipo.</td><td>El usuario no existe, la clave no coincide, o el servidor no permite conexiones desde la IP de este equipo.</td><td>Usuario y contraseña; y la regla de acceso del servidor (sección 8).</td></tr>
+<tr><td>La base de datos no existe en ese servidor. Revise el nombre. / El servidor responde y las credenciales son válidas, pero la base '…' no existe ahí. Revise el nombre.</td><td>El servidor y el usuario están bien, pero el nombre de la base no.</td><td>El campo <em>Base de datos</em>.</td></tr>
+<tr><td>La conexión funciona, pero la base no parece ser un ERP de SEO: faltan las tablas … Revise que el nombre de la base sea el correcto.</td><td>Conectó, pero es otra base. Debajo aparece <em>Tablas faltantes</em>.</td><td>Que sea la base del ERP y no otra del mismo servidor.</td></tr>
 
 </tbody></table>
 <figure class="dialogo"><img src="imagenes/bases-04-error-usuario.png" alt="Formulario con el error de usuario o contraseña"><figcaption>Prueba con un usuario inexistente: el mensaje pide revisar usuario y contraseña.</figcaption></figure>
@@ -312,20 +312,20 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <table>
 <thead><tr><th style="width:20%">Acción</th><th>Qué hace</th></tr></thead>
 <tbody>
-<tr><td><span class="btn">Editar</span></td><td>Abre el mismo formulario con los datos actuales. La contraseña aparece vacía; dejala así para conservar la que ya está. Probá la conexión y guardá.</td></tr>
+<tr><td><span class="btn">Editar</span></td><td>Abre el mismo formulario con los datos actuales. La contraseña aparece vacía; déjela así para conservar la que ya está. Pruebe la conexión y guarde.</td></tr>
 <tr><td><span class="btn">Predeterminar</span></td><td>La convierte en la base por defecto. Solo se puede con una base activa y utilizable. Confirma con un aviso: "<em>… es ahora la base predeterminada</em>".</td></tr>
 <tr><td><span class="btn">Desactivar</span></td><td>Pausa el uso de esa base: no se pueden iniciar conversaciones nuevas ni enviar mensajes contra ella. El historial se sigue viendo y se puede reactivar con <span class="btn">Activar</span>.</td></tr>
 <tr><td><span class="btn">Eliminar</span></td><td>La quita del listado y del selector del chat. El historial de sus conversaciones se conserva. No se puede deshacer desde la aplicación. Pide confirmación.</td></tr>
 </tbody></table>
-<figure class="media"><img src="imagenes/bases-05-confirmar.png" alt="Diálogo de confirmación para eliminar una base"><figcaption>Confirmación antes de eliminar una base. Tocá <span class="btn">Cancelar</span> <span class="n">1</span> si no estás seguro.</figcaption></figure>
+<figure class="media"><img src="imagenes/bases-05-confirmar.png" alt="Diálogo de confirmación para eliminar una base"><figcaption>Confirmación antes de eliminar una base. Toque <span class="btn">Cancelar</span> <span class="n">1</span> si no está seguro.</figcaption></figure>
 <div class="nota importante"><strong>Importante</strong>
-<p>La base <strong>predeterminada</strong> no se puede desactivar ni eliminar. Primero marcá otra como predeterminada.</p></div>
+<p>La base <strong>predeterminada</strong> no se puede desactivar ni eliminar. Primero marque otra como predeterminada.</p></div>
 <h3>Exportar e importar</h3>
 <p>Sirven para pasar la lista de bases de una instalación de SAVI a otra, sin volver a tipear los datos.</p>
 <ol class="pasos">
-  <li>En la instalación de origen, tocá <span class="btn">Exportar</span>, elegí una <strong>contraseña del archivo</strong>, repetila y tocá <span class="btn">Exportar</span>.</li>
-  <li>Pasá el archivo a la otra instalación y compartí la contraseña por <strong>otro canal</strong> (no junto con el archivo).</li>
-  <li>En el destino tocá <span class="btn">Importar</span>, elegí el archivo, escribí la contraseña y confirmá. Las bases con el mismo código se actualizan; el resto se crea.</li>
+  <li>En la instalación de origen, toque <span class="btn">Exportar</span>, elija una <strong>contraseña del archivo</strong>, repítala y toque <span class="btn">Exportar</span>.</li>
+  <li>Pase el archivo a la otra instalación y comparta la contraseña por <strong>otro canal</strong> (no junto con el archivo).</li>
+  <li>En el destino toque <span class="btn">Importar</span>, elija el archivo, escriba la contraseña y confirme. Las bases con el mismo código se actualizan; el resto se crea.</li>
 </ol>
 <figure class="media"><img src="imagenes/bases-06-exportar.png" alt="Diálogo para exportar bases de datos"><figcaption>Exportar pide una contraseña para proteger el archivo.</figcaption></figure>
 </section>
@@ -337,33 +337,33 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <thead><tr><th style="width:26%">Pantalla</th><th>Qué pide</th><th>Notas</th></tr></thead>
 <tbody>
 <tr><td><strong>Base de datos del ERP</strong></td><td>Servidor, Puerto, Base de datos, Usuario y Contraseña.</td><td>Es obligatoria. El puerto viene cargado en 5432. SAVI abre esta base en modo solo lectura. Tiene el botón <span class="btn">Probar conexión</span>, que también corre al tocar Siguiente.</td></tr>
-<tr><td><strong>Base de datos de SAVI</strong></td><td>Elegir entre <em>Archivo local — solo para pruebas o un único usuario en este equipo</em> y <em>Servidor PostgreSQL (recomendado) — varios usuarios, historial compartido y con respaldo</em>.</td><td>Viene marcada la opción PostgreSQL. Si elegís archivo local, el instalador pide confirmar y explica sus límites.</td></tr>
-<tr><td><strong>PostgreSQL de SAVI</strong></td><td>Servidor, Puerto, Base de datos (viene <code>savi</code>), Usuario y Contraseña.</td><td>Solo aparece si elegiste PostgreSQL. Tiene también <span class="btn">Probar conexión</span>. Si la base no existe, SAVI la crea (el usuario necesita permiso para crear bases). Si ya tiene datos de SAVI, se conservan: nunca se borra nada.</td></tr>
+<tr><td><strong>Base de datos de SAVI</strong></td><td>Elegir entre <em>Archivo local — solo para pruebas o un único usuario en este equipo</em> y <em>Servidor PostgreSQL (recomendado) — varios usuarios, historial compartido y con respaldo</em>.</td><td>Viene marcada la opción PostgreSQL. Si elige archivo local, el instalador pide confirmar y explica sus límites.</td></tr>
+<tr><td><strong>PostgreSQL de SAVI</strong></td><td>Servidor, Puerto, Base de datos (viene <code>savi</code>), Usuario y Contraseña.</td><td>Solo aparece si eligió PostgreSQL. Tiene también <span class="btn">Probar conexión</span>. Si la base no existe, SAVI la crea (el usuario necesita permiso para crear bases). Si ya tiene datos de SAVI, se conservan: nunca se borra nada.</td></tr>
 <tr><td><strong>Cuenta de Claude y puerto</strong></td><td>Token y clave de Claude (opcionales) y el puerto local (viene <code>31900</code>).</td><td>Normalmente se dejan los campos de credencial vacíos. Los demás proveedores se cargan después desde SAVI (manual 02).</td></tr>
 </tbody></table>
-<div class="nota consejo"><strong>Consejo</strong><p>Usá siempre <span class="btn">Probar conexión</span> en el instalador antes de continuar. Es más fácil corregir un dato ahí que descubrir el error al abrir SAVI por primera vez.</p></div>
-<p>Si el equipo ya tenía SAVI configurado, el instalador ofrece <em>Conservar la configuración actual (recomendado)</em> o <em>Volver a configurar</em>. Al reconfigurar, el archivo de configuración anterior queda guardado como copia y no se borra ningún dato.</p>
-<div class="nota info"><strong>Para saber</strong><p>Las pantallas del instalador no están capturadas en este manual porque pertenecen al asistente de Windows. Los nombres de los campos y botones de la tabla son los que ves en la ventana.</p></div>
+<div class="nota consejo"><strong>Consejo</strong><p>Use siempre <span class="btn">Probar conexión</span> en el instalador antes de continuar. Es más fácil corregir un dato ahí que descubrir el error al abrir SAVI por primera vez.</p></div>
+<p>Si el equipo ya tenía SAVI configurado, el instalador ofrece <em>Conservar la configuración actual (recomendado)</em> o <em>Modificar la configuración</em>. Al modificarla, las pantallas traen los datos actuales ya cargados: basta con cambiar lo que haga falta, por ejemplo solo el nombre de una base. El archivo de configuración anterior queda guardado como copia y no se borra ningún dato.</p>
+<div class="nota info"><strong>Para saber</strong><p>Las pantallas del instalador no están capturadas en este manual porque pertenecen al asistente de Windows. Los nombres de los campos y botones de la tabla son los que ve en la ventana.</p></div>
 </section>
 
 <section>
 <h2 id="s8">8. Si la base del ERP está en otro equipo</h2>
 <p>Cuando SAVI corre en una PC distinta a la del servidor PostgreSQL, hay que <strong>permitir que esa PC se conecte</strong>. Estos pasos los hace quien administra el servidor de base de datos. Se explican en simple:</p>
 <ol class="pasos">
-  <li><strong>Usá la dirección del servidor, no "localhost".</strong> En el campo <em>Servidor</em> poné la IP o el nombre del equipo donde está PostgreSQL (por ejemplo <code>192.168.1.50</code>). "localhost" significa "este mismo equipo", y no sirve si la base está en otra máquina.</li>
+  <li><strong>Use la dirección del servidor, no "localhost".</strong> En el campo <em>Servidor</em> ponga la IP o el nombre del equipo donde está PostgreSQL (por ejemplo <code>192.168.1.50</code>). "localhost" significa "este mismo equipo", y no sirve si la base está en otra máquina.</li>
   <li><strong>Que PostgreSQL escuche en la red.</strong> En el archivo <code>postgresql.conf</code> del servidor, el parámetro <code>listen_addresses</code> debe incluir la IP del servidor (o <code>'*'</code> para todas).</li>
   <li><strong>Autorizar a la PC de SAVI.</strong> En el archivo <code>pg_hba.conf</code> hay que agregar una línea que deje entrar al usuario de SAVI desde la IP de esa PC:
     <br><code>host  erp_cliente  savi_lectura  192.168.1.20/32  scram-sha-256</code>
-    <br>Reemplazá nombre de la base, usuario e IP por los reales. Después, recargá la configuración de PostgreSQL.</li>
-  <li><strong>Abrir el puerto en el firewall.</strong> En el servidor, permití conexiones entrantes al puerto <code>5432</code> (TCP), al menos desde la IP de la PC de SAVI.</li>
+    <br>Reemplace nombre de la base, usuario e IP por los reales. Después, recargue la configuración de PostgreSQL.</li>
+  <li><strong>Abrir el puerto en el firewall.</strong> En el servidor, permita conexiones entrantes al puerto <code>5432</code> (TCP), al menos desde la IP de la PC de SAVI.</li>
   <li><strong>Un usuario con permiso de lectura.</strong> El usuario debe poder conectarse y <em>leer</em> las tablas del ERP. Por ejemplo, un administrador de la base puede crear un rol dedicado:
     <br><code>CREATE ROLE savi_lectura LOGIN PASSWORD 'CAMBIAR_ESTA_CLAVE';</code>
     <br><code>GRANT pg_read_all_data TO savi_lectura;</code>
     <br>(<code>pg_read_all_data</code> existe desde PostgreSQL 14. En versiones anteriores hay que dar permiso de lectura esquema por esquema.)</li>
 </ol>
-<div class="nota consejo"><strong>Consejo</strong><p>Desde la PC de SAVI, abrí PowerShell y escribí <code>Test-NetConnection 192.168.1.50 -Port 5432</code>. Si dice <em>TcpTestSucceeded: True</em>, la red y el firewall están bien; si dice <em>False</em>, el problema es de red o de firewall, no de usuario.</p></div>
+<div class="nota consejo"><strong>Consejo</strong><p>Desde la PC de SAVI, abra PowerShell y escriba <code>Test-NetConnection 192.168.1.50 -Port 5432</code>. Si dice <em>TcpTestSucceeded: True</em>, la red y el firewall están bien; si dice <em>False</em>, el problema es de red o de firewall, no de usuario.</p></div>
 <div class="nota importante"><strong>Importante</strong>
-<p>No abras el puerto 5432 a todo internet. Limitalo a la red interna o a la IP de la PC de SAVI.</p></div>
+<p>No abra el puerto 5432 a todo internet. Limítelo a la red interna o a la IP de la PC de SAVI.</p></div>
 </section>
 
 <section>
@@ -380,22 +380,22 @@ table.larga { break-inside: auto; page-break-inside: auto; }
 <section>
 <h2 id="s10">10. Consejos y resolución de problemas</h2>
 <ul>
-  <li>Elegí códigos cortos y fáciles de dictar por teléfono (sin guiones raros).</li>
-  <li>Registrá siempre la base con un usuario de <strong>solo lectura</strong>.</li>
-  <li>No elimines una base para "arreglarla": usá <em>Editar</em>. Si necesitás pausarla, usá <em>Desactivar</em>.</li>
-  <li>Después de cambiar la contraseña del usuario en PostgreSQL, actualizala en SAVI con <em>Editar</em>.</li>
-  <li>En el acceso directo <em>Diagnosticar SAVI</em> (se instala con SAVI) podés comprobar si SAVI está corriendo y qué puerto usa.</li>
+  <li>Elija códigos cortos y fáciles de dictar por teléfono (sin guiones raros).</li>
+  <li>Registre siempre la base con un usuario de <strong>solo lectura</strong>.</li>
+  <li>No elimine una base para "arreglarla": use <em>Editar</em>. Si necesita pausarla, use <em>Desactivar</em>.</li>
+  <li>Después de cambiar la contraseña del usuario en PostgreSQL, actualícela en SAVI con <em>Editar</em>.</li>
+  <li>En el acceso directo <em>Diagnosticar SAVI</em> (se instala con SAVI) puede comprobar si SAVI está corriendo y qué puerto usa.</li>
 </ul>
 <table class="larga">
 <thead><tr><th style="width:32%">Problema</th><th>Causa probable</th><th>Qué hacer</th></tr></thead>
 <tbody>
-<tr><td>Al entrar: "No encontramos ese cliente. Revisá el código después de la @."</td><td>El código no está registrado o está mal escrito.</td><td>Mirá el código en <em>Bases de datos</em> (columna Cliente).</td></tr>
-<tr><td>Al entrar: "Ese cliente está desactivado en SAVI. Avisale a tu administrador."</td><td>El código existe, pero la base de ese cliente está desactivada.</td><td>Activala con <span class="btn">Activar</span> en <em>Bases de datos</em>.</td></tr>
-<tr><td>Al entrar: "No pudimos conectar con la base de ese cliente. Probá de nuevo en unos minutos o avisale a tu administrador."</td><td>La base está activa, pero SAVI no logra conectarse (servidor apagado, red, contraseña cambiada o credenciales ilegibles).</td><td>Probá la conexión desde <em>Editar</em> y seguí la tabla de la sección 5.</td></tr>
-<tr><td>Un cliente no aparece en el selector del chat</td><td>La base está desactivada, eliminada o el usuario no pertenece a ese cliente.</td><td>Revisá el estado en <em>Bases de datos</em>.</td></tr>
+<tr><td>Al entrar: "No encontramos ese cliente. Revise el código después de la @."</td><td>El código no está registrado o está mal escrito.</td><td>Mire el código en <em>Bases de datos</em> (columna Cliente).</td></tr>
+<tr><td>Al entrar: "Ese cliente está desactivado en SAVI. Avise a su administrador."</td><td>El código existe, pero la base de ese cliente está desactivada.</td><td>Actívela con <span class="btn">Activar</span> en <em>Bases de datos</em>.</td></tr>
+<tr><td>Al entrar: "No pudimos conectar con la base de ese cliente. Pruebe de nuevo en unos minutos o avise a su administrador."</td><td>La base está activa, pero SAVI no logra conectarse (servidor apagado, red, contraseña cambiada o credenciales ilegibles).</td><td>Pruebe la conexión desde <em>Editar</em> y siga la tabla de la sección 5.</td></tr>
+<tr><td>Un cliente no aparece en el selector del chat</td><td>La base está desactivada, eliminada o el usuario no pertenece a ese cliente.</td><td>Revise el estado en <em>Bases de datos</em>.</td></tr>
 <tr><td>Estado "Credenciales ilegibles"</td><td>No se puede leer la contraseña guardada.</td><td><em>Editar</em> y volver a ingresar la contraseña.</td></tr>
-<tr><td>No puedo desactivar ni eliminar una base</td><td>Es la predeterminada.</td><td>Marcá otra como predeterminada primero.</td></tr>
-<tr><td>Funcionaba y dejó de funcionar</td><td>Cambió la contraseña, la IP del servidor o se apagó PostgreSQL.</td><td>Probá la conexión desde <em>Editar</em> y seguí la tabla de la sección 5.</td></tr>
+<tr><td>No puedo desactivar ni eliminar una base</td><td>Es la predeterminada.</td><td>Marque otra como predeterminada primero.</td></tr>
+<tr><td>Funcionaba y dejó de funcionar</td><td>Cambió la contraseña, la IP del servidor o se apagó PostgreSQL.</td><td>Pruebe la conexión desde <em>Editar</em> y siga la tabla de la sección 5.</td></tr>
 <tr><td>Un usuario ve menos datos de los esperados</td><td>No tiene el módulo habilitado en el ERP.</td><td>Habilitarlo en el ERP.</td></tr>
 <tr><td>Respuestas lentas o cortadas en consultas grandes</td><td>La consulta supera el tiempo máximo.</td><td>Pedir un período menor o, con soporte, aumentar el tiempo máximo.</td></tr>
 </tbody></table>

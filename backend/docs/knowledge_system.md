@@ -15,7 +15,7 @@ Hoy SAVI sabe consultar la BD del ERP (vía `consultar_datos` + `consultar_libre
 SAVI hoy:
 - No tiene noción de qué formulario hace eso.
 - Inventa pasos o se queda corto.
-- No puede decir "andá a Contabilidad → Procesos → Conciliación".
+- No puede decir "vaya a Contabilidad → Procesos → Conciliación".
 
 Lo que necesitamos: que el LLM pueda **inferir la intención del usuario**, encontrar el concepto del ERP que la cubre (formulario, proceso, workflow) y responder con la ruta de navegación, los pasos, los cálculos involucrados y los formularios relacionados — todo en castellano natural.
 
@@ -63,7 +63,7 @@ SAVI ya tiene un semantic layer en `app/modules/data_query/infrastructure/catalo
 | `knowledge` (este doc) | Explicar conceptos del ERP | Formulario / workflow / FAQ | Texto / explicación |
 
 Las dos se complementan:
-- *"¿cómo cobro a un cliente?"* → knowledge responde "usá `frmReciboCliente`, ciclo Cartera..."
+- *"¿cómo cobro a un cliente?"* → knowledge responde "use `frmReciboCliente`, ciclo Cartera..."
 - *"¿cuánto me debe Juan?"* → data_query devuelve el saldo real consultando la BD.
 
 No se pisan, no se confunden, y cuando una pregunta tiene ambas dimensiones el LLM las orquesta llamando primero al knowledge para entender el contexto y luego a data_query para los números.
@@ -94,14 +94,14 @@ bancaria" o "el proceso de conciliación".
 
 La respuesta típica del LLM:
 
-> Para conciliar el extracto del banco con la contabilidad, andá a **Contabilidad → Procesos → Conciliación bancaria**.
+> Para conciliar el extracto del banco con la contabilidad, vaya a **Contabilidad → Procesos → Conciliación bancaria**.
 >
-> Antes de empezar necesitás:
+> Antes de empezar necesita:
 > - La cuenta bancaria configurada en el plan contable.
 > - Los movimientos contables del período ya mayorizados.
 > - El extracto del banco en formato OFX, CSV o Excel.
 >
-> El proceso es: (1) seleccionás la cuenta bancaria, (2) importás el extracto, (3) el sistema cruza automáticamente por valor y referencia, (4) marcás manualmente las partidas que no cruzó solo, (5) generás el documento de conciliación.
+> El proceso es: (1) seleccione la cuenta bancaria, (2) importe el extracto, (3) el sistema cruza automáticamente por valor y referencia, (4) marque manualmente las partidas que no cruzó solo, (5) genere el documento de conciliación.
 >
 > El saldo conciliado se calcula como: *Saldo del extracto − Cheques en tránsito + Depósitos en tránsito*, y tiene que coincidir con el saldo contable del período.
 
@@ -244,7 +244,7 @@ Atajos para preguntas muy comunes que justifican respuesta directa sin búsqueda
   "question": "¿Qué formulario uso para consultar saldos contables?",
   "synonyms": ["ver saldo contable", "saldo de una cuenta", "consulta de saldos"],
   "module": "CONTABILIDAD",
-  "answer_summary": "Para consultar saldos contables andá a Contabilidad → Consultas → Saldos contables.",
+  "answer_summary": "Para consultar saldos contables vaya a Contabilidad → Consultas → Saldos contables.",
   "related_forms": ["frmConsultaSaldoContable"],
   "related_workflows": []
 }
@@ -322,7 +322,7 @@ Validación Pydantic significa:
 |---|---|---|
 | `buscar_por_intencion(query)` | Match natural → mejores 1-3 conceptos relevantes | Por defecto en cualquier pregunta de "cómo se hace X" |
 | `listar_modulos_accesibles()` | Mostrar los módulos del usuario actual | "¿qué puedo hacer en SAVI?" |
-| `describir_modulo(code)` | Overview de un módulo | "contame qué hace contabilidad" |
+| `describir_modulo(code)` | Overview de un módulo | "cuéntame qué hace contabilidad" |
 | `obtener_formulario_por_nombre(name)` | Lookup directo cuando ya se identificó | Uso interno, segundo paso después de buscar |
 | `obtener_workflow(id)` | Detalle de un proceso end-to-end | "¿cuál es el ciclo de venta completo?" |
 | `responder_faq(question)` | Atajo para preguntas con respuesta canónica | Preguntas muy frecuentes ya mapeadas |
@@ -347,14 +347,14 @@ Después del bootstrap, **el JSON v2 queda como referencia histórica** pero la 
 
 ### 9.2 — Editar información existente
 
-1. Abrís el archivo del formulario o workflow correspondiente.
-2. Modificás el campo (ej. agregar un `business_rule`, refinar el `description`).
+1. Abres el archivo del formulario o workflow correspondiente.
+2. Modificas el campo (ej. agregar un `business_rule`, refinar el `description`).
 3. PR + review + merge + deploy.
 4. Próximo turno del chat tiene la info actualizada.
 
 ### 9.3 — Agregar un formulario o concepto nuevo
 
-1. Creás el archivo nuevo siguiendo el schema.
+1. Creas el archivo nuevo siguiendo el schema.
 2. El loader lo descubre automáticamente al próximo boot.
 3. Sin registro central que modificar.
 
@@ -368,7 +368,7 @@ Ejemplo: el equipo quiere documentar `troubleshooting` por formulario. Se agrega
 
 **B) Agregar un tipo de entidad nuevo** (más amplitud):
 
-Ejemplo: querés documentar **roles del ERP** (Contador, Cajero, Almacenista). Creás carpeta `data/roles/`, definís `RoleEntry` Pydantic, agregás tool `describir_rol(name)`. No toca nada existente.
+Ejemplo: quieres documentar **roles del ERP** (Contador, Cajero, Almacenista). Creas carpeta `data/roles/`, defines `RoleEntry` Pydantic, agregas tool `describir_rol(name)`. No toca nada existente.
 
 **C) Cambio breaking del schema** (raro):
 
@@ -396,7 +396,7 @@ Cada concepto (form, workflow, FAQ) declara los módulos a los que pertenece. La
 - Sin declaración → conocimiento transversal, visible para todos los usuarios autenticados.
 - El glosario y los `form_types` son transversales por naturaleza.
 
-El filtrado se aplica en **cada tool** antes de devolver resultados al LLM. Si el LLM pregunta por algo prohibido, el catálogo retorna vacío (no error) — el LLM compone la respuesta de "no tenés acceso a ese módulo".
+El filtrado se aplica en **cada tool** antes de devolver resultados al LLM. Si el LLM pregunta por algo prohibido, el catálogo retorna vacío (no error) — el LLM compone la respuesta de "no tiene acceso a ese módulo".
 
 Esto se enchufa directo al sistema descrito en `authentication_system.md`: `current_user.modules` viaja al catálogo, el catálogo filtra.
 
@@ -434,7 +434,7 @@ Paso 4 — Tools MCP
   - Filtro por módulos del usuario actual
 
 Paso 5 — System prompt
-  - Bloque que le dice al LLM: "tenés estas tools, usalas para responder
+  - Bloque que le dice al LLM: "tienes estas tools, úsalas para responder
     preguntas sobre cómo usar el ERP, qué hace cada formulario,
     procesos de negocio"
   - Regla explícita: nunca mencionar nombres internos (frmXxx) al usuario

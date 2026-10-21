@@ -210,7 +210,7 @@ seguridad del PRD §2.3, no una regresión.
 Hay que verificar cómo recibe hoy el turno el nombre de la base
 consultada (multi-BD §7.4 lo pedía). Si ya lo recibe, se agrega el nombre
 del cliente: *"Datos de Farmacias X — sucursal Sede Centro"*. Así el
-agente no dice "tu empresa" con ambigüedad entre sucursales. Sin tools
+agente no dice "su empresa" con ambigüedad entre sucursales. Sin tools
 nuevas: se mantiene el límite de 4.
 
 ## 7. Instalador

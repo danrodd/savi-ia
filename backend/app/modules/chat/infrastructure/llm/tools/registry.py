@@ -71,33 +71,33 @@ _CONSULTAR_LIBRE_DESCRIPTION = (
     "Úsalo SOLO cuando `consultar_datos` (semantic layer) no cubra el "
     "caso: preguntas puntuales sobre tablas no modeladas, joins "
     "específicos, agregados ad-hoc.\n\n"
-    "Reglas DURAS — si no las respetás, la consulta se rechaza:\n"
+    "Reglas DURAS — si no las respetas, la consulta se rechaza:\n"
     "- Solo UN SELECT por llamada (sin ; multi-statement).\n"
-    "- Sin OFFSET. Si necesitás otro subconjunto, afiná filtros.\n"
+    "- Sin OFFSET. Si necesitas otro subconjunto, afina filtros.\n"
     "- Sin CTE (WITH), UNION, INTERSECT, EXCEPT, LATERAL.\n"
-    "- Sin SELECT * en la raíz: listá las columnas que necesitás.\n"
-    "- LIMIT obligatorio ≤ 50 (si lo omitís se inyecta 50; si pones más, "
+    "- Sin SELECT * en la raíz: lista las columnas que necesitas.\n"
+    "- LIMIT obligatorio ≤ 50 (si lo omites se inyecta 50; si pones más, "
     "se baja a 50).\n"
     "- El planner debe estimar ≤ 1000 filas; si no, se rechaza por "
     "demasiado amplia.\n"
     "- Subqueries: máximo 2 niveles de anidamiento.\n\n"
-    "Estilo recomendado: usá nombres entre comillas dobles para schemas, "
+    "Estilo recomendado: usa nombres entre comillas dobles para schemas, "
     "tablas y columnas si tienen mayúsculas o caracteres especiales "
     '(ej. "Empresa"."CentroCosto", "f.idFactura"). Postgres distingue '
     "mayúsculas en identifiers quoted.\n\n"
-    "Pasá el `pregunta_usuario` original como argumento para auditoría."
+    "Pasa el `pregunta_usuario` original como argumento para auditoría."
 )
 
 _CONSULTAR_CONOCIMIENTO_DESCRIPTION = (
     "Tool ÚNICA para consultar el catálogo de conocimiento del ERP "
     "(módulos, formularios, procesos, workflows, FAQs, glosario). "
-    "Llamala SIEMPRE que el usuario pregunte CÓMO hacer algo, DÓNDE "
+    "Llámala SIEMPRE que el usuario pregunte CÓMO hacer algo, DÓNDE "
     "está una funcionalidad, QUÉ pasos involucra un proceso, o por "
     "siglas del dominio.\n\n"
     "Argumentos:\n"
     "- `tipo`: discriminador, uno de:\n"
     "  * 'intencion' (USO POR DEFECTO): busca conceptos del ERP por la "
-    "intención natural del usuario. Pasá la consulta tal como la formuló.\n"
+    "intención natural del usuario. Pasa la consulta tal como la formuló.\n"
     "  * 'modulo': descripción de un módulo. `consulta` = código "
     "(CONTABILIDAD, NÓMINA, INVENTARIO, etc.).\n"
     "  * 'workflow': detalle de un proceso end-to-end. `consulta` = id "
@@ -111,13 +111,13 @@ _CONSULTAR_CONOCIMIENTO_DESCRIPTION = (
     "`consulta` = nombre del formulario.\n"
     "  * 'documentos': documentos PROPIOS de la empresa (políticas, "
     "procedimientos, reglamentos, actas, normas internas). `consulta` = la "
-    "pregunta del usuario. Cada resultado trae `ref` (D1, D2…): citala entre "
+    "pregunta del usuario. Cada resultado trae `ref` (D1, D2…): cítala entre"
     "corchetes, [D1], justo después de la afirmación que respalda.\n"
     "  * 'documentos_disponibles': lista los títulos de los documentos de la "
     "empresa que el usuario puede consultar. `consulta` = '' (vacío).\n\n"
     "El response trae `matches` (para intencion), `module`, `workflow`, "
     "`faqs`, `entry` o `modules` según el tipo. **Si la respuesta trae "
-    "datos, ESOS DATOS SON REALES — usalos para componer tu respuesta. "
+    "datos, ESOS DATOS SON REALES — úsalos para componer tu respuesta. "
     "NUNCA digas que la herramienta no respondió si trae contenido.**"
 )
 
@@ -169,7 +169,7 @@ def _spec(name: str, description: str, parameters: dict[str, Any], raw: _RawHand
             # queda en el log, que es donde sirve.
             log.exception("tool_failed name=%s", name)
             return ToolResult(
-                text="La herramienta falló por un problema interno. Probá reformular la consulta.",
+                text="La herramienta falló por un problema interno. Prueba reformular la consulta.",
                 is_error=True,
             )
 

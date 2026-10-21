@@ -7,7 +7,7 @@ import { SECURITY } from '../content'
     <div class="lp-container">
       <p class="lp-eyebrow security__eyebrow">Seguridad y privacidad</p>
       <h2 class="lp-title security__title">
-        Diseñado para que la información de tu empresa se quede en tu empresa
+        Diseñado para que la información de su empresa se quede en su empresa
       </h2>
       <ul class="security__grid">
         <li v-for="pillar in SECURITY" :key="pillar.title">

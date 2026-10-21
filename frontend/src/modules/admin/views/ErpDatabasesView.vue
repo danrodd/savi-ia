@@ -34,7 +34,7 @@ const confirmCopy = computed(() => {
     return {
       title: `Desactivar ${db.name}`,
       description:
-        'No se podrán iniciar conversaciones nuevas ni enviar mensajes contra esta base. El historial se sigue viendo y podés reactivarla después.',
+        'No se podrán iniciar conversaciones nuevas ni enviar mensajes contra esta base. El historial se sigue viendo y puede reactivarla después.',
       label: 'Desactivar',
     }
   }

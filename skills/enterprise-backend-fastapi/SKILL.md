@@ -41,7 +41,7 @@ NO la cargues para: fixes triviales, scripts one-off, proyectos no-FastAPI, prot
 |----------|--------|
 | ¿Nuevo dominio? | Crear `app/modules/<x>/` con la triada `domain/`, `application/`, `infrastructure/` — ver [references/module-structure.md](references/module-structure.md) |
 | ¿Nueva acción de negocio? | Crear un Use Case (`{Verbo}{Recurso}UseCase`) en `application/use_cases/` |
-| ¿Acceso a DB/Redis/API externa? | Implementación en `infrastructure/`. Si lo necesita el dominio → definí interface en `domain/interfaces/` y inyectá la impl |
+| ¿Acceso a DB/Redis/API externa? | Implementación en `infrastructure/`. Si lo necesita el dominio → define interface en `domain/interfaces/` y inyecta la impl |
 | ¿Validación de input HTTP? | Pydantic Request en `application/requests/` |
 | ¿Validación de regla de negocio? | Value Object o Validator en `domain/` o `application/validators/` |
 | ¿Settings nuevos? | Agregar a `infrastructure/config/settings.py` (`BaseSettings`) + `.env.example` |
@@ -52,21 +52,21 @@ NO la cargues para: fixes triviales, scripts one-off, proyectos no-FastAPI, prot
 
 ## Execution Steps
 
-1. Antes de tocar código, leé la reference relevante según el gate (módulo, capas, testing, DI).
-2. En proyecto nuevo: ejecutá [assets/starter-kit.sh](assets/starter-kit.sh) y validá `requires-python = ">=3.12"` en `pyproject.toml`.
-3. Para cada cambio, verificá las Hard Rules. Si rompés una, justificalo en el PR.
-4. Corré `uv run ruff check . && uv run pyright && uv run pytest` antes de cerrar trabajo.
+1. Antes de tocar código, lee la reference relevante según el gate (módulo, capas, testing, DI).
+2. En proyecto nuevo: ejecuta [assets/starter-kit.sh](assets/starter-kit.sh) y valida `requires-python = ">=3.12"` en `pyproject.toml`.
+3. Para cada cambio, verifica las Hard Rules. Si rompes una, justifícalo en el PR.
+4. Corre `uv run ruff check . && uv run pyright && uv run pytest` antes de cerrar trabajo.
 
 ## Output Contract
 
-Cuando apliques esta skill, entregá:
+Cuando apliques esta skill, entrega:
 
 - Cambios alineados con la triada `domain/application/infrastructure` del módulo.
 - Use cases sin acoplamiento a FastAPI ni SQLAlchemy.
 - Repositorios definidos como interface en `domain/interfaces/` e implementados en `infrastructure/persistence/repositories/`.
 - Controllers que sólo orquestan `Request → DTO → UseCase → Response`.
 - Tests separados por tipo (unit/integration/e2e) según lo que pruebas.
-- Si introducís una dependencia nueva, justificá por qué no alcanzaba el stack base.
+- Si introduces una dependencia nueva, justifica por qué no alcanzaba el stack base.
 
 ## References
 

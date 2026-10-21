@@ -151,7 +151,7 @@ class UpdateAiReadingSettingsUseCase:
                 if accept_provider != provider:
                     raise CompanyDocumentConflictError(
                         "El proveedor de IA cambió mientras revisabas el aviso. "
-                        "Leelo de nuevo y volvé a aceptar."
+                        "Léalo de nuevo y vuelva a aceptar."
                     )
                 updated = replace(
                     updated,
@@ -161,7 +161,7 @@ class UpdateAiReadingSettingsUseCase:
                 )
             elif provider is None or current.consent_provider != provider:
                 raise CompanyDocumentConflictError(
-                    "Para activar la lectura con IA, aceptá el envío de los PDF al proveedor."
+                    "Para activar la lectura con IA, acepte el envío de los PDF al proveedor."
                 )
         return await self._status.build(await self._settings.save(updated))
 
@@ -197,7 +197,7 @@ class ReadCompanyDocumentWithAiUseCase:
         settings = await self._settings.get()
         if not settings.ai_reading_enabled:
             raise CompanyDocumentConflictError(
-                "La lectura con IA está desactivada. Activala en la configuración de Conocimiento."
+                "La lectura con IA está desactivada. Actívela en la configuración de Conocimiento."
             )
         availability = await self._readers.availability()
         if not availability.available:
@@ -206,7 +206,7 @@ class ReadCompanyDocumentWithAiUseCase:
             )
         if not settings.allows_sending_to(availability.provider):
             raise CompanyDocumentConflictError(
-                "Nadie aceptó enviar los PDF al proveedor de IA activo. Revisá el aviso en la "
+                "Nadie aceptó enviar los PDF al proveedor de IA activo. Revise el aviso en la "
                 "configuración de Conocimiento."
             )
         # Se valida antes de descartar páginas: borrarlas de un documento en

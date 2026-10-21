@@ -3,8 +3,8 @@
 from app.modules.chat.domain.entities import TextDeltaEvent
 
 TRUNCATION_NOTICE = (
-    "\n\n_(Respuesta truncada por límite de tamaño. Si necesitas más "
-    "detalle, pídeme una sección específica.)_"
+    "\n\n_(Respuesta truncada por límite de tamaño. Si necesita más "
+    "detalle, pídame una sección específica.)_"
 )
 
 

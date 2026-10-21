@@ -93,9 +93,9 @@ type TokenUsage = {
 }
 ```
 
-> **Fuentes**: el texto del asistente trae referencias `[D1]`. Reemplazá las
-> que estén en `sources` por una marca numerada por documento y **ocultá**
-> las que no estén (el modelo pudo inventarlas). Abrí el original con
+> **Fuentes**: el texto del asistente trae referencias `[D1]`. Reemplaza las
+> que estén en `sources` por una marca numerada por documento y **oculta**
+> las que no estén (el modelo pudo inventarlas). Abre el original con
 > `GET /company-documents/{document_id}/file?conversation_id=…` usando el
 > header `Authorization` (un `<a href>` directo no lleva el token). Todo
 > rechazo de esa descarga es `404`.
@@ -163,7 +163,7 @@ o cuando el usuario hace doble click.
 **No interrumpe turnos en curso**: si el cliente tiene un `POST /chat`
 streameando cuando llega el `DELETE`, el stream sigue hasta su `done`
 y la respuesta del asistente se persiste igual (queda en una
-conversación invisible — coherente con soft delete). En la UI, ocultá
+conversación invisible — coherente con soft delete). En la UI, oculta
 la conversación del sidebar apenas mandes el `DELETE` sin esperar al
 stream.
 
@@ -378,7 +378,7 @@ Errores:
 | `422` `{ "detail" }` | No es una imagen válida, el formato no está admitido, está vacío o tiene dimensiones excesivas. |
 | `429` `{ "errorCode": "rate_limited" }` + `Retry-After` | Tope de 60 subidas por hora por usuario (`RATE_LIMIT_CHAT_ATTACHMENTS_PER_HOUR`), aparte del de `/chat`. |
 
-Validá en el cliente el peso y el tipo antes de subir para ahorrar el viaje;
+Valida en el cliente el peso y el tipo antes de subir para ahorrar el viaje;
 el backend igual lo vuelve a comprobar.
 
 #### `GET /chat/attachments/{id}` — bytes de la imagen
@@ -386,8 +386,8 @@ el backend igual lo vuelve a comprobar.
 Devuelve los bytes con su `Content-Type` y `Cache-Control: private,
 max-age=86400`. **Solo el dueño**: cualquier otro caso (ajena, inexistente)
 es `404`, sin distinguirlos. Como el endpoint exige el header
-`Authorization`, un `<img src>` directo no lo lleva: pedí el blob con el
-cliente HTTP y usá `URL.createObjectURL` (revocalo al desmontar).
+`Authorization`, un `<img src>` directo no lo lleva: pide el blob con el
+cliente HTTP y usa `URL.createObjectURL` (revócalo al desmontar).
 
 #### Reglas de `attachment_ids` en `POST /chat`
 
@@ -399,8 +399,8 @@ cliente HTTP y usá `URL.createObjectURL` (revocalo al desmontar).
 
 En `edit_last`, los ids de las imágenes conservadas son los que ya trae
 `message.attachments` del mensaje que se edita; el mensaje nuevo recibe
-**ids distintos** (los de las copias), así que releé el hilo con
-`GET /conversations/{id}` si necesitás los ids definitivos.
+**ids distintos** (los de las copias), así que relee el hilo con
+`GET /conversations/{id}` si necesitas los ids definitivos.
 
 Una imagen sirve para **un solo mensaje**: reusar el id de una ya enviada
 (salvo en `edit_last`, del mensaje que se reemplaza) es `422`.
@@ -590,7 +590,7 @@ superseded. Reconstrucción:
   columnas al usuario funcional. Si en el stream llega un `text_delta`
   con SQL, **renderízalo igual** — eso es un bug del backend (avisa).
 - Los `tool_use` y `tool_result` son útiles para mostrar feedback
-  ("Consultando información de tu empresa…"), pero **no muestres el
+  ("Consultando información de su empresa…"), pero **no muestres el
   nombre técnico de la tool** (`mcp__savi__info_empresa`). Trádúcelo
   o muestra solo un spinner.
 

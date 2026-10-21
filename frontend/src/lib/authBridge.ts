@@ -35,7 +35,7 @@ export function installAuthBridge(impl: AuthBridge): void {
 export function getAuthBridge(): AuthBridge {
   if (!bridge) {
     throw new Error(
-      'authBridge no instalado: llamá installAuthBridge() en main.ts antes de cualquier request HTTP.',
+      'authBridge no instalado: llame installAuthBridge() en main.ts antes de cualquier request HTTP.',
     )
   }
   return bridge

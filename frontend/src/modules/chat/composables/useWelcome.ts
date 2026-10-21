@@ -81,11 +81,11 @@ export function useWelcome(visibleCount: number = DEFAULT_VISIBLE): WelcomeState
 
   const subtitle = computed(() => {
     if (permisosStore.isAdmin) {
-      return 'Como administrador, tenés acceso a toda la información del ERP. Elegí por dónde arrancar.'
+      return 'Como administrador, tiene acceso a toda la información del ERP. Elija por dónde arrancar.'
     }
     const count = allowedModules.value.size
     if (count === 0) {
-      return 'Pedíme información del ERP o consultame sobre cualquier módulo del sistema.'
+      return 'Pídame información del ERP o consúlteme sobre cualquier módulo del sistema.'
     }
     const labels = Array.from(allowedModules.value)
       .map((c) => MODULE_LABELS[c as ModuleCode] ?? c)
@@ -97,7 +97,7 @@ export function useWelcome(visibleCount: number = DEFAULT_VISIBLE): WelcomeState
         : labels.length === 2
         ? `${labels[0]} y ${labels[1]}`
         : `${labels.slice(0, -1).join(', ')} y ${labels[labels.length - 1]}`
-    return `Como ${role}, podés consultarme sobre ${moduleListing}.`
+    return `Como ${role}, puede consultarme sobre ${moduleListing}.`
   })
 
   const suggestions = computed<PreparedSuggestion[]>(() => {

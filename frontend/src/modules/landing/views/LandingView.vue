@@ -17,7 +17,7 @@ import LandingPlans from '../components/LandingPlans.vue'
 import LandingSecurity from '../components/LandingSecurity.vue'
 
 onMounted(() => {
-  document.title = 'SAVI · Asistente de IA para tu ERP'
+  document.title = 'SAVI · Asistente de IA para su ERP'
 })
 </script>
 

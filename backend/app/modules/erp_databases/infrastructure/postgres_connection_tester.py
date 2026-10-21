@@ -76,7 +76,7 @@ class PostgresConnectionTester(ConnectionTester):
                         detail=(
                             "La conexión funciona, pero la base no parece ser un "
                             "ERP de SEO: faltan las tablas "
-                            f"{', '.join(missing)}. Revisá que el nombre de la "
+                            f"{', '.join(missing)}. Revise que el nombre de la "
                             "base sea el correcto."
                         ),
                         missing_tables=missing,
@@ -179,16 +179,16 @@ def _explain(error: Exception) -> str | None:
     message = str(getattr(error, "orig", None) or error).lower()
     if isinstance(error, socket.gaierror) or any(m in message for m in _UNKNOWN_HOST_MARKERS):
         return (
-            "No encontramos ese servidor. Revisá que el nombre o la dirección "
+            "No encontramos ese servidor. Revise que el nombre o la dirección "
             "estén bien escritos."
         )
     if "password authentication failed" in message:
         return "Usuario o contraseña incorrectos para esa base de datos."
     if "does not exist" in message:
-        return "La base de datos no existe en ese servidor. Revisá el nombre."
+        return "La base de datos no existe en ese servidor. Revise el nombre."
     if "timeout" in message or "timed out" in message:
         return (
-            "El servidor no respondió a tiempo. Revisá el servidor, el puerto y "
+            "El servidor no respondió a tiempo. Revise el servidor, el puerto y "
             "que el firewall permita la conexión."
         )
     if "closed in the middle of operation" in message:
@@ -198,10 +198,10 @@ def _explain(error: Exception) -> str | None:
         return None
     if "refused" in message or "connect" in message:
         return (
-            "No se pudo conectar al servidor. Revisá el servidor y el puerto, y "
+            "No se pudo conectar al servidor. Revise el servidor y el puerto, y "
             "que PostgreSQL esté aceptando conexiones."
         )
-    return "No se pudo conectar. Revisá los datos de conexión."
+    return "No se pudo conectar. Revise los datos de conexión."
 
 
 async def _disambiguate(database: ErpDatabase) -> str:
@@ -223,13 +223,13 @@ async def _disambiguate(database: ErpDatabase) -> str:
             await conn.execute(text("SELECT 1"))
     except Exception:  # noqa: BLE001
         return (
-            "No se pudo conectar. Revisá el usuario y la contraseña, y que el "
+            "No se pudo conectar. Revise el usuario y la contraseña, y que el "
             "servidor acepte conexiones desde este equipo."
         )
     else:
         return (
             f"El servidor responde y las credenciales son válidas, pero la base "
-            f"'{database.database}' no existe ahí. Revisá el nombre."
+            f"'{database.database}' no existe ahí. Revise el nombre."
         )
     finally:
         await engine.dispose()

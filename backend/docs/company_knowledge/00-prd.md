@@ -186,7 +186,7 @@ por instalación (uvicorn con un worker).
 | # | Riesgo | Impacto | Mitigación |
 |---|---|---|---|
 | R1 | Fuga de documentos entre permisos o entre clientes | Crítico | Filtro previo en el índice, política única y testeada (RNF-01), descarga con la misma política. |
-| R2 | Instrucciones maliciosas dentro de un documento ("ignorá tus reglas") | Alto | Contenido entregado como dato delimitado; regla explícita en el system prompt; test con documento adversario. |
+| R2 | Instrucciones maliciosas dentro de un documento ("ignora tus reglas") | Alto | Contenido entregado como dato delimitado; regla explícita en el system prompt; test con documento adversario. |
 | R3 | Calidad de recuperación insuficiente en español | Alto | Spike con set de evaluación real antes de fijar el modelo (Fase 1 §2); búsqueda híbrida para términos exactos. |
 | R4 | Tamaño del instalador por el modelo | Medio | El spike mide candidatos; se prefiere el más liviano que cumpla RNF-08. |
 | R5 | El procesamiento consume CPU y frena el chat | Alto | Un hilo dedicado, hilos de ONNX acotados y prueba de RNF-02. |

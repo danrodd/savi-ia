@@ -64,7 +64,7 @@ DELETE FROM "Seguridad"."Usuario" WHERE codigo = 'SAVIQA';
 > sur_andina (`a4b1202`, cruce restringido en el commit siguiente).
 >
 > Para que el usuario `SEO` (el mismo superusuario en todos los ERP) atienda
-> a cualquier cliente, agregalo a `SAVI_ADMIN_LOGINS`.
+> a cualquier cliente, agrégalo a `SAVI_ADMIN_LOGINS`.
 
 ### Validación automática
 
@@ -222,7 +222,7 @@ usuario.
 | Tema | Detalle |
 |---|---|
 | ~~La sesión no dice en qué base está~~ | ✅ Resuelto (`5718433`, `638db1f`): login, `/auth/me` y bootstrap devuelven la base; la tarjeta de usuario la muestra. |
-| ~~"· vos" en el ranking~~ | ✅ Resuelto (`3461bbc`): compara id y base de login. |
+| ~~"· usted" en el ranking~~ | ✅ Resuelto (`3461bbc`): compara id y base de login. |
 | ~~Filtro por cliente en la interfaz~~ | ✅ Resuelto (`3461bbc`): chips por cliente en las vistas de consumo. El selector del chat ahora es un buscador (`638db1f`). |
 | **SQL libre para soporte** | Los usuarios de soporte son admin, así que tienen `consultar_libre`. Antes del bug 5, Gemini lo usó 11 veces en un turno. Conviene vigilar el costo por turno de soporte. |
 | **Notas crédito** | Solo farmacias tiene notas crédito con saldo vivo. Quedan en su propio bucket; si el negocio define que restan de la cartera, se cambia en `cartera.py`. |

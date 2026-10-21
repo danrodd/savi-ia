@@ -64,7 +64,7 @@ class SetMessageFeedbackUseCase:
             raise FeedbackNotAllowedError("Solo se pueden calificar las respuestas del asistente.")
         if target.is_superseded:
             raise FeedbackNotAllowedError(
-                "Esa respuesta ya fue reemplazada: calificá la versión vigente."
+                "Esa respuesta ya fue reemplazada: califique la versión vigente."
             )
         if rating is FeedbackRating.UP and reason is not None:
             raise FeedbackNotAllowedError("El motivo solo se envía con una calificación negativa.")

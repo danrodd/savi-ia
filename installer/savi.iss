@@ -514,18 +514,18 @@ begin
   if AlreadyLoggedIn then
     Result :=
       'Ya hay una sesión de Claude Code iniciada en este equipo: SAVI la va ' +
-      'a usar automáticamente. Dejá los dos campos vacíos salvo que quieras ' +
+      'a usar automáticamente. Deje los dos campos vacíos salvo que quiera ' +
       'forzar una autenticación distinta.'
   else
     Result :=
       'SAVI usa la suscripción de Claude (Pro o Max) del cliente. Lo normal ' +
       'es dejar estos dos campos VACÍOS: al terminar la instalación se abre ' +
       'el navegador para iniciar sesión con esa cuenta, y no hay nada que ' +
-      'copiar. Completá un campo solo si te entregaron la credencial ya ' +
-      'generada. El puerto es el que usa SAVI en este equipo; cambialo solo ' +
+      'copiar. Complete un campo solo si le entregaron la credencial ya ' +
+      'generada. El puerto es el que usa SAVI en este equipo; cámbielo solo ' +
       'si ya está ocupado — está elegido para no chocar con nada.' + #13#10 +
-      'Si el cliente usa Gemini u OpenAI en vez de Claude, dejá estos campos ' +
-      'vacíos y cargá la clave después en SAVI: Administración → Proveedores de IA.';
+      'Si el cliente usa Gemini u OpenAI en vez de Claude, deje estos campos ' +
+      'vacíos y cargue la clave después en SAVI: Administración → Proveedores de IA.';
 end;
 
 { `True` si en el directorio elegido ya hay una instalación configurada.
@@ -601,7 +601,7 @@ begin
   Result := False;
   if Trim(Page.Values[0]) = '' then
   begin
-    MsgBox('Indicá el servidor de ' + Which + '.', mbError, MB_OK);
+    MsgBox('Indique el servidor de ' + Which + '.', mbError, MB_OK);
     Exit;
   end;
   if not IsValidPort(Trim(Page.Values[1])) then
@@ -611,12 +611,12 @@ begin
   end;
   if Trim(Page.Values[2]) = '' then
   begin
-    MsgBox('Indicá el nombre de la base de datos de ' + Which + '.', mbError, MB_OK);
+    MsgBox('Indique el nombre de la base de datos de ' + Which + '.', mbError, MB_OK);
     Exit;
   end;
   if Trim(Page.Values[3]) = '' then
   begin
-    MsgBox('Indicá el usuario de ' + Which + '.', mbError, MB_OK);
+    MsgBox('Indique el usuario de ' + Which + '.', mbError, MB_OK);
     Exit;
   end;
   Result := True;
@@ -978,6 +978,55 @@ begin
   Password.Width := Password.Width - Result.Width - ScaleX(8);
 end;
 
+{ Al reconfigurar, las páginas arrancan con lo que ya tiene el .env: quien
+  solo quiere cambiar el nombre de una base no tiene por qué conocer de
+  nuevo servidores, usuarios ni contraseñas. Un valor vacío deja el
+  predeterminado de la página. }
+var
+  ConfigPrefilled: Boolean;
+  PreviousAdminLogins: String;
+
+procedure PrefillValue(Page: TInputQueryWizardPage; Index: Integer; const EnvPath, Key: String);
+var
+  Value: String;
+begin
+  Value := ReadEnvValue(EnvPath, Key);
+  if Value <> '' then
+    Page.Values[Index] := Value;
+end;
+
+procedure PrefillFromEnv();
+var
+  EnvPath: String;
+begin
+  if ConfigPrefilled then
+    Exit;
+  ConfigPrefilled := True;
+  EnvPath := AddBackslash(WizardDirValue) + '.env';
+
+  PrefillValue(ErpPage, 0, EnvPath, 'ERP_DB_HOST');
+  PrefillValue(ErpPage, 1, EnvPath, 'ERP_DB_PORT');
+  PrefillValue(ErpPage, 2, EnvPath, 'ERP_DB_NAME');
+  PrefillValue(ErpPage, 3, EnvPath, 'ERP_DB_USER');
+  PrefillValue(ErpPage, 4, EnvPath, 'ERP_DB_PASSWORD');
+
+  if ReadEnvValue(EnvPath, 'AGENT_DB_ENGINE') = 'sqlite' then
+    AgentKindPage.SelectedValueIndex := 0
+  else if ReadEnvValue(EnvPath, 'AGENT_DB_ENGINE') = 'postgresql' then
+    AgentKindPage.SelectedValueIndex := 1;
+
+  PrefillValue(AgentPgPage, 0, EnvPath, 'AGENT_DB_HOST');
+  PrefillValue(AgentPgPage, 1, EnvPath, 'AGENT_DB_PORT');
+  PrefillValue(AgentPgPage, 2, EnvPath, 'AGENT_DB_NAME');
+  PrefillValue(AgentPgPage, 3, EnvPath, 'AGENT_DB_USER');
+  PrefillValue(AgentPgPage, 4, EnvPath, 'AGENT_DB_PASSWORD');
+
+  PrefillValue(ClaudePage, 0, EnvPath, 'CLAUDE_CODE_OAUTH_TOKEN');
+  PrefillValue(ClaudePage, 1, EnvPath, 'ANTHROPIC_API_KEY');
+  PrefillValue(ClaudePage, 2, EnvPath, 'APP_PORT');
+  PreviousAdminLogins := ReadEnvValue(EnvPath, 'SAVI_ADMIN_LOGINS');
+end;
+
 { ── Páginas del asistente ───────────────────────────────────────────── }
 
 procedure InitializeWizard();
@@ -993,10 +1042,11 @@ begin
     'Configuración existente',
     'Este equipo ya tiene SAVI configurado',
     'Se detectó un archivo de configuración de una instalación anterior. ' +
-    'Podés conservarlo o volver a cargar los datos desde cero.',
+    'Puede conservarlo o cambiar solo lo que necesite: las pantallas siguientes ' +
+    'traen los datos actuales ya cargados.',
     True, False);
   ReconfigPage.Add('Conservar la configuración actual (recomendado)');
-  ReconfigPage.Add('Volver a configurar: bases de datos, autenticación y puerto');
+  ReconfigPage.Add('Modificar la configuración: bases de datos, autenticación y puerto');
   ReconfigPage.SelectedValueIndex := 0;
 
   ErpPage := CreateInputQueryPage(ReconfigPage.ID,
@@ -1123,7 +1173,7 @@ begin
   if WantsReconfigure() then
     Result := Result + NewLine + NewLine +
       'Reconfiguración:' + NewLine +
-      Space + 'Se reemplaza el archivo .env con los datos que cargaste' + NewLine +
+      Space + 'Se reemplaza el archivo .env con los datos que se cargaron' + NewLine +
       Space + 'El anterior queda como .env.anterior por si hay que volver' + NewLine +
       Space + 'Se cierran las sesiones abiertas (cambia la clave de firma)' + NewLine +
       Space + 'Se conservan los datos y la clave de cifrado: nada se borra'
@@ -1159,7 +1209,7 @@ begin
     except
       MsgBox('No se pudieron descargar los componentes necesarios.' + #13#10#13#10 +
              GetExceptionMessage + #13#10#13#10 +
-             'Revisá la conexión a internet y volvé a intentar.', mbCriticalError, MB_OK);
+             'Revise la conexión a internet y vuelva a intentar.', mbCriticalError, MB_OK);
       Result := False;
     end;
   finally
@@ -1171,15 +1221,18 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
 
-  if CurPageID = ErpPage.ID then
+  if (CurPageID = ReconfigPage.ID) and WantsReconfigure() then
+    PrefillFromEnv()
+
+  else if CurPageID = ErpPage.ID then
     Result := TestDbPage(ErpPage, 'erp', 'el ERP', True, LastOkErp)
 
   else if (CurPageID = AgentKindPage.ID) and (AgentKindPage.SelectedValueIndex = 0) then
-    Result := MsgBox('Elegiste guardar los datos de SAVI en un archivo local.' + #13#10#13#10 +
+    Result := MsgBox('Eligió guardar los datos de SAVI en un archivo local.' + #13#10#13#10 +
                      'Sirve para pruebas o para un único usuario: si varias personas ' +
                      'usan el chat al mismo tiempo, las respuestas se traban o fallan, ' +
                      'y el historial queda solo en este equipo, sin respaldo del servidor.' + #13#10#13#10 +
-                     'Para el uso normal en una empresa, elegí PostgreSQL.' + #13#10#13#10 +
+                     'Para el uso normal en una empresa, elija PostgreSQL.' + #13#10#13#10 +
                      '¿Seguir con archivo local?',
                      mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES
 
@@ -1196,8 +1249,8 @@ begin
     if (not AlreadyLoggedIn) and (Trim(ClaudePage.Values[0]) = '') and
        (Trim(ClaudePage.Values[1]) = '') then
     begin
-      Result := MsgBox('No cargaste ningún token ni clave de API.' + #13#10#13#10 +
-                       'Al terminar la instalación se te va a ofrecer iniciar ' +
+      Result := MsgBox('No cargó ningún token ni clave de API.' + #13#10#13#10 +
+                       'Al terminar la instalación se le va a ofrecer iniciar ' +
                        'sesión con la cuenta de Claude del cliente, que es la ' +
                        'forma recomendada.' + #13#10#13#10 +
                        '¿Continuar así?', mbConfirmation, MB_YESNO) = IDYES;
@@ -1320,7 +1373,7 @@ begin
     LogPath := ExpandConstant('{app}\npm-claude-cli.log');
     if NpmCmd = '' then
       MsgBox('No se encontró npm después de instalar Node.js. ' +
-             'Instalá el CLI a mano con: npm install -g @anthropic-ai/claude-code',
+             'Instale el CLI a mano con: npm install -g @anthropic-ai/claude-code',
              mbError, MB_OK)
     else
     begin
@@ -1335,7 +1388,7 @@ begin
       if not RunNpmInstall(NpmCmd, LogPath, ResultCode) then
         MsgBox('La instalación del CLI de Claude Code falló (código ' + IntToStr(ResultCode) + ').' + #13#10 +
                'Detalle en: ' + LogPath + #13#10#13#10 +
-               'Instalalo a mano con: npm install -g @anthropic-ai/claude-code',
+               'Instálelo a mano con: npm install -g @anthropic-ai/claude-code',
                mbError, MB_OK);
     end;
   end;
@@ -1529,7 +1582,7 @@ begin
   if Secret = '' then
   begin
     MsgBox('No se pudo generar la clave de firma de sesiones.' + #13#10 +
-           'Editá JWT_SECRET en el archivo .env antes de usar SAVI.',
+           'Edite JWT_SECRET en el archivo .env antes de usar SAVI.',
            mbError, MB_OK);
     Secret := 'CAMBIAR-ESTE-VALOR';
   end;
@@ -1542,7 +1595,7 @@ begin
   if FernetKey = '' then
   begin
     MsgBox('No se pudo generar la clave de cifrado de credenciales del ERP.' + #13#10 +
-           'Editá ERP_CREDENTIALS_KEY en el archivo .env antes de usar SAVI: generá una con ' + #13#10 +
+           'Edite ERP_CREDENTIALS_KEY en el archivo .env antes de usar SAVI: genere una con ' + #13#10 +
            'python -c "from cryptography.fernet import Fernet; ' +
            'print(Fernet.generate_key().decode())"',
            mbError, MB_OK);
@@ -1550,13 +1603,14 @@ begin
   end;
   ReplaceEnvToken(Lines, '{{ERP_CREDENTIALS_KEY}}', FernetKey);
 
-  { Vacío a propósito: un administrador del ERP ya queda habilitado para
+  { Vacío en una instalación nueva; al reconfigurar se conserva el valor
+    que se había completado a mano. Un administrador del ERP ya queda habilitado para
     la sección de administración por su propio flag. Este campo es el
     escape para dar acceso a un usuario que NO es admin en el ERP, y su
     valor es un `codigo` de Seguridad.Usuario — no el usuario de conexión
     a Postgres que se cargó en el asistente. Se completa a mano en el
     .env cuando hace falta. }
-  ReplaceEnvToken(Lines, '{{SAVI_ADMIN_LOGINS}}', '');
+  ReplaceEnvToken(Lines, '{{SAVI_ADMIN_LOGINS}}', PreviousAdminLogins);
 
   { SAVI Cloud: solo si hay URL de build Y token. Campo vacío = no se
     escribe nada. Al arrancar, SAVI canjea el token y vacía la variable. }
@@ -1607,7 +1661,7 @@ begin
   if LoadStringFromFile(DiagnosticReportPath(), RawAnsi) then
     Text := String(RawAnsi)
   else
-    Text := 'No se encontró el reporte del diagnóstico. Abrí el acceso directo ' +
+    Text := 'No se encontró el reporte del diagnóstico. Abra el acceso directo ' +
             '"Diagnosticar SAVI" desde el menú Inicio para verlo.';
 
   Form := CreateCustomForm(ScaleX(620), ScaleY(420), False, False);
@@ -1670,7 +1724,7 @@ begin
               ewWaitUntilTerminated, ResultCode) then
   begin
     MsgBox('No se pudo ejecutar la verificación de la configuración.' + #13#10 +
-           'Podés correrla después desde el acceso directo "Diagnosticar SAVI".',
+           'Puede correrla después desde el acceso directo "Diagnosticar SAVI".',
            mbError, MB_OK);
     Exit;
   end;
@@ -1694,7 +1748,7 @@ begin
            'pendiente es iniciar sesión con la cuenta de Claude, o renovarla si ' +
            'venció.' + #13#10#13#10 +
            'Al terminar la instalación queda marcada la casilla para hacerlo. ' +
-           'También podés hacerlo cuando quieras desde el acceso directo ' +
+           'También puede hacerlo cuando quiera desde el acceso directo ' +
            '"Iniciar sesión en Claude".',
            mbInformation, MB_OK);
     Exit;
@@ -1703,8 +1757,8 @@ begin
   if ResultCode <> 0 then
     ShowDiagnosticReport('SAVI quedó instalado, pero la verificación encontró problemas y ' +
                          'no va a funcionar hasta corregirlos. Abajo está qué falló y qué ' +
-                         'hacer (las líneas [FALLA]). Para corregir los datos, volvé a ' +
-                         'ejecutar este instalador y elegí "Volver a configurar".');
+                         'hacer (las líneas [FALLA]). Para corregir los datos, vuelva a ' +
+                         'ejecutar este instalador y elija "Modificar la configuración".');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

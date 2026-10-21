@@ -143,7 +143,7 @@ describe('Composer · imágenes adjuntas', () => {
 
     dropOn(wrapper.element.parentElement as HTMLElement, [image('nota.pdf', 'application/pdf')])
     expect(toastMock.error).toHaveBeenLastCalledWith(
-      '“nota.pdf” no es una imagen compatible. Usá PNG, JPG, WEBP o GIF.',
+      '“nota.pdf” no es una imagen compatible. Use PNG, JPG, WEBP o GIF.',
     )
     expect(uploadMock).not.toHaveBeenCalled()
   })
@@ -156,7 +156,7 @@ describe('Composer · imágenes adjuntas', () => {
     await flushPromises()
 
     expect(wrapper.findAll('.chip')).toHaveLength(4)
-    expect(toastMock.error).toHaveBeenCalledWith('Podés adjuntar hasta 4 imágenes por mensaje.')
+    expect(toastMock.error).toHaveBeenCalledWith('Puede adjuntar hasta 4 imágenes por mensaje.')
   })
 
   it('no deja enviar mientras una imagen se está subiendo', async () => {

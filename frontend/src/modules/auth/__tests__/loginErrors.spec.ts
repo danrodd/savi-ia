@@ -15,7 +15,7 @@ describe('loginErrorMessage', () => {
 
     expect(loginErrorMessage(err)).toBe(UNKNOWN_DATABASE_MESSAGE)
     expect(UNKNOWN_DATABASE_MESSAGE).toBe(
-      'No encontramos ese cliente. Revisá el código después de la @.',
+      'No encontramos ese cliente. Revise el código después de la @.',
     )
   })
 
@@ -24,7 +24,7 @@ describe('loginErrorMessage', () => {
 
     expect(loginErrorMessage(err)).toBe(DATABASE_DISABLED_MESSAGE)
     expect(DATABASE_DISABLED_MESSAGE).toBe(
-      'Ese cliente está desactivado en SAVI. Avisale a tu administrador.',
+      'Ese cliente está desactivado en SAVI. Avise a su administrador.',
     )
   })
 
@@ -33,7 +33,7 @@ describe('loginErrorMessage', () => {
 
     expect(loginErrorMessage(err)).toBe(DATABASE_UNREACHABLE_MESSAGE)
     expect(DATABASE_UNREACHABLE_MESSAGE).toBe(
-      'No pudimos conectar con la base de ese cliente. Probá de nuevo en unos minutos o avisale a tu administrador.',
+      'No pudimos conectar con la base de ese cliente. Pruebe de nuevo en unos minutos o avise a su administrador.',
     )
     // Un 503 sin código sigue siendo "SAVI no responde".
     expect(loginErrorMessage(new AuthRequestError('HTTP 503', 503))).toMatch(/SAVI no está/)
@@ -44,7 +44,7 @@ describe('loginErrorMessage', () => {
 
     expect(loginErrorMessage(err)).toBe(GENERIC_LOGIN_MESSAGE)
     expect(GENERIC_LOGIN_MESSAGE).toBe(
-      'No pudimos entrar. Revisá el usuario, la contraseña y el código del cliente.',
+      'No pudimos entrar. Revise el usuario, la contraseña y el código del cliente.',
     )
   })
 
@@ -59,8 +59,8 @@ describe('loginErrorMessage', () => {
       'El usuario está deshabilitado',
     )
     expect(
-      loginErrorMessage(new AuthRequestError('Demasiados intentos. Probá en 60 segundos.', 429)),
-    ).toBe('Demasiados intentos. Probá en 60 segundos.')
+      loginErrorMessage(new AuthRequestError('Demasiados intentos. Pruebe en 60 segundos.', 429)),
+    ).toBe('Demasiados intentos. Pruebe en 60 segundos.')
   })
 
   it('sin conexión explica que es un problema de red', () => {

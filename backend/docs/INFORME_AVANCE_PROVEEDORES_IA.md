@@ -240,7 +240,7 @@ ad23c50 feat(llm-providers): integrar proveedor OpenAI
   agotando cuota, y hoy dejó de responder del todo); el usuario la
   eliminará directamente.
 - Con una key nueva: verificar que la regla de "completitud moderada"
-  del system prompt mejoró la respuesta de Gemini a "decime la razón
+  del system prompt mejoró la respuesta de Gemini a "dime la razón
   social" (debería incluir el NIT, igual que Claude).
 - Repetir la comparación de velocidad en igualdad de condiciones:
   Claude por `api_key` (no `local_session`), Gemini con el modelo

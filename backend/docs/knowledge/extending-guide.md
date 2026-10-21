@@ -1,6 +1,6 @@
 # Guía de extensión — agregar campos, entidades nuevas, evolucionar el schema
 
-Esto es para **devs que quieren hacer crecer el schema**. Si solo querés editar contenido existente, andá a [`editing-guide.md`](./editing-guide.md).
+Esto es para **devs que quieren hacer crecer el schema**. Si solo quieres editar contenido existente, ve a [`editing-guide.md`](./editing-guide.md).
 
 ## Tres tipos de extensión, en orden de complejidad
 
@@ -29,7 +29,7 @@ Esto es para **devs que quieren hacer crecer el schema**. Si solo querés editar
 
 ```
 
-La regla de oro: **80% de las extensiones son tipo A**. Antes de pensar en tipo B o C, evaluá si lo que querés se puede modelar como campo opcional.
+La regla de oro: **80% de las extensiones son tipo A**. Antes de pensar en tipo B o C, evalúa si lo que quieres se puede modelar como campo opcional.
 
 ---
 
@@ -41,7 +41,7 @@ El equipo SEO te pide: *"queremos documentar el tiempo estimado de cada proceso 
 
 ### Paso a paso
 
-1. **Editás el Pydantic** (`app/modules/knowledge/domain/entities/form_entry.py`):
+1. **Editas el Pydantic** (`app/modules/knowledge/domain/entities/form_entry.py`):
 
    ```python
    class FormEntry(BaseModel):
@@ -53,11 +53,11 @@ El equipo SEO te pide: *"queremos documentar el tiempo estimado de cada proceso 
        )
    ```
 
-   Notá:
+   Nota:
    - **Tipo `| None`** con `default=None` → es opcional.
    - **NO modifiques** campos existentes. Eso es Tipo C.
 
-2. **Opcionalmente, actualizás el serializer** en `app/modules/chat/infrastructure/llm/tools/knowledge.py` para que el LLM lo vea:
+2. **Opcionalmente, actualizas el serializer** en `app/modules/chat/infrastructure/llm/tools/knowledge.py` para que el LLM lo vea:
 
    ```python
    def _form_to_payload(form: FormEntry) -> dict[str, Any]:
@@ -67,24 +67,24 @@ El equipo SEO te pide: *"queremos documentar el tiempo estimado de cada proceso 
        }
    ```
 
-3. **Actualizás la documentación** de referencia (`backend/docs/knowledge/reference.md`):
+3. **Actualizas la documentación** de referencia (`backend/docs/knowledge/reference.md`):
 
-   Agregás una fila a la tabla de FormEntry indicando el campo nuevo y su tipo.
+   Agregas una fila a la tabla de FormEntry indicando el campo nuevo y su tipo.
 
-4. **Opcional: actualizás el system prompt** del chat si querés que el LLM use el campo de manera particular. Pero si solo es informativo, el LLM lo ve y lo usa solo.
+4. **Opcional: actualizas el system prompt** del chat si quieres que el LLM use el campo de manera particular. Pero si solo es informativo, el LLM lo ve y lo usa solo.
 
-5. **Probás**: corres los tests, levantás el backend, todos los archivos viejos siguen cargando OK. Editás un form para enriquecerlo con el campo nuevo y verificás en el chat.
+5. **Pruebas**: corres los tests, levantas el backend, todos los archivos viejos siguen cargando OK. Editas un form para enriquecerlo con el campo nuevo y verificas en el chat.
 
 ### Tests
 
-Si el cambio es importante, agregás un test en `tests/unit/modules/knowledge/test_static_catalog.py` que valide que el campo nuevo se carga y se filtra/usa como esperás.
+Si el cambio es importante, agregas un test en `tests/unit/modules/knowledge/test_static_catalog.py` que valide que el campo nuevo se carga y se filtra/usa como esperas.
 
 ### Reglas no negociables del Tipo A
 
 - **NUNCA** cambies el tipo de un campo existente. `description: str` → `description: dict[...]` ES Tipo C.
 - **NUNCA** hagas un campo previamente opcional ahora requerido. Eso rompe archivos viejos.
 - **NUNCA** renombres un campo. Es lo mismo que borrar + crear, y rompe archivos viejos.
-- Sí podés deprecar un campo (dejarlo opcional, vaciarlo en futuros archivos) y removerlo más adelante con una migración.
+- Sí puedes deprecar un campo (dejarlo opcional, vaciarlo en futuros archivos) y removerlo más adelante con una migración.
 
 ---
 
@@ -98,7 +98,7 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
 
 ### Paso a paso
 
-1. **Creás la entidad Pydantic**:
+1. **Creas la entidad Pydantic**:
 
    ```python
    # app/modules/knowledge/domain/entities/role_entry.py
@@ -124,7 +124,7 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
    __all__ = [..., "RoleEntry"]
    ```
 
-3. **Definís dónde viven los archivos en disco**. Por ejemplo:
+3. **Defines dónde viven los archivos en disco**. Por ejemplo:
 
    ```
    data/roles/
@@ -135,7 +135,7 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
 
    Los roles son transversales (no por módulo), así que `data/roles/` directo.
 
-4. **Extendés el puerto** `KnowledgeCatalog`:
+4. **Extiendes el puerto** `KnowledgeCatalog`:
 
    ```python
    class KnowledgeCatalog(ABC):
@@ -148,7 +148,7 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
        def list_roles(self) -> list[RoleEntry]: ...
    ```
 
-5. **Extendés la implementación** `StaticKnowledgeCatalog`:
+5. **Extiendes la implementación** `StaticKnowledgeCatalog`:
 
    ```python
    class StaticKnowledgeCatalog(KnowledgeCatalog):
@@ -163,7 +163,7 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
            return list(self._roles_by_code.values())
    ```
 
-6. **Extendés el loader** `load_static_catalog`:
+6. **Extiendes el loader** `load_static_catalog`:
 
    ```python
    roles_dir = root / "roles"
@@ -172,9 +172,9 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
    return StaticKnowledgeCatalog(..., roles=roles)
    ```
 
-7. **Sumás un `tipo` al dispatcher, NO una tool nueva.** El agente tiene
+7. **Sumas un `tipo` al dispatcher, NO una tool nueva.** El agente tiene
    un máximo de 4 tools (ver `backend/docs/mcp_deferred_tools_gotcha.md`).
-   Editás `app/modules/chat/infrastructure/llm/tools/knowledge.py`:
+   Editas `app/modules/chat/infrastructure/llm/tools/knowledge.py`:
 
    ```python
    def build_describir_rol_impl(catalog: KnowledgeCatalog) -> Callable[[dict[str, Any]], Any]:
@@ -190,27 +190,27 @@ Eso no encaja como campo de un form (es transversal). Es una entidad nueva.
    ```
 
    Y en el mismo archivo:
-   - agregás `"rol"` a `KNOWLEDGE_TIPOS` (el JSON Schema de la tool lo
+   - agregas `"rol"` a `KNOWLEDGE_TIPOS` (el JSON Schema de la tool lo
      toma de ahí automáticamente);
-   - agregás la rama en `build_consultar_conocimiento_impl`:
+   - agregas la rama en `build_consultar_conocimiento_impl`:
      `if tipo == "rol": return await rol({"rol": consulta})`.
 
-8. **Documentás el tipo nuevo** en `_CONSULTAR_CONOCIMIENTO_DESCRIPTION`
+8. **Documentas el tipo nuevo** en `_CONSULTAR_CONOCIMIENTO_DESCRIPTION`
    (`app/modules/chat/infrastructure/llm/tools/registry.py`), que es lo que
    lee el modelo para saber cuándo usarlo. El registro sirve igual para
    todos los proveedores de IA: no hay nada que registrar por proveedor.
 
-9. **Actualizás el system prompt** para que el LLM sepa que la tool existe.
+9. **Actualizas el system prompt** para que el LLM sepa que la tool existe.
 
-10. **Agregás tests** del rol nuevo, similar a los existentes para forms.
+10. **Agregas tests** del rol nuevo, similar a los existentes para forms.
 
-11. **Documentás en `reference.md`** el schema de `RoleEntry` con sus campos.
+11. **Documentas en `reference.md`** el schema de `RoleEntry` con sus campos.
 
 ### Reglas del Tipo B
 
-- Si la entidad nueva **se filtra por módulo** (como los forms), incluí `allowed_modules` en el método del puerto.
+- Si la entidad nueva **se filtra por módulo** (como los forms), incluye `allowed_modules` en el método del puerto.
 - Si es **transversal** (como el glosario y los roles), no incluyas filtro.
-- Si la entidad **referencia otras** (como los workflows referencian forms vía `form`), no valides la referencia en la entidad Pydantic — eso lo podés hacer en un test smoke que recorra el catálogo entero.
+- Si la entidad **referencia otras** (como los workflows referencian forms vía `form`), no valides la referencia en la entidad Pydantic — eso lo puedes hacer en un test smoke que recorra el catálogo entero.
 
 ---
 
@@ -222,7 +222,7 @@ El equipo quiere separar `description` por audiencia: una versión para usuario 
 
 ### Paso a paso (orden importante)
 
-1. **Versionás el schema en el código**. No reemplazás `FormEntry`: creás `FormEntryV2`.
+1. **Versionas el schema en el código**. No reemplazas `FormEntry`: creas `FormEntryV2`.
 
    ```python
    # form_entry.py
@@ -265,7 +265,7 @@ El equipo quiere separar `description` por audiencia: una versión para usuario 
            raise KnowledgeLoadError(f"{path}: schema_version desconocida: {version}")
    ```
 
-3. **Definís una representación canónica** que ambas versiones rinden. Esto es lo que usan las tools y el resto del código:
+3. **Defines una representación canónica** que ambas versiones rinden. Esto es lo que usan las tools y el resto del código:
 
    ```python
    class FormEntry(BaseModel):  # canónico
@@ -276,9 +276,9 @@ El equipo quiere separar `description` por audiencia: una versión para usuario 
            return cls(description=DescriptionByAudience(funcional=v1.description))
    ```
 
-4. **Migrás archivos viejos uno por uno**. No los migrás todos a la vez — eso anula la ventaja del esquema versionado. Migrás cuando alguien va a enriquecer ese form con la versión técnica.
+4. **Migras archivos viejos uno por uno**. No los migras todos a la vez — eso anula la ventaja del esquema versionado. Migras cuando alguien va a enriquecer ese form con la versión técnica.
 
-5. **Eventualmente** (meses después) cuando todos los archivos sean v2, removés `FormEntryV1`. Eso ya no es Tipo C, es housekeeping.
+5. **Eventualmente** (meses después) cuando todos los archivos sean v2, remueves `FormEntryV1`. Eso ya no es Tipo C, es housekeeping.
 
 ### Reglas críticas del Tipo C
 
@@ -291,13 +291,13 @@ El equipo quiere separar `description` por audiencia: una versión para usuario 
 
 ## Cómo elegir entre A, B y C
 
-Cuando dudás qué tipo de extensión hacer, preguntate:
+Cuando dudas qué tipo de extensión hacer, pregúntate:
 
-1. **¿Lo que querés agregar es info adicional sobre algo que ya existe en el catálogo?** → Tipo A. Es el 80% de los casos.
+1. **¿Lo que quieres agregar es info adicional sobre algo que ya existe en el catálogo?** → Tipo A. Es el 80% de los casos.
 
 2. **¿Es un concepto nuevo, transversal o paralelo, que no encaja como atributo de algo existente?** → Tipo B.
 
-3. **¿Necesitás cambiar el tipo de un campo existente, o convertir un opcional en requerido?** → Tipo C. Pero antes intentá si lo podés modelar como campo opcional NUEVO (Tipo A) que coexista con el viejo. Casi siempre se puede.
+3. **¿Necesitas cambiar el tipo de un campo existente, o convertir un opcional en requerido?** → Tipo C. Pero antes intenta si lo puedes modelar como campo opcional NUEVO (Tipo A) que coexista con el viejo. Casi siempre se puede.
 
 ---
 
@@ -307,7 +307,7 @@ Estos antipatrones aparecen tarde o temprano. Los listo para que los detectes:
 
 ### Antipatrón 1 — "Hagamos un v3 que reemplaza todo"
 
-Tentación: "este JSON quedó desactualizado, hagamos uno nuevo desde cero". **Mal**. Perdés el historial, te llena de breaking changes, y vas a tener que repetir el ejercicio en 6 meses.
+Tentación: "este JSON quedó desactualizado, hagamos uno nuevo desde cero". **Mal**. Pierdes el historial, te llena de breaking changes, y vas a tener que repetir el ejercicio en 6 meses.
 
 Mejor: cada archivo se enriquece independientemente con Tipo A.
 
@@ -315,13 +315,13 @@ Mejor: cada archivo se enriquece independientemente con Tipo A.
 
 Tentación: `"metadata": "{key1: val1, key2: val2}"`. **Mal**. JSON adentro de JSON es ilegible y no valida.
 
-Mejor: hacé un sub-modelo Pydantic y declarás los campos.
+Mejor: haz un sub-modelo Pydantic y declaras los campos.
 
 ### Antipatrón 3 — Campos "comodín" tipo `dict[str, Any]`
 
 Tentación: agregar `"custom": {...}` con forma libre. **Mal**. Pierde la garantía de Pydantic, te llena de campos no-validados.
 
-Mejor: si necesitás flexibilidad, agregá los campos opcionales que vayas necesitando con Tipo A.
+Mejor: si necesitas flexibilidad, agrega los campos opcionales que vayas necesitando con Tipo A.
 
 ### Antipatrón 4 — Modificar un archivo por bulk-update programático
 

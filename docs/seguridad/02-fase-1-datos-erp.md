@@ -222,7 +222,7 @@ Ese texto puede traer host, ruta o SQL, y el modelo lo repite al usuario.
 except Exception as e:  # noqa: BLE001
     log.exception("tool_failed name=%s", name)
     return ToolResult(
-        text="La herramienta falló. Probá reformular la consulta.",
+        text="La herramienta falló. Intente reformular la consulta.",
         is_error=True,
     )
 ```

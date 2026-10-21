@@ -60,8 +60,8 @@ class ExecuteFreeQueryUseCase:
                 raise ExplainGateError(
                     f"La consulta es muy amplia: el planner estima "
                     f"~{estimated:,} filas (máximo {self._policy.max_estimated_rows:,}). "
-                    "Afiná el filtro (por fecha, cliente, producto…) o "
-                    "pedime un agregado (totales, conteos)."
+                    "Afina el filtro (por fecha, cliente, producto…) o "
+                    "pide un agregado (totales, conteos)."
                 )
             columns, rows = await self._executor.execute_select(
                 normalized_sql, max_rows=self._policy.max_rows
@@ -111,9 +111,9 @@ class ExecuteFreeQueryUseCase:
             wrapped = DatabaseExecutionError(
                 f"La BD rechazó la consulta: {db_msg}. "
                 "Si el error es por una columna o tabla que no existe, "
-                "ANTES de rendirte consultá `information_schema.columns` "
+                "ANTES de rendirte consulta `information_schema.columns` "
                 "(con `table_schema` y `table_name` específicos + LIMIT 50) "
-                "para descubrir los nombres reales, y reintentá una vez "
+                "para descubrir los nombres reales, y reintenta una vez "
                 "con los nombres correctos."
             )
             log.exception("free_query_unexpected_error sql=%r", sql[:200])

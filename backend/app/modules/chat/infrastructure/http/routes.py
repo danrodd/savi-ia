@@ -122,7 +122,7 @@ async def chat(
     if not access.has_access:
         raise ErpDatabaseUnavailableError(
             str(conversation_database_id),
-            "La base de datos de esta conversación no está disponible o ya no tenés acceso a ella.",
+            "La base de datos de esta conversación no está disponible o ya no tiene acceso a ella.",
         )
 
     # Sin proveedor de IA usable, 409 `llm_provider_unavailable` acá, antes

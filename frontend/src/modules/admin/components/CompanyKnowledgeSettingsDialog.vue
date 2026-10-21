@@ -147,7 +147,7 @@ async function acceptAndEnable(): Promise<void> {
       </p>
 
       <p v-if="settings.uses_subscription" class="kset__warn">
-        La lectura consume el límite de tu suscripción de Claude. Una carga grande puede dejar el
+        La lectura consume el límite de su suscripción de Claude. Una carga grande puede dejar el
         chat sin servicio hasta que el límite se renueve. El costo se muestra como referencia de
         precio de lista.
       </p>

@@ -103,7 +103,7 @@ def _reject_default_jwt_secret(self) -> "Settings":
     firma tokens de administrador válidos para cualquiera que lo conozca."""
     if self.app_env != "development" and self.jwt_secret.strip() == _INSECURE_JWT_SECRET:
         raise ValueError(
-            "JWT_SECRET tiene el valor por defecto. Generá uno nuevo antes de "
+            "JWT_SECRET tiene el valor por defecto. Genere uno nuevo antes de "
             "usar SAVI fuera de desarrollo."
         )
     return self

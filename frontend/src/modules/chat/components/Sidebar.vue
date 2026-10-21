@@ -146,7 +146,7 @@ function goToAdmin(): void {
     <nav class="sidebar__list" aria-label="Conversaciones">
       <p v-if="loading" class="sidebar__hint">Cargando…</p>
       <p v-else-if="usableConversations.length === 0" class="sidebar__hint">
-        Aún no hay conversaciones. Escribile algo a SAVI para empezar.
+        Aún no hay conversaciones. Escríbale algo a SAVI para empezar.
       </p>
       <p v-else-if="groups.length === 0 && hasSearch" class="sidebar__hint">
         No encontramos conversaciones con «{{ search.trim() }}».

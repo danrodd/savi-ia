@@ -24,7 +24,7 @@ def _report() -> Report:
             "La base de datos de SAVI",
             ok=False,
             detail="No se encontró el servidor 'srv'.",
-            remedy="Revisá el nombre del servidor.",
+            remedy="Revise el nombre del servidor.",
         )
     )
     return report
@@ -44,7 +44,7 @@ def test_report_file_gets_the_text_and_the_browser_is_not_opened(
     text = target.read_text(encoding="mbcs")
     assert code != 0
     assert "[FALLA] La base de datos de SAVI" in text
-    assert "-> Revisá el nombre del servidor." in text
+    assert "-> Revise el nombre del servidor." in text
     assert opened == []
 
 

@@ -44,7 +44,7 @@ describe('resolveChatErrorMessage', () => {
     expect(resolveChatErrorMessage({ message }, true)).toBe(message)
   })
 
-  it('el aviso usa voseo', () => {
-    expect(ASSISTANT_UNAVAILABLE_MESSAGE).toContain('Avisale')
+  it('el aviso trata de usted', () => {
+    expect(ASSISTANT_UNAVAILABLE_MESSAGE).toContain('Avise a su administrador')
   })
 })

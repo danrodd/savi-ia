@@ -34,7 +34,7 @@ class CompanyDocumentIndexLimitReachedError(DomainError):
     def __init__(self, limit: int) -> None:
         super().__init__(
             f"La instalación alcanzó el límite de {limit} fragmentos. "
-            "Eliminá documentos para liberar espacio."
+            "Elimine documentos para liberar espacio."
         )
         self.limit = limit
 

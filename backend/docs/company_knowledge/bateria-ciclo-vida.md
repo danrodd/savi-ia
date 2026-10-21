@@ -80,14 +80,14 @@ repetirlo del historial, que el usuario ya vio, y eso no es una fuga.
 | # | Usuario y base | Ve | No ve |
 |---|---|---|---|
 | L01 | QAINV en FRAMI | Los 11 documentos a los que tiene acceso: devoluciones, descuentos FRAMI, viáticos y el corpus público | Acta de junta, cartera, descuentos Sur Andina, el reglamento borrado |
-| L02 | QACXC en Farmacias ("listame las políticas") | Cartera y viáticos | Devoluciones, acta, políticas de otras bases, el procedimiento de inventario |
+| L02 | QACXC en Farmacias ("lístame las políticas") | Cartera y viáticos | Devoluciones, acta, políticas de otras bases, el procedimiento de inventario |
 
 ### Fallos del proveedor
 
 | # | Paso | Resultado |
 |---|---|---|
 | F01 | Configurar `modelo-inexistente-qa` como modelo de lectura | Se guarda (no se valida al guardar) |
-| F02 | Subir un escaneo | Termina en segundos: `no_text`, código `ai_failed`, "No se pudo leer con IA: el proveedor activo no respondió. Revisá su configuración y el modelo de lectura, y después usá «Leer con IA»." |
+| F02 | Subir un escaneo | Termina en segundos: `no_text`, código `ai_failed`, "No se pudo leer con IA: el proveedor activo no respondió. Revise su configuración y el modelo de lectura, y después use «Leer con IA»." |
 | F03 | Restaurar el modelo | El script lo restaura en un `finally`, aunque algo falle |
 | F04 | "Leer con IA" | Listo, leído con IA |
 | F05 | Preguntar | "45 minutos por vehículo" [D1] |
@@ -121,7 +121,7 @@ Test: el commit ocurre antes que la respuesta.
 ### 3.2 Proveedor caído: el aviso sugería justo lo que iba a fallar
 
 Con la IA sin responder, un escaneo quedaba en "El PDF parece escaneado.
-Podés leerlo con IA", y volver a intentarlo fallaba igual hasta corregir el
+Puede leerlo con IA", y volver a intentarlo fallaba igual hasta corregir el
 proveedor. Ahora, si hubo páginas que se mandaron a la IA y todas cayeron
 al respaldo, el documento queda con el código `ai_failed` y un aviso que
 apunta al proveedor.
@@ -152,8 +152,8 @@ ningún turno caído.
 ### 4.1 B04: a veces responde como si el tema fuera ajeno
 
 Tras borrar el reglamento, una corrida respondió a "¿cuántos cupos de motos
-hay en el parqueadero?" con "Solo puedo ayudarte con temas del producto y
-de tu empresa". No filtra nada, pero el tono es de pregunta fuera de tema
+hay en el parqueadero?" con "Solo puedo ayudarle con temas del producto y
+de su empresa". No filtra nada, pero el tono es de pregunta fuera de tema
 cuando lo correcto es "no encontré eso en los documentos". En la otra
 corrida respondió "No encontré información sobre los cupos". Queda
 registrado; no se ajustó el prompt por un caso aislado.

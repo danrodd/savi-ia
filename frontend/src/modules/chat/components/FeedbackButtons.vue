@@ -33,7 +33,7 @@ const isDown = computed(() => props.feedback?.rating === 'down')
 async function save(input: FeedbackInput): Promise<boolean> {
   const ok = await store.rateMessage(props.messageId, input)
   if (ok) toast.success('¡Gracias!')
-  else toast.error('No pudimos guardar tu calificación. Probá de nuevo.')
+  else toast.error('No pudimos guardar su calificación. Pruebe de nuevo.')
   return ok
 }
 
@@ -41,7 +41,7 @@ async function onClick(clicked: 'up' | 'down'): Promise<void> {
   const outcome = resolveFeedbackClick(props.feedback, clicked)
   if (outcome.kind === 'clear') {
     const ok = await store.rateMessage(props.messageId, null)
-    if (!ok) toast.error('No pudimos quitar tu calificación. Probá de nuevo.')
+    if (!ok) toast.error('No pudimos quitar su calificación. Pruebe de nuevo.')
     return
   }
   if (outcome.kind === 'save') {
@@ -66,7 +66,7 @@ async function submitDown(): Promise<void> {
 </script>
 
 <template>
-  <span class="feedback" role="group" aria-label="¿Te sirvió esta respuesta?">
+  <span class="feedback" role="group" aria-label="¿Le sirvió esta respuesta?">
     <button
       type="button"
       class="action-btn feedback__btn"
@@ -101,7 +101,7 @@ async function submitDown(): Promise<void> {
     <Dialog v-model:open="dialogOpen" title="¿Qué pasó?" :max-width="420">
       <form class="fb-form" data-testid="feedback-dialog" @submit.prevent="submitDown">
         <fieldset class="fb-form__reasons">
-          <legend class="fb-form__legend">Elegí lo que mejor describa el problema</legend>
+          <legend class="fb-form__legend">Elija lo que mejor describa el problema</legend>
           <label v-for="option in FEEDBACK_REASONS" :key="option.value" class="fb-form__option">
             <input v-model="reason" type="radio" name="feedback-reason" :value="option.value" />
             <span>{{ option.label }}</span>

@@ -55,7 +55,7 @@ def test_alembic_option_without_escaping_would_fail() -> None:
 
 @pytest.mark.parametrize("env", ["production", "staging"])
 def test_installer_placeholder_jwt_secret_is_rejected(env: str) -> None:
-    with pytest.raises(ValidationError, match="Volver a configurar"):
+    with pytest.raises(ValidationError, match="Modificar la configuración"):
         _pg(app_env=env, jwt_secret=INSTALLER_PLACEHOLDER)
 
 
@@ -64,7 +64,7 @@ def test_installer_placeholder_jwt_secret_is_allowed_in_development() -> None:
 
 
 def test_invalid_credentials_key_is_rejected_with_a_clear_message() -> None:
-    with pytest.raises(ValidationError, match="ERP_CREDENTIALS_KEY.*Volver a configurar"):
+    with pytest.raises(ValidationError, match="ERP_CREDENTIALS_KEY.*Modificar la configuración"):
         _pg(erp_credentials_key=INSTALLER_PLACEHOLDER)
 
 

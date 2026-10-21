@@ -46,8 +46,8 @@ _AUTH_STATUS = (401, 403)
 _SECURITY_REASONS = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"}
 _SECURITY_MESSAGE = "No pude generar una respuesta para esa consulta."
 _CREDENTIAL_REMEDY = (
-    "La API key de Gemini no es válida o no tiene permisos. Revisá la configuración "
-    "del proveedor y volvé a intentar."
+    "La API key de Gemini no es válida o no tiene permisos. Revise la configuración "
+    "del proveedor y vuelva a intentar."
 )
 _NO_CREDITS_MESSAGE = (
     "La cuenta de Gemini no tiene créditos. Un administrador debe cargar saldo en "

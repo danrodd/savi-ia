@@ -28,11 +28,11 @@ describe('validatePermissions', () => {
   })
 
   it('exige al menos un módulo con visibilidad por módulos', () => {
-    expect(validatePermissions(perms({ visibility: 'modules' }))).toBe('Elegí al menos un módulo.')
+    expect(validatePermissions(perms({ visibility: 'modules' }))).toBe('Elija al menos un módulo.')
   })
 
   it('exige al menos una base cuando no aplica a todas', () => {
-    expect(validatePermissions(perms({ all_databases: false }))).toBe('Elegí al menos una base.')
+    expect(validatePermissions(perms({ all_databases: false }))).toBe('Elija al menos una base.')
   })
 })
 

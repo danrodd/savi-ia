@@ -19,19 +19,19 @@ _FAILED_MESSAGES: dict[DocumentStatusCode, str] = {
         "La IA no pudo leer ninguna página: las imágenes están borrosas o son ilegibles."
     ),
     DocumentStatusCode.AI_FAILED: (
-        "No se pudo leer con IA: el proveedor activo no respondió. Revisá su configuración "
-        "y el modelo de lectura, y después usá «Leer con IA»."
+        "No se pudo leer con IA: el proveedor activo no respondió. Revise su configuración "
+        "y el modelo de lectura, y después use «Leer con IA»."
     ),
     DocumentStatusCode.AI_NO_CREDITS: (
-        "No se pudo leer con IA: la cuenta del proveedor activo no tiene saldo. Cargá "
-        "créditos en su consola y después usá «Leer con IA»."
+        "No se pudo leer con IA: la cuenta del proveedor activo no tiene saldo. Cargue "
+        "créditos en su consola y después use «Leer con IA»."
     ),
     DocumentStatusCode.AI_DAILY_QUOTA: (
         "No se pudo leer con IA: se agotó la cuota diaria del proveedor. Se renueva "
-        "mañana; después usá «Leer con IA»."
+        "mañana; después use «Leer con IA»."
     ),
     DocumentStatusCode.INDEX_LIMIT_REACHED: (
-        "La instalación alcanzó el límite de fragmentos. Eliminá documentos para liberar espacio."
+        "La instalación alcanzó el límite de fragmentos. Elimine documentos para liberar espacio."
     ),
 }
 
@@ -85,7 +85,7 @@ class CompanyDocumentMapper:
                 DocumentStatusCode.AI_DAILY_QUOTA,
             ):
                 return _FAILED_MESSAGES[code]
-            return "El PDF parece escaneado; no tiene texto seleccionable. Podés leerlo con IA."
+            return "El PDF parece escaneado; no tiene texto seleccionable. Puede leerlo con IA."
         if document.status_code is None:
             return _DEFAULT_ERROR
         return _FAILED_MESSAGES.get(document.status_code, _DEFAULT_ERROR)

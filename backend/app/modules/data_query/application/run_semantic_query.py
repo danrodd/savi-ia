@@ -56,7 +56,7 @@ async def run_semantic_query(
             )
             return (
                 f"El usuario no tiene acceso a '{entity.name}' en el ERP (requiere el "
-                f"módulo {' o '.join(needed)}). Decile que no tiene "
+                f"módulo {' o '.join(needed)}). Dile que no tiene "
                 "permiso para consultar esa información; no la estimes por otro camino."
             )
         compiled = compile_query(query, entity)
@@ -71,7 +71,7 @@ async def run_semantic_query(
         log.exception("semantic_query_execution_failed entity=%s", query.entidad)
         return (
             "Hubo un problema técnico al consultar la información. "
-            "Intentá reformular la pregunta o pedí menos detalle."
+            "Intenta reformular la pregunta o pide menos detalle."
         )
 
     if _is_empty(result):
@@ -132,11 +132,11 @@ async def _mixed_matches_note(
     shown = ", ".join(names[:_MIXED_MATCHES_SHOWN])
     more = " y otros" if len(names) > _MIXED_MATCHES_SHOWN else ""
     return (
-        f"\n\n_(Ojo: la búsqueda '{flt.valor}' en '{flt.campo}' coincidió con "
+        f"\n\n_(Nota: la búsqueda '{flt.valor}' en '{flt.campo}' coincidió con "
         f"varios valores distintos ({shown}{more}) y este total los SUMA a todos. "
         "Si el usuario preguntó por uno en particular, NO presentes este total "
-        f"como suyo: repetí la consulta con '{flt.campo}' en 'dimensiones' y "
-        "respondé solo el que corresponde, o mostrale las opciones.)_"
+        f"como suyo: repite la consulta con '{flt.campo}' en 'dimensiones' y "
+        "responde solo el que corresponde, o muéstrale las opciones.)_"
     )
 
 
@@ -164,7 +164,7 @@ def _narrower_search_hint(filters: Sequence[QueryFilter]) -> str | None:
             return (
                 f"No hubo coincidencias con TODAS estas palabras en '{flt.campo}': "
                 f"{', '.join(terms)}. El nombre en el ERP suele estar abreviado "
-                f"(ej. '10TAB', '500MG'). Reintentá la consulta con 1 o 2 palabras "
+                f"(ej. '10TAB', '500MG'). Reintenta la consulta con 1 o 2 palabras "
                 f"clave, por ejemplo '{keywords}', antes de responder que no existe."
             )
     return None
@@ -213,7 +213,7 @@ def _format_result(result: QueryResult, labels: dict[str, str]) -> str:
         note = (
             f"\n\n_(Se cortó en {result.row_count} filas y hay más. NO sumes "
             "estas filas para dar un total: ese número sería solo de esta "
-            "página. Para totales usá modo 'agregado' con métricas, o afiná "
+            "página. Para totales usa modo 'agregado' con métricas, o afina "
             "los filtros para acotar la búsqueda.)_"
         )
     return table + note

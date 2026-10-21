@@ -27,5 +27,5 @@ def init_catalog(root: Path) -> KnowledgeCatalog:
 
 def get_catalog() -> KnowledgeCatalog:
     if _catalog is None:
-        raise RuntimeError("KnowledgeCatalog no inicializado. Llamá a init_catalog() en main.py.")
+        raise RuntimeError("KnowledgeCatalog no inicializado. Llame a init_catalog() en main.py.")
     return _catalog

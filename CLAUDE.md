@@ -79,8 +79,8 @@ soft branches, writers independientes, auto-título), ver
 
 ### Regla CRÍTICA sobre tools MCP — leer antes de agregar cualquier tool
 
-**Máximo 4 tools registradas en el MCP server.** Si necesitás más
-funcionalidades, consolidá con el patrón **dispatcher**: una sola tool
+**Máximo 4 tools registradas en el MCP server.** Si necesitas más
+funcionalidades, consolida con el patrón **dispatcher**: una sola tool
 con un campo `tipo` discriminador que rutea internamente a N
 implementaciones.
 
@@ -237,6 +237,7 @@ Cuando varias skills aplican al mismo cambio, el orden de lectura es:
 >   alguna leak, es bug del backend.
 > - Respeta `title_locked` (sin auto-rename si `true`) y `superseded_at`
 >   (oculta del hilo activo por default).
+> - Todo texto visible va de **usted** (ver sección 14).
 
 **General (aplica a backend y frontend)**:
 
@@ -432,3 +433,23 @@ docs(scope): ...
   qué frontend lo consume.
 - **SIEMPRE** lee la skill correspondiente (ver sección 6) ANTES de
   generar código en cualquier capa.
+
+---
+
+## 14. Idioma y registro
+
+- **Todo texto que ve el usuario** (interfaz, mensajes de error,
+  respuestas y prompt del asistente, instalador, manuales) va en español
+  colombiano formal, tratando de **usted**. Nunca voseo ("podés",
+  "revisá", "vos") ni tuteo ("puedes", "tu empresa").
+- **Instrucciones dirigidas al modelo** (descripciones de tools, prompts
+  internos) pueden ir en "tú".
+- **Documentación interna** (specs, guías, skills, este archivo): español
+  neutro, sin voseo. Los ejemplos de textos de interfaz o de respuestas
+  del asistente que cite una spec van de usted.
+- El test `backend/tests/unit/test_usted_register.py` falla si aparece
+  voseo en textos visibles (`backend/app`, `frontend/src`, `installer/`,
+  `docs/manuales/`). Si una forma es legítima (por ejemplo, un prompt que
+  la nombra para prohibirla), agregue la ruta relativa y la forma exacta,
+  en minúsculas, al diccionario `ALLOWED` del test; no hay marcadores en
+  línea.

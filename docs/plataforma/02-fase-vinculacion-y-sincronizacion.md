@@ -429,7 +429,7 @@ activa; `http://` solo si `APP_ENV=development`.
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/admin/cloud-link` | Estado: `status`, `client_name`, `instance_id`, `linked_at`, `last_heartbeat_ok_at`, marcas por stream, `last_error_code`, `notices`. Sin secretos. |
-| `POST` | `/admin/cloud-link` | Body `{token, history: "all" \| "from_now"}`. Llama a `enroll`. `201` con el estado. `422` si ya está vinculada ("desvinculá primero"). Errores de Cloud mapeados (§3.1). |
+| `POST` | `/admin/cloud-link` | Body `{token, history: "all" \| "from_now"}`. Llama a `enroll`. `201` con el estado. `422` si ya está vinculada ("desvincule primero"). Errores de Cloud mapeados (§3.1). |
 | `DELETE` | `/admin/cloud-link` | Desvincula **localmente**: borra secreto e `instance_id` y detiene la sincronización. Conserva `pseudonym_key` e `install_id`. `204`. La instancia sigue existiendo en Cloud hasta que la revoquen desde la consola. |
 | `POST` | `/admin/cloud-link/sync-now` | Dispara heartbeat + ciclo inmediatamente. `202`. |
 | `GET` | `/admin/cloud-link/preview` | Transparencia: el último heartbeat enviado y **un evento real** por stream, exactamente como viajaría. |
@@ -437,7 +437,7 @@ activa; `http://` solo si `APP_ENV=development`.
 ### 6.2 Instalador
 
 - Página "Conectar con SAVI Cloud" (modos Servidor y Escritorio): campo
-  de token, opcional, con el texto "Te lo entrega SEO Group. Podés
+  de token, opcional, con el texto "Se lo entrega SEO Group. Puede
   hacerlo después desde Administración."
 - Escribe `SAVI_CLOUD_URL` (fija, la de producción) y
   `SAVI_CLOUD_ENROLLMENT_TOKEN`. Al arrancar, si hay token y la instancia

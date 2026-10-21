@@ -244,7 +244,7 @@ function isBusyRejection(e: unknown): boolean {
 }
 
 function busyMessage(e: unknown): string {
-  if (!(e instanceof HttpRequestError)) return 'Probá de nuevo en un momento.'
+  if (!(e instanceof HttpRequestError)) return 'Pruebe de nuevo en un momento.'
   if (e.body.errorCode === 'conversation_busy') {
     return 'Ya hay una respuesta en curso en esta conversación.'
   }
@@ -253,7 +253,7 @@ function busyMessage(e: unknown): string {
   }
   return typeof e.body.detail === 'string'
     ? e.body.detail
-    : 'Demasiadas consultas seguidas. Probá en unos segundos.'
+    : 'Demasiadas consultas seguidas. Pruebe en unos segundos.'
 }
 
 function isAdminUser(): boolean {
