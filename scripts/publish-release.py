@@ -13,6 +13,8 @@ así que se corre con el entorno del backend (desde la raíz del monorepo):
     uv run --project backend python scripts/publish-release.py promote
     uv run --project backend python scripts/publish-release.py upload \
         --host savi-publish@<servidor> --remote-dir /srv/savi-master/updates/savi
+    uv run --project backend python scripts/publish-release.py verify \
+        --base-url https://updates.<dominio-seo>/savi --channel stable
 
 `build` deja todo en una carpeta local (`installer/output/updates/` por
 defecto), que es un espejo de lo que se sirve:
@@ -30,6 +32,7 @@ publicación. La pública va incrustada en SAVI
 from __future__ import annotations
 
 import argparse
+import asyncio
 import base64
 import hashlib
 import json
@@ -37,6 +40,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -53,11 +57,20 @@ from cryptography.hazmat.primitives.serialization import (
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "backend"))
 
-from app.modules.updates.domain.value_objects import ReleaseManifest  # noqa: E402
+from app.modules.updates.domain.exceptions import UpdateError  # noqa: E402
+from app.modules.updates.domain.value_objects import (  # noqa: E402
+    ReleaseManifest,
+    ReleaseVersion,
+)
+from app.modules.updates.infrastructure.http_source import (  # noqa: E402
+    HttpInstallerDownloader,
+    HttpManifestSource,
+)
 from app.modules.updates.infrastructure.signing import (  # noqa: E402
     load_public_key,
     verify_manifest,
 )
+from app.modules.updates.infrastructure.trust import UPDATE_PUBLIC_KEY  # noqa: E402
 
 DEFAULT_OUT = ROOT / "installer" / "output" / "updates"
 CHANNELS = ("stable", "beta")
@@ -139,12 +152,32 @@ def tag_notes(version: str) -> str:
     return "\n".join(lines[1:]).strip()
 
 
-def previous_minimum(out: Path, channel: str) -> Minimum | None:
+def _previous(out: Path, channel: str) -> dict[str, object] | None:
     path = out / f"{channel}.json"
     if not path.is_file():
         return None
-    data = json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def previous_minimum(out: Path, channel: str) -> Minimum | None:
+    data = _previous(out, channel)
+    if data is None:
+        return None
     return Minimum(str(data["min_version"]), datetime.fromisoformat(str(data["min_version_from"])))
+
+
+def reject_older_than_published(out: Path, channel: str, version: str) -> None:
+    """Un canal nunca retrocede. Volver a publicar la misma versión sí se
+    permite (por ejemplo, para corregir las notas)."""
+    data = _previous(out, channel)
+    if data is None:
+        return
+    published = str(data["version"])
+    if ReleaseVersion.parse(version) < ReleaseVersion.parse(published):
+        raise PublishError(
+            f"{channel} ya publica {published}: no se publica una versión anterior ({version}). "
+            "Para corregir, se publica una versión nueva."
+        )
 
 
 def resolve_minimum(
@@ -224,6 +257,7 @@ def build(
     now: datetime,
 ) -> Path:
     version = installer_version(installer)
+    reject_older_than_published(out, channel, version)
     minimum = resolve_minimum(
         requested=min_version,
         requested_from=min_version_from,
@@ -255,6 +289,30 @@ def promote(out: Path) -> None:
         if not source.is_file():
             raise PublishError(f"No hay {source.name} para promover.")
         shutil.copy2(source, out / f"stable{suffix}")
+
+
+# --------------------------------------------------------------- verificación
+
+
+def verify(*, base_url: str, channel: str, public_key_b64: str) -> ReleaseManifest:
+    """Lo que haría una instalación: lee el manifiesto publicado, verifica la
+    firma, descarga el instalador y verifica su SHA-256.
+
+    Con el mismo código del backend: si esto pasa, SAVI lo acepta.
+    """
+    public_key = load_public_key(public_key_b64)
+    if public_key is None:
+        raise PublishError("No hay clave pública: pásela con --public-key o péguela en trust.py.")
+
+    async def run() -> ReleaseManifest:
+        source = HttpManifestSource(base_url=base_url, channel=channel, public_key=public_key)
+        manifest = await source.fetch()
+        with tempfile.TemporaryDirectory() as folder:
+            downloader = HttpInstallerDownloader(target_dir=Path(folder))
+            await downloader.download(manifest, lambda _: None)
+        return manifest
+
+    return asyncio.run(run())
 
 
 # ------------------------------------------------------------------- subida
@@ -291,7 +349,7 @@ def upload_commands(
 
 
 def _iso(value: datetime) -> str:
-    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+    return value.astimezone(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 # ---------------------------------------------------------------------- CLI
@@ -325,7 +383,19 @@ def main(argv: list[str] | None = None) -> int:
     p_upload.add_argument("--identity", type=Path, help="llave SSH de savi-publish")
     p_upload.add_argument("--dry-run", action="store_true", help="solo muestra los comandos")
 
+    p_verify = sub.add_parser("verify", help="verifica lo publicado como lo haría SAVI")
+    p_verify.add_argument("--base-url", required=True)
+    p_verify.add_argument("--channel", choices=CHANNELS, default="stable")
+    p_verify.add_argument("--public-key", default=UPDATE_PUBLIC_KEY, help="por defecto, trust.py")
+
     args = parser.parse_args(argv)
+
+    # Igual que `version.py`: Windows abre la consola en cp1252 y los mensajes
+    # llevan acentos.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+
     try:
         if args.command == "keygen":
             public = keygen(args.out)
@@ -348,6 +418,14 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "promote":
             promote(args.out)
             print("beta pasó a stable.")
+        elif args.command == "verify":
+            manifest = verify(
+                base_url=args.base_url, channel=args.channel, public_key_b64=args.public_key
+            )
+            print(
+                f"{args.channel}: {manifest.version} (mínima {manifest.min_version} desde "
+                f"{_iso(manifest.min_version_from)}). Firma y SHA-256 verificados."
+            )
         else:
             commands = upload_commands(
                 out=args.out,
@@ -360,7 +438,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(" ".join(command))
                 if not args.dry_run:
                     subprocess.run(command, check=True)
-    except (PublishError, OSError, subprocess.CalledProcessError) as exc:
+    except (PublishError, UpdateError, OSError, subprocess.CalledProcessError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     return 0

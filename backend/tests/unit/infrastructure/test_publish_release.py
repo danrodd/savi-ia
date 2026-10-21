@@ -135,6 +135,19 @@ def test_minimum_above_the_version_is_rejected(
         _build(key, installer, tmp_path / "updates", min_version="v2.0.0")
 
 
+def test_a_channel_never_goes_back_to_an_older_version(
+    key: Ed25519PrivateKey, installer: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "updates"
+    _build(key, installer, out)
+    older = tmp_path / "SAVI-Setup-v1.3.9.exe"
+    older.write_bytes(b"MZ" + b"\x02" * 4096)
+    with pytest.raises(script.PublishError, match="versión anterior"):
+        _build(key, older, out)
+    # La misma versión sí se puede volver a publicar (por ejemplo, otras notas).
+    _build(key, installer, out, notes="Notas corregidas.")
+
+
 def test_promote_copies_beta_to_stable(
     key: Ed25519PrivateKey, installer: Path, tmp_path: Path
 ) -> None:

@@ -96,7 +96,13 @@ Instalador: `installer/output/SAVI-Setup-v1.3.1.exe` (162 MB, no se versiona).
      - **D3:** sin certificado de firma por ahora.
      - **D4:** el plazo se decide en cada versión, 72 h por defecto.
      - **D5:** `UPDATE_CHANNEL`, con `beta` solo para SEO.
-   - Para desplegar falta el acceso SSH con llave al servidor, que tiene que conseguir el usuario. El código (U0 y U1) se puede escribir y probar en local sin ese acceso.
+   - **U0 y U1 hechos en `feat/actualizacion-automatica`** (2026-10-21), sin mergear todavía a `staging`. Seguimiento en `odd/tasks/actualizacion-automatica.md`.
+     - Backend: módulo `updates`, con firma Ed25519, SHA-256, el plazo de `min_version_from`, chequeo cada 6 h y los endpoints `/updates/*`.
+     - Frontend: barra de aviso, bloqueo y progreso.
+     - `scripts/publish-release.py`, con `keygen`, `build`, `promote`, `upload` y `verify`.
+     - Instalador: SAVI vuelve a abrir solo después de una instalación silenciosa.
+     - Probado de punta a punta contra un servidor HTTP local. No se compiló el instalador.
+   - Para desplegar falta el acceso SSH con llave al servidor, que tiene que conseguir el usuario. Los pasos están en la spec 09, sección 7, "Puesta en marcha".
    - Falta incorporar a la spec una fase previa propuesta. El modo por usuario de D2 cubre en parte el instalador sin administrador:
      - Claude con clave de API directo por la API. Hoy todo Claude pasa por `claude-agent-sdk`/`claude.exe`.
      - Instalador por usuario sin administrador por defecto (`PrivilegesRequired=lowest` + diálogo).

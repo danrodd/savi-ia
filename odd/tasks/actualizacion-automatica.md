@@ -29,7 +29,7 @@ TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv 
 - [x] **T4. Chequeo periódico y endpoints** (inline): `UPDATE_URL` y `UPDATE_CHANNEL` en Settings; chequeo al arrancar y cada 6 h; `GET /updates/status`; `POST /updates/apply` (descarga, verificación, espera de turnos, lanzamiento silencioso). Modo servidor: aplicar solo desde `127.0.0.1`. Tests.
 - [x] **T5. Instalador** (inline): entrada `[Run]` que relanza SAVI en modo silencioso. Sin compilar.
 - [x] **T6. Frontend** (inline): barra de aviso, plazo, diálogo obligatorio y pantalla "Actualizando…" que espera `/health`. Tests.
-- [ ] **T7. Prueba de punta a punta en local**: manifiesto firmado servido con `python -m http.server`, SAVI en desarrollo detecta, verifica y rechaza manipulaciones. Documentar los pasos de despliegue que quedan para el servidor.
+- [x] **T7. Prueba de punta a punta en local**: manifiesto firmado servido con `python -m http.server`, SAVI en desarrollo detecta, verifica y rechaza manipulaciones. Documentar los pasos de despliegue que quedan para el servidor.
 
 ## Criterios de aceptación
 
@@ -53,3 +53,28 @@ TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv 
 - Commit T4: `fb3bf8a`. T5: `2cb93e1` (entrada `[Run]` con `Check: WizardSilent` y `runasoriginaluser`; revisada, sin compilar).
 - T6: módulo `frontend/src/modules/updates` (servicio, `useUpdateStatus`, reglas puras en `utils/updateView.ts`, `UpdateNotice.vue`), montado en `App.vue` solo con sesión. `Dialog.vue` suma `dismissible` para los diálogos que no se cierran. "Más tarde" se guarda 24 h en `localStorage` (con try/catch).
 - Verificación T6: vue-tsc sin errores, Biome limpio en lo tocado, 17 tests nuevos y 315 en toda la suite del frontend. Guarda de usted: 12/12.
+- Commit T6: `4ea209f`.
+- T7, prueba de punta a punta contra `python -m http.server` real, con el script de publicación real y el coordinador real (solo el lanzamiento fue simulado). 11/11 controles:
+  - detecta, descarga, verifica y lanza;
+  - `verify` confirma lo publicado;
+  - rechaza un instalador cambiado, y `verify` también lo detecta;
+  - ignora un manifiesto sin firma válida;
+  - `min_version` inmediata bloquea, y con plazo avisa con fecha;
+  - el script no publica una versión anterior;
+  - SAVI no baja de versión.
+  El script de la prueba quedó fuera del repositorio, en el scratchpad.
+- Hallazgos de T7, ya corregidos:
+  - la salida de `publish-release.py` no era UTF-8 en Windows (se reconfigura como en `version.py`);
+  - el script dejaba publicar una versión menor en un canal (nueva guarda `reject_older_than_published` y su test).
+- Agregados en T7:
+  - `DEFAULT_UPDATE_URL` en `trust.py`; `UPDATE_URL` del `.env` lo reemplaza.
+  - Subcomando `verify`.
+  - Guía "Puesta en marcha" en la spec 09, sección 7, con las variables del `.env`.
+
+## Siguiente paso
+
+Desplegar en el servidor Linux siguiendo la spec 09, sección 7, "Puesta en marcha". Requiere:
+
+- acceso SSH autorizado explícitamente (destino, usuario y llave);
+- el dominio;
+- el bloque de Caddy en `develop` (`deploy/master/` no existe en esta rama).

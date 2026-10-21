@@ -29,7 +29,7 @@ from app.modules.updates.infrastructure.launcher import (
     installed_per_machine,
 )
 from app.modules.updates.infrastructure.signing import load_public_key
-from app.modules.updates.infrastructure.trust import UPDATE_PUBLIC_KEY
+from app.modules.updates.infrastructure.trust import DEFAULT_UPDATE_URL, UPDATE_PUBLIC_KEY
 from app.paths import data_dir
 
 log = logging.getLogger(__name__)
@@ -47,6 +47,11 @@ def get_update_coordinator() -> UpdateCoordinator | None:
     return _coordinator
 
 
+def update_url(settings: Settings) -> str:
+    """`UPDATE_URL` del `.env` si está; si no, el servidor oficial."""
+    return settings.update_url.strip() or DEFAULT_UPDATE_URL.strip()
+
+
 def build_coordinator(
     settings: Settings, *, version: str, public_key_b64: str
 ) -> UpdateCoordinator | None:
@@ -54,8 +59,9 @@ def build_coordinator(
     if current is None:
         log.info("Actualizaciones desactivadas: %s no es una versión publicada.", version)
         return None
-    if not settings.update_url.strip():
-        log.info("Actualizaciones desactivadas: falta UPDATE_URL.")
+    base_url = update_url(settings)
+    if not base_url:
+        log.info("Actualizaciones desactivadas: no hay servidor de actualizaciones.")
         return None
     public_key = load_public_key(public_key_b64)
     if public_key is None:
@@ -66,7 +72,7 @@ def build_coordinator(
     return UpdateCoordinator(
         current=current,
         source=HttpManifestSource(
-            base_url=settings.update_url, channel=settings.update_channel, public_key=public_key
+            base_url=base_url, channel=settings.update_channel, public_key=public_key
         ),
         downloader=HttpInstallerDownloader(target_dir=updates_dir),
         launcher=WindowsInstallerLauncher(
@@ -87,7 +93,7 @@ async def start_updates(settings: Settings) -> None:
     log.info(
         "Actualizaciones: canal %s en %s, cada %s h.",
         settings.update_channel,
-        settings.update_url,
+        update_url(settings),
         settings.update_check_interval_hours,
     )
     _loop_task = asyncio.create_task(

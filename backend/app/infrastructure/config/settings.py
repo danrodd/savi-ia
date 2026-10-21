@@ -286,8 +286,8 @@ class Settings(BaseSettings):
     # ── Actualización automática ─────────────────────────────────────────
     # Spec: docs/plataforma/09-actualizacion-automatica.md. Carpeta servida
     # por HTTPS donde están `<canal>.json`, su `.sig` y `releases/`. Vacío
-    # desactiva el chequeo. Sin la clave pública incrustada en
-    # `modules/updates/infrastructure/trust.py` tampoco se chequea.
+    # usa el servidor oficial (`modules/updates/infrastructure/trust.py`);
+    # se cambia, por ejemplo, para probar contra un servidor local.
     update_url: str = Field(default="")
     # `beta` solo para los equipos de SEO (D5).
     update_channel: Literal["stable", "beta"] = Field(default="stable")

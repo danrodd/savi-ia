@@ -121,13 +121,21 @@ def test_development_builds_do_not_check(version: str) -> None:
     )
 
 
-def test_without_url_or_key_updates_stay_off() -> None:
+def test_without_url_or_key_updates_stay_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(provider, "DEFAULT_UPDATE_URL", "")
     assert (
         provider.build_coordinator(_settings(), version="v1.3.2", public_key_b64=_public_key())
         is None
     )
     with_url = _settings(update_url="https://updates.example.com/savi")
     assert provider.build_coordinator(with_url, version="v1.3.2", public_key_b64="") is None
+
+
+def test_env_url_overrides_the_official_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(provider, "DEFAULT_UPDATE_URL", "https://updates.example.com/savi")
+    assert provider.update_url(_settings()) == "https://updates.example.com/savi"
+    local = _settings(update_url="http://127.0.0.1:8765/savi")
+    assert provider.update_url(local) == "http://127.0.0.1:8765/savi"
 
 
 def test_released_build_with_url_and_key_checks() -> None:
