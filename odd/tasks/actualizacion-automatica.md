@@ -47,7 +47,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 | U0 y U1 (spec 09): manifiesto firmado, chequeo, aviso, descarga verificada, lanzamiento silencioso | Hecho y en `staging`. 11/11 de punta a punta en local. |
 | Clave de firma principal | Generada; la pública está en `trust.py` (`59423c8`). |
 | Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
-| **Fase 1:** núcleo del actualizador | En curso: B0, B1, B4, B2 y B3 hechos; **siguiente: B5** (vista en Administración). |
+| **Fase 1:** núcleo del actualizador | **Fase 1 completa:** B0, B1, B4, B2, B3 y B5 hechos. Falta cerrar con el repaso final y pasar a la Fase 2. |
 | Fase 2: prueba real con instaladores compilados | Pendiente. |
 | Fase 3: producción | Pendiente. |
 
@@ -243,7 +243,7 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 - [x] Hecho (2026-10-23)
 
 **Evidencia:**
-- `UPDATE_PUBLIC_KEYS` con principal y respaldo. La de respaldo está en `claves-savi/savi-updates-respaldo.pem (en la carpeta del usuario)` (generada con `keygen`, nunca leída ni copiada). **Falta que el usuario confirme que la guardó fuera de línea.**
+- `UPDATE_PUBLIC_KEYS` con principal y respaldo. La de respaldo está en `claves-savi/savi-updates-respaldo.pem (en la carpeta del usuario)` (generada con `keygen`, nunca leída ni copiada). El usuario confirmó que la guardó fuera de línea (2026-10-23).
 - Comprobado con las claves reales: cada `.pem` firma algo que valida exactamente una clave de `trust.py`, y son distintas.
 - 317 tests pasan en `updates`, publicación y guarda de usted (el único fallo, `test_logging_survives_migrations`, es previo). Prueba de punta a punta 20/20. Ruff y Pyright limpios.
 - Diferencia: una clave mal formada se descarta con un aviso (no rompe el arranque), como pedía el diseño.
@@ -319,7 +319,13 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 
 ### B5. Vista de Actualizaciones en Administración
 
-- [ ] Hecho
+- [x] Hecho (2026-10-23)
+
+**Evidencia:**
+- Backend: `GET /updates/history` ahora devuelve `{channel, server, records}` (3 tests nuevos: 403 sin ser administrador, con historial y sin actualizaciones). 330 tests de backend pasan; el único fallo, `test_logging_survives_migrations`, es previo.
+- Frontend: 340 tests pasan en toda la suite (12 nuevos: la vista con historial vacío y con varias entradas, "Buscar ahora", "Actualizar ahora", sin actualizaciones activas, error de lectura, reglas puras y la ruta protegida). vue-tsc limpio; Biome limpio en lo tocado (los errores que quedan son de archivos que no toqué).
+- Diferencia: "Actualizar ahora" y "Buscar ahora" avisan al aviso global con el evento `savi:update-status-changed`, para que muestre el avance sin esperar el ciclo de 15 min.
+- **No visto en un navegador real:** la vista se probó con tests de componente y no contra un backend con historial. Queda para la Fase 2, donde habrá un historial de verdad.
 
 **Por qué.** El administrador tiene que poder ver en qué está su instalación y forzar una comprobación sin esperar 6 horas, y soporte tiene que poder pedir el historial.
 

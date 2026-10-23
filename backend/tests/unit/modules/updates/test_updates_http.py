@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -17,7 +18,7 @@ from app.infrastructure.config import Settings, get_settings
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.infrastructure.http.dependencies import get_current_user
 from app.modules.updates.application.coordinator import UpdateCoordinator
-from app.modules.updates.domain.value_objects import ReleaseVersion
+from app.modules.updates.domain.value_objects import InstallOutcome, InstallRecord, ReleaseVersion
 from app.modules.updates.infrastructure.launcher import installed_per_machine, silent_parameters
 from tests.unit.modules.updates.test_coordinator import (
     FakeDownloader,
@@ -168,3 +169,43 @@ def test_installer_runs_silently_and_closes_savi() -> None:
     for flag in ("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"):
         assert flag in params
     assert '/LOG="' in params
+
+
+def test_history_is_for_administrators_only() -> None:
+    assert _client().get("/updates/history").status_code == 403
+
+
+def test_history_reports_channel_server_and_attempts(
+    coordinator: UpdateCoordinator, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("SAVI_ADMIN_LOGINS", "AGENTE")
+    monkeypatch.setenv("UPDATE_URL", "https://updates.example.com/savi")
+    monkeypatch.setenv("UPDATE_CHANNEL", "beta")
+    coordinator._history.append(  # pyright: ignore[reportPrivateUsage]
+        InstallRecord(
+            attempt_id="a1",
+            from_version=ReleaseVersion.parse("v1.3.2"),
+            to_version=ReleaseVersion.parse("v1.4.0"),
+            started_at=datetime(2026, 11, 2, 15, 0, tzinfo=UTC),
+            finished_at=datetime(2026, 11, 2, 15, 2, tzinfo=UTC),
+            outcome=InstallOutcome.INSTALLED,
+        )
+    )
+
+    response = _client().get("/updates/history")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["channel"] == "beta"
+    assert body["server"] == "https://updates.example.com/savi"
+    assert [r["attempt_id"] for r in body["records"]] == ["a1"]
+    assert body["records"][0]["outcome"] == "installed"
+
+
+def test_history_without_updates_is_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SAVI_ADMIN_LOGINS", "AGENTE")
+
+    body = _client().get("/updates/history").json()
+
+    assert body["records"] == []
+    assert body["server"] == ""

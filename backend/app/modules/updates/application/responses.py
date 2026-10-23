@@ -35,6 +35,15 @@ class InstallRecordResponse(BaseModel):
         )
 
 
+class UpdateHistoryResponse(BaseModel):
+    """Lo que ve soporte: de dónde se actualiza SAVI y qué intentos hubo."""
+
+    channel: str
+    # Vacío si no hay servidor de actualizaciones configurado.
+    server: str
+    records: list[InstallRecordResponse]
+
+
 class UpdateStatusResponse(BaseModel):
     # `False` en desarrollo o sin servidor configurado: la interfaz no muestra nada.
     enabled: bool

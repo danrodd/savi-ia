@@ -1,14 +1,19 @@
 from fastapi import APIRouter, Request, status
 
+from app.infrastructure.config import get_settings
 from app.modules.auth.infrastructure.http import CurrentUserDep
 from app.modules.auth.infrastructure.http.admin import SaviAdminDep
-from app.modules.updates.application.responses import InstallRecordResponse, UpdateStatusResponse
+from app.modules.updates.application.responses import (
+    InstallRecordResponse,
+    UpdateHistoryResponse,
+    UpdateStatusResponse,
+)
 from app.modules.updates.domain.exceptions import (
     NoUpdateAvailableError,
     RemoteUpdateNotAllowedError,
 )
 from app.modules.updates.domain.value_objects import HISTORY_LIMIT
-from app.modules.updates.infrastructure.provider import get_update_coordinator
+from app.modules.updates.infrastructure.provider import get_update_coordinator, update_url
 
 router = APIRouter(prefix="/updates", tags=["updates"])
 
@@ -57,13 +62,17 @@ async def check_now(request: Request, _admin: SaviAdminDep) -> UpdateStatusRespo
     return UpdateStatusResponse.from_snapshot(coordinator.snapshot(), can_apply=_is_local(request))
 
 
-@router.get("/history", response_model=list[InstallRecordResponse])
-async def install_history(_admin: SaviAdminDep) -> list[InstallRecordResponse]:
-    """Los últimos intentos de instalación, del más reciente al más viejo."""
+@router.get("/history", response_model=UpdateHistoryResponse)
+async def install_history(_admin: SaviAdminDep) -> UpdateHistoryResponse:
+    """Canal, servidor y los últimos intentos de instalación (del más reciente al más viejo).
+
+    El canal y el servidor son datos de la instalación: solo los ve un administrador.
+    """
+    settings = get_settings()
     coordinator = get_update_coordinator()
-    if coordinator is None:
-        return []
-    return [
-        InstallRecordResponse.from_record(record)
-        for record in coordinator.install_history(HISTORY_LIMIT)
-    ]
+    records = coordinator.install_history(HISTORY_LIMIT) if coordinator is not None else []
+    return UpdateHistoryResponse(
+        channel=settings.update_channel,
+        server=update_url(settings) if coordinator is not None else "",
+        records=[InstallRecordResponse.from_record(record) for record in records],
+    )

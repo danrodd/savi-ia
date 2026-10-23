@@ -16,6 +16,7 @@ const AdminUsageView = () => import('@/modules/admin/views/AdminUsageView.vue')
 const LlmProvidersView = () => import('@/modules/admin/views/LlmProvidersView.vue')
 const FeedbackPilotView = () => import('@/modules/admin/views/FeedbackPilotView.vue')
 const CompanyKnowledgeView = () => import('@/modules/admin/views/CompanyKnowledgeView.vue')
+const UpdatesAdminView = () => import('@/modules/updates/views/UpdatesAdminView.vue')
 const NotFoundView = () => import('@/components/NotFoundView.vue')
 const LandingView = () => import('@/modules/landing/views/LandingView.vue')
 
@@ -105,6 +106,7 @@ const router = createRouter({
           component: CompanyKnowledgeView,
         },
         { path: 'consumo', name: 'admin-usage', component: AdminUsageView },
+        { path: 'actualizaciones', name: 'admin-updates', component: UpdatesAdminView },
         // `/admin/feedback` es del API: la pantalla vive en otro segmento.
         { path: 'piloto', name: 'admin-feedback', component: FeedbackPilotView },
       ],

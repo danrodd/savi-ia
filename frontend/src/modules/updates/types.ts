@@ -25,6 +25,15 @@ export interface InstallRecord {
   message: string
 }
 
+/** `GET /updates/history` (solo administradores). */
+export interface UpdateHistory {
+  channel: string
+  /** Vacío si no hay servidor de actualizaciones configurado. */
+  server: string
+  /** Del más reciente al más viejo. */
+  records: InstallRecord[]
+}
+
 export interface UpdateStatus {
   /** `false` en desarrollo o sin servidor de actualizaciones: no se muestra nada. */
   enabled: boolean

@@ -5,6 +5,7 @@ import {
   Database,
   FileText,
   MessageSquareHeart,
+  RefreshCw,
   Sparkles,
 } from 'lucide-vue-next'
 import { RouterLink, RouterView } from 'vue-router'
@@ -17,6 +18,7 @@ const NAV = [
   { to: { name: 'admin-company-knowledge' }, label: 'Conocimiento de la empresa', icon: FileText },
   { to: { name: 'admin-usage' }, label: 'Consumo', icon: ChartColumn },
   { to: { name: 'admin-feedback' }, label: 'Feedback del piloto', icon: MessageSquareHeart },
+  { to: { name: 'admin-updates' }, label: 'Actualizaciones', icon: RefreshCw },
 ] as const
 </script>
 

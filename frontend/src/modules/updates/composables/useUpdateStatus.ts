@@ -16,6 +16,7 @@ import { HttpRequestError } from '@/lib/HttpClient'
 import { STORAGE_KEYS } from '@/lib/storageKeys'
 import { updatesService } from '../services/updatesService'
 import type { UpdateStatus } from '../types'
+import { STATUS_CHANGED_EVENT } from '../utils/adminView'
 import {
   installStalled,
   isApplying,
@@ -175,15 +176,22 @@ export function useUpdateStatus() {
     if (document.visibilityState === 'visible') void refresh()
   }
 
+  function onStatusChanged(): void {
+    void refresh()
+  }
+
   onMounted(() => {
     void refresh()
     document.addEventListener('visibilitychange', onVisibility)
+    // La vista de Administración avisa cuando buscó o inició una actualización.
+    window.addEventListener(STATUS_CHANGED_EVENT, onStatusChanged)
   })
 
   onUnmounted(() => {
     stopped = true
     if (timer !== null) clearTimeout(timer)
     document.removeEventListener('visibilitychange', onVisibility)
+    window.removeEventListener(STATUS_CHANGED_EVENT, onStatusChanged)
   })
 
   return {

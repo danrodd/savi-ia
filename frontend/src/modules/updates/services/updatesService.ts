@@ -1,12 +1,21 @@
 import { ENV } from '@/lib/env'
 import { HttpClient } from '@/lib/HttpClient'
-import type { UpdateStatus } from '../types'
+import type { UpdateHistory, UpdateStatus } from '../types'
 
 const http = new HttpClient('/updates')
 
 class UpdatesService {
   getStatus(): Promise<UpdateStatus> {
     return http.get<UpdateStatus>('/status')
+  }
+
+  /** Chequea ya, sin esperar el ciclo. Solo administradores. */
+  check(): Promise<UpdateStatus> {
+    return http.post<UpdateStatus>('/check')
+  }
+
+  getHistory(): Promise<UpdateHistory> {
+    return http.get<UpdateHistory>('/history')
   }
 
   apply(): Promise<UpdateStatus> {
