@@ -21,7 +21,9 @@ from app.modules.updates.domain.value_objects import ReleaseVersion
 from app.modules.updates.infrastructure.launcher import installed_per_machine, silent_parameters
 from tests.unit.modules.updates.test_coordinator import (
     FakeDownloader,
+    FakeHistory,
     FakeLauncher,
+    FakeResults,
     FakeSource,
     FakeTurns,
     _manifest,
@@ -48,6 +50,8 @@ def coordinator(launcher: FakeLauncher) -> Iterator[UpdateCoordinator]:
         source=FakeSource(_manifest()),
         downloader=FakeDownloader(),
         launcher=launcher,
+        results=FakeResults(launcher),
+        history=FakeHistory(),
         turns=FakeTurns(),
     )
     provider._coordinator = coordinator  # pyright: ignore[reportPrivateUsage]

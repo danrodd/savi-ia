@@ -2,11 +2,12 @@ from fastapi import APIRouter, Request, status
 
 from app.modules.auth.infrastructure.http import CurrentUserDep
 from app.modules.auth.infrastructure.http.admin import SaviAdminDep
-from app.modules.updates.application.responses import UpdateStatusResponse
+from app.modules.updates.application.responses import InstallRecordResponse, UpdateStatusResponse
 from app.modules.updates.domain.exceptions import (
     NoUpdateAvailableError,
     RemoteUpdateNotAllowedError,
 )
+from app.modules.updates.domain.value_objects import HISTORY_LIMIT
 from app.modules.updates.infrastructure.provider import get_update_coordinator
 
 router = APIRouter(prefix="/updates", tags=["updates"])
@@ -54,3 +55,15 @@ async def check_now(request: Request, _admin: SaviAdminDep) -> UpdateStatusRespo
         return UpdateStatusResponse.disabled()
     await coordinator.check()
     return UpdateStatusResponse.from_snapshot(coordinator.snapshot(), can_apply=_is_local(request))
+
+
+@router.get("/history", response_model=list[InstallRecordResponse])
+async def install_history(_admin: SaviAdminDep) -> list[InstallRecordResponse]:
+    """Los últimos intentos de instalación, del más reciente al más viejo."""
+    coordinator = get_update_coordinator()
+    if coordinator is None:
+        return []
+    return [
+        InstallRecordResponse.from_record(record)
+        for record in coordinator.install_history(HISTORY_LIMIT)
+    ]

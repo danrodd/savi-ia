@@ -5,7 +5,34 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.modules.updates.application.coordinator import ApplyPhase, UpdateSnapshot
-from app.modules.updates.domain.value_objects import UpdateState
+from app.modules.updates.domain.value_objects import InstallOutcome, InstallRecord, UpdateState
+
+
+class InstallRecordResponse(BaseModel):
+    """Un intento de instalación ya resuelto."""
+
+    attempt_id: str
+    from_version: str
+    to_version: str
+    outcome: InstallOutcome
+    started_at: datetime
+    finished_at: datetime
+    exit_code: int | None = None
+    # Texto para la persona, de usted.
+    message: str
+
+    @classmethod
+    def from_record(cls, record: InstallRecord) -> InstallRecordResponse:
+        return cls(
+            attempt_id=record.attempt_id,
+            from_version=str(record.from_version),
+            to_version=str(record.to_version),
+            outcome=record.outcome,
+            started_at=record.started_at,
+            finished_at=record.finished_at,
+            exit_code=record.exit_code,
+            message=record.message,
+        )
 
 
 class UpdateStatusResponse(BaseModel):
@@ -25,6 +52,8 @@ class UpdateStatusResponse(BaseModel):
     downloaded_bytes: int = 0
     error: str | None = None
     checked_at: datetime | None = None
+    # El último intento de instalación: la interfaz lo avisa una sola vez.
+    last_install: InstallRecordResponse | None = None
 
     @classmethod
     def disabled(cls) -> UpdateStatusResponse:
@@ -48,4 +77,9 @@ class UpdateStatusResponse(BaseModel):
             downloaded_bytes=snapshot.downloaded_bytes,
             error=snapshot.apply_error,
             checked_at=snapshot.checked_at,
+            last_install=(
+                InstallRecordResponse.from_record(snapshot.last_install)
+                if snapshot.last_install
+                else None
+            ),
         )

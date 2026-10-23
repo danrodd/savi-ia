@@ -12,11 +12,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 
+from app.modules.updates.application.install_history import reconcile_last_install
 from app.modules.updates.domain.exceptions import (
     DowngradeRejectedError,
     InstallerIntegrityError,
@@ -28,14 +30,21 @@ from app.modules.updates.domain.interfaces import (
     ActiveTurns,
     InstallerDownloader,
     InstallerLauncher,
+    InstallHistory,
+    InstallResultReader,
     ManifestSource,
 )
 from app.modules.updates.domain.value_objects import (
+    InstallAttempt,
+    InstallOutcome,
+    InstallRecord,
     ReleaseManifest,
     ReleaseVersion,
     UpdateDecision,
     UpdateState,
+    WatcherStep,
     decide,
+    settle,
 )
 
 log = logging.getLogger(__name__)
@@ -65,6 +74,8 @@ class UpdateSnapshot:
     phase: ApplyPhase
     downloaded_bytes: int
     apply_error: str | None
+    # El último intento resuelto (de esta sesión o de una anterior).
+    last_install: InstallRecord | None = None
 
 
 class UpdateCoordinator:
@@ -75,19 +86,29 @@ class UpdateCoordinator:
         source: ManifestSource,
         downloader: InstallerDownloader,
         launcher: InstallerLauncher,
+        results: InstallResultReader,
+        history: InstallHistory,
         turns: ActiveTurns,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
         turn_poll_seconds: float = 2.0,
         turn_wait_max_seconds: float = 600.0,
+        install_poll_seconds: float = 2.0,
+        # Más que el tope del vigilante (30 min): si el vigilante llegó a su
+        # límite, acá todavía se alcanza a leer lo que escribió.
+        install_watch_max_seconds: float = 2400.0,
     ) -> None:
         self._current = current
         self._source = source
         self._downloader = downloader
         self._launcher = launcher
+        self._results = results
+        self._history = history
         self._turns = turns
         self._clock = clock
         self._turn_poll_seconds = turn_poll_seconds
         self._turn_wait_max_seconds = turn_wait_max_seconds
+        self._install_poll_seconds = install_poll_seconds
+        self._install_watch_max_seconds = install_watch_max_seconds
 
         self._manifest: ReleaseManifest | None = None
         self._checked_at: datetime | None = None
@@ -125,6 +146,23 @@ class UpdateCoordinator:
             phase=self._phase,
             downloaded_bytes=self._downloaded,
             apply_error=self._apply_error,
+            last_install=self.last_install(),
+        )
+
+    def last_install(self) -> InstallRecord | None:
+        recent = self._history.recent(1)
+        return recent[0] if recent else None
+
+    def install_history(self, limit: int) -> list[InstallRecord]:
+        return self._history.recent(limit)
+
+    def settle_previous_install(self) -> InstallRecord | None:
+        """Al arrancar: da por resuelto el intento que dejó el vigilante, si lo hay."""
+        return reconcile_last_install(
+            results=self._results,
+            history=self._history,
+            running=self._current,
+            now=self._clock(),
         )
 
     def start_apply(self) -> asyncio.Task[None]:
@@ -159,8 +197,20 @@ class UpdateCoordinator:
                 return
 
             self._phase = ApplyPhase.INSTALLING
-            self._launcher.launch(installer)
-            log.info("Actualizaciones: instalador de %s lanzado.", manifest.version)
+            attempt = InstallAttempt(
+                attempt_id=uuid.uuid4().hex,
+                from_version=self._current,
+                to_version=manifest.version,
+                started_at=self._clock(),
+            )
+            # Puede bloquear unos segundos (arranque del vigilante): fuera del event loop.
+            await asyncio.to_thread(self._launcher.launch, installer, attempt)
+            log.info(
+                "Actualizaciones: instalador de %s lanzado (intento %s).",
+                manifest.version,
+                attempt.attempt_id,
+            )
+            await self._watch_install(attempt)
         except InstallerIntegrityError as exc:
             self._fail(_INTEGRITY_MESSAGE, str(exc))
         except UpdateError as exc:
@@ -177,6 +227,43 @@ class UpdateCoordinator:
             await asyncio.sleep(self._turn_poll_seconds)
             waited += self._turn_poll_seconds
         return True
+
+    async def _watch_install(self, attempt: InstallAttempt) -> None:
+        """Mientras SAVI siga vivo, lee lo que escribe el vigilante.
+
+        Si el instalador cierra SAVI, esta tarea muere con el proceso y el
+        resultado lo recoge el SAVI nuevo al arrancar. Acá solo se llega a
+        saber de las instalaciones que NO cerraron SAVI: el permiso de
+        administrador cancelado, o un instalador que no pudo arrancar.
+        """
+        waited = 0.0
+        while waited < self._install_watch_max_seconds:
+            await asyncio.sleep(self._install_poll_seconds)
+            waited += self._install_poll_seconds
+            result = self._results.read()
+            if (
+                result is None
+                or result.attempt_id != attempt.attempt_id
+                or result.step is WatcherStep.STARTED
+            ):
+                continue
+            record = settle(result, self._current, self._clock())
+            self._remember(record)
+            if record.outcome is not InstallOutcome.INSTALLED:
+                self._fail(record.message, f"{record.outcome}, código {result.exit_code}")
+            return
+        log.warning(
+            "Actualizaciones: el vigilante no informó el resultado de %s.", attempt.attempt_id
+        )
+
+    def _remember(self, record: InstallRecord) -> None:
+        try:
+            self._history.append(record)
+        except OSError:
+            log.exception("Actualizaciones: no se pudo guardar el historial.")
+        log.info(
+            "Actualizaciones: intento %s terminó como %s.", record.attempt_id, record.outcome.value
+        )
 
     def _on_progress(self, downloaded: int) -> None:
         self._downloaded = downloaded

@@ -2,7 +2,12 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
 
-from app.modules.updates.domain.value_objects import ReleaseManifest
+from app.modules.updates.domain.value_objects import (
+    InstallAttempt,
+    InstallRecord,
+    InstallResult,
+    ReleaseManifest,
+)
 
 
 class ManifestSource(ABC):
@@ -24,11 +29,28 @@ class InstallerDownloader(ABC):
 
 class InstallerLauncher(ABC):
     @abstractmethod
-    def launch(self, installer: Path) -> None:
+    def launch(self, installer: Path, attempt: InstallAttempt) -> None:
         """Lanza el instalador en modo silencioso y vuelve enseguida.
 
-        El instalador cierra SAVI, reemplaza los archivos y lo vuelve a abrir.
+        El instalador cierra SAVI y reemplaza los archivos. Un vigilante que
+        sobrevive al cierre registra cómo terminó y, si SAVI no volvió a abrir,
+        lo abre con la versión que haya quedado instalada.
         """
+
+
+class InstallResultReader(ABC):
+    @abstractmethod
+    def read(self) -> InstallResult | None:
+        """Lo que escribió el vigilante, o `None` si no hay nada legible."""
+
+
+class InstallHistory(ABC):
+    @abstractmethod
+    def append(self, record: InstallRecord) -> None: ...
+
+    @abstractmethod
+    def recent(self, limit: int) -> list[InstallRecord]:
+        """Los últimos intentos, el más reciente primero."""
 
 
 class ActiveTurns(ABC):

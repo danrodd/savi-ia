@@ -19,10 +19,17 @@ from app.infrastructure.config.settings import Settings
 from app.modules.chat.infrastructure.http.turn_registry import get_turn_registry
 from app.modules.updates.application.coordinator import UpdateCoordinator
 from app.modules.updates.domain.interfaces import ActiveTurns
-from app.modules.updates.domain.value_objects import ReleaseVersion
+from app.modules.updates.domain.value_objects import InstallOutcome, ReleaseVersion
 from app.modules.updates.infrastructure.http_source import (
     HttpInstallerDownloader,
     HttpManifestSource,
+)
+from app.modules.updates.infrastructure.install_files import (
+    HISTORY_FILENAME,
+    RESULT_FILENAME,
+    FileInstallHistory,
+    FileInstallResultReader,
+    delete_downloaded_installers,
 )
 from app.modules.updates.infrastructure.launcher import (
     WindowsInstallerLauncher,
@@ -77,8 +84,16 @@ def build_coordinator(
         downloader=HttpInstallerDownloader(target_dir=updates_dir),
         launcher=WindowsInstallerLauncher(
             elevate=installed_per_machine(Path(sys.executable)),
-            log_path=updates_dir / "install.log",
+            updates_dir=updates_dir,
+            app_exe=Path(sys.executable),
+            # 0.0.0.0 no es una dirección a la que se pueda llamar.
+            health_host="127.0.0.1"
+            if settings.app_host in ("0.0.0.0", "::")
+            else settings.app_host,
+            port_from=settings.app_port,
         ),
+        results=FileInstallResultReader(updates_dir / RESULT_FILENAME),
+        history=FileInstallHistory(updates_dir / HISTORY_FILENAME),
         turns=_ChatTurns(),
     )
 
@@ -96,9 +111,34 @@ async def start_updates(settings: Settings) -> None:
         update_url(settings),
         settings.update_check_interval_hours,
     )
+    await asyncio.to_thread(_settle_previous_install, _coordinator)
     _loop_task = asyncio.create_task(
         _check_forever(_coordinator, settings.update_check_interval_hours * 3600)
     )
+
+
+def _settle_previous_install(coordinator: UpdateCoordinator) -> None:
+    """Cierra el intento de instalación que dejó el vigilante y limpia lo que ya no sirve."""
+    try:
+        record = coordinator.settle_previous_install()
+    except OSError:
+        log.exception("Actualizaciones: no se pudo resolver el intento anterior.")
+        return
+    if record is None:
+        return
+    log.info(
+        "Actualizaciones: el intento %s (%s → %s) terminó como %s.",
+        record.attempt_id,
+        record.from_version,
+        record.to_version,
+        record.outcome.value,
+    )
+    if record.outcome is InstallOutcome.INSTALLED:
+        # El instalador descargado (unos 160 MB) ya no sirve.
+        try:
+            delete_downloaded_installers(data_dir() / "updates")
+        except OSError:
+            log.warning("Actualizaciones: no se pudo borrar el instalador descargado.")
 
 
 async def stop_updates() -> None:

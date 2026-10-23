@@ -25,6 +25,10 @@ class InstallerIntegrityError(UpdateError):
     """El instalador descargado no coincide con el SHA-256 del manifiesto."""
 
 
+class InvalidInstallResultError(UpdateError):
+    """El archivo con el resultado de la instalación no tiene la forma esperada."""
+
+
 class DowngradeRejectedError(UpdateError):
     """El manifiesto ofrece una versión menor o igual a la instalada."""
 

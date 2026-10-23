@@ -2,7 +2,9 @@
 
 Usa el script de publicación real, un servidor HTTP real y el coordinador real
 del backend. Solo el lanzamiento del instalador es falso: el .exe de prueba no
-es un instalador. No toca la red ni el servidor de pruebas.
+es un instalador, salvo en el último bloque (Windows), que corre el lanzador y el
+vigilante reales de PowerShell contra un "SAVI" falso. No toca la red ni el
+servidor de pruebas.
 
     uv run --project backend python scripts/e2e-updates.py
 
@@ -16,7 +18,9 @@ import json
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -29,14 +33,20 @@ sys.path.insert(0, str(REPO / "backend"))
 from app.infrastructure.config import Settings  # noqa: E402
 from app.modules.updates.application.coordinator import ApplyPhase  # noqa: E402
 from app.modules.updates.domain.interfaces import InstallerLauncher  # noqa: E402
+from app.modules.updates.domain.value_objects import InstallAttempt  # noqa: E402
 from app.modules.updates.infrastructure import provider  # noqa: E402
+from app.modules.updates.infrastructure.install_files import (  # noqa: E402
+    FileInstallHistory,
+    FileInstallResultReader,
+)
+from app.modules.updates.infrastructure.launcher import WindowsInstallerLauncher  # noqa: E402
 
 
 class RecordingLauncher(InstallerLauncher):
     def __init__(self) -> None:
         self.launched: list[Path] = []
 
-    def launch(self, installer: Path) -> None:
+    def launch(self, installer: Path, attempt: InstallAttempt) -> None:
         self.launched.append(installer)
 
 
@@ -89,10 +99,11 @@ def run_verify(public_key: str) -> subprocess.CompletedProcess[bytes]:
 
 def coordinator(
     public_key: str,
-    launcher: RecordingLauncher,
+    launcher: InstallerLauncher,
     *,
     version: str = "v1.3.2",
     channel: str = "stable",
+    watch_seconds: float = 0.2,
 ) -> provider.UpdateCoordinator:
     settings = Settings.model_validate(
         {"agent_db_engine": "sqlite", "update_url": BASE, "update_channel": channel}
@@ -101,6 +112,12 @@ def coordinator(
     assert built is not None
     built._launcher = launcher  # noqa: SLF001
     built._downloader._target_dir = WORK / "downloads"  # noqa: SLF001
+    # El estado de los intentos va a la carpeta temporal, no al perfil real.
+    state = WORK / "state"
+    built._results = FileInstallResultReader(state / "last-install.json")  # noqa: SLF001
+    built._history = FileInstallHistory(state / "history.jsonl")  # noqa: SLF001
+    built._install_poll_seconds = 0.05  # noqa: SLF001
+    built._install_watch_max_seconds = watch_seconds  # noqa: SLF001
     return built
 
 
@@ -261,7 +278,81 @@ async def run(public_key: str) -> list[tuple[str, bool, str]]:
         f"{final.state} {final.manifest and final.manifest.version}",
     )
 
+    if sys.platform == "win32":
+        await _real_watcher_checks(public_key, payload, record)
+
     return results
+
+
+class _SaviStub:
+    """Un "SAVI" que solo responde /health, para el vigilante real."""
+
+    def __init__(self) -> None:
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:
+                body = json.dumps({"status": "ok", "version": "v1.4.0-rc.2"}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format: str, *args: object) -> None:
+                return
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.port = int(self.server.server_address[1])
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+
+async def _real_watcher_checks(public_key: str, payload: bytes, record: object) -> None:
+    """El camino completo con el lanzador y el vigilante de verdad (sin permiso de admin).
+
+    El "instalador" descargado no es ejecutable, así que Windows no lo puede abrir: es un
+    fallo real de instalación, y se comprueba que SAVI lo entienda, lo diga en usted y
+    siga con la versión que tenía.
+    """
+    assert callable(record)
+    stub = _SaviStub()
+    (WORK / "SAVI.cmd").write_text("@echo off\r\n", encoding="utf-8")
+    launcher = WindowsInstallerLauncher(
+        elevate=False,
+        updates_dir=WORK / "state",
+        app_exe=WORK / "SAVI.cmd",
+        health_host="127.0.0.1",
+        port_from=stub.port,
+    )
+    c = coordinator(
+        public_key, launcher, version="v1.4.0-rc.2", channel="beta", watch_seconds=120.0
+    )
+    await c.check()
+    offered = c.snapshot().decision
+    record(
+        "[vigilante real] hay una versión para instalar",
+        offered.state == "recommended",
+        str(offered.state),
+    )
+    await c.start_apply()
+    snap = c.snapshot()
+    last = snap.last_install
+    record(
+        "[vigilante real] un instalador que no arranca falla y SAVI lo dice",
+        snap.phase is ApplyPhase.FAILED
+        and snap.apply_error is not None
+        and "SAVI sigue en v1.4.0-rc.2" in snap.apply_error,
+        f"{snap.phase}: {snap.apply_error}",
+    )
+    record(
+        "[vigilante real] queda en el historial",
+        last is not None and last.outcome.value == "failed" and len(c.install_history(10)) >= 1,
+        f"{last and last.outcome}",
+    )
+    after = coordinator(public_key, RecordingLauncher(), version="v1.4.0-rc.2", channel="beta")
+    record(
+        "[vigilante real] al reiniciar no repite el aviso del mismo intento",
+        after.settle_previous_install() is None,
+        "ya estaba en el historial",
+    )
+    stub.server.shutdown()
 
 
 def main() -> int:

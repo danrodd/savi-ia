@@ -1,6 +1,7 @@
 from app.modules.updates.domain.exceptions.exceptions import (
     DowngradeRejectedError,
     InstallerIntegrityError,
+    InvalidInstallResultError,
     InvalidManifestError,
     InvalidVersionError,
     NoUpdateAvailableError,
@@ -13,6 +14,7 @@ from app.modules.updates.domain.exceptions.exceptions import (
 __all__ = [
     "DowngradeRejectedError",
     "InstallerIntegrityError",
+    "InvalidInstallResultError",
     "InvalidManifestError",
     "InvalidVersionError",
     "NoUpdateAvailableError",
