@@ -36,7 +36,8 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 - **Cierre de cada tarea:**
   - backend: Ruff, formato y Pyright strict;
   - frontend: vue-tsc, Biome y Vitest;
-  - los tests del módulo `updates` y de `test_publish_release.py`.
+  - los tests del módulo `updates` y de `test_publish_release.py`;
+  - la prueba de punta a punta en local, `uv run --project backend python scripts/e2e-updates.py` (11 controles, sale con 0 si pasan). Cada tarea que cambie el flujo le suma sus controles.
 - **Modo de pruebas:** TDD apagado, porque no hay configuración que lo active. Pruebas funcionales con `uv run pytest` y `pnpm vitest`.
 
 ## Estado
