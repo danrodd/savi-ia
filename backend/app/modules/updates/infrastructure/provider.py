@@ -44,6 +44,10 @@ log = logging.getLogger(__name__)
 
 _coordinator: UpdateCoordinator | None = None
 _loop_task: asyncio.Task[None] | None = None
+_cleanup_task: asyncio.Task[None] | None = None
+
+# Segundos entre intentos de borrar el instalador, mientras el suyo termina de cerrarse.
+CLEANUP_RETRY_DELAYS: tuple[float, ...] = (5.0, 10.0, 20.0, 40.0)
 
 
 class _ChatTurns(ActiveTurns):
@@ -100,7 +104,7 @@ def build_coordinator(
 
 
 async def start_updates(settings: Settings) -> None:
-    global _coordinator, _loop_task
+    global _coordinator, _loop_task, _cleanup_task
     _coordinator = build_coordinator(
         settings, version=__version__, public_keys_b64=UPDATE_PUBLIC_KEYS
     )
@@ -112,21 +116,27 @@ async def start_updates(settings: Settings) -> None:
         update_url(settings),
         settings.update_check_interval_hours,
     )
-    await asyncio.to_thread(_settle_previous_install, _coordinator)
+    cleanup_pending = await asyncio.to_thread(_settle_previous_install, _coordinator)
+    if cleanup_pending:
+        _cleanup_task = asyncio.create_task(_delete_installer_when_free())
     _loop_task = asyncio.create_task(
         _check_forever(_coordinator, settings.update_check_interval_hours * 3600)
     )
 
 
-def _settle_previous_install(coordinator: UpdateCoordinator) -> None:
-    """Cierra el intento de instalación que dejó el vigilante y limpia lo que ya no sirve."""
+def _settle_previous_install(coordinator: UpdateCoordinator) -> bool:
+    """Cierra el intento de instalación que dejó el vigilante y limpia lo que ya no sirve.
+
+    Devuelve `True` si quedó un instalador por borrar más tarde: SAVI se reabre
+    mientras el instalador todavía termina y lo tiene bloqueado.
+    """
     try:
         record = coordinator.settle_previous_install()
     except OSError:
         log.exception("Actualizaciones: no se pudo resolver el intento anterior.")
-        return
+        return False
     if record is None:
-        return
+        return False
     log.info(
         "Actualizaciones: el intento %s (%s → %s) terminó como %s.",
         record.attempt_id,
@@ -139,11 +149,31 @@ def _settle_previous_install(coordinator: UpdateCoordinator) -> None:
         try:
             delete_downloaded_installers(data_dir() / "updates")
         except OSError:
-            log.warning("Actualizaciones: no se pudo borrar el instalador descargado.")
+            return True
+    return False
+
+
+async def _delete_installer_when_free(
+    retry_delays: Sequence[float] = CLEANUP_RETRY_DELAYS,
+) -> None:
+    """Reintenta el borrado hasta que el instalador termine de cerrarse."""
+    for delay in retry_delays:
+        await asyncio.sleep(delay)
+        try:
+            await asyncio.to_thread(delete_downloaded_installers, data_dir() / "updates")
+        except OSError:
+            continue
+        return
+    log.warning("Actualizaciones: no se pudo borrar el instalador descargado.")
 
 
 async def stop_updates() -> None:
-    global _coordinator, _loop_task
+    global _coordinator, _loop_task, _cleanup_task
+    if _cleanup_task is not None:
+        _cleanup_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await _cleanup_task
+        _cleanup_task = None
     if _loop_task is not None:
         _loop_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
