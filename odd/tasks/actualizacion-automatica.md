@@ -71,10 +71,15 @@ TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv 
   - Subcomando `verify`.
   - Guía "Puesta en marcha" en la spec 09, sección 7, con las variables del `.env`.
 
+- 2026-10-21: rama pusheada y llevada a `staging` por fast-forward (`a248079`), pusheada. Sobre `staging`: 101 tests del backend, 315 del frontend y 11/11 de punta a punta.
+- 2026-10-22: par de claves generado. La privada quedó en `C:\Users\hikig\claves-savi\savi-updates.pem`, fuera del repositorio (respaldarla). La pública está en `trust.py`, commit `59423c8` en `staging`, pusheado.
+- `DEFAULT_UPDATE_URL` sigue vacío a propósito: el dominio oficial no está decidido. Las pruebas usan un dominio propio en `UPDATE_URL` del `.env` de la instalación de prueba. El instalador conserva el `.env` al actualizar (`WriteEnvFile`), así que el valor sobrevive.
+
 ## Siguiente paso
 
-Desplegar en el servidor Linux siguiendo la spec 09, sección 7, "Puesta en marcha". Requiere:
+Probar contra un servidor Linux con un dominio de prueba (spec 09, sección 7, "Puesta en marcha"). Falta:
 
 - acceso SSH autorizado explícitamente (destino, usuario y llave);
-- el dominio;
-- el bloque de Caddy en `develop` (`deploy/master/` no existe en esta rama).
+- registro DNS, bloque de Caddy y usuario `savi-publish`;
+- dos compilaciones del instalador con el equipo libre: una versión base para instalar a mano y una más nueva para publicar en `beta`;
+- con el dominio oficial decidido, completar `DEFAULT_UPDATE_URL`.

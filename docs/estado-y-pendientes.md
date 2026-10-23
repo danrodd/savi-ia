@@ -1,13 +1,13 @@
 # Estado del proyecto y pendientes
 
-**Actualizado:** 2026-10-20. Este archivo hay que actualizarlo cada vez que cambie el estado: se publica una versión, se cierra un pendiente o se toma una decisión.
+**Actualizado:** 2026-10-22. Este archivo hay que actualizarlo cada vez que cambie el estado: se publica una versión, se cierra un pendiente o se toma una decisión.
 
 ## Ramas
 
 | Rama | Commit | Qué es |
 |---|---|---|
 | `main` | `b9b6a0e` | **Producción.** Tags `v1.3.0`, `v1.3.1` y `v1.3.2`. |
-| `staging` | `b9b6a0e` | Rama de preparación de producción. Hoy coincide con `main`. |
+| `staging` | `59423c8` | Rama de preparación de producción. Suma la actualización automática sobre `main`. |
 | `develop` | `bdd1ee6` | SAVI Cloud, la UI compartida (`packages/ui`) y las mejoras de la consola. **No va a producción todavía.** Desde el 2026-10-20 incluye todo `staging` (merge `d0251d3`). |
 
 **Flujo:**
@@ -96,7 +96,8 @@ Instalador: `installer/output/SAVI-Setup-v1.3.1.exe` (162 MB, no se versiona).
      - **D3:** sin certificado de firma por ahora.
      - **D4:** el plazo se decide en cada versión, 72 h por defecto.
      - **D5:** `UPDATE_CHANNEL`, con `beta` solo para SEO.
-   - **U0 y U1 hechos en `feat/actualizacion-automatica`** (2026-10-21), sin mergear todavía a `staging`. Seguimiento en `odd/tasks/actualizacion-automatica.md`.
+   - **U0 y U1 hechos** (2026-10-21) y en `staging`. Seguimiento en `odd/tasks/actualizacion-automatica.md`.
+     - Clave pública en `trust.py` (2026-10-22). La privada no se versiona. `DEFAULT_UPDATE_URL` queda vacío hasta decidir el dominio oficial; las pruebas usan `UPDATE_URL` en el `.env`.
      - Backend: módulo `updates`, con firma Ed25519, SHA-256, el plazo de `min_version_from`, chequeo cada 6 h y los endpoints `/updates/*`.
      - Frontend: barra de aviso, bloqueo y progreso.
      - `scripts/publish-release.py`, con `keygen`, `build`, `promote`, `upload` y `verify`.
