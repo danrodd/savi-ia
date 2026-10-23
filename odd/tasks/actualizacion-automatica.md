@@ -47,7 +47,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 | U0 y U1 (spec 09): manifiesto firmado, chequeo, aviso, descarga verificada, lanzamiento silencioso | Hecho y en `staging`. 11/11 de punta a punta en local. |
 | Clave de firma principal | Generada; la pública está en `trust.py` (`59423c8`). |
 | Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
-| **Fase 1:** núcleo del actualizador | En curso: B0, B1, B4 y B2 hechos; **siguiente: B3** (descarga que se retoma). |
+| **Fase 1:** núcleo del actualizador | En curso: B0, B1, B4, B2 y B3 hechos; **siguiente: B5** (vista en Administración). |
 | Fase 2: prueba real con instaladores compilados | Pendiente. |
 | Fase 3: producción | Pendiente. |
 
@@ -280,7 +280,13 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 
 ### B3. Descarga que se retoma
 
-- [ ] Hecho
+- [x] Hecho (2026-10-23)
+
+**Evidencia:**
+- 10 tests nuevos con `httpx.MockTransport` (corte y `206`, servidor que ignora el rango, `416`, `Content-Range` equivocado, parcial de otra versión, hash inválido, reintentos agotados, instalador completo ya presente, progreso desde N). 327 tests pasan en total; el único fallo, `test_logging_survives_migrations`, es previo.
+- **Contra el servidor real** (`savi-updates.danrodd.dev`, archivo de 40 MB subido como `savi-publish` y borrado después): Caddy contesta `206` con `Content-Range`; una descarga cortada a los 20 004 864 bytes retomó desde ahí y el SHA-256 final coincidió.
+- Prueba de punta a punta 20/20. Hubo que ajustar el caso "instalador cambiado": ahora parte de un equipo sin descargas, porque un instalador ya bajado y verificado contra el manifiesto se reutiliza.
+- Ruff y Pyright limpios. Spec 09 §4 documenta la retoma.
 
 **Por qué.** El instalador pesa unos 160 MB. Hoy, si la conexión se corta, la descarga se borra y arranca de cero (`http_source.py:68`). En una PYME con internet inestable, esa es la falla más probable.
 

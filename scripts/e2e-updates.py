@@ -153,6 +153,9 @@ async def run(public_key: str) -> list[tuple[str, bool, str]]:
     tampered = payload[:-1] + b"\x00"
     assert tampered != payload and len(tampered) == len(payload)
     exe.write_bytes(tampered)
+    # Un equipo que todavía no bajó nada: si ya tuviera el bueno, lo reutilizaría.
+    for done in (WORK / "downloads").glob("SAVI-Setup-*"):
+        done.unlink()
     launcher = RecordingLauncher()
     c = coordinator(public_key, launcher)
     await c.check()

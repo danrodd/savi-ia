@@ -108,6 +108,16 @@ SAVI-Setup-v1.4.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATION
 
 Al ser una actualización, el asistente no muestra páginas: conserva `.env`, `ERP_CREDENTIALS_KEY` y los datos. El log de cada intento queda en `install-<intento>.log` (se guardan los últimos 5). Las entradas `[Run]` y el vigilante abren SAVI con `--no-browser`: la pestaña que pidió la actualización se recarga sola.
 
+### Si la descarga se corta
+
+El instalador pesa unos 160 MB y la conexión puede cortarse. La descarga se retoma donde quedó:
+
+- Junto al `.partial` se guarda un `.partial.json` con la URL, el SHA-256 y el tamaño del manifiesto. Solo se retoma un parcial de esa misma versión; cualquier otro archivo de una descarga anterior se borra.
+- Se pide con `Range: bytes=N-`. Si el servidor contesta `206`, se verifica que `Content-Range` sea el esperado y se sigue escribiendo; si contesta `200`, ignoró el rango y se baja entero; si contesta `416`, se descarta el parcial y se baja de nuevo.
+- Dentro del mismo intento se reintenta 3 veces, esperando 2, 5 y 15 segundos. Si se agotan: "Se perdió la conexión. Intente de nuevo: la descarga sigue desde donde quedó." El parcial se conserva.
+- Si el instalador completo ya está y coincide con el manifiesto, no se vuelve a bajar. Si el SHA-256 o el tamaño no coinciden, se borran el parcial y su `.json`.
+- El progreso arranca en lo ya descargado.
+
 ### Si la instalación falla
 
 Un instalador que falla no puede dejar a la persona frente a una pantalla que espera para siempre. Por eso el instalador no se lanza desde SAVI sino desde un **vigilante**: un script de PowerShell (viene en todo Windows 10 y 11) que corre en un proceso aparte y sobrevive al cierre de SAVI.
