@@ -48,7 +48,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 | Clave de firma principal | Generada; la pública está en `trust.py` (`59423c8`). |
 | Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
 | **Fase 1:** núcleo del actualizador | **Fase 1 completa:** B0, B1, B4, B2, B3 y B5 hechos. Falta cerrar con el repaso final y pasar a la Fase 2. |
-| Fase 2: prueba real con instaladores compilados | Pendiente. |
+| Fase 2: prueba real con instaladores compilados | **En curso (2026-10-23):** sin VM, en el equipo de desarrollo. `rc.1` instalada a mano (UAC aceptado al segundo intento; el primero se canceló, código 1223) y configurada con `UPDATE_URL`/`UPDATE_CHANNEL=beta`; SAVI consulta el servidor (404 mientras no haya nada en `beta`). Falta publicar `rc.2` y correr la matriz. |
 | Fase 3: producción | Pendiente. |
 
 ---
