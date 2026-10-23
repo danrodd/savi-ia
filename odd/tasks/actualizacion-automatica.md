@@ -377,6 +377,8 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 - Al cerrar el intento, "no se pudo borrar el instalador descargado": el archivo seguía bloqueado en ese instante (se pudo borrar a mano minutos después). Queda un instalador de 160 MB en `%LOCALAPPDATA%\SAVI\updates` hasta la próxima limpieza. Reintentar el borrado más tarde o al próximo arranque.
 - El registro de `history.jsonl` quedó con `exit_code: null` aunque `last-install.json` trae `0`. Revisar de dónde lo toma `settle()`.
 - Las notas de la versión se veían en Markdown crudo: corregido en `8184bc0`, llega con la próxima candidata.
+
+**Evidencia de `rc.3` (2026-10-23):** `rc.2` → `rc.3` instalada con "Actualizar ahora". Historial `installed`, `last-install.json` con código 0. El instalador descargado ya no queda en `%LOCALAPPDATA%\SAVI\updates` y el log no avisa de ningún fallo de borrado (arreglo `c9d93b2`). El `exit_code: null` del historial es esperado: SAVI cierra el intento antes de que el vigilante escriba su último paso, y la versión que corre es la prueba de la instalación.
 | 2 | UAC cancelado | Cancelar el cartel de UAC | SAVI sigue abierto con "Se canceló el permiso…". "Reintentar" funciona. En `last-install.json` queda `cancelled`. Es la primera vez que se prueba el código 1223 con un cartel real. |
 | 3 | Corte de red | Desconectar la red de la VM a mitad de la descarga y reconectar | Al reintentar sigue desde donde quedó: en el log de Caddy, pedido con `206`. |
 | 4 | Chat en curso | Actualizar con una respuesta del chat en curso | Espera a que termine el turno y recién ahí instala. |
