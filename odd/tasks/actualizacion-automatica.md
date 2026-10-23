@@ -75,11 +75,14 @@ TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv 
 - 2026-10-22: par de claves generado. La privada quedó en `C:\Users\hikig\claves-savi\savi-updates.pem`, fuera del repositorio (respaldarla). La pública está en `trust.py`, commit `59423c8` en `staging`, pusheado.
 - `DEFAULT_UPDATE_URL` sigue vacío a propósito: el dominio oficial no está decidido. Las pruebas usan un dominio propio en `UPDATE_URL` del `.env` de la instalación de prueba. El instalador conserva el `.env` al actualizar (`WriteEnvFile`), así que el valor sobrevive.
 
+- 2026-10-22: despliegue propio en `deploy/updates/`: solo Caddy, con dominio, puertos, interfaz y carpeta por variables. Tiene dos modos: directo, con Let's Encrypt, o detrás de un proxy que ya ocupa el 80 y el 443. `setup.sh` crea el `.env`, la carpeta y el usuario `savi-publish` (sin contraseña, llave con `restrict`), y valida con `docker compose config` y `caddy validate`. Se separó del Master porque este vive en `develop`. La plantilla se llama `env.template` porque esta sesión no tiene permiso para escribir `.env*`.
+  - Verificado en local: sintaxis de `setup.sh` (`bash -n`) y YAML del compose. Docker no está en este equipo: la validación de compose y de Caddy queda para el servidor, en `setup.sh`.
+
 ## Siguiente paso
 
 Probar contra un servidor Linux con un dominio de prueba (spec 09, sección 7, "Puesta en marcha"). Falta:
 
 - acceso SSH autorizado explícitamente (destino, usuario y llave);
-- registro DNS, bloque de Caddy y usuario `savi-publish`;
+- registro DNS y `deploy/updates/` en el servidor (setup.sh crea `savi-publish`);
 - dos compilaciones del instalador con el equipo libre: una versión base para instalar a mano y una más nueva para publicar en `beta`;
 - con el dominio oficial decidido, completar `DEFAULT_UPDATE_URL`.

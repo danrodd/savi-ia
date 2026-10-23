@@ -1,0 +1,40 @@
+{
+	# Certificados de Let's Encrypt: Caddy los obtiene y los renueva solo, si el dominio apunta
+	# a este servidor y los puertos 80 y 443 de afuera llegan a este contenedor. Detrás de otro
+	# proxy (UPDATES_SITE=http://...) no se pide ningún certificado.
+	email {$ACME_EMAIL}
+}
+
+# Servidor de actualizaciones de SAVI: solo archivos estáticos, sin aplicación detrás.
+# Lo que se sirve está firmado (spec 09): Caddy no necesita ningún secreto.
+{$UPDATES_SITE} {
+	root * /srv
+
+	# Solo lectura: nada se sube por HTTP. La publicación es por SSH (savi-publish).
+	@escritura not method GET HEAD
+	respond @escritura 405
+
+	# Lo que el script sube con nombre temporal antes de renombrarlo no se sirve nunca.
+	@temporal path *.tmp
+	respond @temporal 404
+
+	# El manifiesto no se cachea, para que los equipos vean la versión nueva enseguida. Los
+	# instaladores no cambian una vez publicados.
+	@manifiesto path *.json *.sig
+	header @manifiesto Cache-Control "no-cache"
+	header /savi/releases/* Cache-Control "public, max-age=31536000, immutable"
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	# Sin `browse`: no se listan las carpetas.
+	file_server
+
+	log {
+		output stdout
+		format json
+	}
+}

@@ -41,22 +41,18 @@ https://updates.<dominio-seo>/savi/
 | GitHub Releases | Gratis y ya está integrado con los tags. | El repositorio es privado: descargar exige un token dentro de cada instalación. **Descartada.** |
 | IIS en Windows Server | Sirve si el cliente lo exige. | No aporta nada sobre servir archivos estáticos y es más caro de operar. |
 
-**Cómo se despliega (D1).** SEO ya tiene un servidor Linux, al que se entra por SSH con llave. Las actualizaciones son un dominio más en el mismo Caddy de SAVI Master (`deploy/master/Caddyfile`, en `develop`), sin aplicación detrás:
+**Cómo se despliega (D1).** SEO ya tiene un servidor Linux, al que se entra por SSH con llave. Las actualizaciones se sirven con un Caddy propio, sin aplicación detrás, en [`deploy/updates/`](../../deploy/updates/README.md):
 
-1. Un registro DNS `A` para `updates.<dominio-seo>` apunta al servidor. Caddy obtiene y renueva el certificado de Let's Encrypt.
-2. Un bloque nuevo en el `Caddyfile` sirve la carpeta como archivos estáticos:
-   ```
-   {$UPDATES_DOMAIN} {
-       import seguridad
-       root * /srv/updates
-       file_server
-       @manifiesto path *.json *.sig
-       header @manifiesto Cache-Control "no-cache"
-       header /savi/releases/* Cache-Control "public, max-age=31536000, immutable"
-   }
-   ```
-   En `docker-compose.yml`, la carpeta se monta de solo lectura: `./updates:/srv/updates:ro`. El manifiesto no se cachea, para que los equipos vean la versión nueva enseguida. Los instaladores no cambian nunca, así que se cachean para siempre.
+1. Un registro DNS `A` para `updates.<dominio-seo>` apunta al servidor.
+2. Caddy sirve la carpeta publicada como archivos estáticos de solo lectura. El manifiesto no se cachea, para que los equipos vean la versión nueva enseguida. Los instaladores no cambian nunca, así que se cachean para siempre.
 3. Se publica con un usuario `savi-publish` y una llave SSH propia, que solo puede escribir en esa carpeta. Así, si la llave se filtra, no da acceso de administrador al servidor.
+
+Todo lo que cambia entre servidores va en el `.env` del despliegue: el dominio, los puertos, la interfaz y la carpeta. Hay dos modos:
+
+- **Directo:** Caddy atiende el 80 y el 443 y saca el certificado de Let's Encrypt.
+- **Detrás de otro proxy:** si el servidor ya tiene un nginx u otro Caddy en esos puertos, ese proxy pone el HTTPS y le pasa el tráfico a este contenedor por un puerto local.
+
+Va separado de SAVI Master a propósito: el Master vive en `develop` y todavía no va a producción, y para servir archivos no hace falta levantar SAVI, Cloud ni la base. Cuando el Master pase a producción, el bloque se puede mover a su `Caddyfile`.
 
 **Manifiesto** (`stable.json`):
 
@@ -170,10 +166,9 @@ U0 y U1 están escritos y probados en local. En el servidor solo queda desplegar
    La clave privada se respalda en un lugar seguro: si se pierde, las instalaciones no aceptan más versiones hasta reinstalar a mano una que traiga la clave nueva.
 2. **Datos de confianza.** Se pegan la clave pública y la URL oficial (`https://updates.<dominio-seo>/savi`) en `backend/app/modules/updates/infrastructure/trust.py`, y se commitean.
 3. **DNS.** Un registro `A` para `updates.<dominio-seo>` que apunte al servidor.
-4. **Caddy.** El bloque `{$UPDATES_DOMAIN}` de la sección 3, en `deploy/master/Caddyfile`, que hoy existe solo en `develop`. Además, `UPDATES_DOMAIN` en el `.env` del despliegue y el volumen `./updates:/srv/updates:ro` en `docker-compose.yml`.
-5. **Usuario de publicación.** `savi-publish` en el servidor, con su llave SSH, y permiso de escritura solo sobre la carpeta `updates/`.
-6. **Primera versión con actualización automática.** Se compila el instalador del tag y se instala **a mano** en cada equipo. Las v1.3.x no traen el módulo `updates`, así que no pueden enterarse solas.
-7. **Prueba.** Se publica en `beta`, con `build`, `upload` y `verify`. Un equipo de SEO con `UPDATE_CHANNEL=beta` en el `.env` tiene que mostrar el aviso, actualizar con un clic y volver a abrir con la versión nueva. Si funciona, se pasa a estable con `promote` y `upload --channel stable`.
+4. **Servidor.** En `deploy/updates/`: `sudo ./setup.sh`, completar el `.env`, `sudo ./setup.sh --publish-key savi-publish.pub` y `docker compose up -d`. Crea la carpeta publicada y el usuario `savi-publish`, con su llave SSH y permiso de escritura solo sobre esa carpeta. Detalle en su [README](../../deploy/updates/README.md).
+5. **Primera versión con actualización automática.** Se compila el instalador del tag y se instala **a mano** en cada equipo. Las v1.3.x no traen el módulo `updates`, así que no pueden enterarse solas.
+6. **Prueba.** Se publica en `beta`, con `build`, `upload` y `verify`. Un equipo de SEO con `UPDATE_CHANNEL=beta` en el `.env` tiene que mostrar el aviso, actualizar con un clic y volver a abrir con la versión nueva. Si funciona, se pasa a estable con `promote` y `upload --channel stable`.
 
 **Probar en local, sin servidor.** Se arma la carpeta con `build --base-url http://127.0.0.1:8765`, se sirve con `python -m http.server 8765 --bind 127.0.0.1 --directory installer/output/updates` y se pone `UPDATE_URL=http://127.0.0.1:8765` en el `.env`. Solo `127.0.0.1` y `localhost` admiten HTTP sin TLS.
 
@@ -189,7 +184,7 @@ U0 y U1 están escritos y probados en local. En el servidor solo queda desplegar
 
 | Fase | Contenido | Criterio de hecho |
 |---|---|---|
-| **U0 Servidor y publicación** | Bloque `{$UPDATES_DOMAIN}` en el Caddy de SAVI Master. `publish-release.py` con manifiesto, SHA-256, firma Ed25519 y subida por SSH. | `stable.json` publicado y verificable desde un equipo de prueba. |
+| **U0 Servidor y publicación** | Caddy de solo lectura en `deploy/updates/`. `publish-release.py` con manifiesto, SHA-256, firma Ed25519 y subida por SSH. | `stable.json` publicado y verificable desde un equipo de prueba. |
 | **U1 Aviso y actualización** | Módulo `updates` en el backend (chequeo, verificación, descarga, lanzamiento). Canal `UPDATE_CHANNEL` en el `.env`. Barra de aviso, plazo y diálogo obligatorio en el frontend. Entrada `[Run]` que relanza SAVI en modo silencioso. Bloqueo por `min_version` y `min_version_from`. En esta fase, las instalaciones siguen siendo por máquina y actualizan con UAC. | Un equipo con v1.4.0 pasa a v1.4.1 con un clic y un UAC, sin perder la configuración ni las conversaciones. Tests: comparación de versiones, plazo antes y después de la fecha, firma inválida rechazada, hash inválido rechazado, intento de bajar de versión rechazado. |
 | **U2 Instalador de dos modos** | `PrivilegesRequired=lowest` con diálogo para elegir el modo. Rutas de usuario para los datos y para Claude Code. Botón de actualizar solo local en el modo servidor. | Una cuenta sin permisos de administrador instala y actualiza sola. Una instalación v1.3.x por máquina actualiza sin cambiar de modo. |
 | **U3 Despliegue controlado** | Despliegue por porcentaje (un hash del id de instalación decide si le toca). Reporte de la versión instalada por equipo, aunque sea solo en el log. | Una versión llega primero al 10 % y se puede frenar quitándola del manifiesto. |
@@ -203,7 +198,7 @@ U0 y U1 están escritos y probados en local. En el servidor solo queda desplegar
 
 ## 10. Decisiones (cerradas el 2026-10-21)
 
-- **D1. Dónde se aloja:** en el servidor Linux de SEO, como un dominio más del Caddy de SAVI Master (sección 3). Se descartó R2 porque el servidor ya existe. Falta el acceso SSH para desplegar.
+- **D1. Dónde se aloja:** en el servidor Linux de SEO, con un Caddy propio en `deploy/updates/` (sección 3). Al principio iba en el Caddy de SAVI Master; el 2026-10-22 se separó porque el Master todavía no va a producción, y los puertos y el dominio quedaron configurables por variables. Se descartó R2 porque el servidor ya existe. Falta el acceso SSH para desplegar.
 - **D2. Permisos de administrador:** instalador de dos modos, por usuario por defecto y por máquina para servidores. **No se construye el servicio `SAVIUpdate`** (sección 4).
 - **D3. Certificado de firma de código:** no se compra por ahora. Se compra si un cliente lo exige o su política bloquea ejecutables sin firma, si aparecen falsos positivos de antivirus o si los avisos de SmartScreen cuestan ventas. En ese caso:
   - **Tipo:** un OV con la clave en un HSM en la nube del proveedor, a nombre de SEO Group, con MFA y acceso para dos personas.

@@ -1,0 +1,51 @@
+# Servidor de actualizaciones de SAVI: Caddy sirviendo una carpeta de archivos firmados.
+#
+# Antes de levantar:   ./setup.sh   (con sudo, para crear el usuario savi-publish)
+# Levantar / aplicar:  docker compose up -d
+#
+# Todo lo que cambia entre servidores (dominio, puertos, carpeta) va en .env.
+
+name: savi-updates
+
+services:
+  caddy:
+    image: caddy:${CADDY_VERSION:-2.8.4-alpine}
+    container_name: savi-updates-caddy
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-America/Bogota}
+      UPDATES_SITE: ${UPDATES_SITE:?Falta UPDATES_SITE en .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Falta ACME_EMAIL en .env}
+    ports:
+      # Con otro proxy en este servidor: UPDATES_BIND=127.0.0.1 y puertos libres (ver README).
+      - "${UPDATES_BIND:-0.0.0.0}:${UPDATES_HTTP_PORT:-80}:80"
+      - "${UPDATES_BIND:-0.0.0.0}:${UPDATES_HTTPS_PORT:-443}:443"
+      - "${UPDATES_BIND:-0.0.0.0}:${UPDATES_HTTPS_PORT:-443}:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Lo que publica savi-publish. Solo lectura: Caddy no puede cambiar nada.
+      - ${UPDATES_DIR:-/srv/savi-updates}:/srv:ro
+      - ./data/caddy/data:/data       # certificados y cuenta ACME: persistirlos evita reemitir
+      - ./data/caddy/config:/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE   # puertos 80 y 443
