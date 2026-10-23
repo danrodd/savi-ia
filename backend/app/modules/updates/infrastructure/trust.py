@@ -13,5 +13,5 @@ Con cualquiera de los dos vacío, SAVI no chequea actualizaciones y lo dice en
 el log.
 """
 
-UPDATE_PUBLIC_KEY = ""
+UPDATE_PUBLIC_KEY = "z7FYJ/jvNWNHThAYpEywlwZJUFXG0IVIiZepWnLHzrM="
 DEFAULT_UPDATE_URL = ""
