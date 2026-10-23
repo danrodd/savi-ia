@@ -3,6 +3,7 @@
  * Avisos de la actualización automática (spec 09, sección 6).
  *
  * - Barra superior: versión nueva recomendada, u obligatoria con fecha límite.
+ * - Aviso del resultado del último intento: se muestra una sola vez.
  * - Diálogo que no se cierra: obligatoria con el plazo vencido.
  * - Diálogo de progreso: descarga, espera de turnos e instalación.
  *
@@ -14,48 +15,72 @@ import { computed, ref } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
 import { useUpdateStatus } from '../composables/useUpdateStatus'
-import { bannerMessage, progressMessage, progressPercent } from '../utils/updateView'
+import {
+  bannerMessage,
+  progressMessage,
+  progressPercent,
+  STALLED_MESSAGE,
+} from '../utils/updateView'
 
 const REMOTE_MESSAGE = 'Avise a su área de sistemas para que actualice SAVI desde el servidor.'
 
-const { status, kind, applyError, apply, snooze } = useUpdateStatus()
+const { status, kind, applyError, stalled, result, apply, snooze, dismissResult, giveUpWaiting } =
+  useUpdateStatus()
 const showNotes = ref(false)
 
 const error = computed(() => applyError.value ?? status.value?.error ?? null)
 const notes = computed(() => status.value?.notes?.trim() || null)
 const percent = computed(() => (status.value === null ? null : progressPercent(status.value)))
+const showBanner = computed(() => kind.value === 'banner' && status.value !== null)
 </script>
 
 <template>
-  <div v-if="kind === 'banner' && status" class="update-banner" role="status">
-    <div class="update-banner__row">
-      <p class="update-banner__text">
-        {{ bannerMessage(status) }}
-        <button
-          v-if="notes"
-          type="button"
-          class="update-banner__link"
-          :aria-expanded="showNotes"
-          @click="showNotes = !showNotes"
-        >
-          Qué cambió
-        </button>
-      </p>
-      <div class="update-banner__actions">
-        <template v-if="status.can_apply">
-          <Button size="sm" @click="apply">
-            {{ error ? 'Reintentar' : 'Actualizar y reiniciar' }}
-          </Button>
-          <Button size="sm" variant="ghost" @click="snooze">Más tarde</Button>
-        </template>
-        <template v-else>
-          <span class="update-banner__remote">{{ REMOTE_MESSAGE }}</span>
-          <Button size="sm" variant="ghost" @click="snooze">Más tarde</Button>
-        </template>
+  <div v-if="showBanner || result" class="update-stack">
+    <div
+      v-if="result"
+      class="update-banner"
+      :class="`update-banner--${result.tone}`"
+      role="status"
+      data-testid="update-result"
+    >
+      <div class="update-banner__row">
+        <p class="update-banner__text">{{ result.message }}</p>
+        <div class="update-banner__actions">
+          <Button size="sm" variant="ghost" @click="dismissResult">Entendido</Button>
+        </div>
       </div>
     </div>
-    <p v-if="error" class="update-banner__error" role="alert">{{ error }}</p>
-    <p v-if="showNotes && notes" class="update-banner__notes">{{ notes }}</p>
+
+    <div v-if="showBanner && status" class="update-banner" role="status">
+      <div class="update-banner__row">
+        <p class="update-banner__text">
+          {{ bannerMessage(status) }}
+          <button
+            v-if="notes"
+            type="button"
+            class="update-banner__link"
+            :aria-expanded="showNotes"
+            @click="showNotes = !showNotes"
+          >
+            Qué cambió
+          </button>
+        </p>
+        <div class="update-banner__actions">
+          <template v-if="status.can_apply">
+            <Button size="sm" @click="apply">
+              {{ error ? 'Reintentar' : 'Actualizar y reiniciar' }}
+            </Button>
+            <Button size="sm" variant="ghost" @click="snooze">Más tarde</Button>
+          </template>
+          <template v-else>
+            <span class="update-banner__remote">{{ REMOTE_MESSAGE }}</span>
+            <Button size="sm" variant="ghost" @click="snooze">Más tarde</Button>
+          </template>
+        </div>
+      </div>
+      <p v-if="error" class="update-banner__error" role="alert">{{ error }}</p>
+      <p v-if="showNotes && notes" class="update-banner__notes">{{ notes }}</p>
+    </div>
   </div>
 
   <Dialog
@@ -91,24 +116,42 @@ const percent = computed(() => (status.value === null ? null : progressPercent(s
     >
       <div class="update-progress__bar" :style="{ width: `${percent}%` }" />
     </div>
-    <p class="update-dialog__hint">La página se recarga sola cuando SAVI vuelva a abrir.</p>
+    <p v-if="stalled" class="update-banner__error" role="alert">{{ STALLED_MESSAGE }}</p>
+    <p v-else class="update-dialog__hint">La página se recarga sola cuando SAVI vuelva a abrir.</p>
+    <template v-if="stalled" #footer>
+      <Button variant="ghost" @click="giveUpWaiting">Dejar de esperar</Button>
+    </template>
   </Dialog>
 </template>
 
 <style scoped>
-.update-banner {
+.update-stack {
   position: fixed;
   top: var(--space-3);
   left: 50%;
   z-index: 800;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   transform: translateX(-50%);
   width: min(720px, calc(100vw - 2 * var(--space-4)));
+}
+
+.update-banner {
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   background: var(--surface-elev);
   box-shadow: var(--shadow-md);
   color: var(--text);
+}
+
+.update-banner--success {
+  border-left: 4px solid var(--success);
+}
+
+.update-banner--warning {
+  border-left: 4px solid var(--warning);
 }
 
 .update-banner__row {

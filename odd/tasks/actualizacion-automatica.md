@@ -37,7 +37,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
   - backend: Ruff, formato y Pyright strict;
   - frontend: vue-tsc, Biome y Vitest;
   - los tests del módulo `updates` y de `test_publish_release.py`;
-  - la prueba de punta a punta en local, `uv run --project backend python scripts/e2e-updates.py` (16 controles, sale con 0 si pasan). Cada tarea que cambie el flujo le suma sus controles.
+  - la prueba de punta a punta en local, `uv run --project backend python scripts/e2e-updates.py` (20 controles en Windows, sale con 0 si pasan). Cada tarea que cambie el flujo le suma sus controles.
 - **Modo de pruebas:** TDD apagado, porque no hay configuración que lo active. Pruebas funcionales con `uv run pytest` y `pnpm vitest`.
 
 ## Estado
@@ -47,7 +47,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 | U0 y U1 (spec 09): manifiesto firmado, chequeo, aviso, descarga verificada, lanzamiento silencioso | Hecho y en `staging`. 11/11 de punta a punta en local. |
 | Clave de firma principal | Generada; la pública está en `trust.py` (`59423c8`). |
 | Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
-| **Fase 1:** núcleo del actualizador | En curso: B0 hecho; **siguiente: B1 + B4**. |
+| **Fase 1:** núcleo del actualizador | En curso: B0, B1 y B4 hechos; **siguiente: B2** (varias claves de confianza). |
 | Fase 2: prueba real con instaladores compilados | Pendiente. |
 | Fase 3: producción | Pendiente. |
 
@@ -110,7 +110,32 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 
 ### B1. Vigilante de la instalación
 
-- [ ] Hecho
+- [x] Hecho (2026-10-23), junto con B4.
+
+**Evidencia:**
+- **Backend:** 212 tests pasan (`updates`, publicación, versionado y guarda de usted). Pyright strict con 0 errores; Ruff limpio en lo tocado.
+- **PowerShell de verdad:** `test_watcher.py` corre el vigilante real con un "instalador" `.cmd` y un "SAVI" HTTP falsos, en una carpeta con espacios y una `ñ`:
+  - instalador que sale con 0: queda `finished`, no se toca SAVI;
+  - sale con 4: queda `failed` con el código y SAVI se vuelve a abrir;
+  - no arranca: `failed` sin código;
+  - no termina: `timeout`;
+  - SAVI lo abre el instalador unos segundos después: no se abre dos veces;
+  - SAVI nunca vuelve tras una instalación buena: se abre.
+- **Punta a punta:** `scripts/e2e-updates.py` pasa 20 de 20. Los 4 controles nuevos recorren coordinador → lanzador real → vigilante real → archivo → coordinador: un instalador que Windows no puede abrir deja `failed`, SAVI lo dice en usted ("…SAVI sigue en v1.4.0-rc.2.") y queda en el historial.
+- **Frontend:** 328 tests pasan en toda la suite; vue-tsc y Biome limpios.
+
+**Diferencias con el diseño:**
+- **Argumentos:** el vigilante recibe los datos como argumentos de `-File` y no con el texto incrustado. Así no hay que escapar comillas, y una ruta con `'` o con `ñ` llega intacta.
+- **Respaldo:** si PowerShell no puede arrancar el script (una política de grupo, por ejemplo), SAVI vuelve al lanzamiento directo de antes. Funciona igual, pero sin recuperación.
+- **Puertos:** el vigilante busca a SAVI en su puerto y en los 19 siguientes, porque SAVI salta al siguiente si el suyo está ocupado.
+- **`--no-browser`:** la bandera ya existía; el caso "SAVI ya estaba abierto" abría el navegador igual, y ahora la respeta. La entrada `[Run]` de `savi.iss` la usa.
+- **Frontend:** además del tope de 15 minutos hay un botón **Dejar de esperar**, y si SAVI vuelve con la misma versión se sale de la pantalla de progreso, porque la instalación no se aplicó.
+- **Limpieza (B4):** al instalar bien se borra el instalador descargado (unos 160 MB) y se guardan solo los últimos 5 logs de Inno.
+
+**No se pudo probar sin una persona (queda en la Fase 2):**
+- El cartel de UAC y su cancelación (`NativeErrorCode 1223`). El resto de la rama de error sí está probado.
+- Que `ExitCode` se lea de un proceso elevado. Si no se pudiera, el vigilante lo trata como "terminó" y SAVI decide por la versión que corre.
+- El `[Run]` real de Inno Setup, porque no se compila el instalador.
 
 **Por qué.** Hoy SAVI lanza el instalador con `ShellExecuteW` (`launcher.py:49`), que no devuelve el proceso, y se cierra (`/CLOSEAPPLICATIONS`). Si la instalación falla, Inno revierte los archivos, pero la entrada de `[Run]` que vuelve a abrir SAVI solo corre si todo salió bien. Resultado: SAVI queda cerrado y la pantalla "Actualizando…" espera para siempre (`useUpdateStatus.ts:59`).
 
@@ -175,7 +200,9 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 
 ### B4. Registro del resultado de cada intento
 
-- [ ] Hecho
+- [x] Hecho (2026-10-23), junto con B1. La evidencia está en B1.
+
+**Diferencia con el diseño:** el aviso "SAVI se actualizó a vX.Y.Z" no trae el enlace "Qué cambió". El estado no guarda las notas de la versión instalada, y guardarlas pedía sumarlas al archivo del vigilante. Si hace falta, se agrega después.
 
 **Por qué.** Después de reiniciar, SAVI no sabe si la actualización salió bien. La persona necesita un aviso claro, y soporte necesita poder diagnosticar por teléfono.
 
@@ -324,7 +351,7 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 | # | Caso | Cómo | Resultado esperado |
 |---|---|---|---|
 | 1 | Camino feliz | Aviso → "Actualizar y reiniciar" → aceptar el UAC | Vuelve a abrir en `rc.2` y la pestaña se recarga sola. Conversaciones y configuración intactas. Aviso "SAVI se actualizó". |
-| 2 | UAC cancelado | Cancelar el cartel de UAC | SAVI sigue abierto con "Se canceló el permiso…". "Reintentar" funciona. |
+| 2 | UAC cancelado | Cancelar el cartel de UAC | SAVI sigue abierto con "Se canceló el permiso…". "Reintentar" funciona. En `last-install.json` queda `cancelled`. Es la primera vez que se prueba el código 1223 con un cartel real. |
 | 3 | Corte de red | Desconectar la red de la VM a mitad de la descarga y reconectar | Al reintentar sigue desde donde quedó: en el log de Caddy, pedido con `206`. |
 | 4 | Chat en curso | Actualizar con una respuesta del chat en curso | Espera a que termine el turno y recién ahí instala. |
 | 5 | Instalador manipulado | Reemplazar el `.exe` en el servidor | Lo rechaza por SHA-256 y no lanza nada. |

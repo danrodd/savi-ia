@@ -89,9 +89,13 @@ SAVI (backend)                                   Servidor de actualizaciones
                 │
   descarga el .exe a %LOCALAPPDATA%\SAVI\updates\ ─── GET releases/… ──▶
   verifica SHA-256 y la firma Authenticode
-  lanza el instalador en silencio y termina
+  arranca el vigilante (PowerShell, proceso aparte) y espera
+                │
+  vigilante: lanza el instalador en silencio, con UAC si hace falta, y espera
                 │
   instalador: cierra SAVI, reemplaza archivos, conserva .env, relanza SAVI
+                │
+  vigilante: anota cómo terminó; si SAVI no volvió a abrir, lo abre
                 │
   frontend: muestra "Actualizando…", espera /health con la versión nueva y recarga
 ```
@@ -99,10 +103,37 @@ SAVI (backend)                                   Servidor de actualizaciones
 **Modo de instalación silenciosa:**
 
 ```
-SAVI-Setup-v1.4.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LOG="%LOCALAPPDATA%\SAVI\updates\install.log"
+SAVI-Setup-v1.4.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LOG="%LOCALAPPDATA%\SAVI\updates\install-<intento>.log"
 ```
 
-Al ser una actualización, el asistente no muestra páginas: conserva `.env`, `ERP_CREDENTIALS_KEY` y los datos.
+Al ser una actualización, el asistente no muestra páginas: conserva `.env`, `ERP_CREDENTIALS_KEY` y los datos. El log de cada intento queda en `install-<intento>.log` (se guardan los últimos 5). Las entradas `[Run]` y el vigilante abren SAVI con `--no-browser`: la pestaña que pidió la actualización se recarga sola.
+
+### Si la instalación falla
+
+Un instalador que falla no puede dejar a la persona frente a una pantalla que espera para siempre. Por eso el instalador no se lanza desde SAVI sino desde un **vigilante**: un script de PowerShell (viene en todo Windows 10 y 11) que corre en un proceso aparte y sobrevive al cierre de SAVI.
+
+1. **Lanza el instalador** (con el cartel de UAC en las instalaciones por máquina) y espera hasta 30 minutos.
+2. **Anota el resultado** en `%LOCALAPPDATA%\SAVI\updates\last-install.json`: el paso (`started`, `cancelled`, `failed`, `timeout`, `finished`), el código de salida de Inno Setup y el intento. Lo escribe a un archivo temporal y lo renombra, para que nadie lea un JSON a medias.
+3. **Vuelve a abrir SAVI si hace falta.** Si el instalador falló, espera 5 segundos y abre `SAVI.exe --no-browser`. Si terminó bien, le da hasta 2 minutos al instalador para que abra SAVI él mismo y recién después lo abre. Busca a SAVI en su puerto y en los 19 siguientes, que es lo que prueba SAVI cuando el suyo está ocupado.
+4. **Si no puede arrancar** (por ejemplo, una política de grupo que impide PowerShell), SAVI vuelve al lanzamiento directo de antes: funciona igual, pero sin recuperación.
+
+El resultado final lo decide SAVI al arrancar, contra la versión que corre: si es la de destino, se instaló. Si no, queda como `failed`, `cancelled`, `timeout`, `rolled_back` (el instalador terminó bien y SAVI sigue en la versión anterior) o `interrupted` (no quedó constancia de cómo terminó). Cada intento se guarda en `history.jsonl` (los últimos 50) y se ve en `GET /updates/status` (`last_install`) y, para administradores, en `GET /updates/history`.
+
+Si SAVI sigue vivo (el permiso de administrador se canceló, o el instalador no pudo arrancar), lo sabe leyendo el archivo y muestra el motivo con el botón **Reintentar**. Los códigos de salida de Inno Setup que se distinguen:
+
+| Código | Mensaje (de usted) |
+|---|---|
+| 1 | no se pudo iniciar la instalación |
+| 2 | la instalación se canceló antes de empezar |
+| 3 | no se pudo preparar la instalación |
+| 4 | la instalación falló |
+| 5 | la instalación se canceló |
+| 6 | la instalación se interrumpió |
+| 7 | la instalación no pudo continuar |
+| 8 | la instalación necesita reiniciar el equipo |
+| otro | la instalación terminó con un error (código N) |
+
+Cada mensaje completo dice qué versión no se instaló y en cuál sigue SAVI: "La actualización a v1.4.0 no se completó: la instalación falló. SAVI sigue en v1.3.2."
 
 ### El permiso de administrador
 
@@ -139,7 +170,8 @@ Un sistema de autoactualización es un canal para ejecutar código en todos los 
 - **Aviso recomendado:** una barra superior que dice "Hay una versión nueva de SAVI (v1.4.0)". Tiene dos botones, **Actualizar y reiniciar** y **Más tarde**, y un enlace "Qué cambió" que muestra `notes`. "Más tarde" lo oculta por 24 h.
 - **Obligatoria, dentro del plazo:** la misma barra, con la fecha: "Debe actualizar SAVI antes del 5 de noviembre." No se puede ocultar por más de 24 h.
 - **Obligatoria, vencido el plazo:** un diálogo sin cerrar: "Esta versión de SAVI ya no es compatible. Debe actualizar para seguir usándola." Un único botón: **Actualizar ahora**. En el modo servidor, desde otro equipo, el diálogo dice "Avise a su área de sistemas" y no tiene botón.
-- **Durante la actualización:** una pantalla con progreso de descarga y luego "Reiniciando SAVI…". Cuando `/health` responde con la versión nueva, recarga sola.
+- **Durante la actualización:** una pantalla con progreso de descarga y luego "Reiniciando SAVI…". Cuando `/health` responde con la versión nueva, recarga sola. Si SAVI vuelve con la misma versión, deja de esperar y muestra el motivo. Si pasan 15 minutos sin que vuelva, avisa "La actualización está tardando más de lo normal. Si SAVI no vuelve a abrir, ábralo desde el menú Inicio." y ofrece **Dejar de esperar**.
+- **Resultado del último intento:** un aviso de una sola vez ("SAVI se actualizó a v1.4.0." o "La actualización a v1.4.0 no se completó…"), con el botón **Entendido**. No se repite una cancelación que la persona ya vio. Por ahora no trae el enlace "Qué cambió" de la versión instalada, porque el estado no guarda sus notas.
 - **Si falla:** un mensaje claro y el botón **Reintentar**. SAVI sigue funcionando con la versión actual, salvo que sea obligatoria.
 - **Conversación en curso:** no actualizar a mitad de un turno. El botón espera a que terminen los turnos activos (ver `turn_registry`).
 - **Quién la ve:** el aviso lo ve cualquiera. En el modo por usuario, cualquiera puede actualizar. En el modo servidor, solo desde el propio servidor y con permisos de administrador.

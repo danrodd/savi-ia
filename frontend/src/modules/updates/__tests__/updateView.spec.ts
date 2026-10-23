@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest'
 
 import {
   bannerMessage,
+  INSTALLING_MAX_MS,
+  installStalled,
   noticeKind,
   progressMessage,
   progressPercent,
   restartedWithNewVersion,
+  resultNotice,
   SNOOZE_MS,
 } from '../utils/updateView'
-import { status } from './fixtures'
+import { installRecord, status } from './fixtures'
 
 const NOW = Date.parse('2026-11-02T15:00:00Z')
 
@@ -75,5 +78,47 @@ describe('restartedWithNewVersion', () => {
     expect(restartedWithNewVersion('v1.4.0', 'v1.3.2')).toBe(true)
     expect(restartedWithNewVersion('v1.3.2', 'v1.3.2')).toBe(false)
     expect(restartedWithNewVersion(null, 'v1.3.2')).toBe(false)
+  })
+})
+
+describe('installStalled', () => {
+  it('waits up to 15 minutes before warning', () => {
+    expect(installStalled(null, NOW)).toBe(false)
+    expect(installStalled(NOW, NOW + INSTALLING_MAX_MS)).toBe(false)
+    expect(installStalled(NOW, NOW + INSTALLING_MAX_MS + 1)).toBe(true)
+  })
+})
+
+describe('resultNotice', () => {
+  const done = { state: 'up_to_date', available_version: null } as const
+
+  it('is a success for an installed update and a warning for anything else', () => {
+    const installed = resultNotice(status({ ...done, last_install: installRecord() }), null)
+    const failed = resultNotice(
+      status({ last_install: installRecord({ outcome: 'rolled_back' }) }),
+      null,
+    )
+
+    expect(installed).toMatchObject({ tone: 'success', attemptId: 'a1' })
+    expect(failed).toMatchObject({ tone: 'warning' })
+  })
+
+  it('shows nothing without a record, with updates off, or once seen', () => {
+    expect(resultNotice(null, null)).toBeNull()
+    expect(resultNotice(status({ last_install: null }), null)).toBeNull()
+    expect(resultNotice(status({ enabled: false, last_install: installRecord() }), null)).toBeNull()
+    expect(resultNotice(status({ last_install: installRecord() }), 'a1')).toBeNull()
+  })
+
+  it('skips a cancellation, an attempt in progress and a failure already on screen', () => {
+    expect(
+      resultNotice(status({ last_install: installRecord({ outcome: 'cancelled' }) }), null),
+    ).toBeNull()
+    expect(
+      resultNotice(status({ phase: 'downloading', last_install: installRecord() }), null),
+    ).toBeNull()
+    expect(
+      resultNotice(status({ phase: 'failed', last_install: installRecord() }), null),
+    ).toBeNull()
   })
 })
