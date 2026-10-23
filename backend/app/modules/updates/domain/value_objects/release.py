@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from functools import total_ordering
 from urllib.parse import urlsplit
 
 from app.modules.updates.domain.exceptions.exceptions import (
@@ -18,7 +19,8 @@ from app.modules.updates.domain.exceptions.exceptions import (
     InvalidVersionError,
 )
 
-_VERSION = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+# `-rc.N` es una candidata: se prueba en `beta` y nunca llega a `stable`.
+_VERSION = re.compile(r"^v(\d+)\.(\d+)\.(\d+)(?:-rc\.([1-9]\d*))?$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 # Solo para probar en local con `python -m http.server`: fuera de este equipo
 # el instalador viaja siempre por HTTPS.
@@ -26,18 +28,38 @@ _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 NOTES_MAX_CHARS = 2000
 
 
-@dataclass(frozen=True, order=True)
+@total_ordering
+@dataclass(frozen=True)
 class ReleaseVersion:
     major: int
     minor: int
     patch: int
+    # Número de candidata (`v1.4.0-rc.2` → 2). `None` es la versión final.
+    rc: int | None = None
 
     @classmethod
     def parse(cls, text: str) -> ReleaseVersion:
         match = _VERSION.match(text.strip())
         if match is None:
             raise InvalidVersionError(text)
-        return cls(int(match[1]), int(match[2]), int(match[3]))
+        rc = int(match[4]) if match[4] is not None else None
+        return cls(int(match[1]), int(match[2]), int(match[3]), rc)
+
+    @property
+    def is_candidate(self) -> bool:
+        return self.rc is not None
+
+    def _key(self) -> tuple[int, int, int, int, int]:
+        # Una candidata es anterior a su versión final:
+        # v1.4.0-rc.1 < v1.4.0-rc.2 < v1.4.0 < v1.4.1-rc.1.
+        if self.rc is None:
+            return (self.major, self.minor, self.patch, 1, 0)
+        return (self.major, self.minor, self.patch, 0, self.rc)
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, ReleaseVersion):
+            return NotImplemented
+        return self._key() < other._key()
 
     @classmethod
     def from_running(cls, text: str) -> ReleaseVersion | None:
@@ -45,7 +67,7 @@ class ReleaseVersion:
 
         Un build de desarrollo (`v1.3.2-3-gabc1234`, `-sucio`, `0.0.0-dev`) no
         se actualiza solo: reemplazarlo por el instalador publicado borraría
-        lo que se está probando.
+        lo que se está probando. Una candidata exacta (`v1.4.0-rc.1`) sí.
         """
         try:
             return cls.parse(text)
@@ -53,7 +75,8 @@ class ReleaseVersion:
             return None
 
     def __str__(self) -> str:
-        return f"v{self.major}.{self.minor}.{self.patch}"
+        base = f"v{self.major}.{self.minor}.{self.patch}"
+        return base if self.rc is None else f"{base}-rc.{self.rc}"
 
 
 @dataclass(frozen=True)

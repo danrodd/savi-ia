@@ -172,6 +172,94 @@ def test_create_only_on_main(repo: Path) -> None:
         script.cmd_create("v1.0.0")
 
 
+# ── Candidatas (-rc.N) ───────────────────────────────────────────────
+
+
+def test_next_candidate_tag_numbers_the_candidates_of_a_version() -> None:
+    assert script.next_candidate_tag("v1.4.0", []) == "v1.4.0-rc.1"
+    assert script.next_candidate_tag("v1.4.0", ["v1.4.0-rc.1", "v1.4.0-rc.2"]) == "v1.4.0-rc.3"
+    # Las candidatas de otra versión no cuentan; el 10 va después del 9.
+    assert script.next_candidate_tag("v1.4.0", ["v1.3.0-rc.7", "v1.4.0-rc.9"]) == "v1.4.0-rc.10"
+
+
+def _staging(repo: Path) -> None:
+    _commit(repo, "feat: base")
+    script.cmd_create("v1.0.0")
+    _run_git(repo, "checkout", "-q", "-b", "staging")
+
+
+def test_candidates_are_created_only_on_staging(repo: Path) -> None:
+    _commit(repo, "feat: base")
+    script.cmd_create("v1.0.0")
+    _commit(repo, "feat(chat): exportar")
+
+    with pytest.raises(script.VersionError, match="solo en staging"):
+        script.cmd_create(None, candidate=True)
+
+    _run_git(repo, "checkout", "-q", "-b", "staging")
+    script.cmd_create(None, candidate=True)
+    assert _run_git(repo, "tag", "--points-at", "HEAD") == "v1.1.0-rc.1"
+
+
+def test_final_tags_are_still_created_only_on_main(repo: Path) -> None:
+    _staging(repo)
+    _commit(repo, "feat: algo")
+
+    with pytest.raises(script.VersionError, match="solo en main"):
+        script.cmd_create(None)
+
+
+def test_candidate_lifecycle_rc1_rc2_final_on_the_same_commit(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _staging(repo)
+    _commit(repo, "feat(chat): exportar conversación")
+
+    script.cmd_create(None, candidate=True)
+    assert script.describe() == "v1.1.0-rc.1"
+    assert script.version_number() == "1.1.0"
+    # Las candidatas no son "la última versión publicada".
+    assert script.last_tag() == "v1.0.0"
+    notes = _run_git(repo, "tag", "-l", "--format=%(contents)", "v1.1.0-rc.1")
+    assert notes.splitlines()[0] == "v1.1.0-rc.1"
+    assert "- **chat**: exportar conversación" in notes
+    assert "git push origin v1.1.0-rc.1" in capsys.readouterr().out
+
+    # Sin commits nuevos no se versiona otra vez el mismo commit.
+    with pytest.raises(script.VersionError, match="ya tiene un tag"):
+        script.cmd_create(None, candidate=True)
+
+    _commit(repo, "fix(chat): corregir el título")
+    assert script.describe().startswith("v1.1.0-rc.1-1-g")
+    script.cmd_create(None, candidate=True)
+    assert script.describe() == "v1.1.0-rc.2"
+
+    # La final se crea en main, sobre el mismo commit que se probó como rc.2.
+    _run_git(repo, "checkout", "-q", "main")
+    _run_git(repo, "merge", "-q", "--ff-only", "staging")
+    script.cmd_create(None)
+    assert script.describe() == "v1.1.0"
+    assert script.version_number() == "1.1.0"
+    assert script.last_tag() == "v1.1.0"
+    assert sorted(_run_git(repo, "tag", "--points-at", "HEAD").split()) == [
+        "v1.1.0",
+        "v1.1.0-rc.2",
+    ]
+
+
+def test_describe_marks_a_dirty_final_tag(repo: Path) -> None:
+    _staging(repo)
+    _run_git(repo, "checkout", "-q", "main")
+    (repo / "archivo.txt").write_text("sin commitear", encoding="utf-8")
+
+    assert script.describe() == "v1.0.0-sucio"
+
+
+def test_rc_flag_needs_create() -> None:
+    with pytest.raises(SystemExit):
+        script.main(["--rc"])
+
+
 # ── Resolución en runtime ────────────────────────────────────────────
 
 

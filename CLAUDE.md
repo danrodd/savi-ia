@@ -366,8 +366,10 @@ fases, soft branches, etc.) en la skill — no los repito acá.
 - **`uvicorn` invocado como módulo Python** (`python -m uvicorn`) por
   el bug del trampoline de uv en este Windows.
 - **Versionado**: la versión es el **tag de git** (`vX.Y.Z`, solo en
-  `main`); `scripts/version.py` es la única fuente y `build.ps1` la
-  incrusta en backend, frontend e instalador. **NUNCA** escribas un
+  `main`, más candidatas `vX.Y.Z-rc.N` solo en `staging`, que se prueban
+  en el canal `beta` y nunca llegan a `stable`); `scripts/version.py` es
+  la única fuente y `build.ps1` la incrusta en backend, frontend e
+  instalador. **NUNCA** escribas un
   número de versión a mano en `_version.py`, `pyproject.toml`,
   `package.json` ni `savi.iss`, y no hay `CHANGELOG.md`: las notas
   quedan en el tag anotado. Crear el tag (`--crear`) y hacer push

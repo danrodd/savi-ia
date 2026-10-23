@@ -129,6 +129,9 @@ Un sistema de autoactualización es un canal para ejecutar código en todos los 
 3. **SHA-256** del instalador en el manifiesto, verificado antes de ejecutar.
 4. **Firma de código Authenticode:** por ahora no (D3). La seguridad de la actualización no depende de ella: el SHA-256 y la firma Ed25519 del manifiesto impiden instalar un `.exe` ajeno. Sin firma, la primera instalación muestra el aviso de SmartScreen, como hasta la v1.3.x, y el UAC del modo servidor dice "Editor: desconocido". La descarga que hace SAVI no lleva la marca de "descargado de internet", así que en principio la actualización no dispara SmartScreen; hay que confirmarlo en U1.
 5. **Nunca bajar de versión** aunque el manifiesto lo diga. Se rechaza `version < __version__`.
+   - **Candidatas (`-rc.N`):** solo circulan en `beta`. El orden es `v1.4.0-rc.1 < v1.4.0-rc.2 < v1.4.0 < v1.4.1-rc.1`.
+   - **Tres defensas:** el script `build` y `promote` las rechazan para `stable`, y la propia instalación descarta un manifiesto `stable` con una candidata aunque esté bien firmado.
+   - **Qué se actualiza solo:** una instalación con una candidata exacta (`v1.4.0-rc.1`), no un build de desarrollo encima de ella.
 6. Todo intento queda en `savi.log`: chequeo, descarga, verificación, lanzamiento y resultado.
 
 ## 6. Experiencia de usuario (textos de usted)
@@ -154,7 +157,8 @@ Un sistema de autoactualización es un canal para ejecutar código en todos los 
 
 Publicar sigue siendo una decisión humana, igual que crear el tag: el script no corre solo en CI. Además:
 
-- **Un canal nunca retrocede:** el script se niega a publicar una versión menor que la que el canal ya tiene. Volver a publicar la misma versión, por ejemplo para corregir las notas, sí se permite.
+- **Un canal nunca retrocede:** el script se niega a publicar una versión menor que la que el canal ya tiene, y `promote` tampoco pisa `stable` con una más vieja. Volver a publicar la misma versión, por ejemplo para corregir las notas, sí se permite.
+- **Candidatas:** `build --channel stable` y `promote` rechazan una versión `-rc.N`. Las candidatas se prueban en `beta` y la versión final se compila aparte (`installer/README.md#versionado`).
 - **`verify`** hace lo mismo que una instalación, con el mismo código del backend: lee el manifiesto publicado, verifica la firma, descarga el instalador y verifica el SHA-256.
 
 ### Puesta en marcha (una sola vez)

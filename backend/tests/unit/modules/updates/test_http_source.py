@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from app.modules.updates.domain.exceptions import (
     InstallerIntegrityError,
+    InvalidManifestError,
     UntrustedManifestError,
     UpdateError,
 )
@@ -157,3 +158,32 @@ async def test_missing_installer_is_an_update_error(tmp_path: Path) -> None:
     downloader = HttpInstallerDownloader(target_dir=tmp_path, transport=_server({}))
     with pytest.raises(UpdateError):
         await downloader.download(_manifest(), lambda _: None)
+
+
+async def test_stable_channel_rejects_a_candidate_even_if_signed(key: Ed25519PrivateKey) -> None:
+    payload = _manifest_bytes(
+        version="v1.4.0-rc.1", url=f"{BASE}/releases/SAVI-Setup-v1.4.0-rc.1.exe"
+    )
+    files = {
+        f"{BASE}/stable.json": payload,
+        f"{BASE}/stable.json.sig": base64.b64encode(key.sign(payload)),
+    }
+    with pytest.raises(InvalidManifestError, match="candidatas"):
+        await _source(key, files).fetch()
+
+
+async def test_beta_channel_accepts_a_candidate(key: Ed25519PrivateKey) -> None:
+    payload = _manifest_bytes(
+        version="v1.4.0-rc.1", url=f"{BASE}/releases/SAVI-Setup-v1.4.0-rc.1.exe"
+    )
+    files = {
+        f"{BASE}/beta.json": payload,
+        f"{BASE}/beta.json.sig": base64.b64encode(key.sign(payload)),
+    }
+    source = HttpManifestSource(
+        base_url=BASE, channel="beta", public_key=key.public_key(), transport=_server(files)
+    )
+
+    manifest = await source.fetch()
+
+    assert manifest.version == ReleaseVersion(1, 4, 0, 1)

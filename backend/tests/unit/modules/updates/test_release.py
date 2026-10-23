@@ -129,3 +129,61 @@ def test_immediate_minimum_blocks_right_away() -> None:
     manifest = _manifest(min_version="v1.4.0", min_version_from="2026-11-02T15:00:00Z")
     decision = decide(ReleaseVersion(1, 3, 2), manifest, NOW + timedelta(seconds=1))
     assert decision.state is UpdateState.BLOCKED
+
+
+# ---------------------------------------------------------------- candidatas
+
+
+def test_candidates_order_before_their_final_version() -> None:
+    ordered = ["v1.3.2", "v1.4.0-rc.1", "v1.4.0-rc.2", "v1.4.0-rc.10", "v1.4.0", "v1.4.1-rc.1"]
+    versions = [ReleaseVersion.parse(text) for text in ordered]
+
+    assert versions == sorted(versions)
+    assert [str(version) for version in versions] == ordered
+    assert ReleaseVersion.parse("v1.4.0-rc.2").is_candidate
+    assert not ReleaseVersion.parse("v1.4.0").is_candidate
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "v1.4.0-rc",
+        "v1.4.0-rc.0",
+        "v1.4.0-rc.01",
+        "v1.4.0-rc.1-3-gabc1234",
+        "v1.4.0-rc.1-sucio",
+        "v1.4.0-beta.1",
+    ],
+)
+def test_malformed_candidates_are_rejected(text: str) -> None:
+    with pytest.raises(InvalidVersionError):
+        ReleaseVersion.parse(text)
+
+
+def test_an_exact_candidate_updates_but_a_build_on_top_of_it_does_not() -> None:
+    assert ReleaseVersion.from_running("v1.4.0-rc.1") == ReleaseVersion(1, 4, 0, 1)
+    assert ReleaseVersion.from_running("v1.4.0-rc.1-3-gabc1234") is None
+    assert ReleaseVersion.from_running("v1.4.0-rc.1-sucio") is None
+
+
+def test_a_candidate_moves_to_the_next_candidate_and_to_the_final() -> None:
+    running = ReleaseVersion.parse("v1.4.0-rc.1")
+
+    assert decide(running, _manifest(version="v1.4.0-rc.2"), NOW).state is UpdateState.RECOMMENDED
+    assert decide(running, _manifest(version="v1.4.0"), NOW).state is UpdateState.RECOMMENDED
+
+
+def test_a_candidate_is_never_offered_a_downgrade() -> None:
+    final = ReleaseVersion.parse("v1.4.0")
+    second = ReleaseVersion.parse("v1.4.0-rc.2")
+
+    assert decide(final, _manifest(version="v1.4.0-rc.2"), NOW).state is UpdateState.UP_TO_DATE
+    assert decide(second, _manifest(version="v1.4.0-rc.2"), NOW).state is UpdateState.UP_TO_DATE
+    assert decide(second, _manifest(version="v1.4.0-rc.1"), NOW).state is UpdateState.UP_TO_DATE
+
+
+def test_a_candidate_can_be_the_required_minimum() -> None:
+    running = ReleaseVersion.parse("v1.4.0-rc.1")
+    manifest = _manifest(version="v1.4.0-rc.2", min_version="v1.4.0-rc.2")
+
+    assert decide(running, manifest, NOW).state is UpdateState.REQUIRED

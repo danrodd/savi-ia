@@ -40,7 +40,7 @@ class RecordingLauncher(InstallerLauncher):
         self.launched.append(installer)
 
 
-def publish(version: str, content: bytes, *extra: str) -> None:
+def publish(version: str, content: bytes, *extra: str, channel: str = "stable") -> None:
     installer = WORK / "builds" / f"SAVI-Setup-{version}.exe"
     installer.parent.mkdir(parents=True, exist_ok=True)
     installer.write_bytes(content)
@@ -56,7 +56,7 @@ def publish(version: str, content: bytes, *extra: str) -> None:
             "--key",
             str(WORK / "key.pem"),
             "--channel",
-            "stable",
+            channel,
             "--out",
             str(WORK / "srv" / "savi"),
             "--notes",
@@ -87,9 +87,17 @@ def run_verify(public_key: str) -> subprocess.CompletedProcess[bytes]:
     )
 
 
-def coordinator(public_key: str, launcher: RecordingLauncher) -> provider.UpdateCoordinator:
-    settings = Settings.model_validate({"agent_db_engine": "sqlite", "update_url": BASE})
-    built = provider.build_coordinator(settings, version="v1.3.2", public_key_b64=public_key)
+def coordinator(
+    public_key: str,
+    launcher: RecordingLauncher,
+    *,
+    version: str = "v1.3.2",
+    channel: str = "stable",
+) -> provider.UpdateCoordinator:
+    settings = Settings.model_validate(
+        {"agent_db_engine": "sqlite", "update_url": BASE, "update_channel": channel}
+    )
+    built = provider.build_coordinator(settings, version=version, public_key_b64=public_key)
     assert built is not None
     built._launcher = launcher  # noqa: SLF001
     built._downloader._target_dir = WORK / "downloads"  # noqa: SLF001
@@ -198,6 +206,60 @@ async def run(public_key: str) -> list[tuple[str, bool, str]]:
     await c.check()
     snap = c.snapshot()
     record("no ofrece bajar de versión", snap.decision.state == "up_to_date", snap.decision.state)
+
+    # 7. Candidatas (-rc.N): circulan en beta y nunca llegan a stable.
+    publish("v1.4.0-rc.1", payload + b"r1", channel="beta")
+    publish("v1.4.0-rc.2", payload + b"r2", channel="beta")
+    c = coordinator(public_key, RecordingLauncher(), version="v1.4.0-rc.1", channel="beta")
+    await c.check()
+    offered = c.snapshot().decision
+    record(
+        "beta ofrece rc.2 a quien corre rc.1",
+        offered.state == "recommended"
+        and str(offered.manifest and offered.manifest.version) == "v1.4.0-rc.2",
+        f"{offered.state} {offered.manifest and offered.manifest.version}",
+    )
+    launcher = RecordingLauncher()
+    c = coordinator(public_key, launcher, version="v1.4.0-rc.1", channel="beta")
+    await c.check()
+    await c.start_apply()
+    record(
+        "la candidata se descarga, verifica y lanza",
+        c.snapshot().phase is ApplyPhase.INSTALLING and len(launcher.launched) == 1,
+        f"{c.snapshot().phase}",
+    )
+
+    try:
+        publish("v1.4.0-rc.3", payload + b"r3", channel="stable")
+        record("el script no publica una candidata en stable", False, "publicó")
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.decode("utf-8", "replace").strip()
+        record("el script no publica una candidata en stable", "candidata" in stderr, stderr)
+
+    # Aunque alguien firme una candidata y la suba como stable, SAVI la ignora.
+    rc_manifest = json.loads((WORK / "srv" / "savi" / "beta.json").read_text(encoding="utf-8"))
+    rc_bytes = json.dumps(rc_manifest).encode()
+    manifest_path.write_bytes(rc_bytes)
+    (manifest_path.parent / "stable.json.sig").write_bytes(base64.b64encode(key.sign(rc_bytes)))  # type: ignore[union-attr, call-arg]
+    c = coordinator(public_key, RecordingLauncher(), version="v1.3.2", channel="stable")
+    await c.check()
+    snap = c.snapshot()
+    record(
+        "stable ignora una candidata aunque esté firmada",
+        snap.decision.state == "up_to_date" and snap.checked_at is None,
+        str(snap.decision.state),
+    )
+
+    # La final reemplaza a las candidatas: rc.2 → v1.4.0.
+    publish("v1.4.0", payload, channel="beta")
+    c = coordinator(public_key, RecordingLauncher(), version="v1.4.0-rc.2", channel="beta")
+    await c.check()
+    final = c.snapshot().decision
+    record(
+        "beta ofrece la final a quien corre rc.2",
+        final.state == "recommended" and str(final.manifest and final.manifest.version) == "v1.4.0",
+        f"{final.state} {final.manifest and final.manifest.version}",
+    )
 
     return results
 

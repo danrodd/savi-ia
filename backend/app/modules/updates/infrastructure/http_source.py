@@ -14,7 +14,11 @@ from pathlib import Path
 import httpx
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from app.modules.updates.domain.exceptions import InstallerIntegrityError, UpdateError
+from app.modules.updates.domain.exceptions import (
+    InstallerIntegrityError,
+    InvalidManifestError,
+    UpdateError,
+)
 from app.modules.updates.domain.interfaces import InstallerDownloader, ManifestSource
 from app.modules.updates.domain.value_objects import ReleaseManifest
 from app.modules.updates.infrastructure.signing import (
@@ -38,6 +42,7 @@ class HttpManifestSource(ManifestSource):
         public_key: Ed25519PublicKey,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
+        self._channel = channel
         self._manifest_url = f"{base_url.rstrip('/')}/{channel}.json"
         self._public_key = public_key
         # Solo para tests: simular el servidor sin red.
@@ -47,7 +52,13 @@ class HttpManifestSource(ManifestSource):
         async with _client(_MANIFEST_TIMEOUT, self._transport) as client:
             manifest_bytes = await _get_small(client, self._manifest_url)
             signature = await _get_small(client, f"{self._manifest_url}.sig")
-        return verify_manifest(self._public_key, manifest_bytes, signature)
+        manifest = verify_manifest(self._public_key, manifest_bytes, signature)
+        # Aunque la firma sea buena: una candidata nunca se ofrece en stable.
+        if self._channel == "stable" and manifest.version.is_candidate:
+            raise InvalidManifestError(
+                f"El canal stable no admite versiones candidatas ({manifest.version})."
+            )
+        return manifest
 
 
 class HttpInstallerDownloader(InstallerDownloader):

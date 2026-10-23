@@ -47,7 +47,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 | U0 y U1 (spec 09): manifiesto firmado, chequeo, aviso, descarga verificada, lanzamiento silencioso | Hecho y en `staging`. 11/11 de punta a punta en local. |
 | Clave de firma principal | Generada; la pública está en `trust.py` (`59423c8`). |
 | Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
-| **Fase 1:** núcleo del actualizador | **Siguiente.** |
+| **Fase 1:** núcleo del actualizador | En curso: B0 hecho; **siguiente: B1 + B4**. |
 | Fase 2: prueba real con instaladores compilados | Pendiente. |
 | Fase 3: producción | Pendiente. |
 
@@ -59,7 +59,18 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 
 ### B0. Versiones candidatas (`-rc.N`) para el canal `beta`
 
-- [ ] Hecho
+- [x] Hecho (2026-10-23)
+
+**Evidencia:**
+- 142 tests pasan (módulo `updates`, versionado, publicación y guarda de usted). Incluye el ciclo completo con un repositorio git descartable: `rc.1` → `rc.2` → final sobre el mismo commit.
+- Ruff y formato limpios en lo tocado; Pyright strict con 0 errores.
+- La prueba de punta a punta (`scripts/e2e-updates.py`) pasa 16 de 16: se sumaron 5 controles de candidatas.
+- **Agregados que no estaban en el diseño:**
+  - `describe()` prefiere la tag final cuando el commit tiene la final y una candidata, que es justo el caso de la final sobre `rc.2`.
+  - `cmd_create` permite la final sobre un commit que solo tiene candidatas.
+  - `promote` no pisa `stable` con una versión más vieja.
+  - Las candidatas se numeran por versión base (`next_candidate_tag`).
+- Deuda previa en archivos que no se tocaron: Ruff marca 6 avisos (`login.py`, `gemini_probe.py`, `debug_knowledge.py`) y varios archivos sin el formato de Ruff.
 
 **Por qué.** Hoy solo se actualiza sola una versión `vX.Y.Z` exacta (`release.py:21`), y los tags solo se crean en `main` (`version.py:215`). Para probar hacen falta dos versiones, y eso obligaría a sacar dos versiones de producción. Con las candidatas, `beta` recibe `v1.4.0-rc.1`, `-rc.2`… desde `staging`, y `stable` nunca las ve.
 

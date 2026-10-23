@@ -10,7 +10,7 @@ así que se corre con el entorno del backend (desde la raíz del monorepo):
     uv run --project backend python scripts/publish-release.py build \
         --installer installer/output/SAVI-Setup-v1.4.0.exe \
         --base-url https://updates.<dominio-seo>/savi --key <ruta> [--channel beta]
-    uv run --project backend python scripts/publish-release.py promote
+    uv run --project backend python scripts/publish-release.py promote   # solo versiones finales
     uv run --project backend python scripts/publish-release.py upload \
         --host savi-publish@<servidor> --remote-dir /srv/savi-master/updates/savi
     uv run --project backend python scripts/publish-release.py verify \
@@ -23,6 +23,9 @@ defecto), que es un espejo de lo que se sirve:
 
 Así se puede probar en local sirviendo esa carpeta con `python -m http.server`
 antes de subir nada.
+
+Las candidatas (`SAVI-Setup-v1.4.0-rc.1.exe`) solo se publican en `beta`: `build
+--channel stable` y `promote` las rechazan.
 
 La clave privada Ed25519 vive fuera del repositorio, en el equipo de
 publicación. La pública va incrustada en SAVI
@@ -77,7 +80,11 @@ CHANNELS = ("stable", "beta")
 # Plazo por defecto de una actualización obligatoria (D4).
 DEFAULT_WINDOW = timedelta(hours=72)
 NO_MINIMUM = "v0.0.0"
-_INSTALLER_NAME = re.compile(r"^SAVI-Setup-(v\d+\.\d+\.\d+)\.exe$")
+_INSTALLER_NAME = re.compile(r"^SAVI-Setup-(v\d+\.\d+\.\d+(?:-rc\.[1-9]\d*)?)\.exe$")
+_CANDIDATE_IN_STABLE = (
+    "{version} es una candidata (-rc): se prueba en beta y no pasa a stable. "
+    "Para stable se compila la versión final."
+)
 
 
 class PublishError(Exception):
@@ -131,7 +138,7 @@ def installer_version(installer: Path) -> str:
     if match is None:
         raise PublishError(
             f"{installer.name} no es un instalador de una versión publicada "
-            "(SAVI-Setup-vX.Y.Z.exe). Un build sucio no se publica."
+            "(SAVI-Setup-vX.Y.Z[-rc.N].exe). Un build sucio no se publica."
         )
     return match[1]
 
@@ -257,6 +264,8 @@ def build(
     now: datetime,
 ) -> Path:
     version = installer_version(installer)
+    if channel == "stable" and ReleaseVersion.parse(version).is_candidate:
+        raise PublishError(_CANDIDATE_IN_STABLE.format(version=version))
     reject_older_than_published(out, channel, version)
     minimum = resolve_minimum(
         requested=min_version,
@@ -283,7 +292,13 @@ def build(
 
 def promote(out: Path) -> None:
     """Pasa `beta` a `stable` tal cual: el manifiesto no nombra el canal, así
-    que la misma firma vale para los dos."""
+    que la misma firma vale para los dos. Una candidata no se promueve."""
+    beta = _previous(out, "beta")
+    if beta is not None:
+        if ReleaseVersion.parse(str(beta["version"])).is_candidate:
+            raise PublishError(_CANDIDATE_IN_STABLE.format(version=beta["version"]))
+        # Igual que `build`: un canal nunca retrocede.
+        reject_older_than_published(out, "stable", str(beta["version"]))
     for suffix in (".json", ".json.sig"):
         source = out / f"beta{suffix}"
         if not source.is_file():

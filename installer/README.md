@@ -173,6 +173,21 @@ python scripts/version.py --crear v2.0.0  # o el número que decida una persona
 git push origin v1.5.0
 ```
 
+Para probar una versión antes de publicarla se usan **candidatas**
+(`-rc.N`), que se crean en `staging`:
+
+```powershell
+python scripts/version.py --crear --rc    # v1.5.0-rc.1, luego rc.2…
+git push origin v1.5.0-rc.1
+```
+
+Una candidata se compila y se publica solo en el canal `beta` (ver la
+[spec 09](../docs/plataforma/09-actualizacion-automatica.md)): `stable` la
+rechaza. El orden es `v1.5.0-rc.1 < v1.5.0-rc.2 < v1.5.0 < v1.5.1-rc.1`, así que
+una instalación con la candidata se actualiza a la siguiente y a la final.
+La final se crea en `main`, sobre el mismo commit que se probó como
+candidata, y compila otro instalador: la candidata no se "promueve".
+
 El salto sale de los conventional commits desde el último tag:
 
 | En los commits | Salto |
@@ -185,8 +200,9 @@ El salto sale de los conventional commits desde el último tag:
 La primera versión no se calcula —no hay tag previo desde el cual
 medir—: se crea con un número explícito.
 
-`--crear` exige estar en `main`, con el árbol limpio y en un commit
-que no tenga ya un tag. **No hace push**: publicar el tag es una acción
+`--crear` exige estar en `main` (con `--rc`, en `staging`), con el árbol
+limpio y en un commit que no tenga ya un tag. Las candidatas no cuentan como
+"último tag": el salto se mide desde la última versión final. **No hace push**: publicar el tag es una acción
 explícita.
 
 ### Notas de versión

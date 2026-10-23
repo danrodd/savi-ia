@@ -7,6 +7,7 @@ cubren el acuerdo entre quien publica y quien actualiza.
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -183,3 +184,74 @@ def test_keygen_writes_a_loadable_key(tmp_path: Path) -> None:
     assert script.public_key_b64(script.load_key(path)) == public
     with pytest.raises(script.PublishError):
         script.keygen(path)
+
+
+# ---------------------------------------------------------------- candidatas
+
+
+@pytest.fixture
+def candidate(tmp_path: Path) -> Path:
+    path = tmp_path / "SAVI-Setup-v1.4.0-rc.1.exe"
+    path.write_bytes(b"MZ" + b"\x03" * 4096)
+    return path
+
+
+def test_a_candidate_installer_name_is_a_publishable_version(candidate: Path) -> None:
+    assert script.installer_version(candidate) == "v1.4.0-rc.1"
+
+
+def test_a_candidate_is_published_in_beta_and_the_app_accepts_it(
+    key: Ed25519PrivateKey, candidate: Path, tmp_path: Path
+) -> None:
+    manifest_path = _build(key, candidate, tmp_path / "updates", channel="beta")
+
+    assert json.loads(manifest_path.read_text(encoding="utf-8"))["version"] == "v1.4.0-rc.1"
+
+
+def test_a_candidate_is_not_published_in_stable(
+    key: Ed25519PrivateKey, candidate: Path, tmp_path: Path
+) -> None:
+    with pytest.raises(script.PublishError, match="candidata"):
+        _build(key, candidate, tmp_path / "updates", channel="stable")
+
+
+def test_a_candidate_is_not_promoted_to_stable(
+    key: Ed25519PrivateKey, candidate: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "updates"
+    _build(key, candidate, out, channel="beta")
+
+    with pytest.raises(script.PublishError, match="candidata"):
+        script.promote(out)
+    assert not (out / "stable.json").exists()
+
+
+def test_candidates_go_up_in_beta_and_the_final_replaces_them(
+    key: Ed25519PrivateKey, candidate: Path, installer: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "updates"
+    _build(key, candidate, out)
+    second = tmp_path / "SAVI-Setup-v1.4.0-rc.2.exe"
+    second.write_bytes(b"MZ" + b"\x04" * 4096)
+    _build(key, second, out)
+
+    # La candidata anterior no vuelve, pero la final sí puede publicarse encima.
+    with pytest.raises(script.PublishError, match="versión anterior"):
+        _build(key, candidate, out)
+    _build(key, installer, out)
+    script.promote(out)
+    assert json.loads((out / "stable.json").read_text(encoding="utf-8"))["version"] == "v1.4.0"
+
+
+def test_promote_does_not_take_stable_back_to_an_older_version(
+    key: Ed25519PrivateKey, installer: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "updates"
+    newer = tmp_path / "SAVI-Setup-v1.5.0.exe"
+    newer.write_bytes(b"MZ" + b"\x05" * 4096)
+    _build(key, newer, out, channel="stable")
+    _build(key, installer, out, channel="beta")
+
+    with pytest.raises(script.PublishError, match="versión anterior"):
+        script.promote(out)
+    assert json.loads((out / "stable.json").read_text(encoding="utf-8"))["version"] == "v1.5.0"
