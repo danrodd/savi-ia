@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import { formatFullDateTime } from '@/lib/dateTime'
 import { HttpRequestError } from '@/lib/HttpClient'
+import { renderMarkdown } from '@/lib/markdown'
 import { updatesService } from '../services/updatesService'
 import type { UpdateHistory, UpdateStatus } from '../types'
 import { canApplyNow, channelLabel, notifyStatusChanged, outcomeLabel } from '../utils/adminView'
@@ -18,6 +19,7 @@ const actionError = ref<string | null>(null)
 
 const showApply = computed(() => status.value !== null && canApplyNow(status.value))
 const records = computed(() => history.value?.records ?? [])
+const notesHtml = computed(() => renderMarkdown(status.value?.notes ?? ''))
 
 function describe(error: unknown, fallback: string): string {
   return error instanceof HttpRequestError ? error.message : fallback
@@ -109,7 +111,12 @@ onMounted(() => void load())
         </div>
       </dl>
 
-      <p v-if="status.notes" class="aupd__notes" data-testid="update-notes">{{ status.notes }}</p>
+      <div
+        v-if="status.notes"
+        class="aupd__notes"
+        data-testid="update-notes"
+        v-html="notesHtml"
+      />
       <p v-if="status.error" class="aupd__error" role="alert">{{ status.error }}</p>
 
       <div v-if="status.enabled" class="aupd__actions">
@@ -217,9 +224,29 @@ onMounted(() => void load())
 
 .aupd__notes {
   margin: 0 0 var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
   font-size: 13px;
+  line-height: 1.55;
   color: var(--text);
-  white-space: pre-line;
+}
+
+.aupd__notes :deep(h1),
+.aupd__notes :deep(h2),
+.aupd__notes :deep(h3) {
+  margin: 0 0 var(--space-2);
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+}
+
+.aupd__notes :deep(ul) {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.aupd__notes :deep(p) {
+  margin: 0 0 var(--space-2);
 }
 
 .aupd__actions {

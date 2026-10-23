@@ -14,6 +14,7 @@ import { computed, ref } from 'vue'
 
 import Button from '@/components/ui/Button.vue'
 import Dialog from '@/components/ui/Dialog.vue'
+import { renderMarkdown } from '@/lib/markdown'
 import { useUpdateStatus } from '../composables/useUpdateStatus'
 import {
   bannerMessage,
@@ -79,7 +80,11 @@ const showBanner = computed(() => kind.value === 'banner' && status.value !== nu
         </div>
       </div>
       <p v-if="error" class="update-banner__error" role="alert">{{ error }}</p>
-      <p v-if="showNotes && notes" class="update-banner__notes">{{ notes }}</p>
+      <div
+        v-if="showNotes && notes"
+        class="update-banner__notes"
+        v-html="renderMarkdown(notes)"
+      />
     </div>
   </div>
 
@@ -197,9 +202,25 @@ const showBanner = computed(() => kind.value === 'banner' && status.value !== nu
 
 .update-banner__notes {
   margin: var(--space-2) 0 0;
-  white-space: pre-line;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.update-banner__notes :deep(h1),
+.update-banner__notes :deep(h2),
+.update-banner__notes :deep(h3) {
+  margin: 0 0 var(--space-1);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+}
+
+.update-banner__notes :deep(ul) {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.update-banner__notes :deep(p) {
+  margin: 0 0 var(--space-1);
 }
 
 .update-dialog__text {

@@ -43,6 +43,21 @@ describe('UpdatesAdminView', () => {
     expect(wrapper.get('[data-testid="update-notes"]').text()).toContain('pantalla en blanco')
   })
 
+  it('renders the release notes as markdown, not as raw text', async () => {
+    const wrapper = await mountView(
+      status({
+        notes: '## Funcionalidades\n\n- **updates**: descarga que se retoma\n- <script>x</script>',
+      }),
+    )
+    const notes = wrapper.get('[data-testid="update-notes"]')
+
+    expect(notes.find('h2').text()).toBe('Funcionalidades')
+    expect(notes.findAll('li')).toHaveLength(2)
+    expect(notes.find('strong').text()).toBe('updates')
+    expect(notes.text()).not.toContain('##')
+    expect(notes.find('script').exists()).toBe(false)
+  })
+
   it('says so when there are no attempts yet', async () => {
     const wrapper = await mountView()
 
