@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from app.modules.updates.domain.value_objects import ReleaseVersion
 from app.modules.updates.infrastructure.signing import (
-    load_public_key,
+    load_public_keys,
     verify_installer,
     verify_manifest,
 )
@@ -73,8 +73,7 @@ def test_built_manifest_verifies_with_the_app(
     out = tmp_path / "updates"
     manifest_path = _build(key, installer, out)
 
-    public = load_public_key(script.public_key_b64(key))
-    assert public is not None
+    public = load_public_keys([script.public_key_b64(key)])
     manifest = verify_manifest(
         public, manifest_path.read_bytes(), (out / "beta.json.sig").read_bytes()
     )

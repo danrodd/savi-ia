@@ -61,7 +61,7 @@ def _source(key: Ed25519PrivateKey, files: dict[str, bytes]) -> HttpManifestSour
     return HttpManifestSource(
         base_url=BASE + "/",
         channel="stable",
-        public_key=key.public_key(),
+        public_keys=[key.public_key()],
         transport=_server(files),
     )
 
@@ -98,7 +98,7 @@ async def test_network_failure_is_an_update_error(key: Ed25519PrivateKey) -> Non
     source = HttpManifestSource(
         base_url=BASE,
         channel="stable",
-        public_key=key.public_key(),
+        public_keys=[key.public_key()],
         transport=httpx.MockTransport(fail),
     )
     with pytest.raises(UpdateError):
@@ -181,7 +181,7 @@ async def test_beta_channel_accepts_a_candidate(key: Ed25519PrivateKey) -> None:
         f"{BASE}/beta.json.sig": base64.b64encode(key.sign(payload)),
     }
     source = HttpManifestSource(
-        base_url=BASE, channel="beta", public_key=key.public_key(), transport=_server(files)
+        base_url=BASE, channel="beta", public_keys=[key.public_key()], transport=_server(files)
     )
 
     manifest = await source.fetch()

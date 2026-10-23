@@ -12,6 +12,7 @@ import asyncio
 import contextlib
 import logging
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 from app._version import __version__
@@ -35,8 +36,8 @@ from app.modules.updates.infrastructure.launcher import (
     WindowsInstallerLauncher,
     installed_per_machine,
 )
-from app.modules.updates.infrastructure.signing import load_public_key
-from app.modules.updates.infrastructure.trust import DEFAULT_UPDATE_URL, UPDATE_PUBLIC_KEY
+from app.modules.updates.infrastructure.signing import load_public_keys
+from app.modules.updates.infrastructure.trust import DEFAULT_UPDATE_URL, UPDATE_PUBLIC_KEYS
 from app.paths import data_dir
 
 log = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ def update_url(settings: Settings) -> str:
 
 
 def build_coordinator(
-    settings: Settings, *, version: str, public_key_b64: str
+    settings: Settings, *, version: str, public_keys_b64: Sequence[str]
 ) -> UpdateCoordinator | None:
     current = ReleaseVersion.from_running(version)
     if current is None:
@@ -70,8 +71,8 @@ def build_coordinator(
     if not base_url:
         log.info("Actualizaciones desactivadas: no hay servidor de actualizaciones.")
         return None
-    public_key = load_public_key(public_key_b64)
-    if public_key is None:
+    public_keys = load_public_keys(public_keys_b64)
+    if not public_keys:
         log.warning("Actualizaciones desactivadas: SAVI no trae la clave pública de SEO.")
         return None
 
@@ -79,7 +80,7 @@ def build_coordinator(
     return UpdateCoordinator(
         current=current,
         source=HttpManifestSource(
-            base_url=base_url, channel=settings.update_channel, public_key=public_key
+            base_url=base_url, channel=settings.update_channel, public_keys=public_keys
         ),
         downloader=HttpInstallerDownloader(target_dir=updates_dir),
         launcher=WindowsInstallerLauncher(
@@ -101,7 +102,7 @@ def build_coordinator(
 async def start_updates(settings: Settings) -> None:
     global _coordinator, _loop_task
     _coordinator = build_coordinator(
-        settings, version=__version__, public_key_b64=UPDATE_PUBLIC_KEY
+        settings, version=__version__, public_keys_b64=UPDATE_PUBLIC_KEYS
     )
     if _coordinator is None:
         return

@@ -8,7 +8,7 @@ la registra y SAVI sigue funcionando.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import httpx
@@ -39,12 +39,12 @@ class HttpManifestSource(ManifestSource):
         *,
         base_url: str,
         channel: str,
-        public_key: Ed25519PublicKey,
+        public_keys: Sequence[Ed25519PublicKey],
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._channel = channel
         self._manifest_url = f"{base_url.rstrip('/')}/{channel}.json"
-        self._public_key = public_key
+        self._public_keys = tuple(public_keys)
         # Solo para tests: simular el servidor sin red.
         self._transport = transport
 
@@ -52,7 +52,7 @@ class HttpManifestSource(ManifestSource):
         async with _client(_MANIFEST_TIMEOUT, self._transport) as client:
             manifest_bytes = await _get_small(client, self._manifest_url)
             signature = await _get_small(client, f"{self._manifest_url}.sig")
-        manifest = verify_manifest(self._public_key, manifest_bytes, signature)
+        manifest = verify_manifest(self._public_keys, manifest_bytes, signature)
         # Aunque la firma sea buena: una candidata nunca se ofrece en stable.
         if self._channel == "stable" and manifest.version.is_candidate:
             raise InvalidManifestError(

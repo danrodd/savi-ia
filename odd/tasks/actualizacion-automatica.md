@@ -47,7 +47,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 | U0 y U1 (spec 09): manifiesto firmado, chequeo, aviso, descarga verificada, lanzamiento silencioso | Hecho y en `staging`. 11/11 de punta a punta en local. |
 | Clave de firma principal | Generada; la pública está en `trust.py` (`59423c8`). |
 | Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
-| **Fase 1:** núcleo del actualizador | En curso: B0, B1 y B4 hechos; **siguiente: B2** (varias claves de confianza). |
+| **Fase 1:** núcleo del actualizador | En curso: B0, B1, B4 y B2 hechos; **siguiente: B3** (descarga que se retoma). |
 | Fase 2: prueba real con instaladores compilados | Pendiente. |
 | Fase 3: producción | Pendiente. |
 
@@ -240,7 +240,14 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 
 ### B2. Varias claves de confianza
 
-- [ ] Hecho
+- [x] Hecho (2026-10-23)
+
+**Evidencia:**
+- `UPDATE_PUBLIC_KEYS` con principal y respaldo. La de respaldo está en `claves-savi/savi-updates-respaldo.pem (en la carpeta del usuario)` (generada con `keygen`, nunca leída ni copiada). **Falta que el usuario confirme que la guardó fuera de línea.**
+- Comprobado con las claves reales: cada `.pem` firma algo que valida exactamente una clave de `trust.py`, y son distintas.
+- 317 tests pasan en `updates`, publicación y guarda de usted (el único fallo, `test_logging_survives_migrations`, es previo). Prueba de punta a punta 20/20. Ruff y Pyright limpios.
+- Diferencia: una clave mal formada se descarta con un aviso (no rompe el arranque), como pedía el diseño.
+- Spec 09 §5 documenta la rotación.
 
 **Por qué.** `trust.py` acepta una sola clave. Si se pierde o se filtra, todas las instalaciones quedan sin poder actualizarse y hay que reinstalarlas a mano. Una clave de respaldo solo sirve si viaja desde la primera versión.
 

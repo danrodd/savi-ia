@@ -108,7 +108,7 @@ def coordinator(
     settings = Settings.model_validate(
         {"agent_db_engine": "sqlite", "update_url": BASE, "update_channel": channel}
     )
-    built = provider.build_coordinator(settings, version=version, public_key_b64=public_key)
+    built = provider.build_coordinator(settings, version=version, public_keys_b64=(public_key,))
     assert built is not None
     built._launcher = launcher  # noqa: SLF001
     built._downloader._target_dir = WORK / "downloads"  # noqa: SLF001

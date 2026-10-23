@@ -70,10 +70,10 @@ from app.modules.updates.infrastructure.http_source import (  # noqa: E402
     HttpManifestSource,
 )
 from app.modules.updates.infrastructure.signing import (  # noqa: E402
-    load_public_key,
+    load_public_keys,
     verify_manifest,
 )
-from app.modules.updates.infrastructure.trust import UPDATE_PUBLIC_KEY  # noqa: E402
+from app.modules.updates.infrastructure.trust import UPDATE_PUBLIC_KEYS  # noqa: E402
 
 DEFAULT_OUT = ROOT / "installer" / "output" / "updates"
 CHANNELS = ("stable", "beta")
@@ -245,8 +245,7 @@ def build_manifest(
 def sign(key: Ed25519PrivateKey, payload: bytes) -> bytes:
     signature = base64.b64encode(key.sign(payload)) + b"\n"
     # Se verifica con el código de la aplicación, no con el de este script.
-    public = load_public_key(public_key_b64(key))
-    assert public is not None
+    public = load_public_keys([public_key_b64(key)])
     verify_manifest(public, payload, signature)
     return signature
 
@@ -309,18 +308,18 @@ def promote(out: Path) -> None:
 # --------------------------------------------------------------- verificación
 
 
-def verify(*, base_url: str, channel: str, public_key_b64: str) -> ReleaseManifest:
+def verify(*, base_url: str, channel: str, public_keys_b64: list[str]) -> ReleaseManifest:
     """Lo que haría una instalación: lee el manifiesto publicado, verifica la
     firma, descarga el instalador y verifica su SHA-256.
 
     Con el mismo código del backend: si esto pasa, SAVI lo acepta.
     """
-    public_key = load_public_key(public_key_b64)
-    if public_key is None:
+    public_keys = load_public_keys(public_keys_b64)
+    if not public_keys:
         raise PublishError("No hay clave pública: pásela con --public-key o péguela en trust.py.")
 
     async def run() -> ReleaseManifest:
-        source = HttpManifestSource(base_url=base_url, channel=channel, public_key=public_key)
+        source = HttpManifestSource(base_url=base_url, channel=channel, public_keys=public_keys)
         manifest = await source.fetch()
         with tempfile.TemporaryDirectory() as folder:
             downloader = HttpInstallerDownloader(target_dir=Path(folder))
@@ -401,7 +400,11 @@ def main(argv: list[str] | None = None) -> int:
     p_verify = sub.add_parser("verify", help="verifica lo publicado como lo haría SAVI")
     p_verify.add_argument("--base-url", required=True)
     p_verify.add_argument("--channel", choices=CHANNELS, default="stable")
-    p_verify.add_argument("--public-key", default=UPDATE_PUBLIC_KEY, help="por defecto, trust.py")
+    p_verify.add_argument(
+        "--public-key",
+        action="append",
+        help="puede repetirse; por defecto, las de trust.py",
+    )
 
     args = parser.parse_args(argv)
 
@@ -435,7 +438,9 @@ def main(argv: list[str] | None = None) -> int:
             print("beta pasó a stable.")
         elif args.command == "verify":
             manifest = verify(
-                base_url=args.base_url, channel=args.channel, public_key_b64=args.public_key
+                base_url=args.base_url,
+                channel=args.channel,
+                public_keys_b64=args.public_key or list(UPDATE_PUBLIC_KEYS),
             )
             print(
                 f"{args.channel}: {manifest.version} (mínima {manifest.min_version} desde "

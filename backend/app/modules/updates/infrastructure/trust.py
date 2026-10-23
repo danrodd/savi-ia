@@ -1,9 +1,13 @@
 """Datos de confianza de las actualizaciones: la clave pública y el servidor oficial.
 
-**Clave pública** de SEO para verificar los manifiestos: Ed25519, 32 bytes en
-base64. La genera `scripts/publish-release.py keygen`, que deja la privada
-fuera del repositorio. Va escrita en el código y no en el `.env` a propósito:
-quien pudiera cambiarla podría hacer pasar por buena una versión ajena.
+**Claves públicas** de SEO para verificar los manifiestos: Ed25519, 32 bytes en
+base64. Las genera `scripts/publish-release.py keygen`, que deja la privada
+fuera del repositorio. Son dos: la principal, con la que se firma, y una de
+respaldo que se guarda fuera de línea. Un manifiesto vale si lo firma
+cualquiera de las dos; así, si se pierde la principal, se puede seguir
+publicando sin reinstalar a mano (ver la spec 09, §5).
+Van escritas en el código y no en el `.env` a propósito:
+quien pudiera cambiarlas podría hacer pasar por buena una versión ajena.
 
 **Servidor oficial**: la carpeta servida por HTTPS con `<canal>.json`. Va acá
 para que las instalaciones existentes la usen sin tocar su `.env`.
@@ -13,5 +17,8 @@ Con cualquiera de los dos vacío, SAVI no chequea actualizaciones y lo dice en
 el log.
 """
 
-UPDATE_PUBLIC_KEY = "z7FYJ/jvNWNHThAYpEywlwZJUFXG0IVIiZepWnLHzrM="
+UPDATE_PUBLIC_KEYS: tuple[str, ...] = (
+    "z7FYJ/jvNWNHThAYpEywlwZJUFXG0IVIiZepWnLHzrM=",  # principal
+    "RlZiz5hGbxuZiuXG8+JFnuc/6vJZ236bkUEaqff6PIw=",  # respaldo, fuera de línea
+)
 DEFAULT_UPDATE_URL = ""

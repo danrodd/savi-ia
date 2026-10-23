@@ -121,18 +121,19 @@ def _settings(**values: object) -> Settings:
 def test_development_builds_do_not_check(version: str) -> None:
     settings = _settings(update_url="https://updates.example.com/savi")
     assert (
-        provider.build_coordinator(settings, version=version, public_key_b64=_public_key()) is None
+        provider.build_coordinator(settings, version=version, public_keys_b64=[_public_key()])
+        is None
     )
 
 
 def test_without_url_or_key_updates_stay_off(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(provider, "DEFAULT_UPDATE_URL", "")
     assert (
-        provider.build_coordinator(_settings(), version="v1.3.2", public_key_b64=_public_key())
+        provider.build_coordinator(_settings(), version="v1.3.2", public_keys_b64=[_public_key()])
         is None
     )
     with_url = _settings(update_url="https://updates.example.com/savi")
-    assert provider.build_coordinator(with_url, version="v1.3.2", public_key_b64="") is None
+    assert provider.build_coordinator(with_url, version="v1.3.2", public_keys_b64=[""]) is None
 
 
 def test_env_url_overrides_the_official_server(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -145,7 +146,7 @@ def test_env_url_overrides_the_official_server(monkeypatch: pytest.MonkeyPatch) 
 def test_released_build_with_url_and_key_checks() -> None:
     settings = _settings(update_url="https://updates.example.com/savi", update_channel="beta")
     coordinator = provider.build_coordinator(
-        settings, version="v1.3.2", public_key_b64=_public_key()
+        settings, version="v1.3.2", public_keys_b64=[_public_key()]
     )
     assert coordinator is not None
     assert coordinator.current == ReleaseVersion(1, 3, 2)

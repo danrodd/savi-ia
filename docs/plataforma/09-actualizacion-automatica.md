@@ -156,7 +156,14 @@ Es la diferencia de fondo con Zed. Se evaluaron dos caminos: lanzar el instalado
 Un sistema de autoactualización es un canal para ejecutar código en todos los equipos: si se compromete, se compromete toda la flota.
 
 1. **HTTPS** siempre, sin excepción para "redes internas".
-2. **Manifiesto firmado** con una clave Ed25519. La clave pública va dentro de SAVI y la privada fuera del servidor, en el equipo de publicación o en un secreto. Así, aunque alguien tome el servidor, no puede publicar una versión.
+2. **Manifiesto firmado** con una clave Ed25519. Las claves públicas van dentro de SAVI y la privada fuera del servidor, en el equipo de publicación o en un secreto. Así, aunque alguien tome el servidor, no puede publicar una versión.
+
+   **Dos claves desde la primera versión.** `UPDATE_PUBLIC_KEYS` en `trust.py` trae la principal (con la que se firma) y una de respaldo que se guarda fuera de línea (USB o gestor de contraseñas) y no se usa salvo que se pierda la principal. Un manifiesto se acepta si lo valida cualquiera de las dos; el `.sig` sigue siendo una sola firma. Una clave mal formada se descarta con un aviso y no invalida a la otra.
+
+   **Rotación** (sin reinstalar a mano):
+   1. Se genera la clave nueva y se publica una versión que trae la vieja y la nueva en `UPDATE_PUBLIC_KEYS`, firmada con la vieja.
+   2. Cuando las instalaciones ya la tienen, la versión siguiente se firma con la nueva y se retira la vieja de la lista.
+   3. Si se perdió la principal, el paso 1 se firma con la de respaldo y se agrega una clave de respaldo nueva. Si se filtró, es urgente: se publica ya, porque hasta entonces quien la tenga puede firmar.
 3. **SHA-256** del instalador en el manifiesto, verificado antes de ejecutar.
 4. **Firma de código Authenticode:** por ahora no (D3). La seguridad de la actualización no depende de ella: el SHA-256 y la firma Ed25519 del manifiesto impiden instalar un `.exe` ajeno. Sin firma, la primera instalación muestra el aviso de SmartScreen, como hasta la v1.3.x, y el UAC del modo servidor dice "Editor: desconocido". La descarga que hace SAVI no lleva la marca de "descargado de internet", así que en principio la actualización no dispara SmartScreen; hay que confirmarlo en U1.
 5. **Nunca bajar de versión** aunque el manifiesto lo diga. Se rechaza `version < __version__`.
@@ -199,8 +206,8 @@ U0 y U1 están escritos y probados en local. En el servidor solo queda desplegar
 
 1. **Clave.** En el equipo de publicación, fuera del repositorio:
    `uv run --project backend python scripts/publish-release.py keygen --out <ruta-segura>/savi-updates.pem`.
-   La clave privada se respalda en un lugar seguro: si se pierde, las instalaciones no aceptan más versiones hasta reinstalar a mano una que traiga la clave nueva.
-2. **Datos de confianza.** Se pegan la clave pública y la URL oficial (`https://updates.<dominio-seo>/savi`) en `backend/app/modules/updates/infrastructure/trust.py`, y se commitean.
+   Se genera también una clave de respaldo, que se guarda fuera de línea. Si se pierde la principal, se publica con la de respaldo y se rota (§5); sin respaldo, las instalaciones no aceptarían más versiones hasta reinstalar a mano una que traiga la clave nueva.
+2. **Datos de confianza.** Se pegan las claves públicas (principal y respaldo) y la URL oficial (`https://updates.<dominio-seo>/savi`) en `backend/app/modules/updates/infrastructure/trust.py`, y se commitean.
 3. **DNS.** Un registro `A` para `updates.<dominio-seo>` que apunte al servidor.
 4. **Servidor.** En `deploy/updates/`: `sudo ./setup.sh`, completar el `.env`, `sudo ./setup.sh --publish-key savi-publish.pub` y `docker compose up -d`. Crea la carpeta publicada y el usuario `savi-publish`, con su llave SSH y permiso de escritura solo sobre esa carpeta. Detalle en su [README](../../deploy/updates/README.md).
 5. **Primera versión con actualización automática.** Se compila el instalador del tag y se instala **a mano** en cada equipo. Las v1.3.x no traen el módulo `updates`, así que no pueden enterarse solas.
