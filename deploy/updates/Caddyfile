@@ -1,9 +1,7 @@
-{
-	# Certificados de Let's Encrypt: Caddy los obtiene y los renueva solo, si el dominio apunta
-	# a este servidor y los puertos 80 y 443 de afuera llegan a este contenedor. Detrás de otro
-	# proxy (UPDATES_SITE=http://...) no se pide ningún certificado.
-	email {$ACME_EMAIL}
-}
+# Certificados de Let's Encrypt: Caddy los obtiene y los renueva solo, si el dominio apunta a
+# este servidor y los puertos 80 y 443 de afuera llegan a este contenedor. Detrás de otro proxy
+# (UPDATES_SITE=http://...) no se pide ningún certificado. Sin correo de cuenta: Let's Encrypt
+# ya no manda avisos de vencimiento y Caddy renueva solo.
 
 # Servidor de actualizaciones de SAVI: solo archivos estáticos, sin aplicación detrás.
 # Lo que se sirve está firmado (spec 09): Caddy no necesita ningún secreto.

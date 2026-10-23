@@ -26,14 +26,14 @@ docker compose version >/dev/null 2>&1 || { echo "[ERROR] docker compose v2 plug
 if [[ ! -f .env ]]; then
   cp env.template .env
   chmod 600 .env
-  echo "[OK] Created .env from env.template. Edit UPDATES_SITE, ACME_EMAIL and the ports, then run ./setup.sh again."
+  echo "[OK] Created .env from env.template. Edit UPDATES_SITE and the ports, then run ./setup.sh again."
   exit 0
 fi
 chmod 600 .env
 
 # 2) Refuse to continue with placeholder values
-if grep -Eq '^(UPDATES_SITE|ACME_EMAIL)=.*example\.(com|org|net)' .env; then
-  echo "[ERROR] .env still contains the example domain or email. Edit UPDATES_SITE and ACME_EMAIL." >&2
+if grep -Eq '^UPDATES_SITE=.*example\.(com|org|net)' .env; then
+  echo "[ERROR] .env still contains the example domain. Edit UPDATES_SITE." >&2
   exit 1
 fi
 
@@ -66,6 +66,10 @@ else
   chown -R "$PUBLISH_USER:$PUBLISH_USER" "$UPDATES_DIR/savi"
   # Caddy runs without CAP_DAC_OVERRIDE: everything must be world-readable.
   chmod -R u=rwX,go=rX "$UPDATES_DIR/savi"
+  # With SELinux enforcing, a container cannot read a bind mount without this label.
+  if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
+    chcon -R -t container_file_t "$UPDATES_DIR"
+  fi
 
   if [[ -n "$PUBLISH_KEY" ]]; then
     [[ -f "$PUBLISH_KEY" ]] || { echo "[ERROR] $PUBLISH_KEY not found" >&2; exit 1; }
@@ -88,7 +92,7 @@ fi
 
 # 5) Validate the configuration without starting anything
 docker compose config --quiet
-docker run --rm -e UPDATES_SITE="$UPDATES_SITE" -e ACME_EMAIL="$(env_value ACME_EMAIL '')" \
+docker run --rm -e UPDATES_SITE="$UPDATES_SITE" \
   -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" "caddy:$(env_value CADDY_VERSION 2.8.4-alpine)" \
   caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
 echo "[OK] docker-compose.yml and Caddyfile are valid."

@@ -78,11 +78,21 @@ TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv 
 - 2026-10-22: despliegue propio en `deploy/updates/`: solo Caddy, con dominio, puertos, interfaz y carpeta por variables. Tiene dos modos: directo, con Let's Encrypt, o detrás de un proxy que ya ocupa el 80 y el 443. `setup.sh` crea el `.env`, la carpeta y el usuario `savi-publish` (sin contraseña, llave con `restrict`), y valida con `docker compose config` y `caddy validate`. Se separó del Master porque este vive en `develop`. La plantilla se llama `env.template` porque esta sesión no tiene permiso para escribir `.env*`.
   - Verificado en local: sintaxis de `setup.sh` (`bash -n`) y YAML del compose. Docker no está en este equipo: la validación de compose y de Caddy queda para el servidor, en `setup.sh`.
 
+- 2026-10-23: servidor de pruebas en marcha (detalle en `deploy/updates/servidor-de-pruebas.md`):
+  - **Dónde:** Hetzner, Rocky 10.2, `savi-updates.danrodd.dev`, en modo directo con Let's Encrypt.
+  - **Shortness:** se apagó para liberar los puertos 80 y 443.
+  - **Firewall:** el script "solo Cloudflare" en `DOCKER-USER` cortaba la entrada y también la salida de los contenedores hacia el 443. Se corrigió (`-i eth0`) y se deshabilitó mientras savi-updates use esos puertos.
+  - **Variables:** se quitó `ACME_EMAIL`, porque Let's Encrypt ya no manda avisos de vencimiento.
+  - **SELinux:** `setup.sh` etiqueta la carpeta publicada si está en `Enforcing`.
+  - **Verificado desde afuera:** certificado válido; 404 sin publicar, 404 al listar, 405 en POST, 308 de http a https. Subida real como `savi-publish`: 200 con `no-cache` y HSTS. `savi-publish` no escribe fuera de su carpeta ni tiene `sudo`.
+
 ## Siguiente paso
 
-Probar contra un servidor Linux con un dominio de prueba (spec 09, sección 7, "Puesta en marcha"). Falta:
+Bloque 1 del actualizador, antes de compilar (la primera versión instalada a mano fija lo que el actualizador puede hacer):
 
-- acceso SSH autorizado explícitamente (destino, usuario y llave);
-- registro DNS y `deploy/updates/` en el servidor (setup.sh crea `savi-publish`);
-- dos compilaciones del instalador con el equipo libre: una versión base para instalar a mano y una más nueva para publicar en `beta`;
-- con el dominio oficial decidido, completar `DEFAULT_UPDATE_URL`.
+- [ ] **B1. Recuperación si la instalación falla.** Tope de tiempo en "Actualizando…", aviso de que no se completó y log del instalador para soporte.
+- [ ] **B2. Varias claves de confianza.** `trust.py` acepta una lista, para poder rotar la clave sin reinstalar a mano.
+- [ ] **B3. Descarga que se retoma** (HTTP Range) si se corta la conexión.
+- [ ] **B4. Registro del resultado** de la última actualización, para mostrarlo y para soporte.
+
+Después: dos compilaciones del instalador (base para instalar a mano y una más nueva en `beta`) y la prueba de punta a punta contra `savi-updates.danrodd.dev`.

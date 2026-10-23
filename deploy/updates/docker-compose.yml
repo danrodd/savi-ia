@@ -15,7 +15,6 @@ services:
     environment:
       TZ: ${TZ:-America/Bogota}
       UPDATES_SITE: ${UPDATES_SITE:?Falta UPDATES_SITE en .env}
-      ACME_EMAIL: ${ACME_EMAIL:?Falta ACME_EMAIL en .env}
     ports:
       # Con otro proxy en este servidor: UPDATES_BIND=127.0.0.1 y puertos libres (ver README).
       - "${UPDATES_BIND:-0.0.0.0}:${UPDATES_HTTP_PORT:-80}:80"

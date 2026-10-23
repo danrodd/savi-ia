@@ -61,12 +61,14 @@ updates.<dominio> {
 
 Tiene que responder por HTTPS de verdad y sin redirecciones: SAVI rechaza `http` y no sigue redirecciones.
 
+Si el proxy existente corre en un contenedor, `127.0.0.1` es el propio contenedor y no el servidor. En ese caso no sirve publicar el puerto en `127.0.0.1`: o el proxy apunta a la IP del puente de Docker, o los dos contenedores comparten una red de Docker y el proxy apunta a `savi-updates-caddy:80`.
+
 ## Puesta en marcha
 
 ```bash
 git clone <url-del-repositorio> savi && cd savi/deploy/updates
 sudo ./setup.sh                                  # 1.ª vez: crea .env y se detiene
-nano .env                                        # UPDATES_SITE, ACME_EMAIL, puertos
+nano .env                                        # UPDATES_SITE y puertos
 sudo ./setup.sh --publish-key savi-publish.pub   # carpetas, usuario y su llave; valida
 docker compose up -d
 docker compose ps                                # "healthy"
@@ -101,5 +103,7 @@ UPDATE_CHANNEL=beta
 
 - **Logs:** `docker compose logs -f caddy`. Cada pedido queda en JSON.
 - **No sale el certificado:** el DNS todavía no apunta al servidor, o el 80 y el 443 no llegan desde afuera. En el modo detrás de otro proxy no se pide certificado.
+- **El certificado no sale y en los logs aparece `context deadline exceeded` contra `acme-v02.api.letsencrypt.org`:** el contenedor no tiene salida a internet. Revise `iptables -S DOCKER-USER`: un endurecimiento del estilo "solo Cloudflare en 80/443" sin `-i <interfaz externa>` corta también lo que sale de los contenedores. Caso real documentado en [servidor-de-pruebas.md](servidor-de-pruebas.md).
+- **Nadie llega desde afuera, aunque el contenedor esté `healthy`:** lo mismo, si esas reglas solo dejan entrar IPs de Cloudflare y el dominio no pasa por Cloudflare. También puede ser el firewall del proveedor (en Hetzner, el Firewall de la consola de Cloud).
 - **403 o archivo vacío:** lo publicado tiene que poder leerlo cualquiera, porque Caddy corre sin `CAP_DAC_OVERRIDE`. `sudo ./setup.sh` vuelve a dejar los permisos.
-- **Con SELinux** (RHEL, Rocky, Alma), el contenedor no lee la carpeta montada si no se etiqueta: `sudo chcon -Rt container_file_t /srv/savi-updates`.
+- **Con SELinux en `Enforcing`** (RHEL, Rocky, Alma), el contenedor no lee la carpeta montada si no está etiquetada. `sudo ./setup.sh` la etiqueta con `container_file_t`.
