@@ -370,6 +370,13 @@ Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante
 | # | Caso | Cómo | Resultado esperado |
 |---|---|---|---|
 | 1 | Camino feliz | Aviso → "Actualizar y reiniciar" → aceptar el UAC | Vuelve a abrir en `rc.2` y la pestaña se recarga sola. Conversaciones y configuración intactas. Aviso "SAVI se actualizó". |
+
+**Evidencia del caso 1 (2026-10-23, equipo de desarrollo, sin VM):** `rc.1` → `rc.2` publicada en `beta` desde Administración → Actualizaciones con "Actualizar ahora" y UAC aceptado. `last-install.json`: `step=finished`, `exit_code=0`, `running_version=v1.4.0-rc.2`. Historial: `installed`. Después del reinicio el coordinador dice `instalada v1.4.0-rc.2, publicada v1.4.0-rc.2 → up_to_date`. La persona vio la actualización terminar bien.
+
+**Hallazgos del caso 1 (para corregir antes de `stable`):**
+- Al cerrar el intento, "no se pudo borrar el instalador descargado": el archivo seguía bloqueado en ese instante (se pudo borrar a mano minutos después). Queda un instalador de 160 MB en `%LOCALAPPDATA%\SAVI\updates` hasta la próxima limpieza. Reintentar el borrado más tarde o al próximo arranque.
+- El registro de `history.jsonl` quedó con `exit_code: null` aunque `last-install.json` trae `0`. Revisar de dónde lo toma `settle()`.
+- Las notas de la versión se veían en Markdown crudo: corregido en `8184bc0`, llega con la próxima candidata.
 | 2 | UAC cancelado | Cancelar el cartel de UAC | SAVI sigue abierto con "Se canceló el permiso…". "Reintentar" funciona. En `last-install.json` queda `cancelled`. Es la primera vez que se prueba el código 1223 con un cartel real. |
 | 3 | Corte de red | Desconectar la red de la VM a mitad de la descarga y reconectar | Al reintentar sigue desde donde quedó: en el log de Caddy, pedido con `206`. |
 | 4 | Chat en curso | Actualizar con una respuesta del chat en curso | Espera a que termine el turno y recién ahí instala. |
