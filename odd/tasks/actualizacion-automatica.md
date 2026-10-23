@@ -1,98 +1,393 @@
-# Actualización automática de SAVI (U0 + U1)
+# Actualización automática de SAVI
 
-**Locator:** `odd/tasks/actualizacion-automatica.md` · Engram `odd/actualizacion-automatica/tasks` (espejo pendiente: Engram no está disponible en esta sesión).
-**Rama:** `feat/actualizacion-automatica` (desde `staging` en `b7e59d1`).
-**Spec:** [`docs/plataforma/09-actualizacion-automatica.md`](../../docs/plataforma/09-actualizacion-automatica.md), decisiones D1–D5 cerradas el 2026-10-21.
+**Locator:** `odd/tasks/actualizacion-automatica.md` · Engram `odd/actualizacion-automatica/tasks` (espejo pendiente).
+**Rama de trabajo:** `staging`. U0 y U1 se hicieron en `feat/actualizacion-automatica` y ya están en `staging`.
+**Spec:** [`docs/plataforma/09-actualizacion-automatica.md`](../../docs/plataforma/09-actualizacion-automatica.md), con las decisiones D1–D5 cerradas el 2026-10-21.
+**Servidor de pruebas:** [`deploy/updates/servidor-de-pruebas.md`](../../deploy/updates/servidor-de-pruebas.md), en `https://savi-updates.danrodd.dev/savi`.
 
 ## Objetivo
 
-Dejar escrito y probado en local todo U0 y U1, de modo que al final solo falte desplegar el bloque de Caddy en el servidor Linux y probar contra él.
+Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexiones inestables y sin soporte técnico cerca:
 
-## Restricciones
+- la persona acepta;
+- SAVI baja la versión, la verifica y la instala;
+- SAVI vuelve a abrir con la versión nueva, y si algo falla, vuelve con la anterior y lo dice.
 
-- No correr `installer/build.ps1` (la compilación consume demasiados recursos). Los cambios de `savi.iss` se revisan, no se compilan.
-- Sin acceso al servidor Linux hasta que el usuario lo autorice con destino, usuario y llave.
-- Commits solo con OK explícito del usuario (CLAUDE.md §12). Sin push sin OK.
-- Trabajo inline, sin subagentes (preferencia del usuario).
-- Textos visibles de usted (CLAUDE.md §14). El test `test_usted_register.py` tiene que pasar.
-- La clave privada Ed25519 nunca entra al repositorio.
+## Principio que ordena el plan
 
-## Modo de pruebas
+**La primera versión que se instala a mano fija para siempre lo que el actualizador sabe hacer.** Un error en el propio mecanismo no se corrige actualizando: obliga a reinstalar equipo por equipo. Por eso:
 
-TDD: apagado (no hay configuración que lo active). Pruebas funcionales con `uv run pytest` (backend) y `pnpm vitest` (frontend), más Ruff y Pyright strict.
+- primero se construye todo lo que no se puede arreglar después (Fase 1);
+- se compila una sola vez por versión;
+- se prueba de verdad (Fase 2);
+- recién entonces se sale a producción (Fase 3).
 
-## Tareas
+## Reglas de trabajo
 
-- [x] **T1. Dominio de `updates`** (inline): versión `vX.Y.Z` y su comparación; manifiesto y su validación; decisión (`none`, `recommended`, `required_pending`, `required_blocked`); rechazo de bajar de versión. Tests unitarios.
-- [x] **T2. Firma y verificación** (inline): verificación Ed25519 del manifiesto y SHA-256 del instalador en infraestructura. Clave pública incrustada; si está vacía, el chequeo queda desactivado con un aviso en el log. Tests con un par de claves generado en el test.
-- [x] **T3. `scripts/publish-release.py`** (inline): `keygen`, armado del manifiesto con `min_version_from` (72 h por defecto, `now`), firma, `--out` local para pruebas y subida por SSH (`.exe` primero, manifiesto con nombre temporal y renombre). Tests del armado y la firma.
-- [x] **T4. Chequeo periódico y endpoints** (inline): `UPDATE_URL` y `UPDATE_CHANNEL` en Settings; chequeo al arrancar y cada 6 h; `GET /updates/status`; `POST /updates/apply` (descarga, verificación, espera de turnos, lanzamiento silencioso). Modo servidor: aplicar solo desde `127.0.0.1`. Tests.
-- [x] **T5. Instalador** (inline): entrada `[Run]` que relanza SAVI en modo silencioso. Sin compilar.
-- [x] **T6. Frontend** (inline): barra de aviso, plazo, diálogo obligatorio y pantalla "Actualizando…" que espera `/health`. Tests.
-- [x] **T7. Prueba de punta a punta en local**: manifiesto firmado servido con `python -m http.server`, SAVI en desarrollo detecta, verifica y rechaza manipulaciones. Documentar los pasos de despliegue que quedan para el servidor.
+- **Commits y push a `staging`:** sin pedir confirmación en cada paso, por pedido del usuario (2026-10-22). Un commit por tarea, con sus tests y sus docs.
+- **Siguen necesitando OK explícito:**
+  - correr `installer/build.ps1`, que consume muchos recursos;
+  - crear o pushear tags (CLAUDE.md §10);
+  - cambios en el servidor fuera de `/opt/savi-updates` y `/srv/savi-updates`;
+  - pasar a `main`.
+- Trabajo inline, sin subagentes, por preferencia del usuario.
+- Textos visibles de usted (CLAUDE.md §14), y `test_usted_register.py` tiene que pasar.
+- Las claves privadas de firma nunca entran al repositorio ni al servidor.
+- **Cierre de cada tarea:**
+  - backend: Ruff, formato y Pyright strict;
+  - frontend: vue-tsc, Biome y Vitest;
+  - los tests del módulo `updates` y de `test_publish_release.py`.
+- **Modo de pruebas:** TDD apagado, porque no hay configuración que lo active. Pruebas funcionales con `uv run pytest` y `pnpm vitest`.
 
-## Criterios de aceptación
+## Estado
 
-- Una instalación detecta una versión nueva desde un manifiesto firmado y muestra el aviso correcto según `min_version` y `min_version_from`.
-- Firma inválida, hash inválido y versión menor se rechazan y quedan en `savi.log`.
-- En desarrollo (versión que no es un tag exacto) el chequeo no se activa.
-- Ruff, Pyright strict y los tests del backend y del frontend pasan.
+| Etapa | Estado |
+|---|---|
+| U0 y U1 (spec 09): manifiesto firmado, chequeo, aviso, descarga verificada, lanzamiento silencioso | Hecho y en `staging`. 11/11 de punta a punta en local. |
+| Clave de firma principal | Generada; la pública está en `trust.py` (`59423c8`). |
+| Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
+| **Fase 1:** núcleo del actualizador | **Siguiente.** |
+| Fase 2: prueba real con instaladores compilados | Pendiente. |
+| Fase 3: producción | Pendiente. |
 
-## Progreso
+---
 
-- 2026-10-21: rama creada, exploración hecha. Ruta: todo inline por preferencia del usuario (sin subagentes).
-- T1: `app/modules/updates/domain/` (versión, manifiesto, `decide`). 31 tests.
-- T2: `infrastructure/signing.py` (Ed25519 + SHA-256 y tamaño). 12 tests; 43 en `tests/unit/modules/updates`.
-- T3: `scripts/publish-release.py` (`keygen`, `build`, `promote`, `upload`). Valida y verifica con el código del backend. 13 tests en `tests/unit/infrastructure/test_publish_release.py`.
-- Commits T1–T3: `8afe61d` (dominio y firma), `9a24234` (script de publicación).
-- T4: `UpdateCoordinator` (aplicación); `HttpManifestSource` y `HttpInstallerDownloader` (httpx, sin redirecciones, tope de tamaño); `WindowsInstallerLauncher` (ShellExecute con `runas` si SAVI está en Program Files); `provider.py` (chequeo al arrancar y cada `UPDATE_CHECK_INTERVAL_HOURS`); rutas `GET /updates/status`, `POST /updates/apply` (solo desde 127.0.0.1) y `POST /updates/check` (admin). Settings `UPDATE_URL`, `UPDATE_CHANNEL` y `UPDATE_CHECK_INTERVAL_HOURS`. La clave pública queda vacía en `trust.py` hasta correr `keygen`.
-- Verificación T4: 74 tests en `tests/unit/modules/updates`, 99 sumando publicación y registro de usted. Ruff, formato y Pyright strict sin errores.
-- Falla conocida, previa a esta rama: `test_logging_survives_migrations.py::test_log_still_works_after_ensure_schema` también falla en la base (BD local en la revisión de `develop`).
-- La descarga queda en `%LOCALAPPDATA%\SAVI\updates\` (`data_dir()`), no en `%ProgramData%` como decía la spec, porque es escribible sin administrador. Ajustar la spec en T7.
-- `.env.example` no se tocó (sin permiso de lectura en esta sesión): documentar las variables en T7.
-- Commit T4: `fb3bf8a`. T5: `2cb93e1` (entrada `[Run]` con `Check: WizardSilent` y `runasoriginaluser`; revisada, sin compilar).
-- T6: módulo `frontend/src/modules/updates` (servicio, `useUpdateStatus`, reglas puras en `utils/updateView.ts`, `UpdateNotice.vue`), montado en `App.vue` solo con sesión. `Dialog.vue` suma `dismissible` para los diálogos que no se cierran. "Más tarde" se guarda 24 h en `localStorage` (con try/catch).
-- Verificación T6: vue-tsc sin errores, Biome limpio en lo tocado, 17 tests nuevos y 315 en toda la suite del frontend. Guarda de usted: 12/12.
-- Commit T6: `4ea209f`.
-- T7, prueba de punta a punta contra `python -m http.server` real, con el script de publicación real y el coordinador real (solo el lanzamiento fue simulado). 11/11 controles:
-  - detecta, descarga, verifica y lanza;
-  - `verify` confirma lo publicado;
-  - rechaza un instalador cambiado, y `verify` también lo detecta;
-  - ignora un manifiesto sin firma válida;
-  - `min_version` inmediata bloquea, y con plazo avisa con fecha;
-  - el script no publica una versión anterior;
-  - SAVI no baja de versión.
-  El script de la prueba quedó fuera del repositorio, en el scratchpad.
-- Hallazgos de T7, ya corregidos:
-  - la salida de `publish-release.py` no era UTF-8 en Windows (se reconfigura como en `version.py`);
-  - el script dejaba publicar una versión menor en un canal (nueva guarda `reject_older_than_published` y su test).
-- Agregados en T7:
-  - `DEFAULT_UPDATE_URL` en `trust.py`; `UPDATE_URL` del `.env` lo reemplaza.
-  - Subcomando `verify`.
-  - Guía "Puesta en marcha" en la spec 09, sección 7, con las variables del `.env`.
+## Fase 1. Núcleo del actualizador (local, sin compilar)
 
-- 2026-10-21: rama pusheada y llevada a `staging` por fast-forward (`a248079`), pusheada. Sobre `staging`: 101 tests del backend, 315 del frontend y 11/11 de punta a punta.
-- 2026-10-22: par de claves generado. La privada quedó en `C:\Users\hikig\claves-savi\savi-updates.pem`, fuera del repositorio (respaldarla). La pública está en `trust.py`, commit `59423c8` en `staging`, pusheado.
-- `DEFAULT_UPDATE_URL` sigue vacío a propósito: el dominio oficial no está decidido. Las pruebas usan un dominio propio en `UPDATE_URL` del `.env` de la instalación de prueba. El instalador conserva el `.env` al actualizar (`WriteEnvFile`), así que el valor sobrevive.
+Orden: B0 → B1+B4 → B2 → B3 → B5. B1 y B4 van juntas porque el vigilante de B1 es quien sabe cómo terminó la instalación.
 
-- 2026-10-22: despliegue propio en `deploy/updates/`: solo Caddy, con dominio, puertos, interfaz y carpeta por variables. Tiene dos modos: directo, con Let's Encrypt, o detrás de un proxy que ya ocupa el 80 y el 443. `setup.sh` crea el `.env`, la carpeta y el usuario `savi-publish` (sin contraseña, llave con `restrict`), y valida con `docker compose config` y `caddy validate`. Se separó del Master porque este vive en `develop`. La plantilla se llama `env.template` porque esta sesión no tiene permiso para escribir `.env*`.
-  - Verificado en local: sintaxis de `setup.sh` (`bash -n`) y YAML del compose. Docker no está en este equipo: la validación de compose y de Caddy queda para el servidor, en `setup.sh`.
+### B0. Versiones candidatas (`-rc.N`) para el canal `beta`
 
-- 2026-10-23: servidor de pruebas en marcha (detalle en `deploy/updates/servidor-de-pruebas.md`):
-  - **Dónde:** Hetzner, Rocky 10.2, `savi-updates.danrodd.dev`, en modo directo con Let's Encrypt.
-  - **Shortness:** se apagó para liberar los puertos 80 y 443.
-  - **Firewall:** el script "solo Cloudflare" en `DOCKER-USER` cortaba la entrada y también la salida de los contenedores hacia el 443. Se corrigió (`-i eth0`) y se deshabilitó mientras savi-updates use esos puertos.
-  - **Variables:** se quitó `ACME_EMAIL`, porque Let's Encrypt ya no manda avisos de vencimiento.
-  - **SELinux:** `setup.sh` etiqueta la carpeta publicada si está en `Enforcing`.
-  - **Verificado desde afuera:** certificado válido; 404 sin publicar, 404 al listar, 405 en POST, 308 de http a https. Subida real como `savi-publish`: 200 con `no-cache` y HSTS. `savi-publish` no escribe fuera de su carpeta ni tiene `sudo`.
+- [ ] Hecho
 
-## Siguiente paso
+**Por qué.** Hoy solo se actualiza sola una versión `vX.Y.Z` exacta (`release.py:21`), y los tags solo se crean en `main` (`version.py:215`). Para probar hacen falta dos versiones, y eso obligaría a sacar dos versiones de producción. Con las candidatas, `beta` recibe `v1.4.0-rc.1`, `-rc.2`… desde `staging`, y `stable` nunca las ve.
 
-Bloque 1 del actualizador, antes de compilar (la primera versión instalada a mano fija lo que el actualizador puede hacer):
+**Diseño (decidido):**
+- **Formato válido:** `vX.Y.Z` o `vX.Y.Z-rc.N`, con N ≥ 1. Un build de desarrollo, como `v1.4.0-rc.1-3-gabc1234` o `-sucio`, sigue sin actualizarse solo.
+- **Orden:** `v1.4.0-rc.1 < v1.4.0-rc.2 < v1.4.0 < v1.4.1-rc.1`. `ReleaseVersion` suma `rc: int | None` y compara por `(major, minor, patch, es_final, rc)`.
+- **Defensa en el cliente:** `HttpManifestSource` rechaza un manifiesto con versión rc si el canal es `stable`, con `InvalidManifestError`.
+- **`scripts/version.py`:**
+  - `--crear --rc` funciona solo en `staging`. Calcula la versión base con la propuesta de siempre, tomando la última versión final, y numera la rc siguiente.
+  - `last_tag()` ignora las rc (`--exclude "*-rc.*"`).
+  - `--numero` de un build rc devuelve la base `X.Y.Z`, sacada del tag en `HEAD` y no del último tag final, porque es lo que pide Inno en `VersionInfoVersion`.
+- **`scripts/publish-release.py`:**
+  - el nombre `SAVI-Setup-vX.Y.Z-rc.N.exe` es válido;
+  - `build --channel stable` con una rc da error;
+  - `promote` con una rc en `beta` da error: "una candidata no pasa a stable; se compila la versión final";
+  - `reject_older_than_published` usa el orden nuevo.
+- `build.ps1` no cambia: el nombre del instalador ya sale de la versión.
 
-- [ ] **B1. Recuperación si la instalación falla.** Tope de tiempo en "Actualizando…", aviso de que no se completó y log del instalador para soporte.
-- [ ] **B2. Varias claves de confianza.** `trust.py` acepta una lista, para poder rotar la clave sin reinstalar a mano.
-- [ ] **B3. Descarga que se retoma** (HTTP Range) si se corta la conexión.
-- [ ] **B4. Registro del resultado** de la última actualización, para mostrarlo y para soporte.
+**Archivos:**
+- `backend/app/modules/updates/domain/value_objects/release.py`
+- `backend/app/modules/updates/infrastructure/http_source.py`
+- `scripts/version.py`
+- `scripts/publish-release.py`
+- los tests de los tres
+- `installer/README.md` (#versionado), CLAUDE.md §10 y la spec 09 §5
 
-Después: dos compilaciones del instalador (base para instalar a mano y una más nueva en `beta`) y la prueba de punta a punta contra `savi-updates.danrodd.dev`.
+**Tests:**
+- el orden completo con rc;
+- `from_running` acepta una rc exacta y rechaza una rc con commits encima;
+- `stable` rechaza un manifiesto rc;
+- `version.py --crear --rc` fuera de `staging` da error;
+- la numeración de las rc;
+- `--numero` de una rc;
+- `publish-release`: rc en `stable` da error, `promote` de una rc da error, y una rc menor que la publicada da error.
+
+**Listo cuando:** pasan los tests y una simulación local con el script de punta a punta publica `rc.1` y `rc.2` en `beta`, detecta la actualización y no deja que nada rc llegue a `stable`.
+
+### B1. Vigilante de la instalación
+
+- [ ] Hecho
+
+**Por qué.** Hoy SAVI lanza el instalador con `ShellExecuteW` (`launcher.py:49`), que no devuelve el proceso, y se cierra (`/CLOSEAPPLICATIONS`). Si la instalación falla, Inno revierte los archivos, pero la entrada de `[Run]` que vuelve a abrir SAVI solo corre si todo salió bien. Resultado: SAVI queda cerrado y la pantalla "Actualizando…" espera para siempre (`useUpdateStatus.ts:59`).
+
+**Diseño (decidido):**
+- **El vigilante es un script de PowerShell**, que viene en todo Windows 10 y 11. El texto vive en una constante de Python (`infrastructure/watcher.py`). En cada intento se escribe en `%LOCALAPPDATA%\SAVI\updates\watch-install.ps1`, fuera de `{app}`, porque la instalación reemplaza `{app}`.
+- **El launcher.** `WindowsInstallerLauncher` deja `ShellExecuteW` y arranca el vigilante:
+  - con `subprocess.Popen(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", ...])`;
+  - con `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW`, así que sobrevive al cierre de SAVI.
+  - El vigilante corre como el usuario, sin elevación, y pide la elevación solo para el instalador.
+- **Parámetros del vigilante:**
+  - `-Installer` y `-Arguments`: las banderas silenciosas y `/LOG` de este intento;
+  - `-Elevate`: si la instalación es por máquina;
+  - `-AppExe`: `{app}\SAVI.exe`, sacado de `sys.executable`;
+  - `-HealthUrl`: la URL local de SAVI con el puerto real;
+  - `-FromVersion` y `-ToVersion`;
+  - `-ResultPath`;
+  - `-AttemptId`: un UUID por intento.
+- **Pasos del vigilante:**
+  1. Escribe el resultado con `outcome: "started"`.
+  2. Lanza `Start-Process -FilePath $Installer -ArgumentList $Arguments -PassThru`, con `-Verb RunAs` si corresponde, y espera hasta 30 minutos.
+  3. Si la persona cancela el UAC, PowerShell tira una `Win32Exception` con `NativeErrorCode 1223`. Eso da `outcome: "cancelled"`; SAVI nunca se cerró.
+  4. Con el código de salida de Inno (tabla de abajo): 0 da `installed` y cualquier otro da `failed`. Si se pasa el tiempo, `timeout`.
+  5. Espera hasta 120 s a que `/health` responda. Si no responde, abre `SAVI.exe --no-browser`. Así SAVI vuelve siempre: con la versión nueva si salió bien, y con la vieja si Inno revirtió.
+  6. Lee la versión que devuelve `/health` y escribe el resultado final: `exit_code`, `finished_at`, `relaunched` y `running_version`.
+- **`SAVI.exe --no-browser`.** Bandera nueva en `launcher.py`: no abre el navegador, porque la pestaña que pidió la actualización se recarga sola.
+  - La entrada `[Run]` silenciosa de `savi.iss` también la usa.
+  - Si SAVI ya está corriendo, una segunda instancia lo detecta por `/health` (`_savi_already_running`) y no hace nada. Que la abran el `[Run]` y el vigilante a la vez no hace daño.
+- **El coordinador.** En `INSTALLING`, mientras el backend siga vivo, lee el archivo de resultado cada 2 s con un puerto nuevo, `InstallResultReader`.
+  - Si el resultado es `cancelled` o `failed` y SAVI no se cerró, pasa a `FAILED` con el mensaje que corresponda. Es el caso típico del UAC cancelado.
+- **El frontend.**
+  - `INSTALLING_MAX_MS` es de 15 minutos. Pasado ese tiempo, cambia a: "La actualización está tardando más de lo normal. Si SAVI no vuelve a abrir, ábralo desde el menú Inicio."
+  - Al volver, lee el resultado de B4.
+
+**Códigos de salida de Inno Setup que se distinguen** (documentación oficial de Inno, "Setup Exit Codes"):
+
+| Código | Significado | Mensaje para la persona |
+|---|---|---|
+| 0 | Instalado | — |
+| 1 | No pudo iniciar | "No se pudo iniciar la instalación." |
+| 2 | Cancelado antes de instalar | "La instalación se canceló." |
+| 3, 4 | Error fatal al preparar o al instalar; Inno revierte | "La instalación falló y SAVI volvió a la versión anterior." |
+| 5 | Cancelado durante la instalación | "La instalación se canceló." |
+| 7, 8 | No puede seguir o necesita reiniciar | "La instalación necesita reiniciar el equipo." / "…no pudo continuar." |
+| otro | Desconocido | Mensaje genérico, con el código en el log |
+
+**Archivos:**
+- `infrastructure/watcher.py` (nuevo)
+- `infrastructure/launcher.py`
+- `domain/interfaces/ports.py`: `InstallResultReader`
+- `application/coordinator.py`
+- `infrastructure/provider.py`
+- `backend/app/launcher.py`: `--no-browser`
+- `installer/savi.iss`: `Parameters: "--no-browser"` en la entrada silenciosa
+- el composable y las utilidades de `frontend/src/modules/updates/`
+- la spec 09 §4
+
+**Tests:**
+- **Unitarios:** el coordinador ante `cancelled`, `failed` e `installed`; el armado de los argumentos de PowerShell; la tabla de códigos; el tope de tiempo del frontend.
+- **Integración (solo en Windows, se saltea en otro sistema):** correr el vigilante real sin elevación, con un "instalador" falso (`cmd /c exit 4`) y un `/health` falso. Comprobar el resultado escrito, el `exit_code` y que relance un `SAVI.exe` falso cuando `/health` no responde.
+
+**Listo cuando:** en este equipo, el vigilante real con un instalador falso que sale con 0, con 4 y con cancelación escribe el resultado correcto y relanza cuando corresponde. El frontend deja de esperar a los 15 minutos.
+
+### B4. Registro del resultado de cada intento
+
+- [ ] Hecho
+
+**Por qué.** Después de reiniciar, SAVI no sabe si la actualización salió bien. La persona necesita un aviso claro, y soporte necesita poder diagnosticar por teléfono.
+
+**Diseño (decidido):**
+- **Archivo de resultado.** Lo escribe el vigilante en `%LOCALAPPDATA%\SAVI\updates\last-install.json`, con estos campos: `attempt_id`, `from_version`, `to_version`, `started_at`, `finished_at`, `outcome`, `exit_code`, `relaunched`, `running_version` y `log`.
+- **Log del instalador.** Uno por intento, en `install-<attempt_id>.log`. Se guardan los últimos 5.
+- **Historial.** Al arrancar, el backend lee `last-install.json`. Si ese `attempt_id` no está en `history.jsonl`, calcula el resultado final y lo agrega, con un máximo de 50 entradas:
+  - `installed` si la versión que corre es `to_version`;
+  - `rolled_back` si salió con 0 pero corre otra versión;
+  - el `outcome` del vigilante en los demás casos.
+- **API.**
+  - `GET /updates/status` suma `last_install`: `attempt_id`, `from_version`, `to_version`, `outcome`, `finished_at` y `message` en usted.
+  - `GET /updates/history`, solo para administradores, devuelve el historial completo.
+- **Aviso en el frontend**, una sola vez por `attempt_id`, que se recuerda en `localStorage`:
+  - `installed`: "SAVI se actualizó a vX.Y.Z." y el enlace "Qué cambió".
+  - `failed` o `rolled_back`: "La actualización a vX.Y.Z no se completó. SAVI sigue en vA.B.C." y el botón "Reintentar".
+  - `cancelled`: no se avisa después del reinicio, porque ya se avisó en el momento.
+
+**Archivos:**
+- `infrastructure/install_history.py` (nuevo)
+- `application/responses.py`
+- `infrastructure/http/routes.py`
+- `provider.py` (conciliación al arrancar)
+- `frontend/src/modules/updates/`: tipos, servicio, `UpdateNotice.vue` y las utilidades
+- la spec 09 §6
+
+**Tests:**
+- la conciliación en cada caso: `installed`, `rolled_back`, `failed`, `cancelled` y repetido;
+- el tope de 50 entradas y de 5 logs;
+- un archivo corrupto se ignora con un aviso en el log y SAVI arranca igual;
+- `/updates/history` exige administrador;
+- el aviso del frontend se muestra una sola vez.
+
+**Listo cuando:** se ven en la interfaz los tres resultados de la prueba de B1, después de un reinicio simulado.
+
+### B2. Varias claves de confianza
+
+- [ ] Hecho
+
+**Por qué.** `trust.py` acepta una sola clave. Si se pierde o se filtra, todas las instalaciones quedan sin poder actualizarse y hay que reinstalarlas a mano. Una clave de respaldo solo sirve si viaja desde la primera versión.
+
+**Diseño (decidido):**
+- **En el código:** `UPDATE_PUBLIC_KEYS: tuple[str, ...]` con la principal y la de respaldo. Un manifiesto se acepta si lo valida cualquiera de las dos. El `.sig` sigue siendo una sola firma.
+- **La clave de respaldo:**
+  - Se genera ahora con `keygen` en `C:\Users\hikig\claves-savi\savi-updates-respaldo.pem`.
+  - Se guarda **fuera de línea**, en un USB o en un gestor de contraseñas, y no se usa salvo que se pierda la principal.
+- **Rotación** (documentada en la spec 09 §5):
+  1. Se publica una versión que trae la clave vieja y la nueva, firmada con la vieja.
+  2. La versión siguiente se firma con la nueva.
+  3. Si se pierde la principal, se firma con la de respaldo y se rota igual.
+- **`build_coordinator`** recibe la lista y se desactiva solo si ninguna clave es válida. `verify` usa la lista de `trust.py` por defecto.
+
+**Archivos:**
+- `infrastructure/trust.py`
+- `infrastructure/signing.py`
+- `infrastructure/provider.py`
+- `scripts/publish-release.py`
+- los tests
+- la spec 09 §5
+
+**Tests:**
+- un manifiesto firmado con la principal se acepta;
+- firmado con la de respaldo, también;
+- firmado con una tercera clave, se rechaza;
+- una clave mal formada en la lista no desactiva las demás.
+
+**Listo cuando:** pasan los tests y la clave de respaldo existe, guardada fuera de línea. Que la guardó lo confirma el usuario.
+
+### B3. Descarga que se retoma
+
+- [ ] Hecho
+
+**Por qué.** El instalador pesa unos 160 MB. Hoy, si la conexión se corta, la descarga se borra y arranca de cero (`http_source.py:68`). En una PYME con internet inestable, esa es la falla más probable.
+
+**Diseño (decidido):**
+- **Junto al `.partial`** se guarda `.partial.json`, con `url`, `sha256` y `size`. Si coincide con el manifiesto actual, se retoma; si no, se borra.
+- **Limpieza.** Se borra lo que no sea del manifiesto actual, nunca el parcial de la misma versión. Si ya está el archivo completo y verificado, no se descarga de nuevo.
+- **Pedido con `Range: bytes=N-`:**
+  - `206`: se verifica que `Content-Range` sea `bytes N-(size-1)/size` y se sigue escribiendo al final.
+  - `200`: el servidor ignoró el rango; se vacía el parcial y se baja entero.
+  - `416`: si el parcial ya tiene el tamaño completo, se pasa a verificar; si no, se borra y se reintenta.
+- **Reintentos dentro del mismo intento:** 3, con esperas de 2, 5 y 15 s. Si se agotan, `FAILED` con: "Se perdió la conexión. Intente de nuevo: la descarga sigue desde donde quedó."
+- **Integridad.** Si no coincide el SHA-256 o el tamaño, se borran el parcial y su `.json`.
+- **Servidor.** Caddy (`file_server`) soporta rangos. `python -m http.server` no, así que la prueba local usa un servidor de prueba propio que sí los soporta.
+
+**Archivos:**
+- `infrastructure/http_source.py`
+- `application/coordinator.py`: el progreso arranca en N
+- los tests
+
+**Tests**, con `httpx.MockTransport`:
+- corte a la mitad y reintento con `206`;
+- un servidor que ignora el rango y responde `200`;
+- `416` con el archivo completo;
+- un parcial de otra versión se descarta;
+- un hash inválido borra todo;
+- se agotan los reintentos;
+- el progreso informado arranca en N.
+
+**Listo cuando:** pasan los tests y, contra el servidor de pruebas real con un archivo de prueba grande, un corte forzado retoma con `206`.
+
+### B5. Vista de Actualizaciones en Administración
+
+- [ ] Hecho
+
+**Por qué.** El administrador tiene que poder ver en qué está su instalación y forzar una comprobación sin esperar 6 horas, y soporte tiene que poder pedir el historial.
+
+**Diseño (decidido):**
+- **Ruta:** `/admin/actualizaciones`, con nombre `admin-updates`. Es hija de `/admin` en `frontend/src/router/index.ts` y entra en el menú de Administración.
+- **La vista** vive en el módulo `updates`: `frontend/src/modules/updates/views/UpdatesAdminView.vue`.
+- **Contenido:**
+  - versión instalada, canal, servidor, última comprobación, versión disponible y notas;
+  - el botón "Buscar ahora", que usa `POST /updates/check`, ya existente y solo para administradores;
+  - el botón "Actualizar ahora", que es el mismo flujo del aviso;
+  - una tabla de historial con fecha, versión de origen y de destino, resultado y detalle.
+- **El canal no se cambia desde la interfaz:** queda en el `.env`, porque `beta` es solo para SEO (D5).
+- **Backend:** `GET /updates/history` (B4) suma `channel` y `server`. Esos dos datos se muestran solo a administradores.
+
+**Archivos:**
+- `frontend/src/modules/updates/` (vista, servicio y tipos)
+- `frontend/src/router/index.ts`
+- el menú de Administración
+- `infrastructure/http/routes.py`
+
+**Tests:**
+- la vista con un historial vacío y con varias entradas;
+- "Buscar ahora" refresca el estado;
+- alguien que no es administrador no entra.
+
+**Listo cuando:** se ve y funciona contra el backend local con un historial simulado.
+
+---
+
+## Fase 2. Prueba real con instaladores compilados
+
+**Requisitos (se deciden al llegar):**
+- **Un Windows de prueba aparte.** Se recomienda una máquina virtual con instantánea, para repetir los casos desde cero. No conviene el equipo de desarrollo: comparte `%LOCALAPPDATA%\SAVI` y el puerto 31900 con el SAVI de desarrollo.
+- **OK** para crear los tags rc y para compilar.
+
+**Pasos:**
+1. Tag `v1.4.0-rc.1` en `staging` (con OK), `build.ps1` (con OK) e instalación a mano en el Windows de prueba.
+2. En el `.env` de esa instalación: `UPDATE_URL=https://savi-updates.danrodd.dev/savi` y `UPDATE_CHANNEL=beta`.
+3. Tag `v1.4.0-rc.2` y `build.ps1`. Después, `publish-release.py build` + `upload` + `verify` en `beta`.
+4. Correr la tabla de casos y anotar la evidencia en este documento.
+
+| # | Caso | Cómo | Resultado esperado |
+|---|---|---|---|
+| 1 | Camino feliz | Aviso → "Actualizar y reiniciar" → aceptar el UAC | Vuelve a abrir en `rc.2` y la pestaña se recarga sola. Conversaciones y configuración intactas. Aviso "SAVI se actualizó". |
+| 2 | UAC cancelado | Cancelar el cartel de UAC | SAVI sigue abierto con "Se canceló el permiso…". "Reintentar" funciona. |
+| 3 | Corte de red | Desconectar la red de la VM a mitad de la descarga y reconectar | Al reintentar sigue desde donde quedó: en el log de Caddy, pedido con `206`. |
+| 4 | Chat en curso | Actualizar con una respuesta del chat en curso | Espera a que termine el turno y recién ahí instala. |
+| 5 | Instalador manipulado | Reemplazar el `.exe` en el servidor | Lo rechaza por SHA-256 y no lanza nada. |
+| 6 | Navegador remoto | Abrir SAVI desde otro equipo de la red | Ve el aviso, pero no puede aplicar: "Avise a su área de sistemas". |
+| 7 | Obligatoria | Volver a publicar `rc.2` con `--min-version v1.4.0-rc.2 --min-version-from now` | Diálogo de bloqueo que no se puede cerrar. |
+| 8 | Instalación que falla | Si se consigue forzarla en la VM, por ejemplo con el disco lleno. Si no, queda cubierta por la prueba de integración de B1 | SAVI vuelve con la versión anterior y avisa que no se completó. |
+| 9 | Usuario sin permisos de administrador | Iniciar sesión en Windows con una cuenta estándar | El UAC pide credenciales de administrador. Sin ellas, se comporta como el caso 2. |
+
+**Listo cuando:** pasan los casos 1 a 7 y el 9, el 8 está cubierto (en la VM o por la prueba de integración), y la evidencia está anotada acá.
+
+---
+
+## Fase 3. Producción
+
+1. **Decidir el dominio oficial y dónde se aloja**: el servidor de SEO o este de Hetzner. Va **antes** de compilar `v1.4.0`, porque queda grabado en `DEFAULT_UPDATE_URL` de `trust.py`. Las instalaciones de clientes no deben depender de `danrodd.dev`.
+2. Desplegar `deploy/updates/` en ese servidor, con `setup.sh`, y verificar como en el servidor de pruebas.
+3. Commit de `DEFAULT_UPDATE_URL`.
+4. Confirmar que la clave de respaldo está guardada fuera de línea.
+5. Pasar `staging` a `main` (con OK), crear el tag `v1.4.0` (con OK) y `build.ps1` (con OK).
+6. `publish-release.py build --channel stable` + `upload` + `verify`.
+7. Instalar a mano `v1.4.0` en cada cliente. Las v1.3.x no traen el actualizador.
+8. Actualizar `docs/estado-y-pendientes.md` y la spec 09: estado "en producción".
+
+---
+
+## Decisiones pendientes
+
+| Decisión | Cuándo hace falta |
+|---|---|
+| Equipo Windows de prueba: VM o PC aparte | Al empezar la Fase 2 |
+| Dominio oficial y servidor de producción | Antes de compilar `v1.4.0` (Fase 3, paso 1) |
+
+## Fuera de alcance (se suma después sin reinstalar)
+
+- **U2:** instalación por usuario, sin UAC. Las instalaciones por máquina siguen siéndolo de todos modos.
+- **U3:** salida gradual por porcentaje y reporte de la versión de cada equipo.
+- **Firma de código del instalador** (D3).
+- **Actualizaciones diferenciales**, que bajan solo lo que cambió.
+
+---
+
+## Historial
+
+### U0 y U1 (2026-10-21)
+
+- [x] **T1. Dominio de `updates`:** versión `vX.Y.Z` y su comparación, manifiesto y su validación, decisión de qué mostrar, rechazo de bajar de versión. 31 tests.
+- [x] **T2. Firma y verificación:** Ed25519 del manifiesto, SHA-256 y tamaño del instalador. 12 tests.
+- [x] **T3. `scripts/publish-release.py`:** `keygen`, `build`, `promote` y `upload`. 13 tests. Commits `8afe61d` y `9a24234`.
+- [x] **T4. Chequeo periódico y endpoints.** Commit `fb3bf8a`.
+  - `UpdateCoordinator`, `HttpManifestSource` y `HttpInstallerDownloader`, sin redirecciones y con tope de tamaño;
+  - `WindowsInstallerLauncher`;
+  - `GET /updates/status`, `POST /updates/apply` (solo desde 127.0.0.1) y `POST /updates/check` (administrador);
+  - las variables `UPDATE_URL`, `UPDATE_CHANNEL` y `UPDATE_CHECK_INTERVAL_HOURS`.
+- [x] **T5. Instalador:** entrada `[Run]` con `Check: WizardSilent` y `runasoriginaluser`. Commit `2cb93e1`, sin compilar.
+- [x] **T6. Frontend:** barra de aviso, plazo, diálogo obligatorio y "Actualizando…". `Dialog.vue` suma `dismissible`. Commit `4ea209f`.
+- [x] **T7. Punta a punta en local:** 11/11 controles contra un servidor HTTP real. Commit `a248079`.
+  - Agregó `verify` y `DEFAULT_UPDATE_URL`.
+  - Encontró y corrigió dos errores: la salida del script no era UTF-8 y el script dejaba publicar una versión anterior.
+- Falla conocida, previa a todo esto: `test_logging_survives_migrations.py::test_log_still_works_after_ensure_schema`. La base local está en la revisión de `develop`.
+- La descarga quedó en `%LOCALAPPDATA%\SAVI\updates\`, porque se puede escribir sin administrador, y no en `%ProgramData%`.
+
+### Llegada a `staging` y servidor de pruebas
+
+- **2026-10-21:** fast-forward de `staging` a la rama (`a248079`). 101 tests del backend, 315 del frontend y 11/11 de punta a punta.
+- **2026-10-22: clave de firma principal.**
+  - La privada está en `C:\Users\hikig\claves-savi\savi-updates.pem`, fuera del repositorio.
+  - La pública está en `trust.py` (`59423c8`).
+  - `DEFAULT_UPDATE_URL` sigue vacío a propósito. Las pruebas usan `UPDATE_URL`, que el instalador conserva al actualizar (`WriteEnvFile`).
+- **2026-10-22: `deploy/updates/`** (`5b2125e`).
+  - Solo Caddy. Dominio, puertos, interfaz y carpeta por variables, con dos modos: directo o detrás de un proxy.
+  - `setup.sh` crea el `.env`, la carpeta y `savi-publish`, y valida.
+  - La plantilla se llama `env.template` porque esta sesión no puede escribir `.env*`.
+- **2026-10-23: servidor de pruebas en marcha** (`9623734`). Detalle en `deploy/updates/servidor-de-pruebas.md`.
+  - Hetzner, Rocky 10.2, `savi-updates.danrodd.dev`, en modo directo.
+  - `shortness` apagado.
+  - El firewall "solo Cloudflare" cortaba la entrada y también la salida de los contenedores. Se corrigió y se deshabilitó.
+  - Se quitó `ACME_EMAIL`. `setup.sh` etiqueta la carpeta para SELinux.
+  - Verificado desde afuera: certificado válido, 404, 405 y 308 donde corresponde, y una subida real como `savi-publish`.

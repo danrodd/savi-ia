@@ -96,7 +96,7 @@ Instalador: `installer/output/SAVI-Setup-v1.3.1.exe` (162 MB, no se versiona).
      - **D3:** sin certificado de firma por ahora.
      - **D4:** el plazo se decide en cada versión, 72 h por defecto.
      - **D5:** `UPDATE_CHANNEL`, con `beta` solo para SEO.
-   - **U0 y U1 hechos** (2026-10-21) y en `staging`. Seguimiento en `odd/tasks/actualizacion-automatica.md`.
+   - **U0 y U1 hechos** (2026-10-21) y en `staging`. **Plan de lo que sigue**, con las fases 1 a 3 y el diseño de cada tarea: `odd/tasks/actualizacion-automatica.md`.
      - Clave pública en `trust.py` (2026-10-22). La privada no se versiona. `DEFAULT_UPDATE_URL` queda vacío hasta decidir el dominio oficial; las pruebas usan `UPDATE_URL` en el `.env`.
      - Backend: módulo `updates`, con firma Ed25519, SHA-256, el plazo de `min_version_from`, chequeo cada 6 h y los endpoints `/updates/*`.
      - Frontend: barra de aviso, bloqueo y progreso.
