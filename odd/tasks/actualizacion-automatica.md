@@ -1,6 +1,6 @@
 # Actualización automática de SAVI
 
-**Locator:** `odd/tasks/actualizacion-automatica.md` · Engram `odd/actualizacion-automatica/tasks` (espejo pendiente).
+**Locator:** `odd/tasks/actualizacion-automatica.md` · Engram `odd/actualizacion-automatica/tasks` (espejo al día, 2026-10-23).
 **Rama de trabajo:** `staging`. U0 y U1 se hicieron en `feat/actualizacion-automatica` y ya están en `staging`.
 **Spec:** [`docs/plataforma/09-actualizacion-automatica.md`](../../docs/plataforma/09-actualizacion-automatica.md), con las decisiones D1–D5 cerradas el 2026-10-21.
 **Servidor de pruebas:** [`deploy/updates/servidor-de-pruebas.md`](../../deploy/updates/servidor-de-pruebas.md), en `https://savi-updates.danrodd.dev/savi`.
