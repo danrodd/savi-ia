@@ -99,6 +99,18 @@ UPDATE_URL=https://updates.<dominio>/savi
 UPDATE_CHANNEL=beta
 ```
 
+## Cambiar de dominio o de servidor
+
+La dirección oficial va grabada en `DEFAULT_UPDATE_URL` (`trust.py`), así que cambiarla en el código solo llega a quien se actualice. Para que llegue a **todos**, incluso a los equipos con `UPDATE_URL` en el `.env`, el manifiesto firmado puede anunciar la mudanza:
+
+1. Deje el servidor nuevo funcionando y publique ahí la versión vigente de cada canal.
+2. En el servidor **viejo**, publique de nuevo la versión vigente con `--update-url https://<dominio nuevo>/savi` (es la misma versión, solo cambia el manifiesto). El campo no se hereda: hay que ponerlo en cada publicación mientras dure la mudanza.
+3. Cada SAVI lee el manifiesto viejo, comprueba que el servidor nuevo responde con un manifiesto de firma válida y, solo entonces, anota la dirección nueva en `%LOCALAPPDATA%\SAVI\updates\server.json`. Desde ahí esa dirección manda sobre el `.env` y sobre la grabada en el código.
+4. Si el servidor nuevo no responde o su firma no vale, SAVI sigue con el viejo y lo deja en el log. Una dirección mal escrita no deja a nadie sin actualizaciones.
+5. Mantenga el servidor viejo hasta que ya nadie lo consulte (los registros de Caddy lo muestran). Luego cambie `DEFAULT_UPDATE_URL` en la siguiente versión, para las instalaciones nuevas.
+
+Para volver atrás en un equipo: borre `server.json`.
+
 ## Diagnóstico
 
 - **Logs:** `docker compose logs -f caddy`. Cada pedido queda en JSON.

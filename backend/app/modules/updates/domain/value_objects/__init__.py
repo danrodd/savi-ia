@@ -15,6 +15,7 @@ from app.modules.updates.domain.value_objects.release import (
     UpdateDecision,
     UpdateState,
     decide,
+    normalize_server_url,
 )
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "InstallResult",
     "ReleaseManifest",
     "ReleaseVersion",
+    "normalize_server_url",
     "UpdateDecision",
     "UpdateState",
     "WatcherStep",

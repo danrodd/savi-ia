@@ -28,6 +28,16 @@ _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 NOTES_MAX_CHARS = 2000
 
 
+def normalize_server_url(text: str) -> str:
+    """La carpeta del servidor sin la barra final; exige HTTPS (o loopback, para probar)."""
+    url = text.strip().rstrip("/")
+    parts = urlsplit(url)
+    loopback = parts.scheme == "http" and parts.hostname in _LOOPBACK_HOSTS
+    if (parts.scheme != "https" and not loopback) or not parts.hostname:
+        raise InvalidManifestError("update_url no usa HTTPS.")
+    return url
+
+
 @total_ordering
 @dataclass(frozen=True)
 class ReleaseVersion:
@@ -89,6 +99,9 @@ class ReleaseManifest:
     min_version: ReleaseVersion
     min_version_from: datetime
     notes: str
+    # Carpeta a la que se mudó el servidor de actualizaciones, si se mudó. SAVI
+    # solo la adopta después de leer ahí un manifiesto con firma válida.
+    server_url: str | None = None
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, object]) -> ReleaseManifest:
@@ -118,6 +131,12 @@ class ReleaseManifest:
         if not isinstance(notes, str):
             raise InvalidManifestError("notes tiene que ser texto.")
 
+        server_url = data.get("update_url")
+        if server_url is not None:
+            if not isinstance(server_url, str):
+                raise InvalidManifestError("update_url tiene que ser texto.")
+            server_url = normalize_server_url(server_url)
+
         return cls(
             version=version,
             published_at=_instant(data, "published_at"),
@@ -127,6 +146,7 @@ class ReleaseManifest:
             min_version=min_version,
             min_version_from=_instant(data, "min_version_from"),
             notes=notes[:NOTES_MAX_CHARS],
+            server_url=server_url,
         )
 
 

@@ -221,6 +221,7 @@ def build_manifest(
     minimum: Minimum,
     notes: str,
     now: datetime,
+    update_url: str | None = None,
 ) -> bytes:
     digest = hashlib.sha256()
     with installer.open("rb") as handle:
@@ -236,6 +237,10 @@ def build_manifest(
         "min_version_from": _iso(minimum.since),
         "notes": notes,
     }
+    if update_url:
+        # Anuncia la mudanza del servidor: cada SAVI la adopta solo después de
+        # leer ahí un manifiesto con firma válida.
+        data["update_url"] = update_url
     # Se valida con el mismo dominio que lo va a leer cada SAVI: un
     # manifiesto que la aplicación rechazaría no sale de acá.
     ReleaseManifest.from_mapping(data)
@@ -261,6 +266,7 @@ def build(
     min_version_from: str | None,
     notes: str | None,
     now: datetime,
+    update_url: str | None = None,
 ) -> Path:
     version = installer_version(installer)
     if channel == "stable" and ReleaseVersion.parse(version).is_candidate:
@@ -279,6 +285,7 @@ def build(
         minimum=minimum,
         notes=tag_notes(version) if notes is None else notes,
         now=now,
+        update_url=update_url,
     )
     releases = out / "releases"
     releases.mkdir(parents=True, exist_ok=True)
@@ -385,6 +392,10 @@ def main(argv: list[str] | None = None) -> int:
     p_build.add_argument("--min-version", help="vX.Y.Z que toda instalación debe alcanzar")
     p_build.add_argument("--min-version-from", help="'now' o fecha ISO con zona (default +72 h)")
     p_build.add_argument("--notes", help="texto para el usuario; por defecto, las notas del tag")
+    p_build.add_argument(
+        "--update-url",
+        help="carpeta nueva del servidor, si se mudó (https); no se hereda: va en cada manifiesto",
+    )
 
     p_promote = sub.add_parser("promote", help="pasa beta a stable")
     p_promote.add_argument("--out", type=Path, default=DEFAULT_OUT)
@@ -429,6 +440,7 @@ def main(argv: list[str] | None = None) -> int:
                 min_version=args.min_version,
                 min_version_from=args.min_version_from,
                 notes=args.notes,
+                update_url=args.update_url,
                 now=datetime.now(UTC),
             )
             print(path.read_text(encoding="utf-8"))

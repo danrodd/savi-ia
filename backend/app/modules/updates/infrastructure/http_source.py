@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import BinaryIO
@@ -23,11 +24,14 @@ from app.modules.updates.domain.exceptions import (
 )
 from app.modules.updates.domain.interfaces import InstallerDownloader, ManifestSource
 from app.modules.updates.domain.value_objects import ReleaseManifest
+from app.modules.updates.infrastructure.server_pointer import FileServerPointer
 from app.modules.updates.infrastructure.signing import (
     MANIFEST_MAX_BYTES,
     verify_installer,
     verify_manifest,
 )
+
+log = logging.getLogger(__name__)
 
 USER_AGENT = "SAVI-Update/1.0"
 _MANIFEST_TIMEOUT = httpx.Timeout(15.0)
@@ -47,18 +51,28 @@ class HttpManifestSource(ManifestSource):
         base_url: str,
         channel: str,
         public_keys: Sequence[Ed25519PublicKey],
+        pointer: FileServerPointer | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._channel = channel
-        self._manifest_url = f"{base_url.rstrip('/')}/{channel}.json"
+        self._base_url = base_url.rstrip("/")
         self._public_keys = tuple(public_keys)
+        self._pointer = pointer
         # Solo para tests: simular el servidor sin red.
         self._transport = transport
 
     async def fetch(self) -> ReleaseManifest:
+        manifest = await self._read(self._base_url)
+        moved = manifest.server_url
+        if moved is not None and moved != self._base_url:
+            manifest = await self._follow(moved, manifest)
+        return manifest
+
+    async def _read(self, base_url: str) -> ReleaseManifest:
+        manifest_url = f"{base_url}/{self._channel}.json"
         async with _client(_MANIFEST_TIMEOUT, self._transport) as client:
-            manifest_bytes = await _get_small(client, self._manifest_url)
-            signature = await _get_small(client, f"{self._manifest_url}.sig")
+            manifest_bytes = await _get_small(client, manifest_url)
+            signature = await _get_small(client, f"{manifest_url}.sig")
         manifest = verify_manifest(self._public_keys, manifest_bytes, signature)
         # Aunque la firma sea buena: una candidata nunca se ofrece en stable.
         if self._channel == "stable" and manifest.version.is_candidate:
@@ -66,6 +80,26 @@ class HttpManifestSource(ManifestSource):
                 f"El canal stable no admite versiones candidatas ({manifest.version})."
             )
         return manifest
+
+    async def _follow(self, moved: str, current: ReleaseManifest) -> ReleaseManifest:
+        """Pasa al servidor nuevo solo si ahí hay un manifiesto firmado y válido.
+
+        Una dirección mal escrita en el manifiesto no puede dejar a todas las
+        instalaciones sin servidor: si el nuevo no responde, se sigue con este.
+        """
+        try:
+            verified = await self._read(moved)
+        except UpdateError as exc:
+            log.warning("Actualizaciones: el servidor nuevo %s no sirve todavía: %s", moved, exc)
+            return current
+        self._base_url = moved
+        log.info("Actualizaciones: el servidor se mudó a %s.", moved)
+        if self._pointer is not None:
+            try:
+                self._pointer.write(moved)
+            except OSError:
+                log.warning("Actualizaciones: no se pudo anotar el servidor nuevo.", exc_info=True)
+        return verified
 
 
 class HttpInstallerDownloader(InstallerDownloader):

@@ -36,6 +36,7 @@ from app.modules.updates.infrastructure.launcher import (
     WindowsInstallerLauncher,
     installed_per_machine,
 )
+from app.modules.updates.infrastructure.server_pointer import POINTER_FILENAME, FileServerPointer
 from app.modules.updates.infrastructure.signing import load_public_keys
 from app.modules.updates.infrastructure.trust import DEFAULT_UPDATE_URL, UPDATE_PUBLIC_KEYS
 from app.paths import data_dir
@@ -59,9 +60,14 @@ def get_update_coordinator() -> UpdateCoordinator | None:
     return _coordinator
 
 
+def server_pointer() -> FileServerPointer:
+    return FileServerPointer(data_dir() / "updates" / POINTER_FILENAME)
+
+
 def update_url(settings: Settings) -> str:
-    """`UPDATE_URL` del `.env` si está; si no, el servidor oficial."""
-    return settings.update_url.strip() or DEFAULT_UPDATE_URL.strip()
+    """El servidor al que se mudó, si lo anunció un manifiesto firmado; si no,
+    `UPDATE_URL` del `.env`; si no, el servidor oficial."""
+    return server_pointer().read() or settings.update_url.strip() or DEFAULT_UPDATE_URL.strip()
 
 
 def build_coordinator(
@@ -84,7 +90,10 @@ def build_coordinator(
     return UpdateCoordinator(
         current=current,
         source=HttpManifestSource(
-            base_url=base_url, channel=settings.update_channel, public_keys=public_keys
+            base_url=base_url,
+            channel=settings.update_channel,
+            public_keys=public_keys,
+            pointer=server_pointer(),
         ),
         downloader=HttpInstallerDownloader(target_dir=updates_dir),
         launcher=WindowsInstallerLauncher(

@@ -16,6 +16,7 @@ from types import ModuleType
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from app.modules.updates.domain.exceptions import InvalidManifestError
 from app.modules.updates.domain.value_objects import ReleaseVersion
 from app.modules.updates.infrastructure.signing import (
     load_public_keys,
@@ -80,6 +81,35 @@ def test_built_manifest_verifies_with_the_app(
     assert manifest.version == ReleaseVersion(1, 4, 0)
     assert manifest.url == "https://updates.example.com/savi/releases/SAVI-Setup-v1.4.0.exe"
     verify_installer(out / "releases" / installer.name, manifest)
+
+
+def test_a_server_move_is_announced_in_the_signed_manifest(
+    key: Ed25519PrivateKey, installer: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "updates"
+    manifest_path = _build(key, installer, out, update_url="https://new.example.com/savi/")
+
+    public = load_public_keys([script.public_key_b64(key)])
+    manifest = verify_manifest(
+        public, manifest_path.read_bytes(), (out / "beta.json.sig").read_bytes()
+    )
+    assert manifest.server_url == "https://new.example.com/savi"
+
+
+def test_the_server_move_is_not_inherited_by_the_next_publication(
+    key: Ed25519PrivateKey, installer: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "updates"
+    _build(key, installer, out, update_url="https://new.example.com/savi")
+    data = script.json.loads(_build(key, installer, out).read_text(encoding="utf-8"))
+    assert "update_url" not in data
+
+
+def test_a_server_move_without_https_is_not_published(
+    key: Ed25519PrivateKey, installer: Path, tmp_path: Path
+) -> None:
+    with pytest.raises(InvalidManifestError):
+        _build(key, installer, tmp_path / "updates", update_url="http://new.example.com/savi")
 
 
 def test_first_publication_has_no_minimum(
