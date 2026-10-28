@@ -21,4 +21,4 @@ UPDATE_PUBLIC_KEYS: tuple[str, ...] = (
     "z7FYJ/jvNWNHThAYpEywlwZJUFXG0IVIiZepWnLHzrM=",  # principal
     "RlZiz5hGbxuZiuXG8+JFnuc/6vJZ236bkUEaqff6PIw=",  # respaldo, fuera de línea
 )
-DEFAULT_UPDATE_URL = ""
+DEFAULT_UPDATE_URL = "https://savi-updates.danrodd.dev/savi"
