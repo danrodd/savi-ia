@@ -49,7 +49,7 @@ Que SAVI se actualice solo, de forma confiable, en equipos de PYMEs con conexion
 | Servidor de pruebas | Funcionando y verificado desde afuera (`9623734`). |
 | **Fase 1:** núcleo del actualizador | **Fase 1 completa:** B0, B1, B4, B2, B3 y B5 hechos. Falta cerrar con el repaso final y pasar a la Fase 2. |
 | Fase 2: prueba real con instaladores compilados | **En curso (2026-10-23):** sin VM, en el equipo de desarrollo. `rc.1` instalada a mano (UAC aceptado al segundo intento; el primero se canceló, código 1223) y configurada con `UPDATE_URL`/`UPDATE_CHANNEL=beta`; SAVI consulta el servidor (404 mientras no haya nada en `beta`). Falta publicar `rc.2` y correr la matriz. |
-| Fase 3: producción | Pendiente. |
+| Fase 3: producción | **`v1.4.0` publicada (2026-10-28)** en `stable` y en el `beta` de `.../savi`, con SHA-256 y firma verificados. Dominio: se queda `savi-updates.danrodd.dev/savi` y se puede mudar sin reinstalar (manifiesto con `update_url`, `002d66a`). Falta ver que el cliente de prueba (rc.5, canal beta) se actualice solo y probar la mudanza. |
 
 ---
 
