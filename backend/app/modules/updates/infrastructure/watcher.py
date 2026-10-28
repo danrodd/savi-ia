@@ -145,18 +145,27 @@ try {
     $arguments = "$InstallerFlags /LOG=`"$LogPath`""
     $process = $null
     try {
-        if ($Elevate) {
-            $process = Start-Process -FilePath $Installer -ArgumentList $arguments `
-                -Verb RunAs -PassThru
-        } else {
-            $process = Start-Process -FilePath $Installer -ArgumentList $arguments -PassThru
-        }
+        # Process.Start y no Start-Process: cuando se cancela el cartel del
+        # permiso, Start-Process lanza un error sin codigo y con el texto en el
+        # idioma de Windows; Process.Start deja el codigo 1223 en la excepcion.
+        $info = New-Object System.Diagnostics.ProcessStartInfo
+        $info.FileName = $Installer
+        $info.Arguments = $arguments
+        $info.UseShellExecute = $true
+        $info.WorkingDirectory = Split-Path -Parent $Installer
+        if ($Elevate) { $info.Verb = 'runas' }
+        $process = [System.Diagnostics.Process]::Start($info)
+        if ($null -eq $process) { throw 'El instalador no devolvio un proceso.' }
     } catch {
         # 1223: la persona cancelo el cartel del permiso de administrador.
         $native = 0
         $problem = $_.Exception
-        if ($problem -is [System.ComponentModel.Win32Exception]) {
-            $native = $problem.NativeErrorCode
+        while ($problem) {
+            if ($problem -is [System.ComponentModel.Win32Exception]) {
+                $native = $problem.NativeErrorCode
+                break
+            }
+            $problem = $problem.InnerException
         }
         $state.step = if ($native -eq 1223) { 'cancelled' } else { 'failed' }
         $state.finished_at = Get-Now

@@ -67,6 +67,16 @@ def test_the_script_is_ascii_only() -> None:
     assert WATCHER_SCRIPT.isascii()
 
 
+def test_a_cancelled_permission_is_read_from_the_windows_error_code() -> None:
+    # Con Start-Process el cartel cancelado llega como un error sin codigo y con
+    # el texto en el idioma de Windows: se marcaba "failed" y no "cancelled".
+    # Process.Start deja el 1223 en una excepcion interna, que hay que recorrer.
+    assert "Start-Process -FilePath $Installer" not in WATCHER_SCRIPT
+    assert "[System.Diagnostics.Process]::Start($info)" in WATCHER_SCRIPT
+    assert "$problem = $problem.InnerException" in WATCHER_SCRIPT
+    assert "$native -eq 1223" in WATCHER_SCRIPT
+
+
 def test_the_command_passes_every_value_as_its_own_argument(tmp_path: Path) -> None:
     command = watcher_command(Path("watch.ps1"), _job(tmp_path))
 
