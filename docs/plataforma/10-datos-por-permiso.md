@@ -87,7 +87,27 @@ Hay que comparar sin tildes ni mayúsculas, y dejar en el log los módulos desco
 
 ### 5.8 `Seguridad.TerceroVip`
 
-Es una tabla del ERP que relaciona usuarios con terceros (`idUsuario`, `idTercero`). Podría ser una restricción de visibilidad por tercero: "solo estos usuarios ven a este cliente". Si lo es, SAVI tiene que respetarla. **Hay que confirmarlo con el equipo del ERP** (§8).
+Es una tabla del ERP que relaciona usuarios con terceros: `idUsuario`, `idTercero` y un índice único sobre el par.
+
+**Lo que muestran las tres bases de clientes que tenemos** (respaldos de 2026-09 y 2026-11):
+
+- está **vacía** en las tres, y su secuencia nunca se usó (`setval(..., 1, false)`);
+- ninguna vista, función ni trigger de la base la nombra, así que la lógica, si existe, vive en la aplicación de escritorio del ERP.
+
+**Lo que podría significar**, por el nombre y por estar en el esquema `Seguridad` y no en `Tercero`:
+
+| Hipótesis | Qué haría | Qué tendría que hacer SAVI |
+|---|---|---|
+| A. Tercero reservado | Solo los usuarios listados ven u operan ese tercero (un cliente importante o un socio). | Ocultar ese tercero, o sus datos personales, a los demás usuarios. |
+| B. Cartera asignada | Cada usuario tiene "sus" clientes VIP (un ejecutivo de cuenta). | Nada en permisos; a lo sumo, una dimensión "ejecutivo" en el catálogo. |
+| C. Excepción comercial | Los usuarios listados pueden saltarse reglas con ese tercero (vender sin cupo, aplicar descuentos). | Nada en permisos. |
+
+**Propuesta:** como hoy no tiene filas en ningún cliente, no frena P1. Se implementa la regla conservadora, que solo cuenta si la tabla tiene datos:
+
+- si un tercero aparece en `TerceroVip`, sus datos personales y bancarios los ven solo los administradores y los usuarios listados para ese tercero;
+- si es la hipótesis A, eso la cumple; si es la B o la C, lo peor que pasa es que un usuario sin la asignación no ve el teléfono de ese cliente por SAVI, y lo sigue viendo en el ERP.
+
+Igual se le pregunta al equipo del ERP qué hace la tabla, y se ajusta la regla si la respuesta es otra (§8).
 
 ## 6. Diseño propuesto
 
@@ -146,7 +166,7 @@ Cada consulta que devuelve datos personales queda registrada con quién, cuándo
 
 1. ~~Cuentas bancarias de terceros (§5.4)~~ **Cerrada (2026-11-11):** administradores y quien tenga Cuentas por pagar.
 2. ~~Terceros que son empleados (§5.3)~~ **Cerrada (2026-11-11):** alcanza con el módulo Terceros.
-3. **`Seguridad.TerceroVip` (§5.8):** qué significa en el ERP. Se pregunta al equipo del ERP.
+3. **`Seguridad.TerceroVip` (§5.8):** vacía en los tres clientes. Se implementa la regla conservadora y se le pregunta al equipo del ERP qué hace la tabla; no frena la implementación.
 4. **Usuarios que no son administradores fuera del catálogo (§5.6):** si se planifica como trabajo aparte.
 5. **Términos de servicio (§6.6):** quién redacta el texto sobre el proveedor de IA.
 
