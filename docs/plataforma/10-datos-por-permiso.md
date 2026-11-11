@@ -55,7 +55,7 @@ Casos típicos: "clientes que no compran hace 6 meses, con teléfono", "clientes
 
 ### 5.3 Datos de terceros que también son empleados
 
-`Tercero.Tercero` incluye a los empleados (`empleado = true`). Su teléfono y su dirección son datos personales de un trabajador. **Propuesta:** para los terceros que son empleados, además del módulo Terceros se exige el de Nómina.
+`Tercero.Tercero` incluye a los empleados (`empleado = true`). **Decisión del usuario (2026-11-11):** se tratan igual que cualquier tercero, y alcanza con el módulo Terceros. Lo propio de nómina (sueldos, contratos, liquidaciones) vive en el esquema `Nomina` y no se expone por esta vía.
 
 ### 5.4 Cuentas bancarias de terceros
 
@@ -96,7 +96,7 @@ Es una tabla del ERP que relaciona usuarios con terceros (`idUsuario`, `idTercer
 | Nivel | Quién | Ejemplos |
 |---|---|---|
 | **Negocio** | Quien ve la entidad (como hoy) | nombre, rol, estado, cupo, vendedor, municipio, último movimiento |
-| **Personal** | Administrador, o usuario con el módulo **Terceros**. Si el tercero es empleado, además **Nómina**. | NIT, dirección, teléfonos, correo, representante legal, fecha de nacimiento |
+| **Personal** | Administrador, o usuario con el módulo **Terceros** (también para los terceros que son empleados) | NIT, dirección, teléfonos, correo, representante legal, fecha de nacimiento |
 | **Bancario** | Administrador, o usuario con el módulo **Cuentas por pagar** | banco, tipo y número de cuenta (`Tercero.TerceroBanco`) |
 | **Prohibido** | Nadie, por SAVI | biometría, datos sensibles de la Ley 1581, credenciales |
 
@@ -104,7 +104,6 @@ Es una tabla del ERP que relaciona usuarios con terceros (`idUsuario`, `idTercer
 
 - `FieldDef` (y `DimensionDef` y `FilterDef`, cuando haga falta) suma `required_modules`, con la misma regla que la entidad: alcanza con uno, y `None` para el administrador.
 - **El campo que no corresponde no se ofrece.** La descripción de la tool, que ya se arma por usuario con `build_description(allowed_modules)`, no lo nombra, y el compilador lo rechaza si igual lo piden. Es lo mismo que ya hace `required_modules` con la entidad entera.
-- La regla de "empleado exige Nómina" va como filtro fijo de filas sobre esos campos: el valor sale como `NULL` cuando el tercero es empleado y el usuario no tiene Nómina. El modelo no puede quitar ese filtro, porque no lo escribió él (mismo criterio que `scoped_for`).
 - **Los campos personales del tercero se pueden pedir desde las entidades que ya se unen con él:** ventas, ventas_detalle, compras, compras_detalle y cartera. "Clientes que compraron X, con teléfono" sale en una sola consulta, sin dos pasos. Se arma con un fragmento compartido en `catalog/_names.py`, para no repetir los campos en cada entidad.
 - La entidad `terceros` suma los campos de negocio (§5.2) y los personales (§5.1), y el filtro `id` admite `IN` para encadenar desde otra consulta.
 
@@ -135,7 +134,7 @@ Cada consulta que devuelve datos personales queda registrada con quién, cuándo
 
 1. Un administrador pide "clientes que compraron LLANTAS0183, con teléfono y celular" y recibe la tabla en **una** respuesta.
 2. Un usuario con el módulo Terceros recibe lo mismo por el catálogo. Un usuario sin Terceros recibe la tabla sin esos campos y **una sola** explicación fija, sin reintentos (como máximo 1 rechazo registrado por turno).
-3. Para un tercero que es empleado, los campos personales salen vacíos si el usuario no tiene Nómina.
+3. Las cuentas bancarias de los terceros solo salen para un administrador o un usuario con Cuentas por pagar.
 4. Nadie puede devolver biometría, datos sensibles ni credenciales, ni siquiera por SQL libre, renombrándolos o metiéndolos en una subconsulta (tests como los que ya existen en `test_sql_validator.py`).
 5. La dirección de una bodega o de la empresa ya no se bloquea.
 6. Un usuario cuyos permisos dicen `NOMINA`, `HERRAMIENTAS` o `CuentaPagar` recibe el módulo correspondiente, y los módulos desconocidos quedan en el log.
@@ -146,7 +145,7 @@ Cada consulta que devuelve datos personales queda registrada con quién, cuándo
 ## 8. Decisiones abiertas
 
 1. ~~Cuentas bancarias de terceros (§5.4)~~ **Cerrada (2026-11-11):** administradores y quien tenga Cuentas por pagar.
-2. **Terceros que son empleados (§5.3):** confirmar que se exige Nómina.
+2. ~~Terceros que son empleados (§5.3)~~ **Cerrada (2026-11-11):** alcanza con el módulo Terceros.
 3. **`Seguridad.TerceroVip` (§5.8):** qué significa en el ERP. Se pregunta al equipo del ERP.
 4. **Usuarios que no son administradores fuera del catálogo (§5.6):** si se planifica como trabajo aparte.
 5. **Términos de servicio (§6.6):** quién redacta el texto sobre el proveedor de IA.
