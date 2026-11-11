@@ -59,7 +59,7 @@ Casos típicos: "clientes que no compran hace 6 meses, con teléfono", "clientes
 
 ### 5.4 Cuentas bancarias de terceros
 
-`Tercero.TerceroBanco.numeroCuenta`. Sirven para pagar a proveedores, pero son blanco de fraude (cambio de cuenta del proveedor). **Pendiente de decisión** (§8).
+`Tercero.TerceroBanco.numeroCuenta`. Sirven para pagar a proveedores, pero son blanco de fraude (cambio de cuenta del proveedor). **Decisión del usuario (2026-11-11):** las ven solo los administradores y quien tenga el módulo Cuentas por pagar.
 
 ### 5.5 Lo que nadie debe poder sacar por SAVI, ni siquiera un administrador
 
@@ -97,9 +97,8 @@ Es una tabla del ERP que relaciona usuarios con terceros (`idUsuario`, `idTercer
 |---|---|---|
 | **Negocio** | Quien ve la entidad (como hoy) | nombre, rol, estado, cupo, vendedor, municipio, último movimiento |
 | **Personal** | Administrador, o usuario con el módulo **Terceros**. Si el tercero es empleado, además **Nómina**. | NIT, dirección, teléfonos, correo, representante legal, fecha de nacimiento |
+| **Bancario** | Administrador, o usuario con el módulo **Cuentas por pagar** | banco, tipo y número de cuenta (`Tercero.TerceroBanco`) |
 | **Prohibido** | Nadie, por SAVI | biometría, datos sensibles de la Ley 1581, credenciales |
-
-Cuentas bancarias: nivel según la decisión pendiente.
 
 ### 6.2 Catálogo semántico: permiso por campo
 
@@ -146,7 +145,7 @@ Cada consulta que devuelve datos personales queda registrada con quién, cuándo
 
 ## 8. Decisiones abiertas
 
-1. **Cuentas bancarias de terceros (§5.4):** solo administradores, quien tenga Cuentas por pagar, o nadie por SAVI.
+1. ~~Cuentas bancarias de terceros (§5.4)~~ **Cerrada (2026-11-11):** administradores y quien tenga Cuentas por pagar.
 2. **Terceros que son empleados (§5.3):** confirmar que se exige Nómina.
 3. **`Seguridad.TerceroVip` (§5.8):** qué significa en el ERP. Se pregunta al equipo del ERP.
 4. **Usuarios que no son administradores fuera del catálogo (§5.6):** si se planifica como trabajo aparte.
