@@ -43,7 +43,8 @@ En un sistema de gestión, un listado incompleto que parece completo es peor que
 
 Cada consulta exitosa al ERP, del catálogo o del SQL libre, genera un **conjunto de resultados** guardado en el servidor:
 
-- **El usuario** recibe el conjunto completo, hasta un tope alto (por ejemplo 10.000 filas), en una tabla que el frontend arma **desde los datos**, no desde el Markdown. Lleva su botón para descargar Excel o CSV de todas las filas y la leyenda "214 filas" o "primeras 10.000 de 52.000".
+- **El usuario** ve en el chat una **vista previa** con las primeras filas, que el frontend arma **desde los datos** y no desde el Markdown. Lleva la leyenda "mostrando 30 de 214". La vista del chat se mantiene limitada a propósito, porque una tabla de cientos de filas no se puede leer en una conversación (**decisión del usuario, 2026-11-11**).
+- **Exportar:** la tabla tiene el botón **Exportar** con tres formatos, Excel (`.xlsx`), PDF y CSV. El servidor genera el archivo con **todas** las filas del conjunto (hasta el tope, §6) y lo entrega para descargar. El archivo no se arma en el navegador con lo que se ve, sino en el servidor con lo que se consultó.
 - **El modelo** recibe el total exacto, una muestra (las primeras 30 filas, como hoy), los totales cuando aplica y el identificador del conjunto. Puede mencionar la tabla ("la tabla completa con los 214 clientes está abajo") sin copiarla.
 
 **Consecuencias:**
@@ -94,7 +95,7 @@ Las preguntas de análisis frecuentes se modelan como entidades del catálogo, p
 
 ## 5. Criterios de aceptación
 
-1. "Clientes que compraron LLANTAS0183": el usuario recibe una tabla con **todos** los clientes y su descarga completa. El modelo dice el total exacto.
+1. "Clientes que compraron LLANTAS0183": el chat muestra la vista previa con "mostrando 30 de N", y **Exportar** entrega un Excel, un PDF o un CSV con los N clientes. El modelo dice el total exacto.
 2. "Productos sin ventas en el último año con existencias": la MICHELIN FORCE LTX aparece, junto con todas las demás que cumplen. El criterio queda dicho en la respuesta.
 3. La tabla y la descarga coinciden fila por fila con la base (test de integración contra la base de pruebas).
 4. Un resultado de exactamente 30 filas no dice "hay más".
@@ -103,11 +104,14 @@ Las preguntas de análisis frecuentes se modelan como entidades del catálogo, p
 7. El costo en tokens de "la base de clientes" no crece con la cantidad de filas.
 8. Paridad entre Claude, OpenAI y Gemini en los criterios 1 y 2.
 
-## 6. Decisiones abiertas
+## 6. Decisiones (2026-11-11)
 
-1. **Tope de filas de un conjunto descargable.** Propuesta: 10.000, con la leyenda "primeras 10.000 de N". Un número mayor se vuelve un problema para el navegador y para la carga del ERP.
-2. **Cuánto tiempo se guarda un conjunto.** Propuesta: lo mismo que la conversación, con un máximo de 90 días.
-3. **Cuántas filas ve el modelo.** Propuesta: siguen siendo 30 (o 100 en agregados), más el total y los totales por columna. Más filas solo suben el costo.
+1. **Vista del chat:** limitada a una vista previa; lo completo va por **Exportar** en Excel, PDF o CSV (decisión del usuario).
+2. **Tope de filas de un conjunto exportable:** 10.000, con la leyenda "primeras 10.000 de N". Un número mayor se vuelve un problema para la carga del ERP y para generar el PDF. Se mantiene la propuesta mientras el usuario no pida otra cosa.
+3. **Cuánto tiempo se guarda un conjunto:** lo mismo que la conversación, con un máximo de 90 días. Se mantiene la propuesta.
+4. **Cuántas filas ve el modelo:** siguen siendo 30 (o 100 en agregados), más el total y los totales por columna. Se mantiene la propuesta.
+
+El PDF de una tabla es una exportación de datos. Los documentos con texto, como un informe o una carta con datos, son P3, y reusan este mismo generador.
 
 ## 7. Fuera de alcance
 
