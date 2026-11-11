@@ -55,7 +55,7 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 **Fase A. Análisis (un documento por punto)**
 
 - [x] A1. Documento de P1: `docs/plataforma/10-datos-por-permiso.md`. Hallazgos extra: módulos del ERP que SAVI no reconoce (`NOMINA`, `HERRAMIENTAS`, `CuentaPagar`), biometría y datos sensibles sin bloqueo en el SQL libre, `TerceroVip` por confirmar. Quedan 5 decisiones abiertas (§8).
-- [ ] A2. Documento de P2: límites, honestidad sobre lo incompleto y obtención completa.
+- [x] A2. Documento de P2: `docs/plataforma/11-resultados-completos.md`. Propuesta central: conjuntos de resultados guardados en el servidor (el usuario recibe todo, el modelo una muestra y el total) y entidades de análisis para que los cruces los haga la base. 3 decisiones abiertas (§6).
 - [ ] A3. Documento de P3: diseño seguro de la generación de documentos.
 - [ ] A4. Documento de P4: causa del fallo y cómo evitarlo.
 - [ ] A5. Repaso conjunto y orden de implementación (P1 y P2 condicionan a P3).
@@ -66,5 +66,5 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 
 | Etapa | Estado |
 |---|---|
-| Fase A | En curso: A1 hecho (2026-11-11), con decisiones abiertas. Sigue A2. |
+| Fase A | En curso: A1 y A2 hechos (2026-11-11), con decisiones abiertas. Sigue A3. |
 | Fase B | Pendiente. |
