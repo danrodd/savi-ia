@@ -111,6 +111,12 @@ Las preguntas de análisis frecuentes se modelan como entidades del catálogo, p
 3. **Cuánto tiempo se guarda un conjunto:** lo mismo que la conversación, con un máximo de 90 días. Se mantiene la propuesta.
 4. **Cuántas filas ve el modelo:** siguen siendo 30 (o 100 en agregados), más el total y los totales por columna. Se mantiene la propuesta.
 
+5. **Cómo se pide la exportación:** de las dos formas, con el mismo generador (decisión del usuario).
+   - **Botón Exportar** en cada tabla: es el camino principal, no gasta tokens y no depende del modelo.
+   - **Por el chat** ("pásemelo en Excel"): el modelo llama a la exportación con la referencia del conjunto y el formato, y el archivo aparece como adjunto descargable en la respuesta. El modelo nunca escribe el contenido del archivo.
+   - SAVI no ofrece exportar en cada tabla. Lo menciona solo cuando la tabla está recortada ("le muestro 30 de 214; puede exportar la lista completa").
+   - La herramienta de exportación entra por el patrón dispatcher, para respetar el máximo de 4 herramientas del MCP; se define en P3.
+
 El PDF de una tabla es una exportación de datos. Los documentos con texto, como un informe o una carta con datos, son P3, y reusan este mismo generador.
 
 ## 7. Fuera de alcance
