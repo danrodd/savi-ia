@@ -57,7 +57,7 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 - [x] A1. Documento de P1: `docs/plataforma/10-datos-por-permiso.md`. Hallazgos extra: módulos del ERP que SAVI no reconoce (`NOMINA`, `HERRAMIENTAS`, `CuentaPagar`), biometría y datos sensibles sin bloqueo en el SQL libre, `TerceroVip` por confirmar. Quedan 5 decisiones abiertas (§8).
 - [x] A2. Documento de P2: `docs/plataforma/11-resultados-completos.md`. Propuesta central: conjuntos de resultados guardados en el servidor (el usuario recibe todo, el modelo una muestra y el total) y entidades de análisis para que los cruces los haga la base. 3 decisiones abiertas (§6).
 - [x] A3. Documento de P3: `docs/plataforma/12-generacion-de-documentos.md`. El modelo entrega una especificación validada; las tablas referencian conjuntos (P2); generadores en Python puro (openpyxl, python-docx, reportlab); `info_empresa` pasa a `consultar_conocimiento` para que `entregar_archivo` entre en el límite de 4 herramientas. Exportación por botón y por el chat (decisión del usuario). 3 decisiones abiertas (§8).
-- [ ] A4. Documento de P4: causa del fallo y cómo evitarlo.
+- [x] A4. Documento de P4: `docs/plataforma/13-turnos-sin-respuesta.md`. Hallazgos: un turno con error sin texto no se guarda (`chat_turn.py:653`) y el mismo mensaje cubre 7 causas; en OpenAI, `response.failed` no se reintenta. Causa exacta pendiente: falta el `savi.log` del equipo de la demo o reproducirla con el respaldo.
 - [ ] A5. Repaso conjunto y orden de implementación (P1 y P2 condicionan a P3).
 
 **Fase B. Implementación:** se arma al cerrar la Fase A, con tareas por punto.
@@ -66,5 +66,5 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 
 | Etapa | Estado |
 |---|---|
-| Fase A | En curso: A1, A2 y A3 hechos (2026-11-11). Sigue A4. |
+| Fase A | En curso: A1 a A4 hechos (2026-11-11). Falta la evidencia de P4 y A5. |
 | Fase B | Pendiente. |
