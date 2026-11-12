@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { formatPreviewCell, rowCountLabel } from '../../utils/dataTables'
+import { dateStyles, formatPreviewCell, rowCountLabel } from '../../utils/dataTables'
 
 const serviceMock = vi.hoisted(() => ({ preview: vi.fn(), export: vi.fn() }))
 vi.mock('../../services/resultSetService', () => ({ resultSetService: serviceMock }))
@@ -92,5 +92,19 @@ describe('dataTables utils', () => {
     expect(formatPreviewCell(1234567.5, 'number')).toBe('1.234.567,5')
     expect(formatPreviewCell('2026-11-11', 'date')).toBe('11/11/2026')
     expect(formatPreviewCell(null, 'text')).toBe('—')
+  })
+
+  it('muestra los periodos agrupados como mes o año', () => {
+    const rows = [
+      ['2025-01-01T00:00:00-05:00', '2025-11-01T00:00:00-05:00', '2025-11-14', 10],
+      ['2026-01-01T00:00:00-05:00', '2025-12-01T00:00:00-05:00', '2025-12-01', 20],
+    ]
+
+    const styles = dateStyles(['date', 'date', 'date', 'number'], rows)
+
+    expect(styles).toEqual(['year', 'month', 'day', 'day'])
+    expect(formatPreviewCell(rows[0]?.[0], 'date', styles[0])).toBe('2025')
+    expect(formatPreviewCell(rows[0]?.[1], 'date', styles[1])).toBe('nov 2025')
+    expect(formatPreviewCell(rows[0]?.[2], 'date', styles[2])).toBe('14/11/2025')
   })
 })

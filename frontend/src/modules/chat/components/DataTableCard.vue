@@ -16,7 +16,7 @@ import {
   resultSetService,
 } from '../services/resultSetService'
 import type { DataTableRef } from '../types'
-import { formatPreviewCell, rowCountLabel } from '../utils/dataTables'
+import { dateStyles, formatPreviewCell, rowCountLabel } from '../utils/dataTables'
 
 const props = defineProps<{ table: DataTableRef }>()
 
@@ -39,6 +39,15 @@ const legend = computed(() =>
   rowCountLabel(shownCount.value, props.table.total_rows, props.table.total_is_lower_bound),
 )
 const canExpand = computed(() => (preview.value?.rows.length ?? 0) > COLLAPSED_ROWS)
+// Sobre todas las filas recibidas, no solo las visibles: el estilo no cambia al expandir.
+const styles = computed(() =>
+  preview.value
+    ? dateStyles(
+        preview.value.columns.map((column) => column.kind),
+        preview.value.rows,
+      )
+    : [],
+)
 
 onMounted(async () => {
   try {
@@ -128,7 +137,7 @@ async function exportAs(format: ExportFormat): Promise<void> {
               :key="column.key"
               :class="`is-${column.kind}`"
             >
-              {{ formatPreviewCell(row[c], column.kind) }}
+              {{ formatPreviewCell(row[c], column.kind, styles[c]) }}
             </td>
           </tr>
         </tbody>
