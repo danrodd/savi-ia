@@ -17,7 +17,9 @@ from app.modules.documents.infrastructure.repository import SqlAlchemyResultSetR
 # Se leen una fila más que las que se guardan, para saber si hay más.
 FULL_FETCH = EXPORT_MAX_ROWS + 1
 
-Recorder = Callable[[str, list[str], dict[str, str], list[dict[str, Any]], bool], Awaitable[str]]
+Recorder = Callable[
+    [str, list[str], dict[str, str], list[dict[str, Any]], bool, int | None], Awaitable[str]
+]
 
 
 def make_recorder(conversation_id: UUID | None) -> Recorder | None:
@@ -31,6 +33,7 @@ def make_recorder(conversation_id: UUID | None) -> Recorder | None:
         labels: dict[str, str],
         rows: list[dict[str, Any]],
         has_personal_data: bool,
+        exact_total: int | None = None,
     ) -> str:
         result_set = build_result_set(
             conversation_id=conversation_id,
@@ -39,6 +42,7 @@ def make_recorder(conversation_id: UUID | None) -> Recorder | None:
             labels=labels,
             raw_rows=rows,
             has_personal_data=has_personal_data,
+            exact_total=exact_total,
         )
         await SqlAlchemyResultSetRepository(get_agent_sessionmaker()).add(result_set)
         return str(result_set.id)

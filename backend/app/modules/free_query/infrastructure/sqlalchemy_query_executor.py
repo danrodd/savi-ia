@@ -37,6 +37,19 @@ class SqlAlchemyQueryExecutor(QueryExecutor):
             raise RuntimeError(f"No se pudo leer el plan del EXPLAIN: {e!r}") from e
         return root_rows
 
+    async def count_rows(self, sql: str) -> int | None:
+        import sqlglot
+        from sqlglot import exp
+
+        root = sqlglot.parse_one(sql, dialect="postgres")
+        if not isinstance(root, exp.Select):
+            return None
+        root.set("limit", None)
+        inner = root.sql(dialect="postgres")
+        async with self._engine.connect() as conn:
+            result = await conn.execute(text(f"SELECT COUNT(*) FROM ({inner}) AS total"))
+            return int(result.scalar_one())
+
     async def estimate_cost(self, sql: str) -> float:
         async with self._engine.connect() as conn:
             raw = (await conn.execute(text(f"EXPLAIN (FORMAT JSON) {sql}"))).scalar_one()

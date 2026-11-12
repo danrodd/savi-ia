@@ -21,6 +21,10 @@ class QueryExecutor(ABC):
         para que el caller lo audite como `db_error`.
         """
 
+    async def count_rows(self, sql: str) -> int | None:
+        """Filas totales del SELECT sin su `LIMIT`. Por defecto no se cuenta."""
+        return None
+
     async def estimate_cost(self, sql: str) -> float:
         """`Total Cost` raíz del plan. Por defecto 0: sin medición de costo."""
         return 0.0

@@ -90,6 +90,7 @@ def build_result_set(
     labels: dict[str, str],
     raw_rows: list[dict[str, Any]],
     has_personal_data: bool,
+    exact_total: int | None = None,
 ) -> ResultSet:
     """Arma el conjunto a partir de las filas crudas (hasta `EXPORT_MAX_ROWS + 1`)."""
     lower_bound = len(raw_rows) > EXPORT_MAX_ROWS
@@ -104,7 +105,9 @@ def build_result_set(
         title=title,
         columns=columns,
         rows=rows,
-        total_rows=len(kept),
-        total_is_lower_bound=lower_bound,
+        # Con el total contado, se informa el número real aunque se guarden
+        # solo las primeras `EXPORT_MAX_ROWS`.
+        total_rows=exact_total if exact_total is not None else len(kept),
+        total_is_lower_bound=lower_bound and exact_total is None,
         has_personal_data=has_personal_data,
     )

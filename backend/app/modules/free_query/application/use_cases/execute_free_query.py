@@ -88,6 +88,12 @@ class ExecuteFreeQueryUseCase:
             # Se cortó si llegó al tope que se lee. Antes dependía de la
             # estimación del planner, que podía equivocarse y cortar sin avisar.
             truncated = len(rows) >= fetch
+            total_rows: int | None = None
+            if truncated:
+                try:
+                    total_rows = await self._executor.count_rows(normalized_sql)
+                except Exception:  # noqa: BLE001 — sin el conteo, se informa "más de"
+                    log.warning("free_query_count_failed", exc_info=True)
             return QueryResult(
                 columns=columns,
                 rows=rows,
@@ -95,6 +101,7 @@ class ExecuteFreeQueryUseCase:
                 returned_rows=len(rows),
                 duration_ms=duration_ms,
                 truncated=truncated,
+                total_rows=total_rows,
                 executed_sql=normalized_sql,
             )
         except FreeQueryError as e:

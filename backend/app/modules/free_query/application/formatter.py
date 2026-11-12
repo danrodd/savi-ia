@@ -47,9 +47,12 @@ def format_result(
         # Para `entregar_archivo`: el archivo sale de este conjunto, no de las filas.
         payload["conjunto"] = result_set_id
     if len(rows) < result.returned_rows:
-        total = (
-            f"más de {result.returned_rows - 1}" if result.truncated else str(result.returned_rows)
-        )
+        if result.total_rows is not None:
+            total = str(result.total_rows)
+        elif result.truncated:
+            total = f"más de {result.returned_rows - 1}"
+        else:
+            total = str(result.returned_rows)
         payload["shown_rows"] = len(rows)
         payload["note"] = (
             f"Ves {len(rows)} de {total} filas. NO sumes estas filas para un total: usa SUM/COUNT."

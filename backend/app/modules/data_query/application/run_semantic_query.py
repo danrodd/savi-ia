@@ -35,7 +35,10 @@ from app.modules.data_query.domain.semantic_query import (
     SemanticQuery,
 )
 from app.modules.data_query.infrastructure.catalog import entity_names, get_entity
-from app.modules.data_query.infrastructure.erp_query_executor import execute_compiled
+from app.modules.data_query.infrastructure.erp_query_executor import (
+    count_compiled,
+    execute_compiled,
+)
 
 log = logging.getLogger(__name__)
 audit_log = logging.getLogger("savi.audit")
@@ -45,7 +48,7 @@ audit_log = logging.getLogger("savi.audit")
 # filas y si trae datos personales. Lo arma la capa del chat; acá no se sabe
 # dónde se guarda.
 RowsRecorder = Callable[
-    [str, list[str], dict[str, str], list[dict[str, Any]], bool], Awaitable[str]
+    [str, list[str], dict[str, str], list[dict[str, Any]], bool, int | None], Awaitable[str]
 ]
 
 _TITLES = {
@@ -167,7 +170,18 @@ async def run_semantic_query(
     total: _Total | None = None
     saved_id: str | None = None
     if full is not None and recorder is not None and full_fetch is not None:
-        total = _Total(rows=min(len(full.rows), full_fetch - 1), more=len(full.rows) >= full_fetch)
+        exact: int | None = None
+        if len(full.rows) >= full_fetch:
+            # Más que lo que se guarda: se cuenta el total real.
+            try:
+                exact = await count_compiled(compiled, erp_database_id=erp_database_id)
+            except Exception:  # noqa: BLE001 — sin el conteo, se informa "más de"
+                log.warning("semantic_query_count_failed entity=%s", query.entidad, exc_info=True)
+        total = (
+            _Total(rows=exact, more=False)
+            if exact is not None
+            else _Total(rows=min(len(full.rows), full_fetch - 1), more=len(full.rows) >= full_fetch)
+        )
         if len(full.rows) >= 2:
             personal = any(
                 (item := entity.fields.get(c) or entity.dimensions.get(c)) is not None
@@ -181,6 +195,7 @@ async def run_semantic_query(
                     compiled.select_labels,
                     full.rows,
                     personal,
+                    exact,
                 )
             except Exception:  # noqa: BLE001 — guardar no puede tumbar la respuesta
                 log.exception("result_set_record_failed entity=%s", query.entidad)
@@ -361,14 +376,16 @@ def _format_result(result: QueryResult, labels: dict[str, str], total: _Total | 
     note = ""
     if total is not None and result.truncated:
         # El usuario tiene la tabla completa: el modelo lo dice y no la copia.
-        count = f"más de {total.rows:,}" if total.more else f"{total.rows:,}"
+        # Separador de miles colombiano solo en el número: la frase lleva comas.
+        number = f"{total.rows:,}".replace(",", ".")
+        count = f"más de {number}" if total.more else number
         note = (
             f"\n\n_(Mostrando {result.row_count} de {count} filas. NO sumes estas filas "
             "para dar un total: para totales usa modo 'agregado' con métricas. La tabla "
             f"completa ({count} filas) ya le aparece al usuario debajo de tu respuesta, "
             "con el botón Exportar para bajarla en Excel, PDF o CSV: díselo con el total "
             "exacto y no copies todas las filas.)_"
-        ).replace(",", ".")
+        )
     elif result.truncated:
         # El aviso tiene que decir QUÉ HACER, no solo que se cortó: sin la
         # instrucción, el modelo sumaba las filas visibles y presentaba ese

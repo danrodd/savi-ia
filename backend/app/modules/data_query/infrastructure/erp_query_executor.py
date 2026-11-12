@@ -24,6 +24,18 @@ from app.modules.erp_databases.infrastructure import get_erp_engine_for
 _HARD_FETCH_CAP = 200
 
 
+async def count_compiled(compiled: CompiledQuery, *, erp_database_id: UUID | None = None) -> int:
+    """Filas totales de la consulta, sin su `LIMIT`. Corre con el mismo tiempo máximo."""
+    head, separator, _ = compiled.sql.rpartition("\nLIMIT ")
+    base = head if separator else compiled.sql
+    engine = await get_erp_engine_for(erp_database_id)
+    async with engine.connect() as conn:
+        result = await conn.execute(
+            text(f"SELECT COUNT(*) FROM ({base}) AS total"), compiled.params
+        )
+        return int(result.scalar_one())
+
+
 async def execute_compiled(
     compiled: CompiledQuery,
     entidad: str,

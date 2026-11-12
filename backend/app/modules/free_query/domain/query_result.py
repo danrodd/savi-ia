@@ -21,6 +21,8 @@ class QueryResult:
     returned_rows: int = 0
     duration_ms: int = 0
     truncated: bool = False
+    # Filas totales contadas cuando el resultado se cortó; `None` si no se contó.
+    total_rows: int | None = None
     # El SQL efectivamente ejecutado (puede diferir del input si se
     # sobrescribió el LIMIT). Útil para auditoría.
     executed_sql: str = ""

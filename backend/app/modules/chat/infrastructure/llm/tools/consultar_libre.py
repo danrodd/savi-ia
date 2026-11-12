@@ -99,7 +99,12 @@ def build_consultar_libre_impl(
             personal = any(c.lower() in _CONTACT_COLUMNS for c in result.columns)
             try:
                 kept_id = await recorder(
-                    title, result.columns, {c: c for c in result.columns}, result.rows, personal
+                    title,
+                    result.columns,
+                    {c: c for c in result.columns},
+                    result.rows,
+                    personal,
+                    result.total_rows,
                 )
                 kept = True
             except Exception:  # noqa: BLE001 — guardar no puede tumbar la respuesta

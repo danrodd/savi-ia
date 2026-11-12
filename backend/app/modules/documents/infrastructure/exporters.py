@@ -67,6 +67,8 @@ def _stamp(document: Document) -> str:
 def _total_note(table: ResultSet) -> str:
     if table.total_is_lower_bound:
         return f"Primeras {table.total_rows:,} filas de una consulta más grande.".replace(",", ".")
+    if len(table.rows) < table.total_rows:
+        return f"Primeras {len(table.rows):,} filas de {table.total_rows:,}.".replace(",", ".")
     return f"{table.total_rows:,} filas.".replace(",", ".")
 
 
