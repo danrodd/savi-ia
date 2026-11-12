@@ -204,3 +204,41 @@ def test_the_history_marks_a_failed_answer() -> None:
     block = _format_history_block([Message(role=MessageRole.USER, content="¿Stock?"), failed])
 
     assert "SAVI: [esta respuesta falló" in block
+
+
+async def test_the_failed_turn_keeps_the_provider_and_model() -> None:
+    from app.modules.chat.application.use_cases.chat_turn import (
+        _TurnAccumulator,  # pyright: ignore[reportPrivateUsage]
+    )
+    from app.modules.chat.domain.interfaces import ActiveProvider
+    from app.modules.chat.infrastructure.llm.factory import ResolvingLLMRunner
+
+    provider = ActiveProvider(
+        kind="openai",
+        chat_model="gpt-6-luna",
+        title_model="t",
+        credential_kind="api_key",
+        credential="k",
+    )
+
+    class _Resolver:
+        async def resolve(self) -> ActiveProvider:
+            return provider
+
+    class _Failing:
+        async def stream_turn(self, *_: Any, **__: Any) -> AsyncIterator[ChatEvent]:
+            yield ErrorEvent(message=PROVIDER_BUSY_MESSAGE, code=ErrorCode.PROVIDER_BUSY)
+
+    class _Factory:
+        def build(self, _: ActiveProvider) -> _Failing:
+            return _Failing()
+
+    runner = ResolvingLLMRunner(cast(Any, _Resolver()), cast(Any, _Factory()))
+    events = [e async for e in runner.stream_turn("consulta")]
+
+    error = next(e for e in events if isinstance(e, ErrorEvent))
+    assert (error.provider, error.model) == ("openai", "gpt-6-luna")
+    accumulator = _TurnAccumulator()
+    accumulator.consume(error)
+    message = accumulator.build_message(uuid4())
+    assert (message.provider, message.model) == ("openai", "gpt-6-luna")

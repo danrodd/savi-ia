@@ -156,6 +156,10 @@ class ErrorEvent:
     # Identificador corto del turno, el mismo que queda en el log y en el
     # mensaje guardado: con él soporte encuentra la causa sin pedir el equipo.
     support_code: str | None = None
+    # Proveedor y modelo del turno que falló, para el historial y la vista de
+    # turnos fallidos (en un turno que termina bien llegan con `done`).
+    provider: str | None = None
+    model: str | None = None
 
 
 ChatEvent = (

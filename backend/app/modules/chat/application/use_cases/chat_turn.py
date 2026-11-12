@@ -227,6 +227,8 @@ class _TurnAccumulator:
             self.error_code = event.code.value if event.code else None
             self.error_message = event.message
             self.support_code = event.support_code
+            self.provider = self.provider or event.provider
+            self.model = self.model or event.model
 
     def has_content(self) -> bool:
         return bool(self.text_parts)
