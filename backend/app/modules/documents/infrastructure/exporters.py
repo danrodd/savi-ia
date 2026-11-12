@@ -17,7 +17,7 @@ from datetime import date, datetime
 from typing import Any, cast
 from zoneinfo import ZoneInfo
 
-from app.modules.documents.domain.document import Document
+from app.modules.documents.domain.document import Block, Document
 from app.modules.documents.domain.files import DocumentRenderer, FileFormat
 from app.modules.documents.domain.result_set import ResultColumn, ResultSet
 
@@ -239,6 +239,12 @@ def to_pdf(document: Document) -> bytes:
                 for k, v in block.pairs
             ]
             story.append(Table(rows, hAlign="LEFT"))
+        elif block.kind == "chart" and block.table is not None:
+            chart = Image(io.BytesIO(_chart(block)))
+            ratio = chart.imageHeight / max(chart.imageWidth, 1)
+            chart.drawWidth = pdf.width
+            chart.drawHeight = pdf.width * ratio
+            story.append(chart)
         elif block.kind == "table" and block.table is not None:
             table = block.table
             selected = _selected(table, block.columns)
@@ -268,6 +274,22 @@ def to_pdf(document: Document) -> bytes:
         story.append(Spacer(1, 0.3 * cm))
     pdf.build(story)
     return buffer.getvalue()
+
+
+def _chart(block: Block) -> bytes:
+    """El PNG del gráfico con los valores del conjunto."""
+    from app.modules.documents.infrastructure.charts import bar_chart_png
+
+    table = block.table
+    assert table is not None  # noqa: S101 — solo se llama con un conjunto
+    keys = [c.key for c in table.columns]
+    label_index, value_index = keys.index(block.columns[0]), keys.index(block.columns[1])
+    items = [
+        (str(row[label_index] or "—"), float(row[value_index]))
+        for row in table.rows
+        if isinstance(row[value_index], int | float)
+    ]
+    return bar_chart_png(block.text, items)
 
 
 def _inline_markup(text: str) -> str:
@@ -311,6 +333,8 @@ def to_docx(document: Document) -> bytes:
                 cells = grid.add_row().cells
                 cells[0].text, cells[1].text = key, value
                 cells[0].paragraphs[0].runs[0].bold = True
+        elif block.kind == "chart" and block.table is not None:
+            word.add_picture(io.BytesIO(_chart(block)), width=Cm(16))
         elif block.kind == "table" and block.table is not None:
             table = block.table
             selected = _selected(table, block.columns)

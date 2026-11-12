@@ -45,7 +45,9 @@ ENTREGAR_ARCHIVO_DESCRIPTION = (
     "`titulo` y `bloques`, cada bloque uno de: {tipo:'titulo2', texto}, "
     "{tipo:'parrafo', texto}, {tipo:'lista', items:[...]}, "
     "{tipo:'datos_clave', items:[[etiqueta, valor], ...]}, "
-    "{tipo:'tabla', conjunto:'<id>', columnas:[...opcional]}.\n\n"
+    "{tipo:'tabla', conjunto:'<id>', columnas:[...opcional]}, "
+    "{tipo:'grafico', conjunto:'<id>', etiqueta:'<columna>', valor:'<columna numérica>', "
+    "titulo:'...'} (barras de los 15 valores mayores).\n\n"
     "Reglas: las tablas NO llevan filas, solo el identificador del conjunto; el "
     "servidor pone los datos. En el texto usa solo cifras que vengan de las consultas. "
     "Un documento sin tablas solo si el tema es del negocio (carta de cobro, acta). "
@@ -68,12 +70,15 @@ ENTREGAR_ARCHIVO_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "tipo": {
                         "type": "string",
-                        "enum": ["titulo2", "parrafo", "lista", "datos_clave", "tabla"],
+                        "enum": ["titulo2", "parrafo", "lista", "datos_clave", "tabla", "grafico"],
                     },
                     "texto": {"type": "string"},
                     "items": {"type": "array", "items": {}},
                     "conjunto": {"type": "string"},
                     "columnas": {"type": "array", "items": {"type": "string"}},
+                    "etiqueta": {"type": "string"},
+                    "valor": {"type": "string"},
+                    "titulo": {"type": "string"},
                 },
                 "required": ["tipo"],
             },

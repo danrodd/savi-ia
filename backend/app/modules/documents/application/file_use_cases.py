@@ -10,6 +10,7 @@ from uuid import UUID
 from app.modules.documents.application.document_spec import (
     MAX_TABLES,
     BulletsBlock,
+    ChartBlock,
     DocumentSpec,
     HeadingBlock,
     KeyValuesBlock,
@@ -93,6 +94,17 @@ class BuildDocumentUseCase:
         self._files = files
         self._renderer = renderer
 
+    async def _table(self, table_id: UUID, conversation_id: UUID) -> ResultSet:
+        # Solo conjuntos de ESTA conversación: el modelo no puede traer datos de
+        # otra conversación ni de otro usuario.
+        table = await self._result_sets.get_in_conversation(table_id, conversation_id)
+        if table is None:
+            raise FileRequestError(
+                f"El conjunto {table_id} no existe en esta conversación o venció. "
+                "Usa el identificador que te dio la consulta."
+            )
+        return table
+
     async def execute(
         self, conversation_id: UUID, spec: DocumentSpec, branding: Branding
     ) -> StoredFile:
@@ -109,6 +121,25 @@ class BuildDocumentUseCase:
                 blocks.append(Block(kind="bullets", items=tuple(item.items)))
             elif isinstance(item, KeyValuesBlock):
                 blocks.append(Block(kind="key_values", pairs=tuple(item.items)))
+            elif isinstance(item, ChartBlock):
+                table = await self._table(item.conjunto, conversation_id)
+                personal = personal or table.has_personal_data
+                # Cada una por separado: la etiqueta y el valor pueden ser la misma
+                # columna por error, y eso se explica abajo en vez de romperse.
+                label = _resolve_columns(table, [item.etiqueta])[0]
+                value = _resolve_columns(table, [item.valor])[0]
+                if next(c for c in table.columns if c.key == value).kind != "number":
+                    raise FileRequestError(
+                        f"La columna {item.valor} no es numérica: un gráfico necesita valores."
+                    )
+                blocks.append(
+                    Block(
+                        kind="chart",
+                        text=item.titulo or table.title,
+                        table=table,
+                        columns=(label, value),
+                    )
+                )
             else:
                 # Solo conjuntos de ESTA conversación: el modelo no puede traer
                 # datos de otra conversación ni de otro usuario.

@@ -53,8 +53,18 @@ class TableBlock(_Block):
     )
 
 
+class ChartBlock(_Block):
+    """Barras de una columna numérica de un conjunto, por otra columna de etiquetas."""
+
+    tipo: Literal["grafico"]
+    conjunto: UUID
+    etiqueta: str = Field(min_length=1, max_length=100)
+    valor: str = Field(min_length=1, max_length=100)
+    titulo: str | None = Field(default=None, max_length=150)
+
+
 DocumentBlockSpec = Annotated[
-    HeadingBlock | ParagraphBlock | BulletsBlock | KeyValuesBlock | TableBlock,
+    HeadingBlock | ParagraphBlock | BulletsBlock | KeyValuesBlock | TableBlock | ChartBlock,
     Field(discriminator="tipo"),
 ]
 
@@ -67,4 +77,4 @@ class DocumentSpec(BaseModel):
     bloques: list[DocumentBlockSpec] = Field(min_length=1, max_length=MAX_BLOCKS)
 
     def table_ids(self) -> list[UUID]:
-        return [b.conjunto for b in self.bloques if isinstance(b, TableBlock)]
+        return [b.conjunto for b in self.bloques if isinstance(b, TableBlock | ChartBlock)]

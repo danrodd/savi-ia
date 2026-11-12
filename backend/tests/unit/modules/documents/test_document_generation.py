@@ -256,3 +256,57 @@ async def test_columns_are_matched_by_label_and_unknown_ones_are_explained(
     unknown["bloques"][2]["columnas"] = ["bodega"]
     with pytest.raises(FileRequestError, match="Usa algunas de: codigo, producto, dias_sin_venta"):
         await use_case.execute(conversation_id, DocumentSpec.model_validate(unknown), Branding())
+
+
+async def test_a_report_can_carry_a_bar_chart_from_the_data(
+    sm: async_sessionmaker[AsyncSession],
+) -> None:
+    from pypdf import PdfReader
+
+    conversation_id = await _conversation(sm)
+    table_id = await _saved_table(sm, conversation_id)
+    use_case = BuildDocumentUseCase(
+        SqlAlchemyResultSetRepository(sm), SqlAlchemyStoredFileRepository(sm), FileRenderer()
+    )
+    chart = {
+        "tipo": "grafico",
+        "conjunto": str(table_id),
+        "etiqueta": "Producto",
+        "valor": "dias_sin_venta",
+        "titulo": "Días sin venta por producto",
+    }
+
+    pdf = await use_case.execute(
+        conversation_id, DocumentSpec.model_validate(_spec(table_id, bloques=[chart])), Branding()
+    )
+    word = await use_case.execute(
+        conversation_id,
+        DocumentSpec.model_validate(_spec(table_id, formato="docx", bloques=[chart])),
+        Branding(),
+    )
+
+    assert len(PdfReader(io.BytesIO(pdf.content)).pages[0].images) == 1
+    with zipfile.ZipFile(io.BytesIO(word.content)) as package:
+        assert any(n.startswith("word/media/") for n in package.namelist())
+
+    not_numeric = dict(chart, valor="producto")
+    with pytest.raises(FileRequestError, match="no es numérica"):
+        await use_case.execute(
+            conversation_id,
+            DocumentSpec.model_validate(_spec(table_id, bloques=[not_numeric])),
+            Branding(),
+        )
+
+
+def test_the_chart_draws_the_top_values_in_order() -> None:
+    from PIL import Image
+
+    from app.modules.documents.infrastructure.charts import MAX_BARS, bar_chart_png
+
+    items = [(f"Producto {i}", float(i)) for i in range(30)]
+    png = bar_chart_png("Prueba", items)
+
+    with Image.open(io.BytesIO(png)) as image:
+        assert image.format == "PNG"
+        # Alto proporcional a las barras dibujadas: como mucho MAX_BARS.
+        assert image.size[1] <= 90 + 46 * MAX_BARS + 40

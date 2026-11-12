@@ -13,7 +13,7 @@ from typing import Literal
 
 from app.modules.documents.domain.result_set import ResultSet
 
-BlockKind = Literal["heading", "paragraph", "bullets", "key_values", "table"]
+BlockKind = Literal["heading", "paragraph", "bullets", "key_values", "table", "chart"]
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,8 @@ class Block:
     items: tuple[str, ...] = ()
     pairs: tuple[tuple[str, str], ...] = ()
     table: ResultSet | None = None
-    # Columnas de la tabla a mostrar, en orden. Vacío = todas.
+    # Columnas de la tabla a mostrar, en orden. Vacío = todas. En un gráfico:
+    # (columna de etiquetas, columna de valores).
     columns: tuple[str, ...] = ()
 
 
