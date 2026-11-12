@@ -8,6 +8,7 @@ Cubre las tres reglas + casos límite:
 - Strings desconocidos en PermisoFormulario se ignoran.
 - Version hash es determinista y cambia con el set.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -190,3 +191,31 @@ async def test_version_difiere_por_user_id() -> None:
     # Mismo set de módulos pero distinto user_id → distinto hash.
     assert a.modules == b.modules
     assert a.version != b.version
+
+
+@pytest.mark.asyncio
+async def test_los_modulos_escritos_distinto_en_el_erp_se_reconocen(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # Así aparecen en la base de un cliente real: sin tilde, en plural y en
+    # mayúsculas y minúsculas. Antes se perdían en silencio.
+    use_case = ResolveUserModulesUseCase(
+        permission_repo=_FakePermissionRepo({"NOMINA", "CuentaPagar", "BOMBEROS"}),
+        seo_plan_repo=_FakeSeoPlanRepo(_FULL_PLAN),
+    )
+
+    with caplog.at_level("INFO"):
+        result = await use_case.execute(user_id=10, is_admin=False)
+
+    assert ModuleCode.NOMINA in result.modules
+    assert ModuleCode.CUENTAPAGAR in result.modules
+    assert "BOMBEROS" in caplog.text
+
+
+def test_el_parser_tolera_tildes_mayusculas_y_alias() -> None:
+    from app.modules.auth.domain.value_objects import parse_erp_module
+
+    assert parse_erp_module("Nómina") is ModuleCode.NOMINA
+    assert parse_erp_module(" busqueda ") is ModuleCode.BUSQUEDA
+    assert parse_erp_module("HERRAMIENTAS") is ModuleCode.HERRAMIENTA
+    assert parse_erp_module("INICIO") is None
