@@ -234,6 +234,7 @@ def build_savi_tools(
             erp_database_id=erp_database_id,
             modules=allowed_modules,
             conversation_id=conversation_id,
+            viewer_id=document_context.access.user_id_in_database if document_context else None,
         )
 
     async def company_info() -> dict[str, Any]:

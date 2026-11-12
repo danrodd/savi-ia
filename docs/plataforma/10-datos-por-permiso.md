@@ -166,7 +166,7 @@ Cada consulta que devuelve datos personales queda registrada con quién, cuándo
 
 1. ~~Cuentas bancarias de terceros (§5.4)~~ **Cerrada (2026-11-11):** administradores y quien tenga Cuentas por pagar.
 2. ~~Terceros que son empleados (§5.3)~~ **Cerrada (2026-11-11):** alcanza con el módulo Terceros.
-3. **`Seguridad.TerceroVip` (§5.8):** vacía en los tres clientes. Se implementa la regla conservadora y se le pregunta al equipo del ERP qué hace la tabla; no frena la implementación.
+3. **`Seguridad.TerceroVip` (§5.8):** vacía en los tres clientes. Implementada la regla de §5.8 tal cual: los datos personales y bancarios de un tercero listado los ven el administrador y los usuarios listados para ese tercero (con el `idUsuario` de quien pregunta en esa base). Probado con la copia de Imporllantas. Sigue pendiente preguntarle al equipo del ERP qué hace la tabla.
 4. **Usuarios que no son administradores fuera del catálogo (§5.6):** si se planifica como trabajo aparte.
 5. **Términos de servicio (§6.6):** quién redacta el texto sobre el proveedor de IA.
 

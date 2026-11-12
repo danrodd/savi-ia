@@ -99,6 +99,15 @@ class RowScope:
     label: str  # para decirle al modelo qué parte ve
 
 
+# En el SQL fijo del catálogo, el lugar del `idUsuario` de quien pregunta.
+VIEWER_PLACEHOLDER = "__SAVI_VIEWER__"
+
+
+def _with_viewer(sql: str, viewer_id: int | None) -> str:
+    # Se escribe como entero (nunca texto del usuario): no hay inyección posible.
+    return sql.replace(VIEWER_PLACEHOLDER, str(int(viewer_id)) if viewer_id is not None else "NULL")
+
+
 def module_allows(required: tuple[str, ...], modules: Collection[str] | None) -> bool:
     """`None` es un administrador; sin requisitos, lo ve cualquiera."""
     return modules is None or not required or any(m in modules for m in required)
@@ -174,7 +183,9 @@ class SemanticEntity:
             return self.row_scopes
         return tuple(s for s in self.row_scopes if any(m in modules for m in s.modules))
 
-    def scoped_for(self, modules: Collection[str] | None) -> SemanticEntity:
+    def scoped_for(
+        self, modules: Collection[str] | None, viewer_id: int | None = None
+    ) -> SemanticEntity:
         """La entidad que puede usar quien tiene `modules`.
 
         - Las filas, con los alcances visibles como filtro fijo.
@@ -194,12 +205,16 @@ class SemanticEntity:
         return replace(
             entity,
             fields={
-                name: replace(f, sql=f.restricted_sql) if f.restricted_sql else f
+                name: replace(f, sql=_with_viewer(f.restricted_sql, viewer_id))
+                if f.restricted_sql
+                else f
                 for name, f in entity.fields.items()
                 if module_allows(f.required_modules, modules)
             },
             dimensions={
-                name: replace(d, sql=d.restricted_sql) if d.restricted_sql else d
+                name: replace(d, sql=_with_viewer(d.restricted_sql, viewer_id))
+                if d.restricted_sql
+                else d
                 for name, d in entity.dimensions.items()
                 if module_allows(d.required_modules, modules)
             },

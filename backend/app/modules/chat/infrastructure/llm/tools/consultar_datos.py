@@ -108,6 +108,7 @@ async def consultar_datos_impl(
     erp_database_id: UUID | None = None,
     modules: Collection[str] | None = None,
     conversation_id: UUID | None = None,
+    viewer_id: int | None = None,
 ) -> dict[str, Any]:
     consulta = args.get("consulta")
     if not isinstance(consulta, dict):
@@ -129,5 +130,6 @@ async def consultar_datos_impl(
         modules=modules,
         recorder=make_recorder(conversation_id),
         full_fetch=FULL_FETCH,
+        viewer_id=viewer_id,
     )
     return {"content": [{"type": "text", "text": text}]}

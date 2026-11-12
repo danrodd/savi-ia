@@ -18,7 +18,12 @@ El ERP guarda vacío como `''`: todo pasa por `NULLIF(TRIM(...), '')`.
 
 from __future__ import annotations
 
-from app.modules.data_query.domain.semantic_model import DimensionDef, FieldDef, FilterDef
+from app.modules.data_query.domain.semantic_model import (
+    VIEWER_PLACEHOLDER,
+    DimensionDef,
+    FieldDef,
+    FilterDef,
+)
 from app.modules.data_query.domain.semantic_query import FilterOp
 from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
 
@@ -31,9 +36,18 @@ def _text(column: str, alias: str) -> str:
 
 
 def _vip_guard(sql: str, alias: str) -> str:
+    """Vacío para quien no está listado en `TerceroVip` para ese tercero.
+
+    `VIEWER_PLACEHOLDER` lo reemplaza `scoped_for` por el `idUsuario` de quien
+    pregunta en esa base, como entero; sin usuario conocido queda `NULL` y el
+    dato sale vacío.
+    """
     return (
         f'CASE WHEN EXISTS (SELECT 1 FROM "Seguridad"."TerceroVip" vip '
-        f'WHERE vip."idTercero" = {alias}."idTercero") THEN NULL ELSE {sql} END'
+        f'WHERE vip."idTercero" = {alias}."idTercero") '
+        f'AND NOT EXISTS (SELECT 1 FROM "Seguridad"."TerceroVip" vip '
+        f'WHERE vip."idTercero" = {alias}."idTercero" AND vip."idUsuario" = {VIEWER_PLACEHOLDER}) '
+        f"THEN NULL ELSE {sql} END"
     )
 
 

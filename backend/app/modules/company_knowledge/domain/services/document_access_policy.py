@@ -19,6 +19,10 @@ class DocumentAccessContext:
     modules: frozenset[ModuleCode]
     is_admin_in_database: bool
     is_savi_admin_login: bool
+    # `idUsuario` de quien pregunta en ESA base del ERP (no en la de identidad).
+    # Lo usan las consultas de datos para las reglas por usuario del ERP, como
+    # los terceros reservados de `Seguridad.TerceroVip`.
+    user_id_in_database: int | None = None
 
 
 def can_read(document: DocumentAccessView, context: DocumentAccessContext) -> bool:

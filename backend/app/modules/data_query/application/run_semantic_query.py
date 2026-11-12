@@ -102,6 +102,7 @@ async def run_semantic_query(
     modules: Collection[str] | None = None,
     recorder: RowsRecorder | None = None,
     full_fetch: int | None = None,
+    viewer_id: int | None = None,
 ) -> str:
     """Devuelve texto markdown listo para que el LLM lo presente, o un
     mensaje de error accionable (también texto).
@@ -117,7 +118,7 @@ async def run_semantic_query(
         denied = _denied_names(query, entity.restricted_names(modules))
         if denied:
             return permission_denied_text(denied)
-        entity = entity.scoped_for(modules)
+        entity = entity.scoped_for(modules, viewer_id)
         if not entity.allowed_for(modules):
             # Defensa en profundidad: la descripción de la tool ya la oculta.
             needed = entity.required_modules or tuple(

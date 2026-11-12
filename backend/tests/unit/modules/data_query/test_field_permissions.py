@@ -134,3 +134,12 @@ async def test_returning_personal_data_is_audited_without_the_values(
 
     assert "personal_data_access" in caplog.text and "fields=celular" in caplog.text
     assert "3132622299" not in caplog.text
+
+
+def test_the_vip_rule_lets_the_listed_user_see_and_never_takes_text() -> None:
+    listed = _terceros().scoped_for(SALES_AND_TERCEROS, viewer_id=12).fields["celular"].sql
+    unknown = _terceros().scoped_for(SALES_AND_TERCEROS, viewer_id=None).fields["celular"].sql
+
+    assert 'vip."idUsuario" = 12' in listed
+    assert 'vip."idUsuario" = NULL' in unknown  # sin usuario conocido, el dato sale vacío
+    assert "__SAVI_VIEWER__" not in listed and "__SAVI_VIEWER__" not in unknown
