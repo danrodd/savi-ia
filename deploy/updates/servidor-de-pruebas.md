@@ -27,6 +27,14 @@ uv run --project backend python scripts/publish-release.py verify \
     --base-url https://savi-updates.danrodd.dev/savi --channel beta
 ```
 
+Desde Git Bash, `upload` necesita `MSYS_NO_PATHCONV=1` y la llave con ruta de Windows. Sin eso, Git Bash convierte `/srv/...` en `C:/Program Files/Git/srv/...` y los archivos se suben a una carpeta equivocada. Corra siempre antes con `--dry-run` y revise las rutas:
+
+```bash
+MSYS_NO_PATHCONV=1 uv run --project backend python scripts/publish-release.py upload --channel beta \
+    --host savi-publish@178.105.211.179 --remote-dir /srv/savi-updates/savi \
+    --identity "C:/Users/hikig/.ssh/savi-publish" --dry-run
+```
+
 ## Firewall: el bloqueo a todo lo que no fuera Cloudflare (2026-10-23)
 
 El servidor ya tenía otro proyecto, `shortness`, detrás del proxy de Cloudflare. Para ese caso hay un endurecimiento que deja llegar a los puertos 80 y 443 solo desde las IPs de Cloudflare:
