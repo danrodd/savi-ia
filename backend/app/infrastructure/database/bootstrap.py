@@ -76,7 +76,7 @@ _REGISTERED_MODELS = (
 )
 
 
-def _alembic_config() -> Config:
+def _alembic_config(settings: Settings) -> Config:
     root = resource_dir()
     config = Config(str(root / "alembic.ini"))
     # En el bundle el cwd es arbitrario, así que el `script_location`
@@ -87,6 +87,10 @@ def _alembic_config() -> Config:
     # handlers que ya montó el launcher, dejando el savi.log del cliente
     # mudo justo antes de que la aplicación empiece a atender peticiones.
     config.attributes["configure_logger"] = False
+    # La base que se migra es la de ESTOS settings. Antes `env.py` volvía a
+    # leer `get_settings()` del `.env`: con otros settings (una prueba, otra
+    # base) migraba la base equivocada.
+    config.attributes["agent_db_url"] = settings.agent_db_url
     return config
 
 
@@ -116,10 +120,10 @@ def _sqlite_is_fresh(settings: Settings) -> bool:
 def ensure_schema(settings: Settings) -> None:
     """Deja la BD del agente lista para recibir queries. Idempotente."""
     if settings.agent_db_engine != "sqlite":
-        command.upgrade(_alembic_config(), "head")
+        command.upgrade(_alembic_config(settings), "head")
         return
 
     if _sqlite_is_fresh(settings):
-        command.stamp(_alembic_config(), "head")
+        command.stamp(_alembic_config(settings), "head")
     else:
-        command.upgrade(_alembic_config(), "head")
+        command.upgrade(_alembic_config(settings), "head")
