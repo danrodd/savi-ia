@@ -57,14 +57,54 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 - [x] A1. Documento de P1: `docs/plataforma/10-datos-por-permiso.md`. Hallazgos extra: módulos del ERP que SAVI no reconoce (`NOMINA`, `HERRAMIENTAS`, `CuentaPagar`), biometría y datos sensibles sin bloqueo en el SQL libre, `TerceroVip` por confirmar. Quedan 5 decisiones abiertas (§8).
 - [x] A2. Documento de P2: `docs/plataforma/11-resultados-completos.md`. Propuesta central: conjuntos de resultados guardados en el servidor (el usuario recibe todo, el modelo una muestra y el total) y entidades de análisis para que los cruces los haga la base. 3 decisiones abiertas (§6).
 - [x] A3. Documento de P3: `docs/plataforma/12-generacion-de-documentos.md`. El modelo entrega una especificación validada; las tablas referencian conjuntos (P2); generadores en Python puro (openpyxl, python-docx, reportlab); `info_empresa` pasa a `consultar_conocimiento` para que `entregar_archivo` entre en el límite de 4 herramientas. Exportación por botón y por el chat (decisión del usuario). 3 decisiones abiertas (§8).
-- [x] A4. Documento de P4: `docs/plataforma/13-turnos-sin-respuesta.md`. Hallazgos: un turno con error sin texto no se guarda (`chat_turn.py:653`) y el mismo mensaje cubre 7 causas; en OpenAI, `response.failed` no se reintenta. Causa exacta pendiente: falta el `savi.log` del equipo de la demo o reproducirla con el respaldo.
-- [ ] A5. Repaso conjunto y orden de implementación (P1 y P2 condicionan a P3).
+- [x] A4. Documento de P4: `docs/plataforma/13-turnos-sin-respuesta.md`. Hallazgos: un turno con error sin texto no se guarda (`chat_turn.py:653`) y el mismo mensaje cubre 7 causas; en OpenAI, `response.failed` no se reintenta. La demo corrió con **OpenAI** (confirmado); no hay log, así que la causa se confirma reproduciendo el caso.
+- [x] A5. Repaso conjunto y orden de implementación (abajo).
 
-**Fase B. Implementación:** se arma al cerrar la Fase A, con tareas por punto.
+**Orden de la Fase B y por qué:**
+
+1. **P4 primero:** es lo más chico y lo que más se nota. Un cliente que ve "No pude generar una respuesta" o preguntas sin respuesta pierde la confianza enseguida. No depende de nada.
+2. **P1 después:** destraba lo que el cliente pidió (los teléfonos), corrige los módulos perdidos y deja listo el permiso por campo que usan P2 y P3.
+3. **P2:** los conjuntos de resultados son la base de la exportación y de los documentos.
+4. **P3 al final:** F1, la exportación por el chat, y F2, los documentos.
+
+**Entrega:** commits por tarea a `staging`, como hasta ahora. Build, tags, `main` y servidor, con OK.
+
+**Fase B. Implementación**
+
+*P4. Turnos sin respuesta*
+
+- [ ] B1. Guardar el turno que falla sin texto (`finish_reason = error`, categoría, proveedor, modelo, consultas hechas). Mostrarlo al recargar con Regenerar, y omitirlo del contexto del turno siguiente.
+- [ ] B2. OpenAI: reintentar `response.failed` y `error` pasajeros y respetar `retry-after`. Reintentar solo la llamada al modelo si ya hubo consultas al ERP. Separar `_SECURITY_MESSAGE` de las fallas genéricas.
+- [ ] B3. Categorías de error con texto de usted y código de soporte (backend, frontend y manual de uso). Aplica a OpenAI, Gemini y Claude.
+- [ ] B4. Presupuesto de contexto: tope de consultas por turno (12) y recorte del historial antes del límite.
+- [ ] B5. Reproducir el caso de la demo con el respaldo de Imporllantas y OpenAI. Prueba de regresión.
+- [ ] B6. Vista de turnos fallidos en Administración.
+
+*P1. Datos por permiso*
+
+- [ ] B7. Módulos del ERP sin tildes ni mayúsculas (`NOMINA`, `HERRAMIENTAS`, `CuentaPagar`) y log de los desconocidos.
+- [ ] B8. Permiso por campo en el catálogo (`required_modules` en `FieldDef`) y campos personales, comerciales y bancarios de terceros. Campos del tercero desde ventas, compras y cartera. Regla conservadora de `TerceroVip`.
+- [ ] B9. SQL libre: quitar el bloqueo de contacto para el administrador y armar la lista de prohibidos por tabla y columna.
+- [ ] B10. `PermissionDeniedError` con texto fijo, corte por turno y regla en el prompt.
+- [ ] B11. Auditoría de consultas con datos personales.
+
+*P2. Resultados completos*
+
+- [ ] B12. Conjuntos de resultados guardados (dueño, vencimiento) y total exacto (`limit + 1` y `COUNT`).
+- [ ] B13. Vista previa en el chat desde los datos ("mostrando 30 de N") y botón Exportar (Excel, PDF y CSV generados en el servidor). Quitar `xlsx` del frontend.
+- [ ] B14. Entidad `inventario_rotacion` y campos de última compra o venta del tercero.
+- [ ] B15. SQL libre del administrador: `WITH` no recursivo y filtro previo por costo.
+
+*P3. Documentos*
+
+- [ ] B16. `info_empresa` pasa a ser un tipo de `consultar_conocimiento`, medido con los 3 proveedores.
+- [ ] B17. `entregar_archivo`, tipo `exportar` (por el chat), con adjunto descargable en la respuesta.
+- [ ] B18. `entregar_archivo`, tipo `documento`: especificación validada, Word y PDF.
+- [ ] B19. Plantillas con la presentación de la empresa (logo y colores, F3).
 
 ## Estado
 
 | Etapa | Estado |
 |---|---|
-| Fase A | En curso: A1 a A4 hechos (2026-11-11). Falta la evidencia de P4 y A5. |
-| Fase B | Pendiente. |
+| Fase A | **Completa** (2026-11-11). Quedan decisiones menores abiertas en cada documento, ninguna frena el inicio. |
+| Fase B | Pendiente. Arranca por B1. |

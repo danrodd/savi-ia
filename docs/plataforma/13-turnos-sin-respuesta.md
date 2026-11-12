@@ -1,6 +1,6 @@
 # 13 — Turnos que terminan sin respuesta
 
-**Estado:** análisis (Fase A del plan `odd/tasks/hallazgos-primera-demo.md`). La causa exacta de la demo **está pendiente** de confirmar con el log del equipo donde se hizo (§6).
+**Estado:** análisis (Fase A del plan `odd/tasks/hallazgos-primera-demo.md`). La demo corrió con **OpenAI**. La causa exacta se confirma reproduciendo el caso, porque no hay log del equipo (§6).
 **Origen:** demo con cliente del 2026-11-11.
 
 ## 1. Lo que se vio
@@ -93,11 +93,11 @@ Una categoría por causa, con un texto de usted que diga qué hacer:
 - Se repite la conversación con el mismo proveedor y el mismo modelo, hasta reproducir el error con el log a la vista.
 - El caso queda como prueba de regresión (por lo menos la clasificación de errores con respuestas simuladas del proveedor).
 
-## 6. Evidencia que hace falta
+## 6. Evidencia
 
-1. El **`savi.log`** del equipo de la demo, en `%LOCALAPPDATA%\SAVI\savi.log`. Las líneas `openai_*` o `gemini_*` del 2026-11-11 entre las 16:30 y las 17:00 dicen la causa exacta.
-2. **El proveedor y el modelo** activos en esa instalación (se ven en Administración → Proveedores).
-3. Si no hay log, la reproducción de §5.6.
+- **Proveedor de la demo: OpenAI** (confirmado por el usuario, 2026-11-11). Con Claude nunca se vio este error. Eso apunta al proveedor y a cómo lo maneja nuestro runner de OpenAI (§3), no a la consulta.
+- **El `savi.log` del equipo de la demo no se puede conseguir.** La causa exacta se confirma reproduciendo el caso (§5.6) con OpenAI y el respaldo de la base.
+- Se revisa además el tier y los límites de la cuenta de OpenAI en su panel (Limits). Con un tier bajo, el límite de tokens por minuto se alcanza fácil con conversaciones largas y muchas consultas.
 
 ## 7. Criterios de aceptación
 
