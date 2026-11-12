@@ -24,6 +24,11 @@ from app.modules.data_query.domain.semantic_model import (
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
 from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
+from app.modules.data_query.infrastructure.catalog._tercero_fields import (
+    contact_dimensions,
+    contact_fields,
+    municipality_sql,
+)
 
 _PROVEEDOR_NAME = tercero_display_name()
 
@@ -55,12 +60,17 @@ COMPRAS = SemanticEntity(
         "iva_total": MetricDef("iva_total", 'SUM(fc."valorIva")', "IVA de las compras"),
     },
     dimensions={
+        **contact_dimensions(requires=("tercero",)),
         "dia": DimensionDef("dia", "DATE_TRUNC('day', fc.\"fecha\")", "Día"),
         "mes": DimensionDef("mes", "DATE_TRUNC('month', fc.\"fecha\")", "Mes"),
         "anio": DimensionDef("anio", "DATE_TRUNC('year', fc.\"fecha\")", "Año"),
         "proveedor": DimensionDef("proveedor", _PROVEEDOR_NAME, "Proveedor", requires=("tercero",)),
     },
     fields={
+        **contact_fields(requires=("tercero",)),
+        "municipio": FieldDef(
+            "municipio", municipality_sql(), "Municipio", requires=("tercero",), default=False
+        ),
         "numero": FieldDef("numero", 'fc."numero"', "Número"),
         "factura_proveedor": FieldDef(
             "factura_proveedor", 'fc."referenciaFacturaProveedor"', "Factura del proveedor"
@@ -125,6 +135,7 @@ COMPRAS_DETALLE = SemanticEntity(
         ),
     },
     dimensions={
+        **contact_dimensions(requires=("tercero",)),
         "producto": DimensionDef("producto", 'p."descripcion"', "Producto", requires=("producto",)),
         "sucursal": DimensionDef(
             "sucursal", 'a."descripcion"', "Sucursal / bodega", requires=("almacen",)

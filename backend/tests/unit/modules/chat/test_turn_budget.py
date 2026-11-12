@@ -64,3 +64,18 @@ async def test_the_tools_share_the_budget_and_the_query_does_not_reach_the_erp(
 
     assert len(calls) == 3
     assert [r.is_error for r in results] == [False, False, False, True, True]
+
+
+def test_two_permission_denials_stop_further_queries() -> None:
+    from app.modules.data_query.application.permission_text import permission_denied_text
+
+    budget = TurnBudget(max_queries=12, max_chars=10_000)
+    denied = ToolResult(text=permission_denied_text({"celular": ("TERCERO",)}))
+
+    assert budget.take_query() is None
+    budget.fit(denied)
+    assert budget.take_query() is None
+    budget.fit(denied)
+    refused = budget.take_query()
+
+    assert refused is not None and "dos rechazos" in refused.text

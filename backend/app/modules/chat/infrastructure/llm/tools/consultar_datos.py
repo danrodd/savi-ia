@@ -58,7 +58,11 @@ def build_description(modules: Collection[str] | None = None) -> str:
         "=== Entidades disponibles ===",
     ]
 
-    for ent in list_entities(modules):
+    for full in list_entities(modules):
+        # Lo que este usuario puede pedir: sin los campos que exigen un módulo
+        # que no tiene. Si el modelo no los ve, no los promete.
+        ent = full.scoped_for(modules)
+        hidden = full.restricted_names(modules)
         lines.append(f"\n## {ent.name}")
         if ent.description:
             lines.append(ent.description)
@@ -70,6 +74,11 @@ def build_description(modules: Collection[str] | None = None) -> str:
             lines.append(
                 f"PERMISOS: este usuario solo puede ver {labels}. Si pregunta por "
                 "el resto, dile que no tiene acceso a esa información en el ERP."
+            )
+        if hidden:
+            lines.append(
+                f"PERMISOS: este usuario no puede ver {', '.join(hidden)}. Si los pide, "
+                "dile que necesita permiso en el ERP; no intentes conseguirlos."
             )
         if ent.metrics:
             metricas = ", ".join(f"{m.name} ({m.label})" for m in ent.metrics.values())

@@ -26,6 +26,11 @@ from app.modules.data_query.domain.semantic_model import (
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
 from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
+from app.modules.data_query.infrastructure.catalog._tercero_fields import (
+    contact_dimensions,
+    contact_fields,
+    municipality_sql,
+)
 
 _CLIENTE_NAME = tercero_display_name()
 
@@ -60,12 +65,17 @@ VENTAS = SemanticEntity(
         "subtotal_total": MetricDef("subtotal_total", 'SUM(f."subtotal")', "Subtotal"),
     },
     dimensions={
+        **contact_dimensions(requires=("tercero",)),
         "dia": DimensionDef("dia", "DATE_TRUNC('day', f.\"fecha\")", "Día"),
         "mes": DimensionDef("mes", "DATE_TRUNC('month', f.\"fecha\")", "Mes"),
         "anio": DimensionDef("anio", "DATE_TRUNC('year', f.\"fecha\")", "Año"),
         "cliente": DimensionDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
     },
     fields={
+        **contact_fields(requires=("tercero",)),
+        "municipio": FieldDef(
+            "municipio", municipality_sql(), "Municipio", requires=("tercero",), default=False
+        ),
         "numero": FieldDef("numero", 'f."numero"', "Número"),
         "fecha": FieldDef("fecha", 'f."fecha"', "Fecha"),
         "total": FieldDef("total", 'f."total"', "Total"),
@@ -136,6 +146,7 @@ VENTAS_DETALLE = SemanticEntity(
         ),
     },
     dimensions={
+        **contact_dimensions(requires=("tercero",)),
         "producto": DimensionDef(
             "producto", 'p."descripcion"', "Producto", requires=("detalle", "producto")
         ),

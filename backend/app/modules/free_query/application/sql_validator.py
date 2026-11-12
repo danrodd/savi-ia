@@ -83,23 +83,49 @@ BLOCKED_SCHEMAS: frozenset[str] = frozenset({"pg_catalog", "pg_toast"})
 # pg_shadow` funciona sin escribir `pg_catalog.`.
 _BLOCKED_TABLE_PREFIX = "pg_"
 
-# Datos personales de terceros que nunca se devuelven al usuario
-# (`docs/DB_MAP.md`). El catálogo semántico ya no los expone, pero el SQL libre
-# sí podía: medido, un "¿qué proveedores están bloqueados?" mostró el número de
-# identificación del tercero. Se bloquean en lo que la consulta DEVUELVE; en un
-# WHERE siguen sirviendo para buscar (encontrar por NIT no lo muestra), y dentro
-# de un agregado (`COUNT(email)`) no exponen el valor.
-SENSITIVE_COLUMNS: frozenset[str] = frozenset(
+# El SQL libre es solo para administradores, que en el ERP ven los datos de
+# contacto de los terceros: SAVI ya no se los niega (`docs/plataforma/
+# 10-datos-por-permiso.md`). Lo que sigue prohibido para TODOS por SAVI, en
+# cualquier parte de la consulta (también en un WHERE, para que no se pueda
+# adivinar una clave comparando):
+#
+# - credenciales: con una clave, alguien entra al ERP como otra persona;
+# - biometría y datos sensibles de la Ley 1581, art. 5.
+#
+# Por nombre de columna cuando el nombre no se usa para otra cosa en el ERP.
+PROHIBITED_COLUMNS: frozenset[str] = frozenset(
     {
-        "numeroidentificacion",
-        "telefonofijo",
-        "telefono",
-        "celular",
-        "email",
-        "correo",
-        "correoelectronico",
-        "direccion",
+        "clave",
+        "claveapp",
+        "clavepermiso",
+        "clavepermiso2",
+        "clavepermiso3",
+        "huella",
+        "fotohuella",
+        "puntajesisben",
+        "genero",
+        "estrato",
     }
+)
+# Por tabla y columna cuando el nombre es común: `foto` también es la imagen
+# de un producto, que no es un dato personal.
+PROHIBITED_TABLE_COLUMNS: frozenset[tuple[str, str, str]] = frozenset(
+    {
+        ("tercero", "tercero", "foto"),
+        ("nomina", "empleado", "foto"),
+    }
+)
+# Tablas enteras que no tienen nada para consultar y sí mucho para abusar.
+PROHIBITED_TABLES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("seguridad", "recuperacionclave"),
+        ("seguridad", "sesionactiva"),
+    }
+)
+PROHIBITED_MESSAGE = (
+    "Esa consulta toca datos que SAVI no entrega a nadie (claves, biometría o datos "
+    "sensibles de la ley de protección de datos). No lo intentes de otra forma: "
+    "dile al usuario que esa información no se puede consultar por SAVI."
 )
 
 
@@ -149,7 +175,7 @@ def validate_and_normalize(sql: str, policy: FreeQueryPolicy) -> str:
     _reject_select_star_top_level(root)
     _reject_dangerous_functions(root)
     _reject_system_catalogs(root)
-    _reject_sensitive_columns(root)
+    _reject_prohibited_data(root)
     _check_subquery_depth(root, policy)
     _make_date_ranges_inclusive(root)
 
@@ -255,21 +281,33 @@ def _reject_system_catalogs(root: exp.Select) -> None:
             )
 
 
-def _reject_sensitive_columns(root: exp.Select) -> None:
-    # Cada SELECT, también los de subqueries: si no, `SELECT x FROM (SELECT
-    # email AS x ...)` lo devolvería renombrado.
+def _tables_by_alias(select: exp.Select) -> dict[str, tuple[str, str]]:
+    """Alias (o nombre) → (esquema, tabla), en minúsculas, de un SELECT."""
+    tables: dict[str, tuple[str, str]] = {}
+    for table in select.find_all(exp.Table):
+        key = (str(table.db or "").lower(), str(table.name or "").lower())
+        tables[str(table.alias_or_name).lower()] = key
+    return tables
+
+
+def _reject_prohibited_data(root: exp.Select) -> None:
+    # En toda la consulta y en cada subconsulta: si no, `SELECT x FROM (SELECT
+    # clave AS x ...)` lo devolvería renombrado, o un `WHERE clave = '...'`
+    # serviría para adivinarla.
+    for table in root.find_all(exp.Table):
+        key = (str(table.db or "").lower(), str(table.name or "").lower())
+        if key in PROHIBITED_TABLES:
+            raise AstValidationError(PROHIBITED_MESSAGE)
     for select in [root, *root.find_all(exp.Select)]:
-        for projection in select.expressions:
-            for column in projection.find_all(exp.Column):
-                if column.name.lower() not in SENSITIVE_COLUMNS:
-                    continue
-                if column.find_ancestor(exp.AggFunc) is not None:
-                    continue
-                raise AstValidationError(
-                    f"La columna '{column.name}' es un dato personal y no se puede "
-                    "devolver (identificación, teléfono, email, dirección). Muestra "
-                    "el nombre y el código del tercero en su lugar."
-                )
+        tables = _tables_by_alias(select)
+        only = next(iter(tables.values())) if len(tables) == 1 else None
+        for column in select.find_all(exp.Column):
+            name = column.name.lower()
+            if name in PROHIBITED_COLUMNS:
+                raise AstValidationError(PROHIBITED_MESSAGE)
+            owner = tables.get(column.table.lower()) if column.table else only
+            if owner is not None and (*owner, name) in PROHIBITED_TABLE_COLUMNS:
+                raise AstValidationError(PROHIBITED_MESSAGE)
 
 
 _DATE_ONLY = re.compile(r"^\d{4}-\d{2}-\d{2}$")

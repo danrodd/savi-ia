@@ -111,7 +111,8 @@ def _resolve_fields(query: SemanticQuery, entity: SemanticEntity) -> list[str]:
             "usa modo 'agregado'."
         )
     if not query.campos:
-        return list(entity.fields)  # todos los campos por default
+        # Los de siempre; los de contacto se muestran solo cuando se piden.
+        return [name for name, f in entity.fields.items() if f.default]
     out: list[str] = []
     for c in query.campos:
         if c not in entity.fields:

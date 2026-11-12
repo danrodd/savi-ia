@@ -15,6 +15,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
+from app.modules.data_query.application.permission_text import permission_denied_text
 from app.modules.data_query.application.query_compiler import compile_query, search_terms
 from app.modules.data_query.application.query_parser import parse_semantic_query
 from app.modules.data_query.domain.exceptions import (
@@ -33,6 +34,7 @@ from app.modules.data_query.infrastructure.catalog import entity_names, get_enti
 from app.modules.data_query.infrastructure.erp_query_executor import execute_compiled
 
 log = logging.getLogger(__name__)
+audit_log = logging.getLogger("savi.audit")
 
 
 async def run_semantic_query(
@@ -48,6 +50,9 @@ async def run_semantic_query(
         entity = get_entity(query.entidad)
         if entity is None:
             raise UnknownEntityError(query.entidad, entity_names())
+        denied = _denied_names(query, entity.restricted_names(modules))
+        if denied:
+            return permission_denied_text(denied)
         entity = entity.scoped_for(modules)
         if not entity.allowed_for(modules):
             # Defensa en profundidad: la descripción de la tool ya la oculta.
@@ -79,8 +84,45 @@ async def run_semantic_query(
         if hint:
             return hint
         return _format_result(result, compiled.select_labels)
+    _audit_personal_data(query, entity, erp_database_id, result.row_count)
     note = await _mixed_matches_note(query, entity, erp_database_id)
     return _format_result(result, compiled.select_labels) + note
+
+
+def _audit_personal_data(
+    query: SemanticQuery, entity: SemanticEntity, erp_database_id: UUID | None, rows: int
+) -> None:
+    """Deja constancia de cada consulta que devolvió datos personales o bancarios.
+
+    Quién, qué entidad, qué campos y cuántas filas; nunca los valores. El SQL
+    libre ya queda en su propia tabla de auditoría.
+    """
+    sensitive = [
+        name
+        for name in (*query.campos, *query.dimensiones)
+        if (item := entity.fields.get(name) or entity.dimensions.get(name)) is not None
+        and item.required_modules
+    ]
+    if sensitive:
+        audit_log.info(
+            "personal_data_access erp_database_id=%s entity=%s fields=%s rows=%s",
+            erp_database_id,
+            entity.name,
+            ",".join(sensitive),
+            rows,
+        )
+
+
+def _denied_names(
+    query: SemanticQuery, restricted: dict[str, tuple[str, ...]]
+) -> dict[str, tuple[str, ...]]:
+    """Lo que la consulta pide y el usuario no puede ver, con su módulo."""
+    if not restricted:
+        return {}
+    asked = [*query.campos, *query.dimensiones, *(f.campo for f in query.filtros)]
+    if query.orden is not None:
+        asked.append(query.orden.campo)
+    return {name: restricted[name] for name in asked if name in restricted}
 
 
 # Cuántos valores distintos se nombran en el aviso de coincidencias mezcladas.

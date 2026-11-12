@@ -82,11 +82,11 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 
 *P1. Datos por permiso*
 
-- [ ] B7. Módulos del ERP sin tildes ni mayúsculas (`NOMINA`, `HERRAMIENTAS`, `CuentaPagar`) y log de los desconocidos.
-- [ ] B8. Permiso por campo en el catálogo (`required_modules` en `FieldDef`) y campos personales, comerciales y bancarios de terceros. Campos del tercero desde ventas, compras y cartera. Regla conservadora de `TerceroVip`.
-- [ ] B9. SQL libre: quitar el bloqueo de contacto para el administrador y armar la lista de prohibidos por tabla y columna.
-- [ ] B10. `PermissionDeniedError` con texto fijo, corte por turno y regla en el prompt.
-- [ ] B11. Auditoría de consultas con datos personales.
+- [x] B7. Módulos del ERP sin tildes ni mayúsculas (`NOMINA`, `HERRAMIENTAS`, `CuentaPagar`) y log de los desconocidos.
+- [x] B8. Permiso por campo en el catálogo (`required_modules` en `FieldDef`) y campos personales, comerciales y bancarios de terceros. Campos del tercero desde ventas, compras y cartera. Regla conservadora de `TerceroVip`.
+- [x] B9. SQL libre: quitar el bloqueo de contacto para el administrador y armar la lista de prohibidos por tabla y columna.
+- [x] B10. `PermissionDeniedError` con texto fijo, corte por turno y regla en el prompt.
+- [x] B11. Auditoría de consultas con datos personales.
 
 *P2. Resultados completos*
 
@@ -107,4 +107,4 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 | Etapa | Estado |
 |---|---|
 | Fase A | **Completa** (2026-11-11). Quedan decisiones menores abiertas en cada documento, ninguna frena el inicio. |
-| Fase B | En curso. B1–B3 en `c798dcf` (tests: `test_failed_turn.py`, `test_openai_integration.py`, `failedTurn.spec.ts`); B4 con `test_turn_budget.py`. B5: con OpenAI real y la copia local de Imporllantas, la pregunta que fallaba en la demo responde (557 productos), aunque con 8 consultas rechazadas antes (lo ataca B14/B15); con un OpenAI falso que responde 503, el log muestra 3 reintentos, el turno queda guardado con su código y se ve al recargar. B6: `/admin/failed-turns` y vista Turnos fallidos (`test_failed_turns.py`, `FailedTurnsView.spec.ts`). Pendiente menor: el turno fallido no guarda proveedor y modelo (solo llegan con `done`). Ruta: inline (preferencia del usuario, sin subagentes). |
+| Fase B | En curso. B1–B3 en `c798dcf` (tests: `test_failed_turn.py`, `test_openai_integration.py`, `failedTurn.spec.ts`); B4 con `test_turn_budget.py`. B5: con OpenAI real y la copia local de Imporllantas, la pregunta que fallaba en la demo responde (557 productos), aunque con 8 consultas rechazadas antes (lo ataca B14/B15); con un OpenAI falso que responde 503, el log muestra 3 reintentos, el turno queda guardado con su código y se ve al recargar. B6: `/admin/failed-turns` y vista Turnos fallidos (`test_failed_turns.py`, `FailedTurnsView.spec.ts`). Pendiente menor: el turno fallido no guarda proveedor y modelo (solo llegan con `done`). B7 en `b4dac0a`. B8–B11: permiso por campo (`_tercero_fields.py`), SQL libre con lista de prohibidos, rechazo fijo con corte a los 2 rechazos y auditoría `savi.audit` (`test_field_permissions.py`, `test_sql_validator.py`, `test_turn_budget.py`). Desvío de la spec en `TerceroVip`: hoy vacía el dato para todo no administrador si el tercero está en la tabla (no distingue a los usuarios listados, porque el catálogo no recibe el usuario); la tabla está vacía en los tres clientes. Ruta: inline (preferencia del usuario, sin subagentes). |

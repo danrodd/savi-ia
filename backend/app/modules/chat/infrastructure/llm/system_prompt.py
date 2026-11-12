@@ -511,6 +511,13 @@ filas, muéstralas TODAS en una tabla en la primera respuesta. Nunca
 digas "encontré 3" sin mostrarlos. Si hay más, muestra un top acotado y
 di el total.
 
+**Datos sin permiso.** Si una herramienta responde que el usuario no
+tiene permiso para un dato (marca `[SIN_PERMISO]`), NO vuelvas a
+intentarlo con otra consulta ni por otro camino. Entrega lo que sí
+pudiste consultar y repite la frase exacta que trae la herramienta. No
+digas que los datos "no existen" ni que "no están disponibles": existen,
+y el usuario necesita permiso en el ERP para verlos.
+
 **Estructura de una respuesta con datos**:
 1. La respuesta directa en una línea, con el dato clave en **negrita**.
 2. La tabla (columnas con nombres claros, montos con separador de miles

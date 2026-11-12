@@ -40,6 +40,10 @@ class DimensionDef:
     sql: str  # ej. 'DATE_TRUNC(\'month\', f."fecha")'
     label: str
     requires: tuple[str, ...] = ()
+    # Módulos del ERP que habilitan este dato (alcanza con uno). Vacío = lo
+    # ve quien ve la entidad. Ver `docs/plataforma/10-datos-por-permiso.md`.
+    required_modules: tuple[str, ...] = ()
+    restricted_sql: str | None = None  # como en `FieldDef`
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +54,15 @@ class FieldDef:
     sql: str  # ej. 'f."numero"'
     label: str
     requires: tuple[str, ...] = ()
+    # Módulos del ERP que habilitan este dato (alcanza con uno). Vacío = lo
+    # ve quien ve la entidad. Un usuario sin el módulo ni lo ve ofrecido.
+    required_modules: tuple[str, ...] = ()
+    # SQL para quien no es administrador, cuando difiere (p. ej. vacía el dato
+    # de un tercero reservado en `Seguridad.TerceroVip`). `None` = `sql`.
+    restricted_sql: str | None = None
+    # Si entra cuando el modelo no pide campos. Los datos de contacto no: se
+    # muestran cuando se piden, no en cada listado.
+    default: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +74,7 @@ class FilterDef:
     allowed_ops: tuple[FilterOp, ...]
     requires: tuple[str, ...] = ()
     value_type: FilterValueType = "text"
+    required_modules: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +97,11 @@ class RowScope:
     sql: str  # condición constante, sin parámetros
     modules: tuple[str, ...]  # alcanza con uno
     label: str  # para decirle al modelo qué parte ve
+
+
+def module_allows(required: tuple[str, ...], modules: Collection[str] | None) -> bool:
+    """`None` es un administrador; sin requisitos, lo ve cualquiera."""
+    return modules is None or not required or any(m in modules for m in required)
 
 
 def _no_metrics() -> dict[str, MetricDef]:
@@ -156,13 +175,46 @@ class SemanticEntity:
         return tuple(s for s in self.row_scopes if any(m in modules for m in s.modules))
 
     def scoped_for(self, modules: Collection[str] | None) -> SemanticEntity:
-        """La entidad con las filas que `modules` puede ver, como filtro fijo.
+        """La entidad que puede usar quien tiene `modules`.
+
+        - Las filas, con los alcances visibles como filtro fijo.
+        - Los campos, dimensiones y filtros, sin los que exigen un módulo que
+          no tiene; y los que tienen `restricted_sql`, con esa versión.
 
         Se aplica antes de compilar: el compilador no sabe de permisos y el
-        modelo no puede quitar un filtro que no escribió.
+        modelo no puede quitar un filtro ni pedir un campo que no ve.
         """
-        if modules is None or not self.row_scopes:
+        if modules is None:
             return self
-        scopes = self.visible_scopes(modules)
-        clause = "(" + " OR ".join(s.sql for s in scopes) + ")" if scopes else "FALSE"
-        return replace(self, base_filters=(*self.base_filters, clause))
+        entity = self
+        if self.row_scopes:
+            scopes = self.visible_scopes(modules)
+            clause = "(" + " OR ".join(s.sql for s in scopes) + ")" if scopes else "FALSE"
+            entity = replace(entity, base_filters=(*entity.base_filters, clause))
+        return replace(
+            entity,
+            fields={
+                name: replace(f, sql=f.restricted_sql) if f.restricted_sql else f
+                for name, f in entity.fields.items()
+                if module_allows(f.required_modules, modules)
+            },
+            dimensions={
+                name: replace(d, sql=d.restricted_sql) if d.restricted_sql else d
+                for name, d in entity.dimensions.items()
+                if module_allows(d.required_modules, modules)
+            },
+            filters={
+                name: f
+                for name, f in entity.filters.items()
+                if module_allows(f.required_modules, modules)
+            },
+        )
+
+    def restricted_names(self, modules: Collection[str] | None) -> dict[str, tuple[str, ...]]:
+        """Nombres que `modules` no puede usar y qué módulo los habilita."""
+        hidden: dict[str, tuple[str, ...]] = {}
+        for group in (self.fields, self.dimensions, self.filters):
+            for name, item in group.items():
+                if not module_allows(item.required_modules, modules):
+                    hidden[name] = item.required_modules
+        return hidden
