@@ -54,9 +54,10 @@ class TableBlock(_Block):
 
 
 class ChartBlock(_Block):
-    """Barras de una columna numérica de un conjunto, por otra columna de etiquetas."""
+    """Gráfico de una columna numérica de un conjunto, por otra columna de etiquetas."""
 
     tipo: Literal["grafico"]
+    forma: Literal["barras", "torta", "lineas"] = "barras"
     conjunto: UUID
     etiqueta: str = Field(min_length=1, max_length=100)
     valor: str = Field(min_length=1, max_length=100)

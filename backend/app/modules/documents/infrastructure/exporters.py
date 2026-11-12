@@ -278,7 +278,7 @@ def to_pdf(document: Document) -> bytes:
 
 def _chart(block: Block) -> bytes:
     """El PNG del gráfico con los valores del conjunto."""
-    from app.modules.documents.infrastructure.charts import bar_chart_png
+    from app.modules.documents.infrastructure.charts import chart_png
 
     table = block.table
     assert table is not None  # noqa: S101 — solo se llama con un conjunto
@@ -289,7 +289,7 @@ def _chart(block: Block) -> bytes:
         for row in table.rows
         if isinstance(row[value_index], int | float)
     ]
-    return bar_chart_png(block.text, items)
+    return chart_png(block.shape, block.text, items)
 
 
 def _inline_markup(text: str) -> str:

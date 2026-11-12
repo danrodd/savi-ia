@@ -47,7 +47,10 @@ ENTREGAR_ARCHIVO_DESCRIPTION = (
     "{tipo:'datos_clave', items:[[etiqueta, valor], ...]}, "
     "{tipo:'tabla', conjunto:'<id>', columnas:[...opcional]}, "
     "{tipo:'grafico', conjunto:'<id>', etiqueta:'<columna>', valor:'<columna numérica>', "
-    "titulo:'...'} (barras de los 15 valores mayores).\n\n"
+    "forma:'barras'|'torta'|'lineas', titulo:'...'}. Barras (por defecto) para "
+    "comparar categorías: muestra los 15 mayores. Torta solo para partes de un total "
+    "sin negativos: 7 porciones y el resto en 'Otros'. Líneas para la evolución en el "
+    "tiempo: hasta 60 puntos, en el orden de la consulta (ordénala por fecha).\n\n"
     "Reglas: las tablas NO llevan filas, solo el identificador del conjunto; el "
     "servidor pone los datos. En el texto usa solo cifras que vengan de las consultas. "
     "Un documento sin tablas solo si el tema es del negocio (carta de cobro, acta). "
@@ -78,6 +81,7 @@ ENTREGAR_ARCHIVO_SCHEMA: dict[str, Any] = {
                     "columnas": {"type": "array", "items": {"type": "string"}},
                     "etiqueta": {"type": "string"},
                     "valor": {"type": "string"},
+                    "forma": {"type": "string", "enum": ["barras", "torta", "lineas"]},
                     "titulo": {"type": "string"},
                 },
                 "required": ["tipo"],

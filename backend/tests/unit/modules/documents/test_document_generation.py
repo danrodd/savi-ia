@@ -308,5 +308,120 @@ def test_the_chart_draws_the_top_values_in_order() -> None:
 
     with Image.open(io.BytesIO(png)) as image:
         assert image.format == "PNG"
-        # Alto proporcional a las barras dibujadas: como mucho MAX_BARS.
-        assert image.size[1] <= 90 + 46 * MAX_BARS + 40
+        # Alto proporcional a las barras dibujadas: como mucho MAX_BARS, más la
+        # línea que avisa cuántas quedaron por fuera.
+        assert image.size[1] <= 90 + 34 + 46 * MAX_BARS + 40
+
+
+async def _numbers_table(
+    sm: async_sessionmaker[AsyncSession], conversation_id: UUID, values: list[float]
+) -> UUID:
+    table = build_result_set(
+        conversation_id=conversation_id,
+        title="Ventas por mes",
+        keys=["mes", "total"],
+        labels={"mes": "Mes", "total": "Total"},
+        raw_rows=[{"mes": f"Mes {i + 1}", "total": value} for i, value in enumerate(values)],
+        has_personal_data=False,
+    )
+    await SqlAlchemyResultSetRepository(sm).add(table)
+    return table.id
+
+
+def _chart_spec(table_id: UUID, forma: str) -> DocumentSpec:
+    chart = {
+        "tipo": "grafico",
+        "conjunto": str(table_id),
+        "etiqueta": "mes",
+        "valor": "total",
+        "forma": forma,
+    }
+    return DocumentSpec.model_validate(_spec(table_id, bloques=[chart]))
+
+
+@pytest.mark.parametrize("forma", ["barras", "torta", "lineas"])
+async def test_each_chart_shape_lands_in_the_pdf(
+    sm: async_sessionmaker[AsyncSession], forma: str
+) -> None:
+    from pypdf import PdfReader
+
+    conversation_id = await _conversation(sm)
+    table_id = await _numbers_table(sm, conversation_id, [120.0, 80.5, 0.0, 300.0, 45.0])
+    use_case = BuildDocumentUseCase(
+        SqlAlchemyResultSetRepository(sm), SqlAlchemyStoredFileRepository(sm), FileRenderer()
+    )
+
+    pdf = await use_case.execute(conversation_id, _chart_spec(table_id, forma), Branding())
+
+    assert len(PdfReader(io.BytesIO(pdf.content)).pages[0].images) == 1
+
+
+async def test_a_pie_refuses_negative_values(sm: async_sessionmaker[AsyncSession]) -> None:
+    conversation_id = await _conversation(sm)
+    table_id = await _numbers_table(sm, conversation_id, [120.0, -30.0, 50.0])
+    use_case = BuildDocumentUseCase(
+        SqlAlchemyResultSetRepository(sm), SqlAlchemyStoredFileRepository(sm), FileRenderer()
+    )
+
+    with pytest.raises(FileRequestError, match="negativos"):
+        await use_case.execute(conversation_id, _chart_spec(table_id, "torta"), Branding())
+    # Las barras sí los muestran.
+    await use_case.execute(conversation_id, _chart_spec(table_id, "barras"), Branding())
+
+
+async def test_a_line_asks_to_group_when_there_are_too_many_points(
+    sm: async_sessionmaker[AsyncSession],
+) -> None:
+    from app.modules.documents.domain.document import MAX_LINE_POINTS
+
+    conversation_id = await _conversation(sm)
+    table_id = await _numbers_table(sm, conversation_id, [1.0] * (MAX_LINE_POINTS + 1))
+    use_case = BuildDocumentUseCase(
+        SqlAlchemyResultSetRepository(sm), SqlAlchemyStoredFileRepository(sm), FileRenderer()
+    )
+
+    with pytest.raises(FileRequestError, match="agrupa la consulta por mes"):
+        await use_case.execute(conversation_id, _chart_spec(table_id, "lineas"), Branding())
+
+
+def test_pie_slices_fold_the_rest_into_others_and_keep_the_total() -> None:
+    from app.modules.documents.infrastructure.charts import MAX_SLICES, pie_slices
+
+    items = [(f"Vendedor {i}", float(i)) for i in range(1, 13)]
+
+    slices = pie_slices(items)
+
+    assert len(slices) == MAX_SLICES + 1
+    assert slices[0] == ("Vendedor 12", 12.0)
+    assert slices[-1] == ("Otros (5)", 1.0 + 2.0 + 3.0 + 4.0 + 5.0)
+    assert sum(v for _, v in slices) == sum(v for _, v in items)
+
+
+@pytest.mark.parametrize(
+    ("low", "high", "expected"),
+    [
+        (0.0, 230.0, [0.0, 100.0, 200.0, 300.0]),
+        (0.0, 905_871_472.0, [0.0, 2.5e8, 5e8, 7.5e8, 1e9]),
+        (-40.0, 90.0, [-50.0, 0.0, 50.0, 100.0]),
+        (0.0, 0.0, [0.0, 0.25, 0.5, 0.75, 1.0]),
+    ],
+)
+def test_line_axis_ticks_are_round_and_cover_the_range(
+    low: float, high: float, expected: list[float]
+) -> None:
+    from app.modules.documents.infrastructure.charts import nice_ticks
+
+    assert nice_ticks(low, high) == pytest.approx(expected)
+
+
+def test_pie_slices_leave_out_zeros_and_do_not_fold_a_single_extra() -> None:
+    from app.modules.documents.infrastructure.charts import MAX_SLICES, pie_slices
+
+    items = [(f"P{i}", float(i)) for i in range(1, MAX_SLICES + 2)] + [("Cero", 0.0)]
+
+    slices = pie_slices(items)
+
+    # Una sola porción de más se muestra con su nombre: "Otros (1)" no aporta.
+    assert len(slices) == MAX_SLICES + 1
+    assert all(not label.startswith("Otros") for label, _ in slices)
+    assert ("Cero", 0.0) not in slices

@@ -14,6 +14,10 @@ from typing import Literal
 from app.modules.documents.domain.result_set import ResultSet
 
 BlockKind = Literal["heading", "paragraph", "bullets", "key_values", "table", "chart"]
+ChartShape = Literal["bar", "pie", "line"]
+
+# Más puntos que esto en una línea no se leen: se pide agrupar la consulta.
+MAX_LINE_POINTS = 60
 
 
 @dataclass(frozen=True)
@@ -26,6 +30,8 @@ class Block:
     # Columnas de la tabla a mostrar, en orden. Vacío = todas. En un gráfico:
     # (columna de etiquetas, columna de valores).
     columns: tuple[str, ...] = ()
+    # Forma del gráfico (solo en bloques "chart").
+    shape: ChartShape = "bar"
 
 
 @dataclass(frozen=True)

@@ -17,7 +17,13 @@ from app.modules.documents.application.document_spec import (
     ParagraphBlock,
 )
 from app.modules.documents.application.use_cases import Owner
-from app.modules.documents.domain.document import Block, Branding, Document
+from app.modules.documents.domain.document import (
+    MAX_LINE_POINTS,
+    Block,
+    Branding,
+    ChartShape,
+    Document,
+)
 from app.modules.documents.domain.files import (
     TABLE_FORMATS,
     DocumentRenderer,
@@ -132,12 +138,15 @@ class BuildDocumentUseCase:
                     raise FileRequestError(
                         f"La columna {item.valor} no es numérica: un gráfico necesita valores."
                     )
+                shape = _CHART_SHAPES[item.forma]
+                _check_chart(table, value, shape)
                 blocks.append(
                     Block(
                         kind="chart",
                         text=item.titulo or table.title,
                         table=table,
                         columns=(label, value),
+                        shape=shape,
                     )
                 )
             else:
@@ -170,6 +179,24 @@ class BuildDocumentUseCase:
         )
         await self._files.add(stored)
         return stored
+
+
+_CHART_SHAPES: dict[str, ChartShape] = {"barras": "bar", "torta": "pie", "lineas": "line"}
+
+
+def _check_chart(table: ResultSet, value_key: str, shape: ChartShape) -> None:
+    """Lo que la forma no puede mostrar con honestidad se le explica al modelo."""
+    index = next(i for i, c in enumerate(table.columns) if c.key == value_key)
+    numbers = [row[index] for row in table.rows if isinstance(row[index], int | float)]
+    if shape == "pie" and any(n < 0 for n in numbers):
+        raise FileRequestError(
+            "Una torta no admite valores negativos: usa forma 'barras' para esos datos."
+        )
+    if shape == "line" and len(table.rows) > MAX_LINE_POINTS:
+        raise FileRequestError(
+            f"Una línea admite hasta {MAX_LINE_POINTS} puntos y el conjunto tiene "
+            f"{len(table.rows)}: agrupa la consulta por mes o por semana y vuelve a intentarlo."
+        )
 
 
 def _resolve_columns(table: ResultSet, requested: list[str]) -> tuple[str, ...]:
