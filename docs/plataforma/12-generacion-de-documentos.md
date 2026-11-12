@@ -1,6 +1,6 @@
 # 12 — Generación de documentos (Excel, PDF, Word)
 
-**Estado:** análisis (Fase A del plan `odd/tasks/hallazgos-primera-demo.md`).
+**Estado:** implementado y probado (2026-11-12, B16–B19 del plan `odd/tasks/hallazgos-primera-demo.md`). F3: el logo y el nombre salen de `Empresa.Empresa` del ERP; los gráficos quedan para después.
 **Origen:** demo con cliente del 2026-11-11: "la posibilidad de que SAVI genere documentos, ya sea un Word, PDF o Excel, donde lleve la información que se le solicita".
 **Depende de:** P1 (`10-datos-por-permiso.md`), por los permisos, y P2 (`11-resultados-completos.md`), por los conjuntos de resultados y la exportación.
 

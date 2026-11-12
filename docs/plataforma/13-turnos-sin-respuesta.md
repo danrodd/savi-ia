@@ -1,6 +1,6 @@
 # 13 — Turnos que terminan sin respuesta
 
-**Estado:** análisis (Fase A del plan `odd/tasks/hallazgos-primera-demo.md`). La demo corrió con **OpenAI**. La causa exacta se confirma reproduciendo el caso, porque no hay log del equipo (§6).
+**Estado:** implementado y probado (2026-11-12, B1–B6 del plan `odd/tasks/hallazgos-primera-demo.md`). Con OpenAI real y la copia de Imporllantas, la pregunta que fallaba en la demo responde; con un OpenAI falso que responde 503, el turno queda guardado con su código de soporte.
 **Origen:** demo con cliente del 2026-11-11.
 
 ## 1. Lo que se vio

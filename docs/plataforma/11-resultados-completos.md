@@ -1,6 +1,6 @@
 # 11 — Resultados completos: que lo recortado no parezca completo
 
-**Estado:** análisis (Fase A del plan `odd/tasks/hallazgos-primera-demo.md`).
+**Estado:** implementado y probado (2026-11-12, B12–B15 del plan `odd/tasks/hallazgos-primera-demo.md`).
 **Origen:** demo con cliente del 2026-11-11.
 
 ## 1. Problema
