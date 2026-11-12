@@ -112,6 +112,15 @@ export interface StoredMessage {
   error_message?: string | null
   support_code?: string | null
   data_tables?: DataTableRef[]
+  files?: GeneratedFileRef[]
+}
+
+/** Un archivo generado para la respuesta (`/files/{id}`). */
+export interface GeneratedFileRef {
+  id: string
+  filename: string
+  media_type: string
+  size_bytes: number
 }
 
 /** Un conjunto de resultados de la respuesta (`/result-sets/{id}`). */
@@ -141,6 +150,7 @@ export type ChatEvent =
   | { type: 'title_update'; title: string }
   | { type: 'sources'; sources: MessageSource[] }
   | { type: 'data_tables'; tables: DataTableRef[] }
+  | { type: 'files'; files: GeneratedFileRef[] }
   | {
       type: 'done'
       usage: Record<string, unknown> | null
@@ -192,6 +202,8 @@ export interface UIMessage {
   supportCode?: string
   /** Tablas de datos de la respuesta: vista previa y exportación completa. */
   dataTables?: DataTableRef[]
+  /** Archivos que SAVI generó para la respuesta. */
+  files?: GeneratedFileRef[]
   sources?: MessageSource[]
   /** Calificación propia de la respuesta (`null`/ausente = sin calificar). */
   feedback?: MessageFeedback | null

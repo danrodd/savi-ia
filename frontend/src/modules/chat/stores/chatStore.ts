@@ -69,6 +69,7 @@ function storedToUI(m: StoredMessage): UIMessage {
         : undefined,
     supportCode: m.support_code ?? undefined,
     dataTables: m.data_tables ?? [],
+    files: m.files ?? [],
     sources: m.sources ?? [],
     feedback: m.feedback ?? null,
   }
@@ -222,6 +223,9 @@ function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
       break
     case 'data_tables':
       next[next.length - 1] = { ...last, dataTables: ev.tables }
+      break
+    case 'files':
+      next[next.length - 1] = { ...last, files: ev.files }
       break
     case 'thinking_delta':
     case 'title_update':

@@ -7,6 +7,7 @@ import { groupToolCalls } from '../utils/groupToolCalls'
 import BrandMark from './BrandMark.vue'
 import DataTableCard from './DataTableCard.vue'
 import FeedbackButtons from './FeedbackButtons.vue'
+import FileCard from './FileCard.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import MessageSources from './MessageSources.vue'
 import ShareMenu from './ShareMenu.vue'
@@ -142,6 +143,9 @@ function next(): void {
 
       <template v-if="message.done && !isViewingHistorical && message.dataTables?.length">
         <DataTableCard v-for="table in message.dataTables" :key="table.id" :table="table" />
+      </template>
+      <template v-if="message.done && !isViewingHistorical && message.files?.length">
+        <FileCard v-for="file in message.files" :key="file.id" :file="file" />
       </template>
 
       <MessageSources
