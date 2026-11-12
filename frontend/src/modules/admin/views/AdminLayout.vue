@@ -7,6 +7,7 @@ import {
   MessageSquareHeart,
   RefreshCw,
   Sparkles,
+  TriangleAlert,
 } from 'lucide-vue-next'
 import { RouterLink, RouterView } from 'vue-router'
 
@@ -19,6 +20,7 @@ const NAV = [
   { to: { name: 'admin-usage' }, label: 'Consumo', icon: ChartColumn },
   { to: { name: 'admin-feedback' }, label: 'Feedback del piloto', icon: MessageSquareHeart },
   { to: { name: 'admin-updates' }, label: 'Actualizaciones', icon: RefreshCw },
+  { to: { name: 'admin-failed-turns' }, label: 'Turnos fallidos', icon: TriangleAlert },
 ] as const
 </script>
 

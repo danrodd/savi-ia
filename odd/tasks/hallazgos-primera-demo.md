@@ -77,8 +77,8 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 - [x] B2. OpenAI: reintentar `response.failed` y `error` pasajeros y respetar `retry-after`. Reintentar solo la llamada al modelo si ya hubo consultas al ERP. Separar `_SECURITY_MESSAGE` de las fallas genéricas.
 - [x] B3. Categorías de error con texto de usted y código de soporte (backend, frontend y manual de uso). Aplica a OpenAI, Gemini y Claude.
 - [x] B4. Presupuesto de contexto: tope de consultas por turno (12) y recorte del historial antes del límite.
-- [ ] B5. Reproducir el caso de la demo con el respaldo de Imporllantas y OpenAI. Prueba de regresión.
-- [ ] B6. Vista de turnos fallidos en Administración.
+- [x] B5. Reproducir el caso de la demo con el respaldo de Imporllantas y OpenAI. Prueba de regresión.
+- [x] B6. Vista de turnos fallidos en Administración.
 
 *P1. Datos por permiso*
 
@@ -107,4 +107,4 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 | Etapa | Estado |
 |---|---|
 | Fase A | **Completa** (2026-11-11). Quedan decisiones menores abiertas en cada documento, ninguna frena el inicio. |
-| Fase B | En curso. B1–B3 en `c798dcf` (tests: `test_failed_turn.py`, `test_openai_integration.py`, `failedTurn.spec.ts`); B4 con `test_turn_budget.py`. Ruta: inline (preferencia del usuario, sin subagentes). |
+| Fase B | En curso. B1–B3 en `c798dcf` (tests: `test_failed_turn.py`, `test_openai_integration.py`, `failedTurn.spec.ts`); B4 con `test_turn_budget.py`. B5: con OpenAI real y la copia local de Imporllantas, la pregunta que fallaba en la demo responde (557 productos), aunque con 8 consultas rechazadas antes (lo ataca B14/B15); con un OpenAI falso que responde 503, el log muestra 3 reintentos, el turno queda guardado con su código y se ve al recargar. B6: `/admin/failed-turns` y vista Turnos fallidos (`test_failed_turns.py`, `FailedTurnsView.spec.ts`). Pendiente menor: el turno fallido no guarda proveedor y modelo (solo llegan con `done`). Ruta: inline (preferencia del usuario, sin subagentes). |

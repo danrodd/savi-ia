@@ -35,6 +35,9 @@ from app.modules.company_knowledge.infrastructure.provider import (
 )
 from app.modules.conversations.infrastructure.http import attachments_router
 from app.modules.conversations.infrastructure.http import router as conversations_router
+from app.modules.conversations.infrastructure.http.admin_routes import (
+    router as failed_turns_admin_router,
+)
 from app.modules.erp_databases.infrastructure import (
     ErpConnectionProvider,
     backfill_legacy_rows,
@@ -229,6 +232,7 @@ def create_app() -> FastAPI:
     app.include_router(conversations_router)
     app.include_router(feedback_router)
     app.include_router(feedback_admin_router)
+    app.include_router(failed_turns_admin_router)
     app.include_router(chat_router)
     app.include_router(attachments_router)
     app.include_router(usage_router)
