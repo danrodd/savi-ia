@@ -106,6 +106,11 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
     assert "document_model" in llm_columns
     assert "method" in _table_columns(db_path, "company_document_pages")
     assert "cost_usd" in _table_columns(db_path, "company_document_ai_reads")
+    # Turnos fallidos, conjuntos de resultados y archivos generados.
+    message_columns = _table_columns(db_path, "messages")
+    assert {"error_code", "support_code", "data_tables", "files"}.issubset(message_columns)
+    assert "total_rows" in _table_columns(db_path, "result_sets")
+    assert "content" in _table_columns(db_path, "generated_files")
     assert "ai_reading_enabled" in _table_columns(db_path, "company_knowledge_settings")
 
     engine = create_engine(f"sqlite:///{db_path.as_posix()}")
@@ -114,7 +119,7 @@ def test_fresh_sqlite_gets_the_current_schema_via_create_all_and_stamp(
             version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     finally:
         engine.dispose()
-        assert version == "c3a7d1e9f5b2"
+        assert version == "f6a1c4e8d2b3"
 
 
 def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
@@ -240,7 +245,7 @@ def test_existing_sqlite_upgrades_and_backfills_the_owner_column(
     assert row.erp_database_id == queried_database_id
     # ...y la identidad se backfillea desde la base consultada.
     assert row.owner_erp_database_id == queried_database_id
-    assert version == "c3a7d1e9f5b2"
+    assert version == "f6a1c4e8d2b3"
 
 
 _CHAT_ATTACHMENT_COLUMNS = {
