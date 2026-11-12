@@ -23,7 +23,10 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
-from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
+from app.modules.data_query.infrastructure.catalog._names import (
+    product_search_text,
+    tercero_display_name,
+)
 from app.modules.data_query.infrastructure.catalog._tercero_fields import (
     contact_dimensions,
     contact_fields,
@@ -147,7 +150,7 @@ COMPRAS_DETALLE = SemanticEntity(
     filters={
         "fecha": FilterDef("fecha", 'fc."fecha"', _DATE, value_type="date"),
         "producto": FilterDef(
-            "producto", 'p."descripcion"', (FilterOp.CONTAINS,), requires=("producto",)
+            "producto", product_search_text(), (FilterOp.CONTAINS,), requires=("producto",)
         ),
         "producto_id": FilterDef(
             "producto_id", 'df."idProducto"', (FilterOp.EQ, FilterOp.IN), value_type="number"

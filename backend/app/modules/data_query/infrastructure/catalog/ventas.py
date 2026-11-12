@@ -25,7 +25,10 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
-from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
+from app.modules.data_query.infrastructure.catalog._names import (
+    product_search_text,
+    tercero_display_name,
+)
 from app.modules.data_query.infrastructure.catalog._tercero_fields import (
     contact_dimensions,
     contact_fields,
@@ -170,7 +173,7 @@ VENTAS_DETALLE = SemanticEntity(
         # y no hay un id que lo represente.
         "producto": FilterDef(
             "producto",
-            'p."descripcion"',
+            product_search_text(),
             (FilterOp.CONTAINS,),
             requires=("detalle", "producto"),
         ),

@@ -31,6 +31,7 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
+from app.modules.data_query.infrastructure.catalog._names import product_search_text
 
 _NUMBER_OPS = (FilterOp.GT, FilterOp.GTE, FilterOp.LT, FilterOp.LTE, FilterOp.EQ)
 _DATE_OPS = (FilterOp.LT, FilterOp.LTE, FilterOp.GT, FilterOp.GTE, FilterOp.BETWEEN)
@@ -96,7 +97,7 @@ INVENTARIO_ROTACION = SemanticEntity(
         ),
     },
     filters={
-        "producto": FilterDef("producto", 'p."descripcion"', (FilterOp.CONTAINS,)),
+        "producto": FilterDef("producto", product_search_text(), (FilterOp.CONTAINS,)),
         "codigo": FilterDef("codigo", 'p."codigo"', (FilterOp.EQ, FilterOp.CONTAINS)),
         "existencia": FilterDef("existencia", "s.existencia", _NUMBER_OPS, value_type="number"),
         "dias_sin_venta": FilterDef(

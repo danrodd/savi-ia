@@ -6,7 +6,8 @@ usuario en la base consultada —D3— y la base del ERP). Reutilizar tools
 entre turnos cruzaría ese contexto.
 
 Siguen siendo como máximo 4 tools, con el patrón dispatcher en el
-knowledge (que incluye los datos de la empresa) y en `entregar_archivo`. Ver `backend/docs/mcp_deferred_tools_gotcha.md`.
+knowledge (que incluye los datos de la empresa) y en `entregar_archivo`.
+Ver `backend/docs/mcp_deferred_tools_gotcha.md`.
 """
 
 import json

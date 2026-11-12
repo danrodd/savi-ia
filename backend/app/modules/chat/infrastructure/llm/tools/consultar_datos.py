@@ -16,6 +16,7 @@ from typing import Any, cast
 from uuid import UUID
 
 from app.modules.chat.infrastructure.llm.tools.result_sets import FULL_FETCH, make_recorder
+from app.modules.data_query.application.permission_text import user_message
 from app.modules.data_query.application.run_semantic_query import run_semantic_query
 from app.modules.data_query.infrastructure.catalog import list_entities
 
@@ -79,9 +80,11 @@ def build_description(modules: Collection[str] | None = None) -> str:
                 "el resto, dile que no tiene acceso a esa información en el ERP."
             )
         if hidden:
+            needed = tuple(dict.fromkeys(m for required in hidden.values() for m in required))
             lines.append(
                 f"PERMISOS: este usuario no puede ver {', '.join(hidden)}. Si los pide, "
-                "dile que necesita permiso en el ERP; no intentes conseguirlos."
+                "entrega lo demás y dile exactamente esto, sin intentar conseguirlos: "
+                f'"{user_message(needed)}"'
             )
         if ent.metrics:
             metricas = ", ".join(f"{m.name} ({m.label})" for m in ent.metrics.values())
