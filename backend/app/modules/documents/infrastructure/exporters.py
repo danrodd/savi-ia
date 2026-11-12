@@ -14,7 +14,7 @@ import csv
 import io
 import re
 from datetime import date, datetime
-from typing import Any, cast
+from typing import Any, Literal, cast
 from zoneinfo import ZoneInfo
 
 from app.modules.documents.domain.document import Block, Document
@@ -43,7 +43,33 @@ def _selected(table: ResultSet, columns: tuple[str, ...]) -> list[tuple[int, Res
     return chosen or indexed
 
 
-def _display(value: Any, kind: str) -> str:
+DateStyle = Literal["day", "month", "year"]
+
+_MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+
+
+def _as_date(value: Any) -> date | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value[:10])
+    except ValueError:
+        return None
+
+
+def date_style(table: ResultSet, index: int) -> DateStyle:
+    """Cómo mostrar una columna de fechas, mirando la columna entera.
+
+    Una consulta agrupada por mes o por año trae el primer día del periodo
+    (2025-11-01, 2025-01-01): se muestra "nov 2025" o "2025", no "01/11/2025".
+    """
+    days = [d for d in (_as_date(row[index]) for row in table.rows) if d is not None]
+    if not days or any(d.day != 1 for d in days):
+        return "day"
+    return "year" if all(d.month == 1 for d in days) and len(days) > 1 else "month"
+
+
+def display_value(value: Any, kind: str, style: DateStyle = "day") -> str:
     """Texto para PDF y Word: montos con separador de miles, fechas cortas."""
     if value is None:
         return ""
@@ -52,11 +78,21 @@ def _display(value: Any, kind: str) -> str:
             return f"{int(value):,}".replace(",", ".")
         return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     if kind == "date" and isinstance(value, str):
-        try:
-            return date.fromisoformat(value[:10]).strftime("%d/%m/%Y")
-        except ValueError:
+        day = _as_date(value)
+        if day is None:
             return value
+        if style == "year":
+            return str(day.year)
+        if style == "month":
+            return f"{_MONTHS[day.month - 1]} {day.year}"
+        return day.strftime("%d/%m/%Y")
     return str(value)
+
+
+def _styles(table: ResultSet) -> list[DateStyle]:
+    return [
+        date_style(table, i) if c.kind == "date" else "day" for i, c in enumerate(table.columns)
+    ]
 
 
 def _stamp(document: Document) -> str:
@@ -249,9 +285,13 @@ def to_pdf(document: Document) -> bytes:
             table = block.table
             selected = _selected(table, block.columns)
             data = [[Paragraph(escape(c.label), head) for _, c in selected]]
+            date_styles = _styles(table)
             for row in table.rows:
                 data.append(
-                    [Paragraph(escape(_display(row[i], c.kind)), cell) for i, c in selected]
+                    [
+                        Paragraph(escape(display_value(row[i], c.kind, date_styles[i])), cell)
+                        for i, c in selected
+                    ]
                 )
             grid = Table(data, repeatRows=1)
             grid.setStyle(
@@ -284,8 +324,19 @@ def _chart(block: Block) -> bytes:
     assert table is not None  # noqa: S101 — solo se llama con un conjunto
     keys = [c.key for c in table.columns]
     label_index, value_index = keys.index(block.columns[0]), keys.index(block.columns[1])
+    # Solo las fechas se formatean: un año numérico (2025) no lleva separador de miles.
+    is_date = table.columns[label_index].kind == "date"
+    style = _styles(table)[label_index]
     items = [
-        (str(row[label_index] or "—"), float(row[value_index]))
+        (
+            (
+                display_value(row[label_index], "date", style)
+                if is_date
+                else str(row[label_index] or "")
+            )
+            or "—",
+            float(row[value_index]),
+        )
         for row in table.rows
         if isinstance(row[value_index], int | float)
     ]
@@ -342,10 +393,13 @@ def to_docx(document: Document) -> bytes:
             grid.style = "Light Grid Accent 2"
             for position, (_, column) in enumerate(selected):
                 grid.rows[0].cells[position].text = column.label
+            date_styles = _styles(table)
             for row in table.rows:
                 cells = grid.add_row().cells
                 for position, (index, column) in enumerate(selected):
-                    cells[position].text = _display(row[index], column.kind)
+                    cells[position].text = display_value(
+                        row[index], column.kind, date_styles[index]
+                    )
             for row_cells in grid.rows:
                 for cell in row_cells.cells:
                     for paragraph in cell.paragraphs:

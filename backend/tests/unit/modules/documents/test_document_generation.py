@@ -414,6 +414,28 @@ def test_line_axis_ticks_are_round_and_cover_the_range(
     assert nice_ticks(low, high) == pytest.approx(expected)
 
 
+def test_period_dates_show_as_month_or_year() -> None:
+    from app.modules.documents.infrastructure.exporters import date_style, display_value
+
+    def column(values: list[str]) -> Any:
+        table = build_result_set(
+            conversation_id=uuid4(),
+            title="Periodos",
+            keys=["fecha"],
+            labels={"fecha": "Fecha"},
+            raw_rows=[{"fecha": v} for v in values],
+            has_personal_data=False,
+        )
+        return date_style(table, 0)
+
+    assert column(["2025-11-01T00:00:00-05:00", "2025-12-01T00:00:00-05:00"]) == "month"
+    assert column(["2025-01-01", "2026-01-01"]) == "year"
+    assert column(["2025-11-01", "2025-11-14"]) == "day"
+    assert display_value("2025-11-01T00:00:00-05:00", "date", "month") == "nov 2025"
+    assert display_value("2026-01-01", "date", "year") == "2026"
+    assert display_value("2025-11-14", "date") == "14/11/2025"
+
+
 def test_pie_slices_leave_out_zeros_and_do_not_fold_a_single_extra() -> None:
     from app.modules.documents.infrastructure.charts import MAX_SLICES, pie_slices
 
