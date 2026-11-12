@@ -15,6 +15,7 @@ ni en tools curadas. Es la última capa de la cascada.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 from uuid import UUID
 
@@ -39,6 +40,18 @@ log = logging.getLogger(__name__)
 _CONTACT_COLUMNS = frozenset(
     {"numeroidentificacion", "telefonofijo", "telefono", "celular", "email", "direccion"}
 )
+
+_SCHEMA_LOOKUP = re.compile(r"\binformation_schema\b", re.IGNORECASE)
+
+
+def is_schema_lookup(sql: str) -> bool:
+    """La consulta explora la estructura de la base, no datos del negocio.
+
+    El modelo consulta `information_schema` para encontrar tablas y columnas.
+    Ese resultado no se guarda como conjunto: si no, llega al chat como una
+    tabla con nombres internos de la base.
+    """
+    return _SCHEMA_LOOKUP.search(sql) is not None
 
 
 def build_consultar_libre_impl(
@@ -94,7 +107,7 @@ def build_consultar_libre_impl(
             }
         kept = False
         kept_id: str | None = None
-        if recorder is not None and len(result.rows) >= 2:
+        if recorder is not None and len(result.rows) >= 2 and not is_schema_lookup(sql):
             title = (user_question or "Consulta del ERP").strip()[:150]
             personal = any(c.lower() in _CONTACT_COLUMNS for c in result.columns)
             try:
