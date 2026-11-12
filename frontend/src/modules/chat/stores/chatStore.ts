@@ -21,7 +21,7 @@ import type {
   UIAttachment,
   UIMessage,
 } from '../types'
-import { resolveChatErrorMessage } from '../utils/errorMessages'
+import { resolveChatErrorMessage, STORED_FAILURE_MESSAGE } from '../utils/errorMessages'
 
 function mapStoredToolCall(t: ToolInvocation): ToolCall {
   const status: ToolCall['status'] =
@@ -60,7 +60,14 @@ function storedToUI(m: StoredMessage): UIMessage {
     createdAt: m.created_at,
     done: true,
     interrupted: m.finish_reason === 'interrupted',
-    error: m.finish_reason === 'error' ? 'La respuesta falló.' : undefined,
+    error:
+      m.finish_reason === 'error'
+        ? resolveChatErrorMessage(
+            { message: m.error_message || STORED_FAILURE_MESSAGE, code: m.error_code },
+            isAdminUser(),
+          )
+        : undefined,
+    supportCode: m.support_code ?? undefined,
     sources: m.sources ?? [],
     feedback: m.feedback ?? null,
   }
@@ -202,7 +209,12 @@ function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
       }
       break
     case 'error':
-      next[next.length - 1] = { ...last, done: true, error: ev.message }
+      next[next.length - 1] = {
+        ...last,
+        done: true,
+        error: ev.message,
+        supportCode: ev.support_code ?? undefined,
+      }
       break
     case 'sources':
       next[next.length - 1] = { ...last, sources: ev.sources }

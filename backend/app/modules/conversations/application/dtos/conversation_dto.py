@@ -55,6 +55,9 @@ class MessageDTO:
     superseded_by_id: UUID | None = None
     sources: tuple[MessageSource, ...] = ()
     attachments: tuple[ChatAttachment, ...] = ()
+    error_code: str | None = None
+    error_message: str | None = None
+    support_code: str | None = None
 
 
 @dataclass(frozen=True)

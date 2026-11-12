@@ -86,9 +86,7 @@ class ConversationOrmMapper:
         raw_tools = model.tool_invocations or []
         tools = [ToolInvocation.from_dict(t) for t in raw_tools]
         usage = TokenUsage.from_dict(model.usage) if model.usage else None
-        finish = (
-            MessageFinishReason(model.finish_reason) if model.finish_reason else None
-        )
+        finish = MessageFinishReason(model.finish_reason) if model.finish_reason else None
         return Message(
             id=model.id,
             conversation_id=model.conversation_id,
@@ -101,6 +99,9 @@ class ConversationOrmMapper:
             provider=model.provider,
             model=model.model,
             sources=[MessageSource.from_dict(s) for s in (model.sources or [])],
+            error_code=model.error_code,
+            error_message=model.error_message,
+            support_code=model.support_code,
             # Si la relación no está cargada (p. ej. recién insertado) se
             # devuelve vacío en vez de disparar una carga perezosa, que en
             # async revienta.
@@ -117,13 +118,9 @@ class ConversationOrmMapper:
     @staticmethod
     def message_to_model(entity: Message) -> MessageModel:
         tool_payload: list[dict[str, Any]] | None = (
-            [t.to_dict() for t in entity.tool_invocations]
-            if entity.tool_invocations
-            else None
+            [t.to_dict() for t in entity.tool_invocations] if entity.tool_invocations else None
         )
-        usage_payload: dict[str, Any] | None = (
-            entity.usage.to_dict() if entity.usage else None
-        )
+        usage_payload: dict[str, Any] | None = entity.usage.to_dict() if entity.usage else None
         return MessageModel(
             id=entity.id,
             conversation_id=entity.conversation_id,
@@ -136,6 +133,9 @@ class ConversationOrmMapper:
             provider=entity.provider,
             model=entity.model,
             sources=[s.to_dict() for s in entity.sources] or None,
+            error_code=entity.error_code,
+            error_message=entity.error_message,
+            support_code=entity.support_code,
             superseded_at=entity.superseded_at,
             superseded_by_id=entity.superseded_by_id,
         )

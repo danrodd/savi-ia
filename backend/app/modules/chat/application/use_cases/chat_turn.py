@@ -19,16 +19,19 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Coroutine, Sequence
+from dataclasses import replace
 from decimal import Decimal
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.application.requests import ChatAction
 from app.modules.chat.domain.entities import (
+    INTERNAL_ERROR_MESSAGE,
     ChatEvent,
     DoneEvent,
+    ErrorCode,
     ErrorEvent,
     ImageInput,
     SourcesEvent,
@@ -96,6 +99,11 @@ def _format_history_block(messages: list[Message]) -> str:
             body = body[:_HISTORY_CHAR_LIMIT] + " …"
         if m.role == MessageRole.ASSISTANT and m.finish_reason == MessageFinishReason.INTERRUPTED:
             body += "\n\n[respuesta interrumpida por el usuario]"
+        if m.role == MessageRole.ASSISTANT and m.finish_reason == MessageFinishReason.ERROR:
+            # Sin esta marca, el modelo recibía dos preguntas seguidas del
+            # usuario y no sabía a cuál responder ("¿Por qué?" de qué).
+            marker = "[esta respuesta falló por un problema técnico; no se respondió]"
+            body = f"{body}\n\n{marker}" if body else marker
         if m.attachments:
             markers = "\n".join(f"[imagen adjunta: {a.filename}]" for a in m.attachments)
             body = f"{body}\n{markers}" if body else markers
@@ -140,6 +148,9 @@ class _TurnAccumulator:
         self.model: str | None = None
         self.finish_reason: MessageFinishReason = MessageFinishReason.COMPLETE
         self.sources: list[MessageSource] = []
+        self.error_code: str | None = None
+        self.error_message: str | None = None
+        self.support_code: str | None = None
         # Hubo una tool entre el último texto y el próximo.
         self._tool_since_text = False
 
@@ -207,9 +218,21 @@ class _TurnAccumulator:
             self.model = event.model
         elif isinstance(event, ErrorEvent):
             self.finish_reason = MessageFinishReason.ERROR
+            self.error_code = event.code.value if event.code else None
+            self.error_message = event.message
+            self.support_code = event.support_code
 
     def has_content(self) -> bool:
         return bool(self.text_parts)
+
+    def should_persist(self) -> bool:
+        """Se guarda si hay texto o si el turno falló.
+
+        Un turno que fallaba antes del primer texto no se guardaba: al
+        recargar, la pregunta quedaba sin respuesta y no había rastro del
+        error ni de las consultas que sí se hicieron.
+        """
+        return self.has_content() or self.finish_reason == MessageFinishReason.ERROR
 
     def build_message(self, conversation_id: UUID) -> Message:
         return Message(
@@ -223,7 +246,15 @@ class _TurnAccumulator:
             provider=self.provider,
             model=self.model,
             sources=list(self.sources),
+            error_code=self.error_code,
+            error_message=self.error_message,
+            support_code=self.support_code,
         )
+
+
+def new_support_code() -> str:
+    """Código corto del turno para soporte: 8 caracteres, fácil de dictar."""
+    return uuid4().hex[:8].upper()
 
 
 class ChatTurnUseCase:
@@ -612,6 +643,7 @@ class ChatTurnUseCase:
             )
 
         accumulator = _TurnAccumulator()
+        support_code = new_support_code()
         try:
             async for event in self._runner.stream_turn(
                 prompt,
@@ -625,6 +657,15 @@ class ChatTurnUseCase:
                 if separator is not None:
                     accumulator.consume(separator)
                     yield separator
+                if isinstance(event, ErrorEvent):
+                    event = replace(event, support_code=support_code)
+                    log.warning(
+                        "chat_turn_error support_code=%s code=%s conversation_id=%s tools=%s",
+                        support_code,
+                        event.code.value if event.code else None,
+                        conversation_id,
+                        len(accumulator.tool_invocations),
+                    )
                 accumulator.consume(event)
                 if isinstance(event, DoneEvent):
                     # Las fuentes llegan ANTES de `done`: el frontend cierra
@@ -646,11 +687,16 @@ class ChatTurnUseCase:
             accumulator.finish_reason = MessageFinishReason.INTERRUPTED
             raise
         except Exception:
-            accumulator.finish_reason = MessageFinishReason.ERROR
-            log.exception("chat_turn_stream_failed")
-            raise
+            # Antes se relanzaba y el stream se cortaba sin decirle nada al
+            # usuario. Ahora termina como cualquier otro error del turno.
+            log.exception("chat_turn_stream_failed support_code=%s", support_code)
+            failure = ErrorEvent(
+                message=INTERNAL_ERROR_MESSAGE, code=ErrorCode.INTERNAL, support_code=support_code
+            )
+            accumulator.consume(failure)
+            yield failure
         finally:
-            if accumulator.has_content():
+            if accumulator.should_persist():
                 # Con cancelación no hubo `done`: se resuelven acá las
                 # referencias válidas citadas hasta el corte.
                 accumulator.resolve_sources(document_context)

@@ -14,6 +14,9 @@ export const ASSISTANT_UNAVAILABLE_MESSAGE =
 export const ASSISTANT_FAILED_MESSAGE =
   'No pude completar la respuesta. Pruebe de nuevo en un momento.'
 
+/** Turno guardado como fallido por un backend que todavía no guardaba el texto. */
+export const STORED_FAILURE_MESSAGE = 'No se pudo completar esta respuesta. Toque Regenerar.'
+
 export interface ChatErrorInfo {
   message: string
   /** Categoría que manda el backend (`provider_error`, `internal_error`). */

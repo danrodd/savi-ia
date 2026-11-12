@@ -35,15 +35,19 @@ class Message:
     role: MessageRole = MessageRole.USER
     content: str = ""
     finish_reason: MessageFinishReason | None = None
-    tool_invocations: list[ToolInvocation] = field(
-        default_factory=_empty_tool_invocations
-    )
+    tool_invocations: list[ToolInvocation] = field(default_factory=_empty_tool_invocations)
     usage: TokenUsage | None = None
     cost_usd: Decimal | None = None
     provider: str | None = None
     model: str | None = None
     # Documentos de la empresa citados. Vacío si la respuesta no citó ninguno.
     sources: list[MessageSource] = field(default_factory=list[MessageSource])
+    # Turno que terminó en error: la categoría (`provider_busy`,
+    # `internal_error`...), el texto que vio el usuario y el código de soporte
+    # que también quedó en el log. `None` si el turno no falló.
+    error_code: str | None = None
+    error_message: str | None = None
+    support_code: str | None = None
     # Imágenes adjuntas (solo metadata). Solo los mensajes del usuario las tienen.
     attachments: list[ChatAttachment] = field(default_factory=list[ChatAttachment])
     # Revisiones: si `superseded_at` está set, este mensaje ya no es parte

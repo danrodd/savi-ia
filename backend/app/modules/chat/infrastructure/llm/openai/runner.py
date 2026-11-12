@@ -10,6 +10,7 @@ reenviar **todos** los output items de esa respuesta (incluidos los de
 razonamiento) en el siguiente request. Enviar solo el texto visible hace
 que la segunda vuelta falle o pierda contexto.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -26,6 +27,9 @@ from openai import APIConnectionError, APIError, AsyncOpenAI
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
+    INTERNAL_ERROR_MESSAGE,
+    PROVIDER_BUSY_MESSAGE,
+    PROVIDER_REFUSED_MESSAGE,
     ChatEvent,
     DoneEvent,
     ErrorCode,
@@ -55,7 +59,13 @@ log = logging.getLogger(__name__)
 
 _RETRYABLE_STATUS = (429, 500, 502, 503, 504)
 _AUTH_STATUS = (401, 403)
-_SECURITY_MESSAGE = "No pude generar una respuesta para esa consulta."
+# Códigos de texto con que `response.failed` informa una falla pasajera.
+_TRANSIENT_FAILURE_CODES = frozenset(
+    {"rate_limit_exceeded", "server_error", "server_is_overloaded", "service_unavailable"}
+)
+# Tope de espera cuando el proveedor indica `retry-after`: más que esto deja
+# al usuario mirando una pantalla quieta.
+_MAX_RETRY_AFTER_S = 20.0
 _CREDENTIAL_REMEDY = (
     "La API key de OpenAI no es válida o no tiene permisos. Revise la configuración "
     "del proveedor y vuelva a intentar."
@@ -76,16 +86,47 @@ def _status(error: Exception) -> int | None:
     return value if isinstance(value, int) else None
 
 
+class _StreamFailedError(Exception):
+    """Un `response.failed` o `error` que llegó como evento del stream.
+
+    Se convierte en excepción para que pase por la misma clasificación que
+    los errores HTTP: antes iba directo al mensaje genérico, sin reintento,
+    aunque fuera un límite de uso o un error pasajero del servidor.
+    """
+
+    def __init__(self, status_code: int | None, code: str | None) -> None:
+        super().__init__(f"stream failed status={status_code} code={code}")
+        self.status_code = status_code
+        self.code = code
+
+
 def _transient(error: Exception, code: int | None) -> bool:
     """Errores pasajeros que se reintentan antes del primer token.
 
     Además de 429 y 5xx: un corte de conexión o timeout no trae código HTTP,
-    y el límite de tokens por minuto puede llegar como evento `error` dentro
-    del stream (`APIError` con `code="rate_limit_exceeded"` y sin estado).
+    y el límite de tokens por minuto puede llegar dentro del stream, como
+    `APIError` o como evento `response.failed` (`_StreamFailedError`), con
+    `code="rate_limit_exceeded"` y sin estado.
     """
     if code in _RETRYABLE_STATUS or isinstance(error, APIConnectionError):
         return True
-    return isinstance(error, APIError) and error.code == "rate_limit_exceeded"
+    if isinstance(error, _StreamFailedError):
+        return error.code in _TRANSIENT_FAILURE_CODES
+    return isinstance(error, APIError) and error.code in _TRANSIENT_FAILURE_CODES
+
+
+def _retry_delay(error: Exception, attempt: int, base_delay_s: float) -> float:
+    """Espera antes del reintento: la que pide el proveedor, o exponencial."""
+    response = getattr(error, "response", None)
+    headers = getattr(response, "headers", None)
+    raw = headers.get("retry-after") if headers is not None else None
+    try:
+        asked = float(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        asked = None
+    if asked is not None and asked >= 0:
+        return min(asked, _MAX_RETRY_AFTER_S)
+    return base_delay_s * (2 ** (attempt - 1))
 
 
 def _quota_exhausted(error: Exception) -> bool:
@@ -126,18 +167,23 @@ def _user_content(prompt: str, images: Sequence[ImageInput]) -> str | list[dict[
     return content
 
 
-def _failure_code(event: Any) -> int | None:
-    """Código de un evento `response.failed`/`error`.
+def _failure_code(event: Any) -> tuple[int | None, str | None]:
+    """Código numérico y de texto de un evento `response.failed`/`error`.
 
     La SDK expone el detalle en `event.response.error`, no en un atributo
-    `message`; buscamos ambas rutas para no perderlo.
+    `message`; buscamos ambas rutas para no perderlo. El código suele ser
+    texto (`"server_error"`, `"rate_limit_exceeded"`), no un estado HTTP.
     """
     response = getattr(event, "response", None)
     error = getattr(response, "error", None) if response is not None else None
     if error is None:
         error = getattr(event, "error", None)
+    if error is None:
+        error = event
     code = getattr(error, "code", None)
-    return code if isinstance(code, int) else None
+    if isinstance(code, int):
+        return code, None
+    return None, str(code) if code else None
 
 
 class OpenAIRunner(LLMRunner):
@@ -181,9 +227,7 @@ class OpenAIRunner(LLMRunner):
         document_context: TurnDocumentContext | None = None,
         images: Sequence[ImageInput] = (),
     ) -> AsyncIterator[ChatEvent]:
-        client = cast(
-            _AsyncClient, self._client or AsyncOpenAI(api_key=self._provider.credential)
-        )
+        client = cast(_AsyncClient, self._client or AsyncOpenAI(api_key=self._provider.credential))
         tool_specs = build_savi_tools(
             conversation_id=conversation_id,
             allowed_modules=allowed_modules,
@@ -244,24 +288,15 @@ class OpenAIRunner(LLMRunner):
                     elif event_type in ("response.refusal.delta", "response.refusal.done"):
                         refusal_seen = True
                     elif event_type in ("response.failed", "error"):
-                        code = _failure_code(event)
+                        status_code, failure = _failure_code(event)
                         log.error(
-                            "openai_stream_failed model=%s status=%s attempt=%s",
+                            "openai_stream_failed model=%s status=%s code=%s attempt=%s",
                             selected_model,
-                            code,
+                            status_code,
+                            failure,
                             retry_attempt,
                         )
-                        if code in _AUTH_STATUS:
-                            yield ErrorEvent(
-                                message=user_facing_error(
-                                    "La API key de OpenAI no es válida o no tiene permisos.",
-                                    credential_remedy=_CREDENTIAL_REMEDY,
-                                ),
-                                code=ErrorCode.PROVIDER,
-                            )
-                        else:
-                            yield ErrorEvent(message=_SECURITY_MESSAGE)
-                        return
+                        raise _StreamFailedError(status_code, failure)
             except Exception as error:  # noqa: BLE001
                 code = _status(error)
                 if code == 429 and _quota_exhausted(error):
@@ -284,7 +319,12 @@ class OpenAIRunner(LLMRunner):
                         code=ErrorCode.PROVIDER,
                     )
                     return
+                # Un reintento repite la misma llamada al modelo con los
+                # resultados de las tools ya obtenidos (están en
+                # `input_items`): las consultas al ERP no se repiten, y no
+                # cuenta como una iteración más del agente.
                 if _transient(error, code) and not first_token:
+                    iteration -= 1
                     retry_attempt += 1
                     if retry_attempt <= self._settings.openai_retry_attempts:
                         log.warning(
@@ -294,24 +334,19 @@ class OpenAIRunner(LLMRunner):
                             retry_attempt,
                         )
                         await asyncio.sleep(
-                            self._settings.openai_retry_base_delay_s * (2 ** (retry_attempt - 1))
+                            _retry_delay(
+                                error, retry_attempt, self._settings.openai_retry_base_delay_s
+                            )
                         )
                         continue
                     model_index += 1
                     if model_index < len(models):
                         selected_model = models[model_index]
                         retry_attempt = 0
-                        log.warning(
-                            "openai_fallback model=%s status=%s", selected_model, code
-                        )
+                        log.warning("openai_fallback model=%s status=%s", selected_model, code)
                         continue
-                    log.warning(
-                        "openai_unavailable model=%s status=%s", selected_model, code
-                    )
-                    yield ErrorEvent(
-                        message="No pude generar una respuesta para esa consulta.",
-                        code=ErrorCode.PROVIDER,
-                    )
+                    log.warning("openai_unavailable model=%s status=%s", selected_model, code)
+                    yield ErrorEvent(message=PROVIDER_BUSY_MESSAGE, code=ErrorCode.PROVIDER_BUSY)
                     return
                 log.error(
                     "openai_turn_failed model=%s status=%s attempt=%s",
@@ -320,17 +355,14 @@ class OpenAIRunner(LLMRunner):
                     retry_attempt,
                     exc_info=error,
                 )
-                if first_token:
-                    yield ErrorEvent(message=str(error), code=ErrorCode.INTERNAL)
-                else:
-                    yield ErrorEvent(message="No pude generar una respuesta para esa consulta.")
+                yield ErrorEvent(message=INTERNAL_ERROR_MESSAGE, code=ErrorCode.INTERNAL)
                 return
 
             if refusal_seen:
                 # Un refusal no es una respuesta: nunca termina en DoneEvent
                 # vacío, que el usuario leería como "el asistente no responde".
                 log.warning("openai_refusal model=%s", selected_model)
-                yield ErrorEvent(message=_SECURITY_MESSAGE)
+                yield ErrorEvent(message=PROVIDER_REFUSED_MESSAGE, code=ErrorCode.PROVIDER_REFUSED)
                 return
 
             if iteration_usage is not None:
@@ -350,9 +382,7 @@ class OpenAIRunner(LLMRunner):
                 finish = "truncated" if incomplete_reason in _TRUNCATED_REASONS else "complete"
                 yield DoneEvent(
                     usage=usage.to_dict(),
-                    cost_usd=compute_cost_usd(
-                        usage, self._provider.pricing.get(selected_model)
-                    ),
+                    cost_usd=compute_cost_usd(usage, self._provider.pricing.get(selected_model)),
                     finish_reason=finish,
                     provider=self._provider.kind,
                     model=selected_model,

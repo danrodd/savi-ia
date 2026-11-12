@@ -107,6 +107,10 @@ export interface StoredMessage {
   attachments?: ChatAttachment[]
   /** Calificación propia. Un backend anterior no lo manda. */
   feedback?: MessageFeedback | null
+  /** Turno fallido: categoría, texto que vio el usuario y código de soporte. */
+  error_code?: string | null
+  error_message?: string | null
+  support_code?: string | null
 }
 
 export interface ConversationDetail {
@@ -133,7 +137,7 @@ export type ChatEvent =
       cost_usd: number | null
       finish_reason: string
     }
-  | { type: 'error'; message: string; code?: string | null }
+  | { type: 'error'; message: string; code?: string | null; support_code?: string | null }
 
 export type ToolCallStatus = 'running' | 'success' | 'error'
 
@@ -174,6 +178,8 @@ export interface UIMessage {
   done: boolean
   interrupted?: boolean
   error?: string
+  /** Código corto del turno fallido, el mismo que queda en el log del servidor. */
+  supportCode?: string
   sources?: MessageSource[]
   /** Calificación propia de la respuesta (`null`/ausente = sin calificar). */
   feedback?: MessageFeedback | null

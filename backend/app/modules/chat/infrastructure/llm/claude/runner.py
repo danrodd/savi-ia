@@ -32,6 +32,7 @@ from app.infrastructure.claude_env import build_claude_env
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
+    PROVIDER_BUSY_MESSAGE,
     ChatEvent,
     DoneEvent,
     ErrorCode,
@@ -70,11 +71,11 @@ _PROVIDER_ERRORS = {
         "cargar saldo en la consola de Anthropic para que el asistente pueda responder."
     ),
     "authentication_failed": CREDENTIAL_REMEDY,
-    "rate_limit": (
-        "Claude está recibiendo demasiadas solicitudes en este momento. "
-        "Pruebe de nuevo en unos minutos."
-    ),
+    "rate_limit": PROVIDER_BUSY_MESSAGE,
+    "server_error": PROVIDER_BUSY_MESSAGE,
 }
+# Fallas que se resuelven esperando: cualquier usuario puede tocar Regenerar.
+_BUSY_ERRORS = frozenset({"rate_limit", "server_error"})
 
 
 def provider_error_message(error: str | None, text: str) -> str | None:
@@ -246,7 +247,11 @@ class ClaudeAgentRunner(LLMRunner):
                     )
                     if failure is not None:
                         log.error("claude_provider_error kind=%s", msg.error)
-                        yield ErrorEvent(message=failure, code=ErrorCode.PROVIDER)
+                        busy = msg.error in _BUSY_ERRORS
+                        yield ErrorEvent(
+                            message=failure,
+                            code=ErrorCode.PROVIDER_BUSY if busy else ErrorCode.PROVIDER,
+                        )
                         return
                     for block in msg.content:
                         if isinstance(block, TextBlock):

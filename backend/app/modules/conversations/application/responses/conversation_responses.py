@@ -132,6 +132,10 @@ class MessageResponse(BaseModel):
     superseded_by_id: UUID | None = None
     sources: list[MessageSourceResponse] = Field(default_factory=_empty_sources)
     attachments: list[ChatAttachmentResponse] = Field(default_factory=_empty_attachments)
+    # Turno fallido: categoría, texto que vio el usuario y código de soporte.
+    error_code: str | None = None
+    error_message: str | None = None
+    support_code: str | None = None
     # Calificación del usuario autenticado. La completa la ruta con el módulo
     # `feedback`; `None` = sin calificar (aditivo).
     feedback: MessageFeedbackResponse | None = None
@@ -158,6 +162,9 @@ class MessageResponse(BaseModel):
             cost_usd=dto.cost_usd,
             provider=dto.provider,
             model=dto.model,
+            error_code=dto.error_code,
+            error_message=dto.error_message,
+            support_code=dto.support_code,
             superseded_at=dto.superseded_at,
             superseded_by_id=dto.superseded_by_id,
             sources=[

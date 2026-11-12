@@ -90,21 +90,45 @@ class ErrorCode(StrEnum):
     sin saldo, cuota agotada, proveedor caído). Es un problema que sólo un
     administrador puede resolver: el mensaje trae detalle técnico que un
     usuario funcional no necesita ver.
+    `PROVIDER_BUSY`: el proveedor está saturado o alcanzó su límite de uso
+    (429, 5xx) y no respondió ni después de reintentar. Se resuelve
+    esperando: cualquier usuario puede tocar Regenerar.
+    `PROVIDER_REFUSED`: el proveedor se negó o bloqueó la respuesta.
     `INTERNAL`: falla inesperada del turno; el mensaje es el texto crudo.
     """
 
     PROVIDER = "provider_error"
+    PROVIDER_BUSY = "provider_busy"
+    PROVIDER_REFUSED = "provider_refused"
     INTERNAL = "internal_error"
+
+
+# Textos de usted por categoría. Una sola fuente: los runners los usan y el
+# frontend tiene los mismos para lo que guarda el historial.
+PROVIDER_BUSY_MESSAGE = (
+    "El servicio de inteligencia artificial está saturado en este momento. "
+    "Espere un minuto y toque Regenerar."
+)
+PROVIDER_REFUSED_MESSAGE = (
+    "El proveedor de inteligencia artificial no quiso responder esta consulta. "
+    "Reformúlela con otras palabras."
+)
+INTERNAL_ERROR_MESSAGE = (
+    "No pude completar la respuesta por un problema interno. Toque Regenerar; "
+    "si se repite, avise a soporte."
+)
 
 
 @dataclass(slots=True)
 class ErrorEvent:
     message: str
     type: ChatEventType = ChatEventType.ERROR
-    # `None` = mensaje ya pensado para cualquier usuario (p.ej. "No pude
-    # generar una respuesta para esa consulta."). Campo aditivo: los clientes
-    # que no lo conocen siguen mostrando `message`.
+    # `None` = mensaje ya pensado para cualquier usuario. Campo aditivo: los
+    # clientes que no lo conocen siguen mostrando `message`.
     code: ErrorCode | None = None
+    # Identificador corto del turno, el mismo que queda en el log y en el
+    # mensaje guardado: con él soporte encuentra la causa sin pedir el equipo.
+    support_code: str | None = None
 
 
 ChatEvent = (

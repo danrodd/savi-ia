@@ -1,4 +1,7 @@
 from app.modules.chat.domain.entities.chat_event import (
+    INTERNAL_ERROR_MESSAGE,
+    PROVIDER_BUSY_MESSAGE,
+    PROVIDER_REFUSED_MESSAGE,
     ChatEvent,
     ChatEventType,
     DoneEvent,
@@ -16,6 +19,9 @@ from app.modules.chat.domain.entities.image_input import ImageInput
 from app.modules.chat.domain.entities.tool_spec import ToolHandler, ToolResult, ToolSpec
 
 __all__ = [
+    "INTERNAL_ERROR_MESSAGE",
+    "PROVIDER_BUSY_MESSAGE",
+    "PROVIDER_REFUSED_MESSAGE",
     "ToolHandler",
     "ToolResult",
     "ToolSpec",
