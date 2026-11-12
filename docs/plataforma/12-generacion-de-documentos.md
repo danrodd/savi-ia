@@ -48,7 +48,7 @@ El modelo **no escribe el archivo** (ni HTML, ni código, ni bytes). Entrega una
 | 3 | **Inyección de fórmulas en Excel y CSV:** un nombre del ERP como `=HYPERLINK("http://...")` se ejecuta al abrir el archivo. | Toda celda de texto se escribe como texto. Las que empiezan con `=`, `+`, `-`, `@`, tabulador o retorno de carro se neutralizan con `'` delante, también en CSV. Los números y las fechas se escriben con su tipo. |
 | 4 | **Contenido activo:** macros, enlaces externos, imágenes remotas. | Solo `.xlsx` y `.docx`, nunca `.xlsm` ni `.docm`. Sin hipervínculos. Las imágenes solo pueden ser el logo de la empresa, guardado en SAVI; nada se descarga de una URL, lo que evita SSRF. |
 | 5 | **Instrucciones escondidas en los datos:** un campo del ERP que dice "ignora las instrucciones". | Las filas no pasan por el modelo para armar la tabla (§3), y se renderizan como datos. |
-| 6 | **Contenido fuera de tema:** "hágame un ensayo de historia en PDF". | La especificación la escribe el mismo modelo, con las mismas reglas del prompt de SAVI: se niega igual que en el chat. Además, un documento sin ninguna tabla ni datos del ERP se rechaza o se limita (§8). |
+| 6 | **Contenido fuera de tema:** "hágame un ensayo de historia en PDF". | La especificación la escribe el mismo modelo, con las mismas reglas del prompt de SAVI: se niega igual que en el chat. Un documento sin tablas del ERP se permite si el tema es del negocio, como una carta de cobro o un acta (§8). |
 | 7 | **Datos internos en el archivo:** SQL, nombres de herramientas, modelo, rutas. | La especificación no tiene campos para eso. Los metadatos del archivo (autor, título) los pone el servidor: autor "SAVI" y el nombre de la empresa. |
 | 8 | **Archivos gigantes o generación que no termina.** | Hasta 10.000 filas por tabla (P2), hasta 10 tablas y 200 bloques por documento, y un tiempo máximo de generación. Se genera en un hilo aparte, para no frenar el chat. |
 | 9 | **Descarga por terceros.** | Mismo criterio que los adjuntos actuales (`conversations/.../attachment_routes.py`): el archivo pertenece al dueño de la conversación. Se sirve con `Content-Disposition: attachment`, el MIME correcto, `X-Content-Type-Options: nosniff` y un nombre de archivo saneado. |
@@ -127,6 +127,6 @@ F1 es la base de F2, y F2 es lo que pidió el cliente.
 
 ## 8. Decisiones abiertas
 
-1. **¿Se permiten documentos sin datos del ERP?** Por ejemplo, "redácteme una carta de cobro" sin tabla. Propuesta: sí, si el tema es del negocio (una carta de cobro, un acta), con las mismas reglas del chat.
+1. ~~¿Se permiten documentos sin datos del ERP?~~ **Cerrada (2026-11-11):** sí, si el tema es del negocio (una carta de cobro, un acta), con las mismas reglas del chat.
 2. **Logo y colores de la empresa (F3):** quién los carga y dónde. Propuesta: el administrador, en la Administración de SAVI.
 3. **Cartas masivas** (una carta por cliente): fuera de alcance por ahora; queda anotado.
