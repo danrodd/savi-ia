@@ -101,6 +101,13 @@ class Settings(BaseSettings):
     claude_code_git_bash_path: str = Field(default="")
     max_response_chars: int = Field(default=20000)
     max_agent_turns: int = Field(default=40)
+    # Consultas al ERP por turno. En la demo un turno hizo 14 y los siguientes
+    # fallaron por el volumen de contexto: al llegar al tope, el modelo
+    # responde con lo que tiene y dice qué faltó.
+    erp_queries_per_turn: int = Field(default=12, gt=0)
+    # Tope de texto que vuelve al modelo de una sola herramienta. Lo que pasa
+    # se recorta con un aviso, para que un resultado ancho no llene el contexto.
+    tool_result_max_chars: int = Field(default=12000, gt=0)
     # Timeout corto para la fase 2 del título inline al cierre del turno.
     # Si tarda más, dejamos el de la fase 1 (que ya está en BD) y seguimos.
     title_phase2_timeout_s: float = Field(default=4.0)

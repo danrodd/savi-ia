@@ -73,10 +73,10 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 
 *P4. Turnos sin respuesta*
 
-- [ ] B1. Guardar el turno que falla sin texto (`finish_reason = error`, categoría, proveedor, modelo, consultas hechas). Mostrarlo al recargar con Regenerar, y omitirlo del contexto del turno siguiente.
-- [ ] B2. OpenAI: reintentar `response.failed` y `error` pasajeros y respetar `retry-after`. Reintentar solo la llamada al modelo si ya hubo consultas al ERP. Separar `_SECURITY_MESSAGE` de las fallas genéricas.
-- [ ] B3. Categorías de error con texto de usted y código de soporte (backend, frontend y manual de uso). Aplica a OpenAI, Gemini y Claude.
-- [ ] B4. Presupuesto de contexto: tope de consultas por turno (12) y recorte del historial antes del límite.
+- [x] B1. Guardar el turno que falla sin texto (`finish_reason = error`, categoría, proveedor, modelo, consultas hechas). Mostrarlo al recargar con Regenerar, y omitirlo del contexto del turno siguiente.
+- [x] B2. OpenAI: reintentar `response.failed` y `error` pasajeros y respetar `retry-after`. Reintentar solo la llamada al modelo si ya hubo consultas al ERP. Separar `_SECURITY_MESSAGE` de las fallas genéricas.
+- [x] B3. Categorías de error con texto de usted y código de soporte (backend, frontend y manual de uso). Aplica a OpenAI, Gemini y Claude.
+- [x] B4. Presupuesto de contexto: tope de consultas por turno (12) y recorte del historial antes del límite.
 - [ ] B5. Reproducir el caso de la demo con el respaldo de Imporllantas y OpenAI. Prueba de regresión.
 - [ ] B6. Vista de turnos fallidos en Administración.
 
@@ -107,4 +107,4 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 | Etapa | Estado |
 |---|---|
 | Fase A | **Completa** (2026-11-11). Quedan decisiones menores abiertas en cada documento, ninguna frena el inicio. |
-| Fase B | Pendiente. Arranca por B1. |
+| Fase B | En curso. B1–B3 en `c798dcf` (tests: `test_failed_turn.py`, `test_openai_integration.py`, `failedTurn.spec.ts`); B4 con `test_turn_budget.py`. Ruta: inline (preferencia del usuario, sin subagentes). |

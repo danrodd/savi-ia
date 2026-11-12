@@ -15,6 +15,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, cast
 from uuid import UUID
 
+from app.infrastructure.config.settings import get_settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import ToolResult, ToolSpec
 from app.modules.chat.infrastructure.llm.tools.consultar_datos import (
@@ -40,6 +41,7 @@ from app.modules.chat.infrastructure.llm.tools.schemas import (
     CONSULTAR_LIBRE_SCHEMA,
     INFO_EMPRESA_SCHEMA,
 )
+from app.modules.chat.infrastructure.llm.tools.turn_budget import TurnBudget
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.company_knowledge.infrastructure.provider import (
     get_company_knowledge_runtime,
@@ -151,8 +153,25 @@ def to_tool_result(raw: dict[str, Any]) -> ToolResult:
     )
 
 
-def _spec(name: str, description: str, parameters: dict[str, Any], raw: _RawHandler) -> ToolSpec:
+def _spec(
+    name: str,
+    description: str,
+    parameters: dict[str, Any],
+    raw: _RawHandler,
+    *,
+    budget: TurnBudget | None = None,
+    counts_query: bool = False,
+) -> ToolSpec:
     async def handler(args: dict[str, Any]) -> ToolResult:
+        if budget is not None and counts_query:
+            refused = budget.take_query()
+            if refused is not None:
+                log.info("tool_query_limit name=%s", name)
+                return refused
+        result = await call(args)
+        return budget.fit(result) if budget is not None else result
+
+    async def call(args: dict[str, Any]) -> ToolResult:
         try:
             return to_tool_result(await raw(args))
         except _EXPLAINABLE_ERRORS as e:
@@ -203,6 +222,10 @@ def build_savi_tools(
     document_context: TurnDocumentContext | None = None,
 ) -> list[ToolSpec]:
     """`allowed_modules=None` significa admin sin filtro (D3)."""
+    settings = get_settings()
+    budget = TurnBudget(
+        max_queries=settings.erp_queries_per_turn, max_chars=settings.tool_result_max_chars
+    )
 
     async def info_empresa(args: dict[str, Any]) -> dict[str, Any]:
         return await info_empresa_impl(args, erp_database_id=erp_database_id)
@@ -220,18 +243,27 @@ def build_savi_tools(
     )
 
     tools = [
-        _spec("info_empresa", _INFO_EMPRESA_DESCRIPTION, INFO_EMPRESA_SCHEMA, info_empresa),
+        _spec(
+            "info_empresa",
+            _INFO_EMPRESA_DESCRIPTION,
+            INFO_EMPRESA_SCHEMA,
+            info_empresa,
+            budget=budget,
+        ),
         _spec(
             "consultar_datos",
             build_description(allowed_modules),
             CONSULTAR_DATOS_SCHEMA,
             consultar_datos,
+            budget=budget,
+            counts_query=True,
         ),
         _spec(
             "consultar_conocimiento",
             _CONSULTAR_CONOCIMIENTO_DESCRIPTION,
             CONSULTAR_CONOCIMIENTO_SCHEMA,
             consultar_conocimiento,
+            budget=budget,
         ),
     ]
 
@@ -254,6 +286,8 @@ def build_savi_tools(
                 _CONSULTAR_LIBRE_DESCRIPTION,
                 CONSULTAR_LIBRE_SCHEMA,
                 build_consultar_libre_impl(conversation_id, erp_database_id),
+                budget=budget,
+                counts_query=True,
             ),
         )
     return tools
