@@ -17,7 +17,6 @@ from typing import Any
 from uuid import UUID
 
 from pydantic import ValidationError as SpecValidationError
-from sqlalchemy import text
 
 from app.infrastructure.database import get_agent_sessionmaker
 from app.modules.documents.application.document_spec import DocumentSpec
@@ -27,12 +26,12 @@ from app.modules.documents.application.file_use_cases import (
     FileRequestError,
 )
 from app.modules.documents.domain.files import FileFormat
+from app.modules.documents.infrastructure.branding import read_branding
 from app.modules.documents.infrastructure.exporters import FileRenderer
 from app.modules.documents.infrastructure.repository import (
     SqlAlchemyResultSetRepository,
     SqlAlchemyStoredFileRepository,
 )
-from app.modules.erp_databases.infrastructure import get_erp_engine_for
 
 log = logging.getLogger(__name__)
 
@@ -83,22 +82,6 @@ ENTREGAR_ARCHIVO_SCHEMA: dict[str, Any] = {
     "required": ["tipo", "formato"],
 }
 
-_COMPANY_SQL = (
-    'SELECT NULLIF(TRIM("razonSocial"), \'\') FROM "Empresa"."Empresa" ORDER BY "idEmpresa" LIMIT 1'
-)
-
-
-async def _company_name(erp_database_id: UUID | None) -> str | None:
-    """Nombre de la empresa para el encabezado; sin él, el documento sale igual."""
-    try:
-        engine = await get_erp_engine_for(erp_database_id)
-        async with engine.connect() as conn:
-            value = (await conn.execute(text(_COMPANY_SQL))).scalar_one_or_none()
-    except Exception:  # noqa: BLE001
-        log.warning("document_company_name_unavailable", exc_info=True)
-        return None
-    return str(value) if value else None
-
 
 def _text(message: str, *, error: bool = False) -> dict[str, Any]:
     return {"content": [{"type": "text", "text": message}], "isError": error}
@@ -112,7 +95,7 @@ def build_entregar_archivo_impl(conversation_id: UUID | None, erp_database_id: U
         result_sets = SqlAlchemyResultSetRepository(sessionmaker)
         files = SqlAlchemyStoredFileRepository(sessionmaker)
         renderer = FileRenderer()
-        company = await _company_name(erp_database_id)
+        branding = await read_branding(erp_database_id)
         tipo = str(args.get("tipo", "")).strip().lower()
         try:
             if tipo == "exportar":
@@ -127,7 +110,7 @@ def build_entregar_archivo_impl(conversation_id: UUID | None, erp_database_id: U
                         error=True,
                     )
                 stored = await ExportToFileUseCase(result_sets, files, renderer).execute(
-                    conversation_id, file_format, result_set_id, company
+                    conversation_id, file_format, result_set_id, branding
                 )
             elif tipo == "documento":
                 try:
@@ -143,7 +126,7 @@ def build_entregar_archivo_impl(conversation_id: UUID | None, erp_database_id: U
                         f"La especificación del documento no es válida: {problems}", error=True
                     )
                 stored = await BuildDocumentUseCase(result_sets, files, renderer).execute(
-                    conversation_id, spec, company
+                    conversation_id, spec, branding
                 )
             else:
                 return _text("`tipo` tiene que ser 'exportar' o 'documento'.", error=True)

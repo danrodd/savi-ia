@@ -164,6 +164,7 @@ def to_pdf(document: Document) -> bytes:
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import cm
     from reportlab.platypus import (
+        Image,
         ListFlowable,
         ListItem,
         Paragraph,
@@ -194,6 +195,14 @@ def to_pdf(document: Document) -> bytes:
     cell = ParagraphStyle("cell", parent=styles["BodyText"], fontSize=7.5, leading=9)
     head = ParagraphStyle("head", parent=cell, textColor=colors.white, fontName="Helvetica-Bold")
     story: list[Any] = []
+    if document.logo_png:
+        logo = Image(io.BytesIO(document.logo_png))
+        ratio = logo.imageHeight / max(logo.imageWidth, 1)
+        logo.drawWidth = 3.5 * cm
+        logo.drawHeight = 3.5 * cm * ratio
+        logo.hAlign = "LEFT"
+        story.append(logo)
+        story.append(Spacer(1, 0.2 * cm))
     if document.company:
         story.append(Paragraph(escape(document.company), styles["Normal"]))
     story.append(Paragraph(escape(document.title), styles["Title"]))
@@ -271,11 +280,13 @@ def _inline_markup(text: str) -> str:
 
 def to_docx(document: Document) -> bytes:
     from docx import Document as WordDocument
-    from docx.shared import Pt
+    from docx.shared import Cm, Pt
 
     word = WordDocument()
     word.core_properties.author = "SAVI"
     word.core_properties.title = document.title[:200]
+    if document.logo_png:
+        word.add_picture(io.BytesIO(document.logo_png), width=Cm(3.5))
     if document.company:
         word.add_paragraph(document.company)
     word.add_heading(document.title, level=0)

@@ -20,6 +20,7 @@ from app.modules.documents.application.use_cases import (
     Owner,
 )
 from app.modules.documents.domain.files import FileFormat
+from app.modules.documents.infrastructure.branding import read_branding
 from app.modules.documents.infrastructure.exporters import FileRenderer
 from app.modules.documents.infrastructure.repository import (
     SqlAlchemyResultSetRepository,
@@ -86,7 +87,7 @@ async def export(
     format: Annotated[FileFormat, Query()] = FileFormat.XLSX,  # noqa: A002 — nombre del parámetro en la URL
 ) -> Response:
     generated = await ExportResultSetUseCase(repository, FileRenderer()).execute(
-        result_set_id, _owner(user), format
+        result_set_id, _owner(user), format, await read_branding(user.erp_database_id)
     )
     return Response(
         content=generated.content,

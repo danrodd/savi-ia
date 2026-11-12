@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
-from app.modules.documents.domain.document import Document
+from app.modules.documents.domain.document import Branding, Document
 from app.modules.documents.domain.files import (
     TABLE_FORMATS,
     DocumentRenderer,
@@ -62,12 +62,16 @@ class ExportResultSetUseCase:
         self._renderer = renderer
 
     async def execute(
-        self, result_set_id: UUID, owner: Owner, file_format: FileFormat
+        self,
+        result_set_id: UUID,
+        owner: Owner,
+        file_format: FileFormat,
+        branding: Branding | None = None,
     ) -> GeneratedFile:
         if file_format not in TABLE_FORMATS:
             raise ValidationError("Una tabla se exporta en Excel, PDF o CSV.")
         table = await GetResultSetUseCase(self._repository).execute(result_set_id, owner)
-        document = Document.for_table(table, generated_at=datetime.now(UTC), company=None)
+        document = Document.for_table(table, generated_at=datetime.now(UTC), branding=branding)
         # Generar 10.000 filas en PDF bloquearía el event loop.
         content = await asyncio.to_thread(self._renderer.render, document, file_format)
         if table.has_personal_data:

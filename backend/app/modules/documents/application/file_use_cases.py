@@ -16,7 +16,7 @@ from app.modules.documents.application.document_spec import (
     ParagraphBlock,
 )
 from app.modules.documents.application.use_cases import Owner
-from app.modules.documents.domain.document import Block, Document
+from app.modules.documents.domain.document import Block, Branding, Document
 from app.modules.documents.domain.files import (
     TABLE_FORMATS,
     DocumentRenderer,
@@ -52,7 +52,7 @@ class ExportToFileUseCase:
         conversation_id: UUID,
         file_format: FileFormat,
         result_set_id: UUID | None,
-        company: str | None,
+        branding: Branding,
     ) -> StoredFile:
         if file_format not in TABLE_FORMATS:
             raise FileRequestError("Una tabla se exporta en xlsx, pdf o csv.")
@@ -66,7 +66,7 @@ class ExportToFileUseCase:
                 "No hay un conjunto de datos de esta conversación para exportar. Primero "
                 "consulta los datos con consultar_datos o consultar_libre."
             )
-        document = Document.for_table(table, generated_at=datetime.now(UTC), company=company)
+        document = Document.for_table(table, generated_at=datetime.now(UTC), branding=branding)
         content = await asyncio.to_thread(self._renderer.render, document, file_format)
         stored = StoredFile(
             conversation_id=conversation_id,
@@ -93,7 +93,7 @@ class BuildDocumentUseCase:
         self._renderer = renderer
 
     async def execute(
-        self, conversation_id: UUID, spec: DocumentSpec, company: str | None
+        self, conversation_id: UUID, spec: DocumentSpec, branding: Branding
     ) -> StoredFile:
         if len(spec.table_ids()) > MAX_TABLES:
             raise FileRequestError(f"Un documento puede tener hasta {MAX_TABLES} tablas.")
@@ -122,8 +122,9 @@ class BuildDocumentUseCase:
         document = Document(
             title=spec.titulo,
             generated_at=datetime.now(UTC),
-            company=company,
+            company=branding.name,
             blocks=tuple(blocks),
+            logo_png=branding.logo_png,
         )
         file_format = FileFormat(spec.formato)
         content = await asyncio.to_thread(self._renderer.render, document, file_format)

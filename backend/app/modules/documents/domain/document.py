@@ -28,19 +28,30 @@ class Block:
 
 
 @dataclass(frozen=True)
+class Branding:
+    """Nombre y logo (PNG ya validado) de la empresa, para el encabezado."""
+
+    name: str | None = None
+    logo_png: bytes | None = None
+
+
+@dataclass(frozen=True)
 class Document:
     title: str
     generated_at: datetime
     company: str | None = None
     blocks: tuple[Block, ...] = field(default_factory=tuple)
+    logo_png: bytes | None = None
 
     @classmethod
     def for_table(
-        cls, table: ResultSet, *, generated_at: datetime, company: str | None
+        cls, table: ResultSet, *, generated_at: datetime, branding: Branding | None = None
     ) -> Document:
+        brand = branding or Branding()
         return cls(
             title=table.title,
             generated_at=generated_at,
-            company=company,
+            company=brand.name,
             blocks=(Block(kind="table", table=table),),
+            logo_png=brand.logo_png,
         )

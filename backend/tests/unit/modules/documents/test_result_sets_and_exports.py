@@ -28,7 +28,7 @@ from app.modules.documents.application.use_cases import (
     GetResultSetUseCase,
     Owner,
 )
-from app.modules.documents.domain.document import Block, Document
+from app.modules.documents.domain.document import Block, Branding, Document
 from app.modules.documents.domain.files import FileFormat, safe_filename
 from app.modules.documents.domain.result_set import EXPORT_MAX_ROWS, build_result_set
 from app.modules.documents.infrastructure.exporters import (
@@ -161,7 +161,7 @@ async def test_export_returns_the_file_and_audits_personal_data(
 
 def _document() -> Document:
     return Document.for_table(
-        _table(uuid4()), generated_at=datetime.now(UTC), company="IMPORLLANTAS"
+        _table(uuid4()), generated_at=datetime.now(UTC), branding=Branding(name="IMPORLLANTAS")
     )
 
 
