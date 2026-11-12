@@ -23,7 +23,10 @@ from app.modules.chat.infrastructure.persistence import (
     SqlAlchemyConversationTitleUpdater,
 )
 from app.modules.conversations.domain.interfaces import ConversationRepository
-from app.modules.documents.infrastructure.repository import SqlAlchemyResultSetRepository
+from app.modules.documents.infrastructure.repository import (
+    SqlAlchemyResultSetRepository,
+    SqlAlchemyStoredFileRepository,
+)
 from app.modules.llm_providers.infrastructure.active_provider_resolver import (
     get_active_provider_resolver,
 )
@@ -103,6 +106,7 @@ def get_chat_turn_use_case(
         title_updater=title_updater,
         settings=settings,
         result_sets=SqlAlchemyResultSetRepository(get_agent_sessionmaker()),
+        files=SqlAlchemyStoredFileRepository(get_agent_sessionmaker()),
     )
 
 

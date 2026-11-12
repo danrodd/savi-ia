@@ -52,6 +52,8 @@ class Message:
     # Conjuntos de resultados que acompañan a la respuesta (id, título, filas):
     # el chat los muestra con su vista previa y su botón Exportar.
     data_tables: list[dict[str, Any]] = field(default_factory=list[dict[str, Any]])
+    # Archivos que SAVI generó para la respuesta (Excel, PDF, CSV, Word).
+    files: list[dict[str, Any]] = field(default_factory=list[dict[str, Any]])
     # Imágenes adjuntas (solo metadata). Solo los mensajes del usuario las tienen.
     attachments: list[ChatAttachment] = field(default_factory=list[ChatAttachment])
     # Revisiones: si `superseded_at` está set, este mensaje ya no es parte

@@ -45,7 +45,7 @@ audit_log = logging.getLogger("savi.audit")
 # filas y si trae datos personales. Lo arma la capa del chat; acá no se sabe
 # dónde se guarda.
 RowsRecorder = Callable[
-    [str, list[str], dict[str, str], list[dict[str, Any]], bool], Awaitable[None]
+    [str, list[str], dict[str, str], list[dict[str, Any]], bool], Awaitable[str]
 ]
 
 _TITLES = {
@@ -145,6 +145,7 @@ async def run_semantic_query(
         return _format_result(result, compiled.select_labels)
     _audit_personal_data(query, entity, erp_database_id, result.row_count)
     total: _Total | None = None
+    saved_id: str | None = None
     if full is not None and recorder is not None and full_fetch is not None:
         total = _Total(rows=min(len(full.rows), full_fetch - 1), more=len(full.rows) >= full_fetch)
         if len(full.rows) >= 2:
@@ -154,13 +155,18 @@ async def run_semantic_query(
                 for c in full.columns
             )
             try:
-                await recorder(
+                saved_id = await recorder(
                     _title(query), full.columns, compiled.select_labels, full.rows, personal
                 )
             except Exception:  # noqa: BLE001 — guardar no puede tumbar la respuesta
                 log.exception("result_set_record_failed entity=%s", query.entidad)
                 total = None
     note = await _mixed_matches_note(query, entity, erp_database_id)
+    if saved_id:
+        note += (
+            f"\n\n_(Conjunto de datos: {saved_id}. Si el usuario quiere estos datos en un "
+            "archivo o en un informe, usa entregar_archivo con este conjunto.)_"
+        )
     return _format_result(result, compiled.select_labels, total) + note
 
 

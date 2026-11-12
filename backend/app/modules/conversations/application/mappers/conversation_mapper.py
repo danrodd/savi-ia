@@ -39,4 +39,5 @@ class ConversationMapper:
             error_message=entity.error_message,
             support_code=entity.support_code,
             data_tables=tuple(entity.data_tables),
+            files=tuple(entity.files),
         )

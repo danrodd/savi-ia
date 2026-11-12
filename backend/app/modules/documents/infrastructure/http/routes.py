@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from app.infrastructure.database import get_agent_sessionmaker
 from app.modules.auth.infrastructure.http import CurrentUserDep
+from app.modules.documents.application.file_use_cases import DownloadFileUseCase
 from app.modules.documents.application.use_cases import (
     PREVIEW_MAX_ROWS,
     ExportResultSetUseCase,
@@ -20,7 +21,10 @@ from app.modules.documents.application.use_cases import (
 )
 from app.modules.documents.domain.files import FileFormat
 from app.modules.documents.infrastructure.exporters import FileRenderer
-from app.modules.documents.infrastructure.repository import SqlAlchemyResultSetRepository
+from app.modules.documents.infrastructure.repository import (
+    SqlAlchemyResultSetRepository,
+    SqlAlchemyStoredFileRepository,
+)
 
 router = APIRouter(prefix="/result-sets", tags=["documents"])
 
@@ -89,6 +93,30 @@ async def export(
         media_type=generated.media_type,
         headers={
             "Content-Disposition": f"attachment; filename*=UTF-8''{quote(generated.filename)}",
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+files_router = APIRouter(prefix="/files", tags=["documents"])
+
+
+def _files() -> SqlAlchemyStoredFileRepository:
+    return SqlAlchemyStoredFileRepository(get_agent_sessionmaker())
+
+
+FilesDep = Annotated[SqlAlchemyStoredFileRepository, Depends(_files)]
+
+
+@files_router.get("/{file_id}")
+async def download_file(file_id: UUID, user: CurrentUserDep, files: FilesDep) -> Response:
+    stored = await DownloadFileUseCase(files).execute(file_id, _owner(user))
+    return Response(
+        content=stored.content,
+        media_type=stored.media_type,
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(stored.filename)}",
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "no-store",
         },

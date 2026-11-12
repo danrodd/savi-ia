@@ -12,6 +12,7 @@ class ChatEventType(StrEnum):
     SUPERSEDED = "superseded"
     SOURCES = "sources"
     DATA_TABLES = "data_tables"
+    FILES = "files"
     DONE = "done"
     ERROR = "error"
 
@@ -88,6 +89,18 @@ class DataTablesEvent:
 
 
 @dataclass(slots=True)
+class FilesEvent:
+    """Archivos que SAVI generó en el turno (`entregar_archivo`).
+
+    Llega justo antes de `done`. Cada uno es `{id, filename, media_type,
+    size_bytes}`; se descarga de `/files/{id}`.
+    """
+
+    files: list[dict[str, Any]]
+    type: ChatEventType = ChatEventType.FILES
+
+
+@dataclass(slots=True)
 class DoneEvent:
     usage: dict[str, Any] | None = None
     cost_usd: float | None = None
@@ -154,6 +167,7 @@ ChatEvent = (
     | SupersededEvent
     | SourcesEvent
     | DataTablesEvent
+    | FilesEvent
     | DoneEvent
     | ErrorEvent
 )

@@ -60,6 +60,7 @@ class MessageDTO:
     error_message: str | None = None
     support_code: str | None = None
     data_tables: tuple[dict[str, Any], ...] = ()
+    files: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)

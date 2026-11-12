@@ -35,6 +35,7 @@ from app.modules.chat.domain.entities import (
     DoneEvent,
     ErrorCode,
     ErrorEvent,
+    FilesEvent,
     ImageInput,
     SourcesEvent,
     SupersededEvent,
@@ -68,7 +69,7 @@ from app.modules.conversations.domain.value_objects import (
     ToolInvocation,
     ToolInvocationStatus,
 )
-from app.modules.documents.domain.interfaces import ResultSetRepository
+from app.modules.documents.domain.interfaces import ResultSetRepository, StoredFileRepository
 
 log = logging.getLogger(__name__)
 
@@ -155,6 +156,7 @@ class _TurnAccumulator:
         self.error_message: str | None = None
         self.support_code: str | None = None
         self.data_tables: list[dict[str, Any]] = []
+        self.files: list[dict[str, Any]] = []
         # Hubo una tool entre el último texto y el próximo.
         self._tool_since_text = False
 
@@ -254,6 +256,7 @@ class _TurnAccumulator:
             error_message=self.error_message,
             support_code=self.support_code,
             data_tables=list(self.data_tables),
+            files=list(self.files),
         )
 
 
@@ -276,8 +279,10 @@ class ChatTurnUseCase:
         title_updater: ConversationTitleUpdater,
         settings: Settings,
         result_sets: ResultSetRepository | None = None,
+        files: StoredFileRepository | None = None,
     ) -> None:
         self._result_sets = result_sets
+        self._files = files
         self._repository = repository
         self._runner = runner
         self._assistant_writer = assistant_writer
@@ -685,6 +690,10 @@ class ChatTurnUseCase:
                     if tables:
                         accumulator.data_tables = tables
                         yield DataTablesEvent(tables=tables)
+                    files = await self._turn_files(conversation_id, turn_started)
+                    if files:
+                        accumulator.files = files
+                        yield FilesEvent(files=files)
                     # Las fuentes llegan ANTES de `done`: el frontend cierra
                     # el mensaje al recibir `done`.
                     sources = accumulator.resolve_sources(document_context)
@@ -765,6 +774,17 @@ class ChatTurnUseCase:
             }
             for table in created[-DATA_TABLES_PER_TURN:]
         ]
+
+    async def _turn_files(self, conversation_id: UUID, since: datetime) -> list[dict[str, Any]]:
+        """Los archivos que `entregar_archivo` generó en este turno."""
+        if self._files is None:
+            return []
+        try:
+            created = await self._files.created_since(conversation_id, since)
+        except Exception:  # noqa: BLE001 — sin la tarjeta, la respuesta igual sale
+            log.exception("chat_turn_files_failed conversation_id=%s", conversation_id)
+            return []
+        return [stored.summary() for stored in created]
 
     async def _safe_write(self, message: Message, *, supersedes_id: UUID | None) -> None:
         try:

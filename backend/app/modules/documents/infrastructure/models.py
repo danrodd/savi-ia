@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database.base import Base
@@ -32,4 +32,25 @@ class ResultSetModel(Base):
 
     __table_args__ = (
         Index("ix_result_sets_conversation_created", "conversation_id", "created_at"),
+    )
+
+
+class StoredFileModel(Base):
+    """Archivo generado para una respuesta. Se borra con la conversación y vence."""
+
+    __tablename__ = "generated_files"
+
+    id: Mapped[UUID] = mapped_column(UuidType, primary_key=True, default=uuid4)
+    conversation_id: Mapped[UUID] = mapped_column(
+        UuidType, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
+    filename: Mapped[str] = mapped_column(String(160), nullable=False)
+    media_type: Mapped[str] = mapped_column(String(120), nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    has_personal_data: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False)
+
+    __table_args__ = (
+        Index("ix_generated_files_conversation_created", "conversation_id", "created_at"),
     )

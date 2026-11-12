@@ -51,7 +51,7 @@ def test_the_other_tools_stay_for_everyone() -> None:
     `consultar_datos` sigue, acotada por el catálogo semántico."""
     acotado = _nombres(frozenset({ModuleCode.VENTA}))
 
-    assert acotado == {"info_empresa", "consultar_datos", "consultar_conocimiento"}
+    assert acotado == {"entregar_archivo", "consultar_datos", "consultar_conocimiento"}
 
 
 def test_tool_count_stays_within_the_mcp_limit() -> None:

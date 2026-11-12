@@ -22,7 +22,13 @@ from typing import Any
 from app.modules.free_query.domain.query_result import QueryResult
 
 
-def format_result(result: QueryResult, *, shown: int | None = None, kept: bool = False) -> str:
+def format_result(
+    result: QueryResult,
+    *,
+    shown: int | None = None,
+    kept: bool = False,
+    result_set_id: str | None = None,
+) -> str:
     """JSON para el modelo. Con `shown`, solo las primeras filas y el total.
 
     `kept` = el resultado completo quedó guardado para el usuario: el modelo lo
@@ -37,6 +43,9 @@ def format_result(result: QueryResult, *, shown: int | None = None, kept: bool =
         "columns": result.columns,
         "rows": rows,
     }
+    if result_set_id:
+        # Para `entregar_archivo`: el archivo sale de este conjunto, no de las filas.
+        payload["conjunto"] = result_set_id
     if len(rows) < result.returned_rows:
         total = (
             f"más de {result.returned_rows - 1}" if result.truncated else str(result.returned_rows)

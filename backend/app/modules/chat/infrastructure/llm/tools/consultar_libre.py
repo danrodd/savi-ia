@@ -93,17 +93,18 @@ def build_consultar_libre_impl(
                 "isError": True,
             }
         kept = False
+        kept_id: str | None = None
         if recorder is not None and len(result.rows) >= 2:
             title = (user_question or "Consulta del ERP").strip()[:150]
             personal = any(c.lower() in _CONTACT_COLUMNS for c in result.columns)
             try:
-                await recorder(
+                kept_id = await recorder(
                     title, result.columns, {c: c for c in result.columns}, result.rows, personal
                 )
                 kept = True
             except Exception:  # noqa: BLE001 — guardar no puede tumbar la respuesta
                 log.exception("result_set_record_failed tool=consultar_libre")
-        text = format_result(result, shown=policy.max_rows, kept=kept)
+        text = format_result(result, shown=policy.max_rows, kept=kept, result_set_id=kept_id)
         return {"content": [{"type": "text", "text": text}]}
 
     return _impl

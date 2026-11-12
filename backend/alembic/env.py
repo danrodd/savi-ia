@@ -24,7 +24,10 @@ from app.modules.conversations.infrastructure.persistence.models import (  # noq
     ConversationModel,
     MessageModel,
 )
-from app.modules.documents.infrastructure.models import ResultSetModel  # noqa: F401
+from app.modules.documents.infrastructure.models import (  # noqa: F401
+    ResultSetModel,
+    StoredFileModel,
+)
 from app.modules.erp_databases.infrastructure.persistence.models import (  # noqa: F401
     ErpDatabaseModel,
 )

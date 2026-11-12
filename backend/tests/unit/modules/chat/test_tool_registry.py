@@ -39,7 +39,7 @@ def tools(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, ToolSpec
 
 def test_registry_exposes_exactly_the_four_tools(tools: dict[str, ToolSpec]) -> None:
     assert set(tools) == {
-        "info_empresa",
+        "entregar_archivo",
         "consultar_datos",
         "consultar_libre",
         "consultar_conocimiento",

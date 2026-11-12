@@ -141,6 +141,7 @@ class MessageResponse(BaseModel):
     error_message: str | None = None
     support_code: str | None = None
     data_tables: list[dict[str, Any]] = Field(default_factory=_empty_data_tables)
+    files: list[dict[str, Any]] = Field(default_factory=_empty_data_tables)
     # Calificación del usuario autenticado. La completa la ruta con el módulo
     # `feedback`; `None` = sin calificar (aditivo).
     feedback: MessageFeedbackResponse | None = None
@@ -171,6 +172,7 @@ class MessageResponse(BaseModel):
             error_message=dto.error_message,
             support_code=dto.support_code,
             data_tables=list(dto.data_tables),
+            files=list(dto.files),
             superseded_at=dto.superseded_at,
             superseded_by_id=dto.superseded_by_id,
             sources=[
