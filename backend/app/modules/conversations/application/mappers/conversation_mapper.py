@@ -38,4 +38,5 @@ class ConversationMapper:
             error_code=entity.error_code,
             error_message=entity.error_message,
             support_code=entity.support_code,
+            data_tables=tuple(entity.data_tables),
         )

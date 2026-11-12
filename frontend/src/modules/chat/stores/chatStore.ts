@@ -68,6 +68,7 @@ function storedToUI(m: StoredMessage): UIMessage {
           )
         : undefined,
     supportCode: m.support_code ?? undefined,
+    dataTables: m.data_tables ?? [],
     sources: m.sources ?? [],
     feedback: m.feedback ?? null,
   }
@@ -218,6 +219,9 @@ function applyEvent(messages: UIMessage[], ev: ChatEvent): UIMessage[] {
       break
     case 'sources':
       next[next.length - 1] = { ...last, sources: ev.sources }
+      break
+    case 'data_tables':
+      next[next.length - 1] = { ...last, dataTables: ev.tables }
       break
     case 'thinking_delta':
     case 'title_update':

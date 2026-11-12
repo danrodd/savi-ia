@@ -5,6 +5,7 @@ import type { MessageVersion, UIMessage } from '../types'
 import { linkCitations } from '../utils/citations'
 import { groupToolCalls } from '../utils/groupToolCalls'
 import BrandMark from './BrandMark.vue'
+import DataTableCard from './DataTableCard.vue'
 import FeedbackButtons from './FeedbackButtons.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import MessageSources from './MessageSources.vue'
@@ -138,6 +139,10 @@ function next(): void {
           <span v-if="showCaret && !isViewingHistorical" class="caret" aria-hidden="true" />
         </template>
       </div>
+
+      <template v-if="message.done && !isViewingHistorical && message.dataTables?.length">
+        <DataTableCard v-for="table in message.dataTables" :key="table.id" :table="table" />
+      </template>
 
       <MessageSources
         v-if="message.done && displayedSources.length > 0"

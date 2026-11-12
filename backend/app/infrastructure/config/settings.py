@@ -129,6 +129,9 @@ class Settings(BaseSettings):
     # EXPLAIN gate: si el planner estima más que esto, rechazamos antes
     # de ejecutar.
     free_query_max_estimated_rows: int = Field(default=1000)
+    # EXPLAIN gate por costo del plan (unidades de Postgres). Con esto el de
+    # filas deja de aplicar: las filas ya no viajan por el modelo.
+    free_query_max_estimated_cost: float = Field(default=2_000_000.0, ge=0)
 
     # ── Imágenes adjuntas al chat ────────────────────────────────────────
     # Peso máximo del archivo subido (antes de reducirlo).

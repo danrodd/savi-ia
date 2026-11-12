@@ -15,6 +15,7 @@ from collections.abc import Collection
 from typing import Any, cast
 from uuid import UUID
 
+from app.modules.chat.infrastructure.llm.tools.result_sets import FULL_FETCH, make_recorder
 from app.modules.data_query.application.run_semantic_query import run_semantic_query
 from app.modules.data_query.infrastructure.catalog import list_entities
 
@@ -46,12 +47,14 @@ def build_description(modules: Collection[str] | None = None) -> str:
         "",
         "Modos:",
         "- agregado: métricas agrupadas por dimensiones (totales, conteos).",
-        "- detalle: lista de filas (máx ~30). Para 'las últimas N facturas'.",
+        "- detalle: lista de filas. Tú ves hasta ~30 y el total; el usuario recibe la "
+        "lista completa (hasta 10.000 filas) para exportarla en Excel, PDF o CSV.",
         "- registro: un único registro identificado por su clave.",
         "",
-        "Reglas: no puedes pedir listados masivos crudos; para muchos datos "
-        "usa agregados. Para buscar un cliente por nombre usa entidad "
-        "'terceros', modo 'detalle', filtro {campo:'nombre', op:'contiene', "
+        'Reglas: para un listado largo ("la base de clientes", "todos los que '
+        'compraron X") usa modo detalle o agregado sin achicar el límite: el usuario '
+        "recibe todas las filas. Para totales usa agregados. Para buscar un cliente "
+        "por nombre usa entidad 'terceros', modo 'detalle', filtro {campo:'nombre', op:'contiene', "
         "valor:'<texto>'} y obtén su 'id', luego filtra ventas por "
         "{campo:'cliente_id', op:'=', valor:<id>}.",
         "",
@@ -101,6 +104,7 @@ async def consultar_datos_impl(
     *,
     erp_database_id: UUID | None = None,
     modules: Collection[str] | None = None,
+    conversation_id: UUID | None = None,
 ) -> dict[str, Any]:
     consulta = args.get("consulta")
     if not isinstance(consulta, dict):
@@ -117,6 +121,10 @@ async def consultar_datos_impl(
             "isError": True,
         }
     text = await run_semantic_query(
-        cast(dict[str, Any], consulta), erp_database_id=erp_database_id, modules=modules
+        cast(dict[str, Any], consulta),
+        erp_database_id=erp_database_id,
+        modules=modules,
+        recorder=make_recorder(conversation_id),
+        full_fetch=FULL_FETCH,
     )
     return {"content": [{"type": "text", "text": text}]}

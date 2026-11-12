@@ -4,7 +4,8 @@ Política de FORMA:
 - Una sola sentencia.
 - Solo SELECT (con FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT).
 - Sin OFFSET (impide paginación multi-turno).
-- Sin CTE (WITH ...): el LIMIT global se evade fácilmente con CTE.
+- CTE (WITH ...) solo sin recursión y solo con SELECT. Antes se prohibían
+  porque evadían el LIMIT; ahora el tope lo pone la lectura (`fetch_rows`).
 - Sin UNION/INTERSECT/EXCEPT: cada rama duplica el cap efectivo.
 - Sin LATERAL: multiplica filas por cada fila de la outer query.
 - Sin SELECT * salvo en subqueries específicas (ej. EXISTS).
@@ -205,11 +206,14 @@ def _reject_unions_anywhere(root: exp.Select) -> None:
 
 
 def _reject_with_ctes(root: exp.Select) -> None:
-    if root.args.get("with") is not None or any(root.find_all(exp.With)):
-        raise AstValidationError(
-            "WITH (CTEs) no está permitido. Expresa la lógica en una sola "
-            "consulta con joins y subqueries simples."
-        )
+    """`WITH` sirve para análisis (cruzar inventario con ventas por periodo);
+    se permite sin recursión y con cada parte un SELECT."""
+    for with_ in root.find_all(exp.With):
+        if with_.args.get("recursive"):
+            raise AstValidationError("WITH RECURSIVE no está permitido.")
+        for cte in with_.expressions:
+            if not isinstance(cte.this, exp.Select):
+                raise AstValidationError("Cada parte de un WITH tiene que ser un SELECT.")
 
 
 def _reject_lateral_joins(root: exp.Select) -> None:
@@ -370,19 +374,17 @@ def _depth(node: exp.Expression) -> int:  # pyright: ignore[reportPrivateImportU
 
 
 def _enforce_limit(root: exp.Select, policy: FreeQueryPolicy) -> None:
+    cap = max(policy.fetch_rows, policy.max_rows)
     existing = root.args.get("limit")
     if existing is None:
-        root.set(
-            "limit",
-            exp.Limit(expression=exp.Literal.number(policy.max_rows)),
-        )
+        root.set("limit", exp.Limit(expression=exp.Literal.number(cap)))
         return
     # Si el LIMIT actual es un literal numérico, lo bajamos si pasa el cap.
     inner = existing.expression
     if isinstance(inner, exp.Literal) and inner.is_int:
         n = int(inner.this)
-        if n > policy.max_rows or n <= 0:
-            existing.set("expression", exp.Literal.number(policy.max_rows))
+        if n > cap or n <= 0:
+            existing.set("expression", exp.Literal.number(cap))
         return
     # LIMIT con expresión no literal (ej. parámetro o función): reemplazo.
-    existing.set("expression", exp.Literal.number(policy.max_rows))
+    existing.set("expression", exp.Literal.number(cap))

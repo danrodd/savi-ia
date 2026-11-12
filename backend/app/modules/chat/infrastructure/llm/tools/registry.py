@@ -232,7 +232,10 @@ def build_savi_tools(
 
     async def consultar_datos(args: dict[str, Any]) -> dict[str, Any]:
         return await consultar_datos_impl(
-            args, erp_database_id=erp_database_id, modules=allowed_modules
+            args,
+            erp_database_id=erp_database_id,
+            modules=allowed_modules,
+            conversation_id=conversation_id,
         )
 
     consultar_conocimiento = build_consultar_conocimiento_impl(

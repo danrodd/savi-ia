@@ -37,6 +37,7 @@ from app.modules.conversations.infrastructure.persistence.models import (
     ConversationModel,
     MessageModel,
 )
+from app.modules.documents.infrastructure.models import ResultSetModel
 from app.modules.erp_databases.infrastructure.persistence.models import (
     ErpDatabaseModel,
 )
@@ -70,6 +71,7 @@ _REGISTERED_MODELS = (
     CompanyDocumentAiReadModel,
     CompanyKnowledgeSettingsModel,
     MessageFeedbackModel,
+    ResultSetModel,
 )
 
 

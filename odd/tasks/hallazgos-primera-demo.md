@@ -90,10 +90,10 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 
 *P2. Resultados completos*
 
-- [ ] B12. Conjuntos de resultados guardados (dueño, vencimiento) y total exacto (`limit + 1` y `COUNT`).
-- [ ] B13. Vista previa en el chat desde los datos ("mostrando 30 de N") y botón Exportar (Excel, PDF y CSV generados en el servidor). Quitar `xlsx` del frontend.
-- [ ] B14. Entidad `inventario_rotacion` y campos de última compra o venta del tercero.
-- [ ] B15. SQL libre del administrador: `WITH` no recursivo y filtro previo por costo.
+- [x] B12. Conjuntos de resultados guardados (dueño, vencimiento) y total exacto (`limit + 1` y `COUNT`).
+- [x] B13. Vista previa en el chat desde los datos ("mostrando 30 de N") y botón Exportar (Excel, PDF y CSV generados en el servidor). Quitar `xlsx` del frontend.
+- [x] B14. Entidad `inventario_rotacion` y campos de última compra o venta del tercero.
+- [x] B15. SQL libre del administrador: `WITH` no recursivo y filtro previo por costo.
 
 *P3. Documentos*
 
@@ -107,4 +107,4 @@ Que SAVI le facilite el trabajo al usuario sin dejar de ser seguro:
 | Etapa | Estado |
 |---|---|
 | Fase A | **Completa** (2026-11-11). Quedan decisiones menores abiertas en cada documento, ninguna frena el inicio. |
-| Fase B | En curso. B1–B3 en `c798dcf` (tests: `test_failed_turn.py`, `test_openai_integration.py`, `failedTurn.spec.ts`); B4 con `test_turn_budget.py`. B5: con OpenAI real y la copia local de Imporllantas, la pregunta que fallaba en la demo responde (557 productos), aunque con 8 consultas rechazadas antes (lo ataca B14/B15); con un OpenAI falso que responde 503, el log muestra 3 reintentos, el turno queda guardado con su código y se ve al recargar. B6: `/admin/failed-turns` y vista Turnos fallidos (`test_failed_turns.py`, `FailedTurnsView.spec.ts`). Pendiente menor: el turno fallido no guarda proveedor y modelo (solo llegan con `done`). B7 en `b4dac0a`. B8–B11: permiso por campo (`_tercero_fields.py`), SQL libre con lista de prohibidos, rechazo fijo con corte a los 2 rechazos y auditoría `savi.audit` (`test_field_permissions.py`, `test_sql_validator.py`, `test_turn_budget.py`). Desvío de la spec en `TerceroVip`: hoy vacía el dato para todo no administrador si el tercero está en la tabla (no distingue a los usuarios listados, porque el catálogo no recibe el usuario); la tabla está vacía en los tres clientes. Ruta: inline (preferencia del usuario, sin subagentes). |
+| Fase B | En curso. B1–B3 en `c798dcf` (tests: `test_failed_turn.py`, `test_openai_integration.py`, `failedTurn.spec.ts`); B4 con `test_turn_budget.py`. B5: con OpenAI real y la copia local de Imporllantas, la pregunta que fallaba en la demo responde (557 productos), aunque con 8 consultas rechazadas antes (lo ataca B14/B15); con un OpenAI falso que responde 503, el log muestra 3 reintentos, el turno queda guardado con su código y se ve al recargar. B6: `/admin/failed-turns` y vista Turnos fallidos (`test_failed_turns.py`, `FailedTurnsView.spec.ts`). Pendiente menor: el turno fallido no guarda proveedor y modelo (solo llegan con `done`). B7 en `b4dac0a`. B8–B11: permiso por campo (`_tercero_fields.py`), SQL libre con lista de prohibidos, rechazo fijo con corte a los 2 rechazos y auditoría `savi.audit` (`test_field_permissions.py`, `test_sql_validator.py`, `test_turn_budget.py`). Desvío de la spec en `TerceroVip`: hoy vacía el dato para todo no administrador si el tercero está en la tabla (no distingue a los usuarios listados, porque el catálogo no recibe el usuario); la tabla está vacía en los tres clientes. B12–B15: módulo `documents` (conjuntos de resultados de hasta 10.000 filas, dueño y vencimiento a 90 días, exportación Excel/PDF/CSV/Word en el servidor con fórmulas neutralizadas), evento `data_tables` y tarjeta de datos en el chat, `xlsx` fuera del frontend, entidad `inventario_rotacion` (con la copia de Imporllantas: 124 productos con más de un año sin venta, la MICHELIN FORCE LTX con 509 días), SQL libre con `WITH` no recursivo y filtro por costo. Desvío: si hay más de 10.000 filas se informa "más de 10.000" en lugar de contar con `COUNT`. Ruta: inline (preferencia del usuario, sin subagentes). |

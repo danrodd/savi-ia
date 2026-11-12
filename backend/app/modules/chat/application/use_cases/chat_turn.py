@@ -20,6 +20,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator, Coroutine, Sequence
 from dataclasses import replace
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
@@ -30,6 +31,7 @@ from app.modules.chat.application.requests import ChatAction
 from app.modules.chat.domain.entities import (
     INTERNAL_ERROR_MESSAGE,
     ChatEvent,
+    DataTablesEvent,
     DoneEvent,
     ErrorCode,
     ErrorEvent,
@@ -66,6 +68,7 @@ from app.modules.conversations.domain.value_objects import (
     ToolInvocation,
     ToolInvocationStatus,
 )
+from app.modules.documents.domain.interfaces import ResultSetRepository
 
 log = logging.getLogger(__name__)
 
@@ -151,6 +154,7 @@ class _TurnAccumulator:
         self.error_code: str | None = None
         self.error_message: str | None = None
         self.support_code: str | None = None
+        self.data_tables: list[dict[str, Any]] = []
         # Hubo una tool entre el último texto y el próximo.
         self._tool_since_text = False
 
@@ -249,7 +253,13 @@ class _TurnAccumulator:
             error_code=self.error_code,
             error_message=self.error_message,
             support_code=self.support_code,
+            data_tables=list(self.data_tables),
         )
+
+
+# Tablas de datos que se muestran con una respuesta: las últimas consultas del
+# turno, que son las que la responden. Más que esto llena la pantalla.
+DATA_TABLES_PER_TURN = 3
 
 
 def new_support_code() -> str:
@@ -265,7 +275,9 @@ class ChatTurnUseCase:
         assistant_writer: AssistantMessageWriter,
         title_updater: ConversationTitleUpdater,
         settings: Settings,
+        result_sets: ResultSetRepository | None = None,
     ) -> None:
+        self._result_sets = result_sets
         self._repository = repository
         self._runner = runner
         self._assistant_writer = assistant_writer
@@ -644,6 +656,7 @@ class ChatTurnUseCase:
 
         accumulator = _TurnAccumulator()
         support_code = new_support_code()
+        turn_started = datetime.now(UTC)
         try:
             async for event in self._runner.stream_turn(
                 prompt,
@@ -668,6 +681,10 @@ class ChatTurnUseCase:
                     )
                 accumulator.consume(event)
                 if isinstance(event, DoneEvent):
+                    tables = await self._turn_data_tables(conversation_id, turn_started)
+                    if tables:
+                        accumulator.data_tables = tables
+                        yield DataTablesEvent(tables=tables)
                     # Las fuentes llegan ANTES de `done`: el frontend cierra
                     # el mensaje al recibir `done`.
                     sources = accumulator.resolve_sources(document_context)
@@ -727,6 +744,27 @@ class ChatTurnUseCase:
             )
             if refined:
                 yield TitleUpdateEvent(title=refined)
+
+    async def _turn_data_tables(
+        self, conversation_id: UUID, since: datetime
+    ) -> list[dict[str, Any]]:
+        """Las tablas de datos que dejaron las consultas de este turno."""
+        if self._result_sets is None:
+            return []
+        try:
+            created = await self._result_sets.created_since(conversation_id, since)
+        except Exception:  # noqa: BLE001 — sin tablas, la respuesta igual sale
+            log.exception("chat_turn_data_tables_failed conversation_id=%s", conversation_id)
+            return []
+        return [
+            {
+                "id": str(table.id),
+                "title": table.title,
+                "total_rows": table.total_rows,
+                "total_is_lower_bound": table.total_is_lower_bound,
+            }
+            for table in created[-DATA_TABLES_PER_TURN:]
+        ]
 
     async def _safe_write(self, message: Message, *, supersedes_id: UUID | None) -> None:
         try:

@@ -23,20 +23,9 @@ function downloadCsv(): void {
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-async function downloadXlsx(): Promise<void> {
-  // Lazy: SheetJS solo entra al bundle al exportar a Excel. Se usa únicamente
-  // para ESCRIBIR (aoa_to_sheet trata los strings como texto, no fórmulas).
-  const XLSX = await import('xlsx')
-  const ws = XLSX.utils.aoa_to_sheet(exportRows.value)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Datos')
-  XLSX.writeFile(wb, 'datos.xlsx')
-}
-
-function pick(format: 'csv' | 'xlsx'): void {
+function pick(): void {
   open.value = false
-  if (format === 'csv') downloadCsv()
-  else downloadXlsx()
+  downloadCsv()
 }
 </script>
 
@@ -70,19 +59,12 @@ function pick(format: 'csv' | 'xlsx'): void {
       </button>
 
       <Popover v-model:open="open" :anchor="trigger" side="bottom" align="end" :min-width="150">
-        <button type="button" class="menu__item" role="menuitem" @click="pick('xlsx')">
+        <button type="button" class="menu__item" role="menuitem" @click="pick()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
           </svg>
-          Excel (.xlsx)
-        </button>
-        <button type="button" class="menu__item" role="menuitem" @click="pick('csv')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
-          CSV (para otros programas)
+          CSV de esta tabla
         </button>
       </Popover>
     </div>

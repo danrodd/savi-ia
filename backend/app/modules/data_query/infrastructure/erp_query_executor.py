@@ -5,6 +5,7 @@ El pool ya fuerza `default_transaction_read_only=on` + `statement_timeout`
 de filas como red de seguridad — el compilador ya pone LIMIT, esto es
 defensa en profundidad por si algo se escapa.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -17,8 +18,9 @@ from app.modules.data_query.domain.query_result import QueryResult
 from app.modules.data_query.domain.semantic_query import QueryMode
 from app.modules.erp_databases.infrastructure import get_erp_engine_for
 
-# Tope absoluto de filas devueltas al modelo, independiente del LIMIT del
-# compilador. Nunca debería alcanzarse (LIMIT máx es aggregate_max_rows=100).
+# Tope absoluto de filas leídas, independiente del LIMIT del compilador. Para
+# lo que ve el modelo nunca debería alcanzarse (LIMIT máx 100); para guardar el
+# resultado completo, quien llama pasa un `max_rows` mayor.
 _HARD_FETCH_CAP = 200
 
 
@@ -28,6 +30,7 @@ async def execute_compiled(
     modo: QueryMode,
     *,
     erp_database_id: UUID | None = None,
+    max_rows: int = _HARD_FETCH_CAP,
 ) -> QueryResult:
     engine = await get_erp_engine_for(erp_database_id)
     async with engine.connect() as conn:
@@ -36,7 +39,7 @@ async def execute_compiled(
         rows: list[dict[str, Any]] = []
         truncated = False
         for i, row in enumerate(mappings):
-            if i >= _HARD_FETCH_CAP:
+            if i >= max_rows:
                 truncated = True
                 break
             rows.append(dict(row))

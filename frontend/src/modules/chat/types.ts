@@ -111,6 +111,15 @@ export interface StoredMessage {
   error_code?: string | null
   error_message?: string | null
   support_code?: string | null
+  data_tables?: DataTableRef[]
+}
+
+/** Un conjunto de resultados de la respuesta (`/result-sets/{id}`). */
+export interface DataTableRef {
+  id: string
+  title: string
+  total_rows: number
+  total_is_lower_bound: boolean
 }
 
 export interface ConversationDetail {
@@ -131,6 +140,7 @@ export type ChatEvent =
   | { type: 'superseded'; message_ids: string[] }
   | { type: 'title_update'; title: string }
   | { type: 'sources'; sources: MessageSource[] }
+  | { type: 'data_tables'; tables: DataTableRef[] }
   | {
       type: 'done'
       usage: Record<string, unknown> | null
@@ -180,6 +190,8 @@ export interface UIMessage {
   error?: string
   /** Código corto del turno fallido, el mismo que queda en el log del servidor. */
   supportCode?: string
+  /** Tablas de datos de la respuesta: vista previa y exportación completa. */
+  dataTables?: DataTableRef[]
   sources?: MessageSource[]
   /** Calificación propia de la respuesta (`null`/ausente = sin calificar). */
   feedback?: MessageFeedback | null

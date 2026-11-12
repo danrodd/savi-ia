@@ -104,6 +104,10 @@ class ChatAttachmentResponse(BaseModel):
         )
 
 
+def _empty_data_tables() -> list[dict[str, Any]]:
+    return []
+
+
 def _empty_attachments() -> list[ChatAttachmentResponse]:
     return []
 
@@ -136,6 +140,7 @@ class MessageResponse(BaseModel):
     error_code: str | None = None
     error_message: str | None = None
     support_code: str | None = None
+    data_tables: list[dict[str, Any]] = Field(default_factory=_empty_data_tables)
     # Calificación del usuario autenticado. La completa la ruta con el módulo
     # `feedback`; `None` = sin calificar (aditivo).
     feedback: MessageFeedbackResponse | None = None
@@ -165,6 +170,7 @@ class MessageResponse(BaseModel):
             error_code=dto.error_code,
             error_message=dto.error_message,
             support_code=dto.support_code,
+            data_tables=list(dto.data_tables),
             superseded_at=dto.superseded_at,
             superseded_by_id=dto.superseded_by_id,
             sources=[

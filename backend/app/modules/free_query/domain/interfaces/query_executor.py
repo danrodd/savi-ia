@@ -4,6 +4,7 @@ Abstrae el motor: hoy implementado con SQLAlchemy async + asyncpg sobre
 el pool readonly del ERP; mañana podría apuntar a un user dedicado
 (`savi_query`) o a otro engine.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -19,6 +20,10 @@ class QueryExecutor(ABC):
         (sintaxis, permisos, tabla no existe), levanta el error original
         para que el caller lo audite como `db_error`.
         """
+
+    async def estimate_cost(self, sql: str) -> float:
+        """`Total Cost` raíz del plan. Por defecto 0: sin medición de costo."""
+        return 0.0
 
     @abstractmethod
     async def execute_select(

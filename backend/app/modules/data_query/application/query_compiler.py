@@ -77,6 +77,23 @@ class _ParamCounter:
         return f":{key}"
 
 
+def widen_limit(compiled: CompiledQuery, fetch_limit: int) -> CompiledQuery:
+    """La misma consulta con otro `LIMIT`: para guardar el resultado completo.
+
+    El modelo sigue viendo las filas de su límite; el resto va al conjunto de
+    resultados que el usuario exporta (ver `docs/plataforma/11-resultados-completos.md`).
+    """
+    head, separator, _ = compiled.sql.rpartition("\nLIMIT ")
+    if not separator:
+        return compiled
+    return CompiledQuery(
+        sql=f"{head}\nLIMIT {fetch_limit}",
+        params=compiled.params,
+        select_labels=compiled.select_labels,
+        limit=fetch_limit,
+    )
+
+
 def compile_query(query: SemanticQuery, entity: SemanticEntity) -> CompiledQuery:
     if query.modo == QueryMode.AGGREGATE:
         return _compile_aggregate(query, entity)

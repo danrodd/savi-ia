@@ -11,6 +11,7 @@ Las excepciones tipadas (`AstValidationError`, `ExplainGateError`,
 el caller solo decide entre dos caminos: éxito o mensaje accionable
 con `isError=True`.
 """
+
 from __future__ import annotations
 
 import logging
@@ -56,16 +57,23 @@ class ExecuteFreeQueryUseCase:
         try:
             normalized_sql = validate_and_normalize(sql, self._policy)
             estimated = await self._executor.estimate_rows(normalized_sql)
-            if estimated > self._policy.max_estimated_rows:
+            if self._policy.max_estimated_cost > 0:
+                cost = await self._executor.estimate_cost(normalized_sql)
+                if cost > self._policy.max_estimated_cost:
+                    raise ExplainGateError(
+                        "La consulta es demasiado pesada para el ERP (el planner estima un "
+                        f"costo de {cost:,.0f}). Agrega filtros (fecha, producto, bodega) o "
+                        "simplifica los cruces."
+                    )
+            elif estimated > self._policy.max_estimated_rows:
                 raise ExplainGateError(
                     f"La consulta es muy amplia: el planner estima "
                     f"~{estimated:,} filas (máximo {self._policy.max_estimated_rows:,}). "
                     "Afina el filtro (por fecha, cliente, producto…) o "
                     "pide un agregado (totales, conteos)."
                 )
-            columns, rows = await self._executor.execute_select(
-                normalized_sql, max_rows=self._policy.max_rows
-            )
+            fetch = max(self._policy.fetch_rows, self._policy.max_rows)
+            columns, rows = await self._executor.execute_select(normalized_sql, max_rows=fetch)
             duration_ms = _elapsed_ms(started)
             await self._auditor.record(
                 conversation_id=conversation_id,
@@ -77,9 +85,9 @@ class ExecuteFreeQueryUseCase:
                 duration_ms=duration_ms,
                 error_message=None,
             )
-            truncated = len(rows) >= self._policy.max_rows and (
-                estimated > self._policy.max_rows
-            )
+            # Se cortó si llegó al tope que se lee. Antes dependía de la
+            # estimación del planner, que podía equivocarse y cortar sin avisar.
+            truncated = len(rows) >= fetch
             return QueryResult(
                 columns=columns,
                 rows=rows,

@@ -58,6 +58,15 @@ def test_rejects_anything_that_is_not_a_select(sql: str) -> None:
         _valida(sql)
 
 
+def test_a_non_recursive_with_is_allowed_for_analysis() -> None:
+    sql = _valida(
+        "WITH ventas AS (SELECT idproducto, MAX(fecha) AS ultima FROM detalle GROUP BY 1) "
+        "SELECT p.codigo, v.ultima FROM producto p JOIN ventas v ON v.idproducto = p.idproducto"
+    )
+
+    assert sql.upper().startswith("WITH") and "LIMIT" in sql.upper()
+
+
 def test_rejects_multiple_statements() -> None:
     with pytest.raises(AstValidationError, match="UNA sentencia"):
         _valida("SELECT nombre FROM terceros; DROP TABLE terceros")
@@ -66,7 +75,7 @@ def test_rejects_multiple_statements() -> None:
 @pytest.mark.parametrize(
     ("sql", "motivo"),
     [
-        ("WITH t AS (SELECT 1 AS a) SELECT a FROM t", "WITH"),
+        ("WITH RECURSIVE t AS (SELECT 1 AS a) SELECT a FROM t", "RECURSIVE"),
         ("SELECT a FROM x UNION SELECT b FROM y", "UNION"),
         ("SELECT a FROM x INTERSECT SELECT b FROM y", "INTERSECT"),
         ("SELECT a FROM x EXCEPT SELECT b FROM y", "EXCEPT"),

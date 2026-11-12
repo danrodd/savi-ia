@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
 
 from app.modules.conversations.domain.entities.chat_attachment import ChatAttachment
@@ -48,6 +49,9 @@ class Message:
     error_code: str | None = None
     error_message: str | None = None
     support_code: str | None = None
+    # Conjuntos de resultados que acompañan a la respuesta (id, título, filas):
+    # el chat los muestra con su vista previa y su botón Exportar.
+    data_tables: list[dict[str, Any]] = field(default_factory=list[dict[str, Any]])
     # Imágenes adjuntas (solo metadata). Solo los mensajes del usuario las tienen.
     attachments: list[ChatAttachment] = field(default_factory=list[ChatAttachment])
     # Revisiones: si `superseded_at` está set, este mensaje ya no es parte

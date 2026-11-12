@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from app.modules.conversations.domain.entities import ChatAttachment
@@ -58,6 +59,7 @@ class MessageDTO:
     error_code: str | None = None
     error_message: str | None = None
     support_code: str | None = None
+    data_tables: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)

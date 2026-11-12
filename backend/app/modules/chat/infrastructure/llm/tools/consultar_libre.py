@@ -11,13 +11,16 @@ El LLM **sí** escribe SQL acá, pero pasa por:
 Lo usa para preguntas que no caen en `consultar_datos` (semantic layer)
 ni en tools curadas. Es la última capa de la cascada.
 """
+
 from __future__ import annotations
 
+import logging
 from typing import Any
 from uuid import UUID
 
 from app.infrastructure.config import get_settings
 from app.infrastructure.database import get_agent_sessionmaker
+from app.modules.chat.infrastructure.llm.tools.result_sets import FULL_FETCH, make_recorder
 from app.modules.erp_databases.infrastructure import get_erp_engine_for
 from app.modules.free_query.application.formatter import format_result
 from app.modules.free_query.application.use_cases import ExecuteFreeQueryUseCase
@@ -28,6 +31,13 @@ from app.modules.free_query.infrastructure.sqlalchemy_query_auditor import (
 )
 from app.modules.free_query.infrastructure.sqlalchemy_query_executor import (
     SqlAlchemyQueryExecutor,
+)
+
+log = logging.getLogger(__name__)
+
+# Columnas de contacto: marcan el conjunto para auditar su exportación.
+_CONTACT_COLUMNS = frozenset(
+    {"numeroidentificacion", "telefonofijo", "telefono", "celular", "email", "direccion"}
 )
 
 
@@ -44,8 +54,11 @@ def build_consultar_libre_impl(
     settings = get_settings()
     policy = FreeQueryPolicy(
         max_rows=settings.free_query_max_rows,
+        fetch_rows=FULL_FETCH,
         max_estimated_rows=settings.free_query_max_estimated_rows,
+        max_estimated_cost=settings.free_query_max_estimated_cost,
     )
+    recorder = make_recorder(conversation_id)
 
     async def _impl(args: dict[str, Any]) -> dict[str, Any]:
         sql = args.get("sql")
@@ -64,9 +77,7 @@ def build_consultar_libre_impl(
             user_question = None
 
         use_case = ExecuteFreeQueryUseCase(
-            executor=SqlAlchemyQueryExecutor(
-                await get_erp_engine_for(erp_database_id)
-            ),
+            executor=SqlAlchemyQueryExecutor(await get_erp_engine_for(erp_database_id)),
             auditor=SqlAlchemyQueryAuditor(get_agent_sessionmaker()),
             policy=policy,
         )
@@ -81,6 +92,18 @@ def build_consultar_libre_impl(
                 "content": [{"type": "text", "text": e.message}],
                 "isError": True,
             }
-        return {"content": [{"type": "text", "text": format_result(result)}]}
+        kept = False
+        if recorder is not None and len(result.rows) >= 2:
+            title = (user_question or "Consulta del ERP").strip()[:150]
+            personal = any(c.lower() in _CONTACT_COLUMNS for c in result.columns)
+            try:
+                await recorder(
+                    title, result.columns, {c: c for c in result.columns}, result.rows, personal
+                )
+                kept = True
+            except Exception:  # noqa: BLE001 — guardar no puede tumbar la respuesta
+                log.exception("result_set_record_failed tool=consultar_libre")
+        text = format_result(result, shown=policy.max_rows, kept=kept)
+        return {"content": [{"type": "text", "text": text}]}
 
     return _impl

@@ -102,6 +102,7 @@ class ConversationOrmMapper:
             error_code=model.error_code,
             error_message=model.error_message,
             support_code=model.support_code,
+            data_tables=list(model.data_tables or []),
             # Si la relación no está cargada (p. ej. recién insertado) se
             # devuelve vacío en vez de disparar una carga perezosa, que en
             # async revienta.
@@ -136,6 +137,7 @@ class ConversationOrmMapper:
             error_code=entity.error_code,
             error_message=entity.error_message,
             support_code=entity.support_code,
+            data_tables=entity.data_tables or None,
             superseded_at=entity.superseded_at,
             superseded_by_id=entity.superseded_by_id,
         )

@@ -11,6 +11,7 @@ class ChatEventType(StrEnum):
     TITLE_UPDATE = "title_update"
     SUPERSEDED = "superseded"
     SOURCES = "sources"
+    DATA_TABLES = "data_tables"
     DONE = "done"
     ERROR = "error"
 
@@ -71,6 +72,19 @@ class SourcesEvent:
 
     sources: list[dict[str, Any]]
     type: ChatEventType = ChatEventType.SOURCES
+
+
+@dataclass(slots=True)
+class DataTablesEvent:
+    """Conjuntos de resultados que acompañan a la respuesta.
+
+    Llega justo antes de `done`. Cada uno es `{id, title, total_rows,
+    total_is_lower_bound}`; el frontend pide la vista previa a
+    `/result-sets/{id}` y exporta desde ahí.
+    """
+
+    tables: list[dict[str, Any]]
+    type: ChatEventType = ChatEventType.DATA_TABLES
 
 
 @dataclass(slots=True)
@@ -139,6 +153,7 @@ ChatEvent = (
     | TitleUpdateEvent
     | SupersededEvent
     | SourcesEvent
+    | DataTablesEvent
     | DoneEvent
     | ErrorEvent
 )
