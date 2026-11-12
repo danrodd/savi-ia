@@ -52,3 +52,17 @@ def test_it_requires_the_inventory_module() -> None:
     assert entity is not None
     assert not entity.allowed_for(frozenset({"VENTA"}))
     assert entity.allowed_for(frozenset({"INVENTARIO"}))
+
+
+def test_the_title_reads_like_spanish_and_works_as_a_filename() -> None:
+    from app.modules.data_query.application.run_semantic_query import (
+        _title,  # pyright: ignore[reportPrivateUsage]
+    )
+
+    entity = get_entity("inventario_rotacion")
+    assert entity is not None
+    query = parse_semantic_query(_query())
+
+    assert _title(query, entity) == (
+        "Rotación de inventario · Existencia mayor a 0, Días sin venta desde 365"
+    )

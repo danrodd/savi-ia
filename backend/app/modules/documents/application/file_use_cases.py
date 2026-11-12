@@ -24,6 +24,7 @@ from app.modules.documents.domain.files import (
     safe_filename,
 )
 from app.modules.documents.domain.interfaces import ResultSetRepository, StoredFileRepository
+from app.modules.documents.domain.result_set import ResultSet
 from app.modules.documents.domain.stored_file import StoredFile
 from app.shared.exceptions import NotFoundError, ValidationError
 
@@ -118,7 +119,8 @@ class BuildDocumentUseCase:
                         "Usa el identificador que te dio la consulta."
                     )
                 personal = personal or table.has_personal_data
-                blocks.append(Block(kind="table", table=table, columns=tuple(item.columnas)))
+                columns = _resolve_columns(table, item.columnas)
+                blocks.append(Block(kind="table", table=table, columns=columns))
         document = Document(
             title=spec.titulo,
             generated_at=datetime.now(UTC),
@@ -137,6 +139,25 @@ class BuildDocumentUseCase:
         )
         await self._files.add(stored)
         return stored
+
+
+def _resolve_columns(table: ResultSet, requested: list[str]) -> tuple[str, ...]:
+    """Las columnas pedidas, por su clave o por su etiqueta, sin importar mayúsculas.
+
+    Una columna que no existe se le explica al modelo con la lista de las que sí
+    hay: antes salía un PDF con la tabla vacía, o una falla interna.
+    """
+    if not requested:
+        return ()
+    by_name = {c.key.casefold(): c.key for c in table.columns}
+    by_name.update({c.label.casefold(): c.key for c in table.columns})
+    unknown = [name for name in requested if name.casefold() not in by_name]
+    if unknown:
+        valid = ", ".join(c.key for c in table.columns)
+        raise FileRequestError(
+            f"Las columnas {', '.join(unknown)} no están en el conjunto. Usa algunas de: {valid}."
+        )
+    return tuple(dict.fromkeys(by_name[name.casefold()] for name in requested))
 
 
 class DownloadFileUseCase:

@@ -66,10 +66,30 @@ def _value_text(value: object) -> str:
     return str(value)
 
 
-def _title(query: SemanticQuery) -> str:
+# Cómo se lee cada operador en el título (que también es el nombre del archivo).
+_OP_WORDS = {
+    "=": "",
+    "!=": "distinto de",
+    ">": "mayor a",
+    ">=": "desde",
+    "<": "menor a",
+    "<=": "hasta",
+    "entre": "entre",
+    "contiene": "con",
+    "en": "en",
+}
+
+
+def _title(query: SemanticQuery, entity: SemanticEntity) -> str:
+    """Título legible: "Rotación de inventario · Días sin venta desde 365"."""
     base = _TITLES.get(query.entidad, query.entidad.replace("_", " ").capitalize())
-    filters = ", ".join(f"{f.campo} {f.op.value} {_value_text(f.valor)}" for f in query.filtros)
-    return f"{base} · {filters}"[:150] if filters else base
+    parts: list[str] = []
+    for f in query.filtros:
+        field = entity.fields.get(f.campo)
+        label = field.label if field is not None else f.campo.replace("_", " ").capitalize()
+        words = _OP_WORDS.get(f.op.value, f.op.value)
+        parts.append(" ".join(p for p in (label, words, _value_text(f.valor)) if p))
+    return f"{base} · {', '.join(parts)}"[:150] if parts else base
 
 
 async def run_semantic_query(
@@ -156,7 +176,11 @@ async def run_semantic_query(
             )
             try:
                 saved_id = await recorder(
-                    _title(query), full.columns, compiled.select_labels, full.rows, personal
+                    _title(query, entity),
+                    full.columns,
+                    compiled.select_labels,
+                    full.rows,
+                    personal,
                 )
             except Exception:  # noqa: BLE001 — guardar no puede tumbar la respuesta
                 log.exception("result_set_record_failed entity=%s", query.entidad)

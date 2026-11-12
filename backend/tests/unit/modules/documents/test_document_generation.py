@@ -233,3 +233,26 @@ def test_the_logo_is_validated_shrunk_and_reencoded() -> None:
 @pytest.mark.parametrize("raw", [b"", b"no es una imagen", b"\x89PNG\r\n\x1a\nroto"])
 def test_a_broken_logo_is_dropped(raw: bytes) -> None:
     assert normalize_logo(raw) is None
+
+
+async def test_columns_are_matched_by_label_and_unknown_ones_are_explained(
+    sm: async_sessionmaker[AsyncSession],
+) -> None:
+    # Así falló en la prueba real: el modelo pidió las columnas por su etiqueta.
+    conversation_id = await _conversation(sm)
+    table_id = await _saved_table(sm, conversation_id)
+    use_case = BuildDocumentUseCase(
+        SqlAlchemyResultSetRepository(sm), SqlAlchemyStoredFileRepository(sm), FileRenderer()
+    )
+    by_label = _spec(table_id)
+    by_label["bloques"][2]["columnas"] = ["Código", "PRODUCTO"]
+
+    stored = await use_case.execute(
+        conversation_id, DocumentSpec.model_validate(by_label), Branding()
+    )
+    assert stored.content.startswith(b"%PDF")
+
+    unknown = _spec(table_id)
+    unknown["bloques"][2]["columnas"] = ["bodega"]
+    with pytest.raises(FileRequestError, match="Usa algunas de: codigo, producto, dias_sin_venta"):
+        await use_case.execute(conversation_id, DocumentSpec.model_validate(unknown), Branding())

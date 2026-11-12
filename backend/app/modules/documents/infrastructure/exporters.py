@@ -38,7 +38,9 @@ def _selected(table: ResultSet, columns: tuple[str, ...]) -> list[tuple[int, Res
     if not columns:
         return indexed
     by_key = {c.key: (i, c) for i, c in indexed}
-    return [by_key[key] for key in columns if key in by_key]
+    chosen = [by_key[key] for key in columns if key in by_key]
+    # Nunca una tabla sin columnas: si nada coincide, van todas.
+    return chosen or indexed
 
 
 def _display(value: Any, kind: str) -> str:

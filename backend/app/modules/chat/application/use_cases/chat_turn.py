@@ -263,6 +263,9 @@ class _TurnAccumulator:
 # Tablas de datos que se muestran con una respuesta: las últimas consultas del
 # turno, que son las que la responden. Más que esto llena la pantalla.
 DATA_TABLES_PER_TURN = 3
+# Menos filas que esto es una búsqueda auxiliar (el id de un producto o un
+# cliente), no un listado que el usuario quiera ver o exportar.
+DATA_TABLE_MIN_ROWS = 5
 
 
 def new_support_code() -> str:
@@ -772,7 +775,9 @@ class ChatTurnUseCase:
                 "total_rows": table.total_rows,
                 "total_is_lower_bound": table.total_is_lower_bound,
             }
-            for table in created[-DATA_TABLES_PER_TURN:]
+            for table in [t for t in created if t.total_rows >= DATA_TABLE_MIN_ROWS][
+                -DATA_TABLES_PER_TURN:
+            ]
         ]
 
     async def _turn_files(self, conversation_id: UUID, since: datetime) -> list[dict[str, Any]]:
