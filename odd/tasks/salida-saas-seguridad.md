@@ -37,7 +37,7 @@ Rama `develop`. El usuario autorizó el trabajo el 2026-11-18. Las instalaciones
   - vincular el Master a Cloud;
   - poner el tope por persona y por proveedor;
   - bajar los límites del chat.
-- [ ] **S5. Avisos de alertas dentro de la consola.** El usuario decidió el 2026-11-18 que no salgan por correo ni por chat.
+- [x] **S5. Avisos de alertas dentro de la consola.** El usuario decidió el 2026-11-18 que no salgan por correo ni por chat.
   - Un toast cuando aparece una alerta nueva crítica o de aviso, con un botón "Ver".
   - Una campana en el menú con las últimas alertas abiertas.
   - El conteo en el título de la pestaña.
@@ -69,6 +69,17 @@ Rama `develop`. El usuario autorizó el trabajo el 2026-11-18. Las instalaciones
   - Nota de proceso: f82aea9 se hizo con esas tres pruebas fallando, porque el commit se encadenó a la prueba en el mismo comando. Se corrigió en el commit siguiente.
 - **S4, 5702107.** Se agregó la sección §6.1 a `DEPLOYMENT.md`, y el compose ahora acepta `SAVI_RATE_LIMIT_CHAT_PER_MINUTE` y `SAVI_RATE_LIMIT_CHAT_PER_HOUR`.
 
+- **S5, eeb7ca0.**
+  - Componentes: `useOpenAlerts` (detecta las alertas nuevas), `AlertBell` (campana en el menú y en la barra del celular), avisos con el botón "Ver" y el conteo en el título de la pestaña.
+  - Pruebas: 238 en Cloud y 56 en `packages/ui`, con `vue-tsc` sin errores en las tres apps. Cuatro pruebas pasan a esperar una consulta más de alertas, que es la de la campana.
+  - En el navegador: la campana lista las 8 alertas abiertas y la pestaña muestra "(8) Clientes · SAVI Cloud". El aviso se cubre con pruebas, porque generar una alerta real en local depende del evaluador.
+
 ## Próximo paso
 
-S5: definir el canal de aviso de las alertas.
+Todo lo que se puede hacer sin el servidor está hecho. Lo que sigue necesita el servidor:
+
+- subir la v1.5.0;
+- desplegar el Master;
+- poner el monitor externo;
+- copiar los respaldos fuera del servidor;
+- endurecer el servidor.
