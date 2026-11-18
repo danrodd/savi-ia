@@ -28,12 +28,12 @@ Rama `develop`. El usuario autorizó el trabajo el 2026-11-18. Las instalaciones
 
 ## Tareas
 
-- [ ] **S1. `TwoFactorPanel` en `@savi/ui`.** Tiene dos modos:
+- [x] **S1. `TwoFactorPanel` en `@savi/ui`.** Tiene dos modos:
   - **Configuración:** tres pasos cortos, un QR compacto, la clave agrupada en bloques de 4 que se despliega con "¿No puede escanear?", y casillas que se envían solas.
   - **Verificación:** las casillas, un indicador de cuánto falta para que el código cambie y una ayuda para quien perdió el celular.
-- [ ] **S2. Cloud:** el ingreso usa `TwoFactorPanel`.
-- [ ] **S3. SAVI:** `MfaPanel` usa `TwoFactorPanel`.
-- [ ] **S4. Tope de la demo.** No requiere código. Hay que documentar en `deploy/master/DEPLOYMENT.md` cómo hacerlo:
+- [x] **S2. Cloud:** el ingreso usa `TwoFactorPanel`.
+- [x] **S3. SAVI:** `MfaPanel` usa `TwoFactorPanel`.
+- [x] **S4. Tope de la demo.** No requiere código. Hay que documentar en `deploy/master/DEPLOYMENT.md` cómo hacerlo:
   - vincular el Master a Cloud;
   - poner el tope por persona y por proveedor;
   - bajar los límites del chat.
@@ -52,4 +52,19 @@ Rama `develop`. El usuario autorizó el trabajo el 2026-11-18. Las instalaciones
 
 ## Progreso
 
-Sin empezar.
+- **S1–S3, f82aea9.** `TwoFactorPanel` en `@savi/ui`, usado en Cloud y en SAVI.
+  - Pruebas: 56 en `packages/ui`, 235 en Cloud y 395 en SAVI, con `vue-tsc` sin errores.
+  - Se probó en el navegador con un usuario nuevo de la Cloud local:
+    - cambio de contraseña;
+    - QR y clave plegada;
+    - código generado desde la clave;
+    - entrada a la consola;
+    - verificación en un ingreso posterior.
+  - En Cloud, la configuración entra en una sola pantalla: la marca se achica y la tarjeta es más ancha.
+- **4b2206a.** Tres pruebas de Cloud que montan el router pasaban los 5 s en la suite completa (solas tardan menos de 1 s), porque la carga en frío de las vistas creció. Se fijó un `testTimeout` de 15 s.
+  - Nota de proceso: f82aea9 se hizo con esas tres pruebas fallando, porque el commit se encadenó a la prueba en el mismo comando. Se corrigió en el commit siguiente.
+- **S4, 5702107.** Se agregó la sección §6.1 a `DEPLOYMENT.md`, y el compose ahora acepta `SAVI_RATE_LIMIT_CHAT_PER_MINUTE` y `SAVI_RATE_LIMIT_CHAT_PER_HOUR`.
+
+## Próximo paso
+
+S5: definir el canal de aviso de las alertas.
