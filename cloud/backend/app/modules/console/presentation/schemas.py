@@ -31,6 +31,13 @@ class _Body(BaseModel):
 # ------------------------------------------------------------------ modelos de respuesta
 
 
+class ClientPlanOut(BaseModel):
+    name: str | None
+    max_users: int | None
+    valid_until: date | None
+    status: str  # none | active | expiring | expired
+
+
 class ClientOut(BaseModel):
     id: str
     code: str
@@ -48,11 +55,41 @@ class ClientOut(BaseModel):
     allow_local_cli: bool
     ai_policy: dict[str, Any]
     access_policy: dict[str, Any]
+    instances_waiting: int = 0
+    instances_offline: int = 0
+    # Consumo de los últimos 30 días.
+    turns_30d: int = 0
+    active_users_30d: int = 0
+    cost_30d_usd: str = "0"
+    open_alerts: dict[str, int] = Field(default_factory=lambda: {})
+    health: str = "ok"
+    # Solo con `clients.billing`: el resto del staff no ve el plan.
+    plan: ClientPlanOut | None = None
 
     @classmethod
-    def of(cls, summary: ClientSummary) -> ClientOut:
+    def of(cls, summary: ClientSummary, *, billing: bool = False) -> ClientOut:
         c = summary.client
+        usage = summary.usage
+        sub = c.subscription
+        plan = (
+            ClientPlanOut(
+                name=sub.plan_name,
+                max_users=sub.max_users,
+                valid_until=sub.valid_until,
+                status=summary.subscription_status.value,
+            )
+            if billing and not sub.is_empty
+            else None
+        )
         return cls(
+            instances_waiting=summary.instances_waiting,
+            instances_offline=summary.instances_offline,
+            turns_30d=usage.turns if usage else 0,
+            active_users_30d=usage.active_users if usage else 0,
+            cost_30d_usd=str(usage.cost_usd) if usage else "0",
+            open_alerts={s.value: n for s, n in summary.open_alerts.items()},
+            health=summary.health(billing=billing).value,
+            plan=plan,
             id=str(c.id),
             code=c.code,
             name=c.name,
@@ -93,6 +130,7 @@ class InstanceOut(BaseModel):
     outdated: bool
     enrolled_at: datetime
     last_seen_at: datetime | None
+    turns_30d: int = 0
     # Solo con `instances.read_technical`:
     status_reason: str | None = None
     fingerprint: str | None = None
@@ -118,6 +156,7 @@ class InstanceOut(BaseModel):
             online=item.online,
             outdated=item.outdated,
             enrolled_at=i.enrolled_at,
+            turns_30d=item.turns_30d,
             last_seen_at=i.last_seen_at,
         )
         if technical:

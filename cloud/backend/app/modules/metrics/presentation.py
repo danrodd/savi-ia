@@ -221,16 +221,43 @@ class VersionOut(BaseModel):
     instances: int
 
 
+class ClientUsageOut(BaseModel):
+    client_id: str
+    code: str
+    name: str
+    turns: int
+    active_users: int
+    cost_usd: str
+
+
+class ClientDayOut(BaseModel):
+    """Turnos de un día de uno de los clientes principales; `client_id` nulo = Otros."""
+
+    day: date
+    client_id: str | None
+    turns: int
+
+
 class OverviewOut(BaseModel):
     clients: CountsOut
     instances: InstanceCountsOut
     period: PeriodOut
     freshness: FreshnessOut
     usage: UsageOut
+    # Mismas cifras en el periodo anterior de igual duración, para mostrar la variación.
+    previous_usage: UsageOut
     trend: list[DayOut]
+    # Los clientes con más turnos del periodo (máximo `TOP_CLIENTS`).
+    top_clients: list[ClientUsageOut]
+    # Serie diaria de los `TREND_CLIENTS` primeros de `top_clients`, más Otros.
+    trend_by_client: list[ClientDayOut]
     providers: list[ModelOut]
     versions: list[VersionOut]
     open_alerts: dict[str, int]
+
+
+TOP_CLIENTS = 5
+TREND_CLIENTS = 3
 
 
 # ------------------------------------------------------------------ utilidades
@@ -329,7 +356,22 @@ async def overview(
         )
         instances = [to_entity(m) for m in (await session.execute(select(InstanceModel))).scalars()]
         totals = await queries.totals(None, period)
+        previous = await queries.totals(None, period.previous)
         series = await queries.series(None, period)
+        ranking = (await queries.by_client(period))[:TOP_CLIENTS]
+        names = {
+            cid: (code, name)
+            for cid, code, name in (
+                await session.execute(
+                    select(ClientModel.id, ClientModel.code, ClientModel.name).where(
+                        ClientModel.id.in_([r.client_id for r in ranking])
+                    )
+                )
+            ).all()
+        }
+        by_client = await queries.series_by_client(
+            period, [r.client_id for r in ranking[:TREND_CLIENTS]]
+        )
         providers = await queries.by_model(None, period)
         freshness = await _freshness(session, now, None)
         open_alerts = await SqlAlchemyAlertRepository(session).count_open_by_severity()
@@ -351,7 +393,23 @@ async def overview(
         period=PeriodOut(start=period.start, end=period.end),
         freshness=freshness,
         usage=UsageOut.of(totals),
+        previous_usage=UsageOut.of(previous),
         trend=[DayOut.of(p) for p in series],
+        top_clients=[
+            ClientUsageOut(
+                client_id=str(r.client_id),
+                code=names.get(r.client_id, ("", ""))[0],
+                name=names.get(r.client_id, ("", ""))[1],
+                turns=r.turns,
+                active_users=r.active_users,
+                cost_usd=str(r.cost_usd),
+            )
+            for r in ranking
+        ],
+        trend_by_client=[
+            ClientDayOut(day=d, client_id=str(cid) if cid else None, turns=n)
+            for d, cid, n in by_client
+        ],
         providers=_models(providers),
         versions=[
             VersionOut(version=v, instances=n)

@@ -37,8 +37,13 @@ from app.modules.metrics.definitions import (
 AnySelect = Select[*tuple[Any, ...]]
 
 BOGOTA = "America/Bogota"
+BOGOTA_OFFSET = timedelta(hours=-5)  # Colombia no tiene horario de verano
 DEFAULT_PERIOD_DAYS = 30
 MAX_PERIOD_DAYS = 400
+
+
+def bogota_today(now: datetime) -> date:
+    return (now.astimezone(UTC) + BOGOTA_OFFSET).date()
 
 
 @dataclass(frozen=True)
@@ -55,6 +60,11 @@ class Period:
     @property
     def days(self) -> float:
         return (self.end - self.start).total_seconds() / 86400
+
+    @property
+    def previous(self) -> Period:
+        """El periodo inmediatamente anterior, de la misma duración (para la variación)."""
+        return Period(self.start - (self.end - self.start), self.start)
 
 
 def _day(session: AsyncSession, column: Any) -> ColumnElement[Any]:
@@ -175,6 +185,14 @@ class DatabaseInfo:
     credentials_unreadable: bool
     last_connection_ok_at: datetime | None
     snapshot_date: date
+
+
+@dataclass(frozen=True)
+class ClientUsage:
+    client_id: UUID
+    turns: int
+    active_users: int
+    cost_usd: Decimal
 
 
 @dataclass
@@ -353,6 +371,56 @@ class MetricsQueries:
             ModelUsage(p, m, int(n), int(toks or 0), _money(cost))
             for p, m, n, toks, cost in (await self._s.execute(stmt)).all()
         ]
+
+    async def by_client(
+        self, period: Period, client_ids: list[UUID] | None = None
+    ) -> list[ClientUsage]:
+        """Consumo de cada cliente en el periodo, de mayor a menor cantidad de turnos."""
+        t = EvTurnModel
+        stmt = self._turn_scope(
+            select(
+                t.client_id,
+                func.count(),
+                func.count(func.distinct(t.user_ref)),
+                func.sum(t.cost_usd),
+            ),
+            None,
+            period,
+        ).group_by(t.client_id)
+        if client_ids is not None:
+            stmt = stmt.where(t.client_id.in_(client_ids))
+        rows = [
+            ClientUsage(cid, int(n), int(users), _money(cost))
+            for cid, n, users, cost in (await self._s.execute(stmt)).all()
+        ]
+        return sorted(rows, key=lambda r: (-r.turns, -r.cost_usd, str(r.client_id)))
+
+    async def series_by_client(
+        self, period: Period, client_ids: list[UUID]
+    ) -> list[tuple[date, UUID | None, int]]:
+        """Turnos por día de cada cliente de `client_ids`; el resto se suma en `None` (Otros)."""
+        t = EvTurnModel
+        day = _day(self._s, t.occurred_at).label("day")
+        stmt = self._turn_scope(select(day, t.client_id, func.count()), None, period).group_by(
+            day, t.client_id
+        )
+        wanted = set(client_ids)
+        totals: dict[tuple[date, UUID | None], int] = defaultdict(int)
+        for d, cid, n in (await self._s.execute(stmt)).all():
+            totals[(_as_date(d), cid if cid in wanted else None)] += int(n)
+        return sorted(
+            ((d, cid, n) for (d, cid), n in totals.items()),
+            key=lambda r: (r[0], r[1] is None, str(r[1])),
+        )
+
+    async def turns_by_instance(
+        self, period: Period, client_id: UUID | None = None
+    ) -> dict[UUID, int]:
+        t = EvTurnModel
+        stmt = self._turn_scope(select(t.instance_id, func.count()), client_id, period).group_by(
+            t.instance_id
+        )
+        return {iid: int(n) for iid, n in (await self._s.execute(stmt)).all()}
 
     async def by_database(self, client_id: UUID, period: Period) -> list[DatabaseUsage]:
         t = EvTurnModel

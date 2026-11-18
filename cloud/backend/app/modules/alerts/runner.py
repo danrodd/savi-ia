@@ -30,17 +30,12 @@ from app.modules.ingest.infrastructure import EvTurnModel
 from app.modules.instances.infrastructure import InstanceModel
 from app.modules.instances.infrastructure import to_entity as instance_entity
 from app.modules.metrics.definitions import ERROR_FINISH_REASON
-from app.modules.metrics.queries import BOGOTA
+from app.modules.metrics.queries import BOGOTA, BOGOTA_OFFSET, bogota_today
 from app.shared.clock import Clock
 
 logger = logging.getLogger("savi_cloud.alerts")
 
 HISTORY_DAYS = 15  # hoy + los 14 previos que usa `cost_spike`
-BOGOTA_OFFSET = timedelta(hours=-5)  # Colombia no tiene horario de verano
-
-
-def bogota_today(now: datetime) -> date:
-    return (now.astimezone(UTC) + BOGOTA_OFFSET).date()
 
 
 def _as_date(value: object) -> date:

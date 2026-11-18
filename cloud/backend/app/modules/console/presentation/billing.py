@@ -14,7 +14,7 @@ from app.modules.clients.infrastructure import (
     SqlAlchemyClientRepository,
     SqlAlchemyLedgerRepository,
 )
-from app.modules.clients.subscription import LedgerEntry, LedgerKind, Subscription
+from app.modules.clients.subscription import WARN_DAYS, LedgerEntry, LedgerKind, Subscription
 from app.modules.console.presentation.common import make_client_actions
 from app.modules.console.presentation.schemas import (
     LedgerEntryBody,
@@ -27,9 +27,6 @@ from app.modules.staff.dependencies import RequirePermission, request_context
 from app.modules.staff.domain import Permission
 
 router = APIRouter()
-
-# Con cuántos días de anticipación se muestra «por vencer» (la alerta tiene su propio umbral).
-WARN_DAYS = 7
 
 
 def _out(entry: LedgerEntry) -> LedgerEntryOut:

@@ -162,7 +162,7 @@ async def test_client_lifecycle_and_listing(fx: Fixture) -> None:
     await make_client(fx, "AGRO1", "Agro Beta")
     await link_instance(fx, a)
 
-    page = (await fx.console.http.get(f"{API}/clients", headers=fx.comercial.auth)).json()
+    page = (await fx.console.http.get(f"{API}/clients?sort=code", headers=fx.comercial.auth)).json()
     assert page["total"] == 2
     assert [c["code"] for c in page["items"]] == ["AGRO1", "FARMA"]
     farma = next(c for c in page["items"] if c["code"] == "FARMA")
@@ -172,7 +172,9 @@ async def test_client_lifecycle_and_listing(fx: Fixture) -> None:
     assert [c["code"] for c in found["items"]] == ["FARMA"]
 
     limited = (
-        await fx.console.http.get(f"{API}/clients?limit=1&offset=1", headers=fx.comercial.auth)
+        await fx.console.http.get(
+            f"{API}/clients?sort=code&limit=1&offset=1", headers=fx.comercial.auth
+        )
     ).json()
     assert limited["total"] == 2
     assert [c["code"] for c in limited["items"]] == ["FARMA"]

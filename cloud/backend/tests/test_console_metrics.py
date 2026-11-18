@@ -425,6 +425,60 @@ async def test_overview_aggregates_all_clients(fx: Fixture) -> None:
     assert len(body["trend"]) == 3
 
 
+async def test_overview_compares_with_the_previous_period_and_ranks_clients(fx: Fixture) -> None:
+    data = await seed(fx)
+    # Periodo de 32 días: el anterior (31/10 al 1/12) solo tiene el turno "old" de FARMX.
+    body = await get(fx, "/overview?start=2025-12-01T00:00:00Z&end=2026-01-02T00:00:00Z")
+    assert body["usage"]["turns"] == 6
+    assert body["previous_usage"]["turns"] == 1
+    assert body["previous_usage"]["cost_usd"] == "5.000000"
+
+    ranking = [(c["code"], c["turns"]) for c in body["top_clients"]]
+    assert ranking == [("FARMX", 5), ("OTRO1", 1)]
+    assert body["top_clients"][0]["client_id"] == data.client_id
+
+    # Con dos clientes, los dos van en la serie por cliente y no hay "Otros".
+    by_client = {(r["day"], r["client_id"]): r["turns"] for r in body["trend_by_client"]}
+    assert sum(by_client.values()) == 6
+    assert by_client[("2025-12-31", data.other_client_id)] == 1
+    assert all(cid is not None for _, cid in by_client)
+
+
+async def test_overview_groups_the_rest_of_the_clients_as_others(fx: Fixture) -> None:
+    await seed(fx)
+    extra = [UUID(await make_client(fx, f"EXTRA{n}", f"Extra {n}")) for n in range(3)]
+    async with fx.console.maker() as s, s.begin():
+        for n, cid in enumerate(extra):
+            for k in range(2):
+                s.add(
+                    _turn(
+                        cid,
+                        f"x{n}{k}",
+                        "2025-12-31T15:00:00Z",
+                        f"x{n}",
+                        "claude",
+                        "sonnet",
+                        "complete",
+                        (1, 1, 0, 0),
+                        "0.001000",
+                        10,
+                        DB_A,
+                        [],
+                    )
+                )
+
+    body = await get(fx, "/overview")
+    # FARMX (5) y los tres EXTRA (2) superan a OTRO1 (1): quedan cinco en el ranking.
+    assert [c["code"] for c in body["top_clients"]][:1] == ["FARMX"]
+    assert len(body["top_clients"]) == 5
+    shown = {r["client_id"] for r in body["trend_by_client"]} - {None}
+    assert len(shown) == 3
+    others = sum(r["turns"] for r in body["trend_by_client"] if r["client_id"] is None)
+    total = sum(r["turns"] for r in body["trend_by_client"])
+    assert total == body["usage"]["turns"]
+    assert others == total - sum(c["turns"] for c in body["top_clients"] if c["client_id"] in shown)
+
+
 async def heartbeat_with_sync(fx: Fixture, who: Linked, *, watermark: str) -> None:
     res = await fx.console.http.post(
         "/api/v1/instances/heartbeat",

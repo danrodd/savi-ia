@@ -19,6 +19,8 @@ from app.shared.errors import DomainError
 MAX_USD = Decimal("99999999")
 MAX_NOTE = 500
 MAX_USERS = 100000
+# Con cuántos días de anticipación la consola muestra «por vencer» (la alerta tiene su umbral).
+WARN_DAYS = 7
 _PLAN_NAME = re.compile(r"^\S.{0,79}$")
 
 

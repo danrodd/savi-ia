@@ -30,7 +30,7 @@ from app.modules.console.presentation.schemas import (
 )
 from app.modules.staff.application import Principal
 from app.modules.staff.dependencies import RequirePermission, request_context
-from app.modules.staff.domain import Permission
+from app.modules.staff.domain import Permission, has_permission
 
 router = APIRouter()
 
@@ -43,16 +43,17 @@ async def list_clients(
     request: Request,
     status: ClientStatus | None = None,
     q: str | None = Query(default=None, max_length=100),
-    sort: Literal["code", "name", "last_seen"] = "code",
+    sort: Literal["attention", "usage", "code", "name", "last_seen"] = "attention",
     limit: int = Query(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
-    _: Principal = Depends(RequirePermission(Permission.CLIENTS_READ)),
+    principal: Principal = Depends(RequirePermission(Permission.CLIENTS_READ)),
 ) -> ClientPage:
+    billing = has_permission(principal.user.role, Permission.CLIENTS_BILLING)
     async with transaction(request) as session:
         items, total = await make_queries(request, session).list_clients(
-            status=status, q=q, sort=sort, limit=limit, offset=offset
+            status=status, q=q, sort=sort, limit=limit, offset=offset, billing=billing
         )
-    return ClientPage(items=[ClientOut.of(s) for s in items], total=total)
+    return ClientPage(items=[ClientOut.of(s, billing=billing) for s in items], total=total)
 
 
 @router.post("/clients", response_model=ClientOut, status_code=201)
