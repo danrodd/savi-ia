@@ -29,7 +29,7 @@ const events = computed(() =>
       <div>
         <h2 id="cloud-preview-title" class="cp__title">Qué datos se envían</h2>
         <p class="cp__lead">
-          Acá ves exactamente lo que viaja a SAVI Cloud, tal como se envía. Son datos de uso para
+          Aquí puede ver exactamente lo que se envía a SAVI Cloud, tal como viaja. Son datos de uso para
           que SEO Group pueda dar soporte y medir el piloto.
         </p>
       </div>

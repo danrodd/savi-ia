@@ -41,7 +41,12 @@ function onSubmit(): void {
         </p>
       </div>
 
-      <form class="demo__form" novalidate @submit.prevent="onSubmit">
+      <!-- Sin correo de destino el formulario no tiene adónde ir: se ofrece el
+           camino que sí funciona en vez de un botón deshabilitado. -->
+      <p v-if="!contact" class="demo__note demo__note--alone" role="status">
+        Para agendar una demostración, comuníquese con su asesor de SEO Group.
+      </p>
+      <form v-else class="demo__form" novalidate @submit.prevent="onSubmit">
         <label class="demo__field">
           <span>Nombre</span>
           <input v-model="form.name" autocomplete="name" :aria-invalid="!!errors.name" />
@@ -75,13 +80,10 @@ function onSubmit(): void {
           <textarea v-model="form.message" rows="3" maxlength="1000" />
         </label>
 
-        <p v-if="!contact" class="demo__note" role="status">
-          El formulario todavía no tiene un correo de destino configurado.
-        </p>
-        <p v-else-if="sent" class="demo__note" role="status">
+        <p v-if="sent" class="demo__note" role="status">
           Se abrió su correo con la solicitud lista. Solo falta enviarla.
         </p>
-        <button type="submit" class="lp-button lp-button--primary demo__submit" :disabled="!contact">
+        <button type="submit" class="lp-button lp-button--primary demo__submit">
           Solicitar demo
         </button>
       </form>
@@ -160,6 +162,12 @@ function onSubmit(): void {
   margin: 0;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.demo__note--alone {
+  align-self: center;
+  font-size: 16px;
+  color: var(--text);
 }
 
 .demo__submit {
