@@ -36,6 +36,13 @@ from app.modules.data_query.infrastructure.catalog._tercero_fields import (
 )
 
 _CLIENTE_NAME = tercero_display_name()
+# El vendedor es el empleado que figura en la factura: otro tercero, con su
+# propio alias para no chocar con el del cliente.
+_VENDEDOR_NAME = tercero_display_name("v")
+_VENDEDOR_JOIN = JoinDef(
+    "vendedor",
+    'LEFT JOIN "Tercero"."Tercero" v ON v."idTercero" = f."idTerceroEmpleado"',
+)
 
 _DATE = (FilterOp.BETWEEN, FilterOp.GTE, FilterOp.LTE, FilterOp.EQ)
 
@@ -48,14 +55,15 @@ VENTAS = SemanticEntity(
     description=(
         "Facturas de venta (cabecera). Úsala para totales facturados, "
         "número de facturas, ticket promedio, IVA y descuentos, agrupados "
-        "por periodo o por cliente. Para detalle por PRODUCTO usa "
-        "'ventas_detalle'."
+        "por periodo, por cliente o por vendedor. Para detalle por PRODUCTO "
+        "usa 'ventas_detalle'."
     ),
     joins={
         "tercero": JoinDef(
             "tercero",
             'JOIN "Tercero"."Tercero" t ON t."idTercero" = f."idTercero"',
         ),
+        "vendedor": _VENDEDOR_JOIN,
     },
     metrics={
         "monto_total": MetricDef("monto_total", 'SUM(f."total")', "Total facturado"),
@@ -73,6 +81,7 @@ VENTAS = SemanticEntity(
         "mes": DimensionDef("mes", "DATE_TRUNC('month', f.\"fecha\")", "Mes"),
         "anio": DimensionDef("anio", "DATE_TRUNC('year', f.\"fecha\")", "Año"),
         "cliente": DimensionDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
+        "vendedor": DimensionDef("vendedor", _VENDEDOR_NAME, "Vendedor", requires=("vendedor",)),
     },
     fields={
         **contact_fields(requires=("tercero",)),
@@ -86,6 +95,7 @@ VENTAS = SemanticEntity(
         "iva": FieldDef("iva", 'f."valorImpuestoIva"', "IVA"),
         "descuento": FieldDef("descuento", 'f."descuento"', "Descuento"),
         "cliente": FieldDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
+        "vendedor": FieldDef("vendedor", _VENDEDOR_NAME, "Vendedor", requires=("vendedor",)),
     },
     filters={
         "fecha": FilterDef("fecha", 'f."fecha"', _DATE, value_type="date"),
@@ -99,6 +109,10 @@ VENTAS = SemanticEntity(
         # él el modelo tenía que buscar el id en `terceros` y encadenar; si
         # ese primer paso fallaba, contestaba que el cliente no existía.
         "cliente": FilterDef("cliente", _CLIENTE_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
+        # "Cuánto vendió Mateo" por el nombre del vendedor.
+        "vendedor": FilterDef(
+            "vendedor", _VENDEDOR_NAME, (FilterOp.CONTAINS,), requires=("vendedor",)
+        ),
         "numero": FilterDef("numero", 'f."numero"', (FilterOp.EQ,), value_type="number"),
     },
     record_key="numero",
@@ -112,8 +126,8 @@ VENTAS_DETALLE = SemanticEntity(
     base_filters=('f."anulada" = false',),
     description=(
         "Líneas de venta (por producto). Úsala para unidades vendidas, "
-        "ingresos y costo por producto o por sucursal. Para totales de "
-        "factura usa 'ventas'."
+        "ingresos y costo por producto, por sucursal o por vendedor. Para "
+        "totales de factura usa 'ventas'."
     ),
     joins={
         # 'detalle' debe ir primero: 'producto' y 'almacen' dependen de él.
@@ -133,6 +147,7 @@ VENTAS_DETALLE = SemanticEntity(
             "tercero",
             'JOIN "Tercero"."Tercero" t ON t."idTercero" = f."idTercero"',
         ),
+        "vendedor": _VENDEDOR_JOIN,
     },
     metrics={
         "monto_lineas": MetricDef(
@@ -158,6 +173,7 @@ VENTAS_DETALLE = SemanticEntity(
         ),
         "mes": DimensionDef("mes", "DATE_TRUNC('month', f.\"fecha\")", "Mes"),
         "cliente": DimensionDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
+        "vendedor": DimensionDef("vendedor", _VENDEDOR_NAME, "Vendedor", requires=("vendedor",)),
     },
     fields={},  # entidad analítica: sin modo detalle/registro
     filters={
@@ -179,5 +195,9 @@ VENTAS_DETALLE = SemanticEntity(
         ),
         "cliente_id": FilterDef("cliente_id", 'f."idTercero"', (FilterOp.EQ,), value_type="number"),
         "cliente": FilterDef("cliente", _CLIENTE_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
+        # "Cuánto vendió Mateo" por el nombre del vendedor.
+        "vendedor": FilterDef(
+            "vendedor", _VENDEDOR_NAME, (FilterOp.CONTAINS,), requires=("vendedor",)
+        ),
     },
 )

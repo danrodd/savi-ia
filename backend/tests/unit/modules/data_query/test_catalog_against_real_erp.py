@@ -213,7 +213,7 @@ async def test_terceros_with_a_boolean_filter_runs(erp_engine: AsyncEngine) -> N
 async def test_blocked_suppliers_are_not_the_inactive_ones(
     erp_engine: AsyncEngine, erp_name: str
 ) -> None:
-    """"¿Qué proveedores están bloqueados?" se respondía con los inactivos:
+    """ "¿Qué proveedores están bloqueados?" se respondía con los inactivos:
     son columnas distintas del ERP. En farmacias el único bloqueado es
     COPHARCOL, y está ACTIVO."""
     query = SemanticQuery(
@@ -411,6 +411,38 @@ async def test_every_filter_exists(erp_engine: AsyncEngine, entidad: str) -> Non
 
     for nombre in entity.filters:
         await _run(erp_engine, _aggregate(entidad, filtros=[_sample_filter(entidad, nombre)]))
+
+
+@pytest.mark.asyncio
+async def test_ventas_by_seller_adds_up_to_the_billed_total(erp_engine: AsyncEngine) -> None:
+    """ "Ventas por vendedor" en una consulta: cada vendedor suma lo mismo que
+    agrupar por `idTerceroEmpleado`, y entre todos dan el total facturado.
+    Sin la dimensión, el modelo encadenaba de 6 a 10 consultas libres."""
+    periodo = QueryFilter("fecha", FilterOp.BETWEEN, ["2025-01-01", "2025-12-31"])
+    por_vendedor = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="ventas",
+            modo=QueryMode.AGGREGATE,
+            metricas=["monto_total"],
+            dimensiones=["vendedor"],
+            filtros=[periodo],
+            limite=500,
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        esperado = await conn.execute(
+            text(
+                'SELECT f."idTerceroEmpleado" AS id, SUM(f.total) AS monto '
+                'FROM "CuentaCobrar"."Factura" f WHERE f.anulada = false '
+                "AND f.fecha >= '2025-01-01' AND f.fecha < '2026-01-01' "
+                'GROUP BY f."idTerceroEmpleado"'
+            )
+        )
+        montos = sorted(float(r.monto) for r in esperado)
+
+    assert sorted(float(r["monto_total"]) for r in por_vendedor) == pytest.approx(montos)
+    assert all(r["vendedor"] for r in por_vendedor if r["monto_total"]), "vendedor sin nombre"
 
 
 @pytest.mark.asyncio
