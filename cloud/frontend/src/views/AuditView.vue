@@ -14,6 +14,7 @@ import {
 import { ScrollText, Search, X } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import FiltersPanel from '@/components/FiltersPanel.vue'
 import { useQueryParam } from '@/composables/useQueryParam'
 import { useTargetNames } from '@/composables/useTargetNames'
 import { consoleApi } from '@/lib/api'
@@ -96,7 +97,7 @@ function pretty(value: Record<string, unknown> | null): string {
     />
 
     <div class="stack">
-      <Card padding="md">
+      <FiltersPanel :active="[actor, action, target].filter(Boolean).length">
         <form class="filters" novalidate @submit.prevent="load()">
           <TextField v-model="actor" type="email" label="Quién" placeholder="correo@seogroup.com" />
           <Select v-model="action" label="Acción" placeholder="Todas las acciones" :options="AUDIT_ACTION_OPTIONS" />
@@ -121,7 +122,7 @@ function pretty(value: Record<string, unknown> | null): string {
             <X :size="12" aria-hidden="true" />
           </button>
         </div>
-      </Card>
+      </FiltersPanel>
 
       <Alert v-if="error" tone="danger">
         {{ error }}

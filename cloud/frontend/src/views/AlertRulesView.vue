@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   Alert,
-  Badge,
   Button,
   Card,
   PageHeader,
@@ -81,142 +80,212 @@ function saveThreshold(rule: AlertRule): void {
         </template>
       </Alert>
 
-      <template v-if="loading && !data">
-        <Card v-for="n in 3" :key="n">
-          <Skeleton height="18px" width="35%" />
-          <Skeleton height="14px" width="70%" style="margin-top: 10px" />
-        </Card>
-      </template>
-
-      <Card v-for="rule in data ?? []" :key="rule.code" :class="{ 'rule--off': !rule.enabled }">
-        <div class="rule">
-          <div class="rule__head">
-            <div class="rule__title">
-              <h2>{{ rule.title }}</h2>
-              <Badge :tone="rule.auto_resolve ? 'success' : 'neutral'">
-                {{ rule.auto_resolve ? 'Se resuelve sola' : 'Se resuelve a mano' }}
-              </Badge>
-            </div>
-            <p>{{ rule.description }}</p>
-          </div>
-          <Switch
-            :model-value="rule.enabled"
-            :label="rule.enabled ? 'Activa' : 'Apagada'"
-            :aria-label="`Regla ${rule.title}`"
-            :disabled="busy === rule.code"
-            :data-test="`rule-${rule.code}-enabled`"
-            @update:model-value="save(rule, { enabled: $event }, $event ? 'Regla activada' : 'Regla apagada')"
-          />
+      <Card padding="none">
+        <div v-if="loading && !data" class="loading">
+          <Skeleton v-for="n in 4" :key="n" height="18px" />
         </div>
 
-        <div class="rule__settings">
-          <Select
-            :model-value="rule.severity"
-            label="Severidad"
-            :options="SEVERITY_OPTIONS"
-            :disabled="busy === rule.code"
-            @update:model-value="(value) => value && save(rule, { severity: value }, 'Severidad guardada')"
-          />
-          <form
-            v-if="rule.default_threshold !== null"
-            class="rule__threshold"
-            novalidate
-            @submit.prevent="saveThreshold(rule)"
-          >
-            <TextField
-              :model-value="draftOf(rule)"
-              type="number"
-              :min="0"
-              step="any"
-              :label="`Umbral (${rule.threshold_unit})`"
-              :hint="`Por defecto: ${rule.default_threshold}`"
-              :error="thresholdErrors[rule.code]"
-              :data-test="`rule-${rule.code}-threshold`"
-              @update:model-value="drafts[rule.code] = $event as number | null"
-            />
-            <Button
-              v-if="isDirty(rule)"
-              type="submit"
-              class="rule__save"
-              :loading="busy === rule.code"
-            >
-              Guardar umbral
-            </Button>
-          </form>
-        </div>
+        <!-- Una fila por regla: lo que se cambia seguido (severidad, umbral, encendido)
+             queda alineado en columnas; la explicación va debajo del nombre. -->
+        <table v-else class="rules">
+          <caption class="sr-only">Reglas de alerta</caption>
+          <thead>
+            <tr>
+              <th scope="col">Regla</th>
+              <th scope="col" class="col-severity">Severidad</th>
+              <th scope="col" class="col-threshold">Umbral</th>
+              <th scope="col" class="col-enabled">Activa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="rule in data ?? []" :key="rule.code" :class="{ 'rule--off': !rule.enabled }">
+              <td class="rule">
+                <strong>{{ rule.title }}</strong>
+                <p>{{ rule.description }}</p>
+                <small>{{ rule.auto_resolve ? 'Se resuelve sola' : 'Se resuelve a mano' }}</small>
+              </td>
+              <td class="col-severity" data-label="Severidad">
+                <Select
+                  class="compact"
+                  :model-value="rule.severity"
+                  :label="`Severidad de ${rule.title}`"
+                  :options="SEVERITY_OPTIONS"
+                  :disabled="busy === rule.code"
+                  @update:model-value="(value) => value && save(rule, { severity: value }, 'Severidad guardada')"
+                />
+              </td>
+              <td class="col-threshold" data-label="Umbral">
+                <form
+                  v-if="rule.default_threshold !== null"
+                  class="threshold"
+                  novalidate
+                  @submit.prevent="saveThreshold(rule)"
+                >
+                  <TextField
+                    class="compact"
+                    :model-value="draftOf(rule)"
+                    type="number"
+                    :min="0"
+                    step="any"
+                    :label="`Umbral de ${rule.title}`"
+                    :error="thresholdErrors[rule.code]"
+                    :data-test="`rule-${rule.code}-threshold`"
+                    @update:model-value="drafts[rule.code] = $event as number | null"
+                  >
+                    <template #suffix>{{ rule.threshold_unit }}</template>
+                  </TextField>
+                  <Button v-if="isDirty(rule)" type="submit" size="sm" :loading="busy === rule.code">
+                    Guardar
+                  </Button>
+                  <small v-else class="muted">Por defecto: {{ rule.default_threshold }}</small>
+                </form>
+                <span v-else class="muted">—</span>
+              </td>
+              <td class="col-enabled" data-label="Activa">
+                <Switch
+                  class="compact"
+                  :model-value="rule.enabled"
+                  :label="rule.enabled ? 'Activa' : 'Apagada'"
+                  :aria-label="`Regla ${rule.title}`"
+                  :disabled="busy === rule.code"
+                  :data-test="`rule-${rule.code}-enabled`"
+                  @update:model-value="save(rule, { enabled: $event }, $event ? 'Regla activada' : 'Regla apagada')"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </Card>
     </div>
   </div>
 </template>
 
 <style scoped>
-.rule {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-6);
-}
-
-.rule__head {
-  min-width: 0;
-}
-
-.rule__title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.rule__title h2 {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: var(--fw-semibold);
-}
-
-.rule__head p {
-  margin: var(--space-2) 0 0;
-  font-size: 13px;
-  color: var(--text-muted);
-  max-width: 70ch;
-}
-
-.rule__settings {
+.loading {
   display: grid;
-  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-5);
-  margin-top: var(--space-5);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border);
+  gap: var(--space-4);
+  padding: var(--space-5);
 }
 
-.rule__threshold {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  max-width: 420px;
+.rules {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.rule__threshold > :first-child {
-  flex: 1;
+.rules th {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-.rule__save {
-  margin-top: 21px;
+.rules td {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
 }
 
-.rule--off {
-  opacity: 0.75;
+.rules tbody tr:last-child td {
+  border-bottom: 0;
 }
 
-@media (max-width: 640px) {
-  .rule {
-    flex-direction: column;
+.rule strong {
+  font-size: 14px;
+}
+
+.rule p {
+  margin: 4px 0;
+  max-width: 60ch;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.rule small {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+.col-severity {
+  width: 170px;
+}
+
+.col-threshold {
+  width: 260px;
+}
+
+.col-enabled {
+  width: 130px;
+}
+
+/* En la tabla, la columna ya nombra cada campo: la etiqueta queda solo para lectores. */
+.compact :deep(.ui-field__label),
+.compact :deep(.ui-switch__label) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.threshold {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.threshold small {
+  font-size: 12px;
+}
+
+.rule--off .rule,
+.rule--off .col-severity,
+.rule--off .col-threshold {
+  opacity: 0.6;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .rules thead {
+    display: none;
   }
 
-  .rule__settings {
-    grid-template-columns: minmax(0, 1fr);
+  .rules,
+  .rules tbody,
+  .rules tr,
+  .rules td {
+    display: block;
+    width: auto;
+  }
+
+  .rules tr {
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rules td {
+    padding: var(--space-2) var(--space-5);
+    border: 0;
+  }
+
+  .rules td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+    color: var(--text-muted);
   }
 }
 </style>

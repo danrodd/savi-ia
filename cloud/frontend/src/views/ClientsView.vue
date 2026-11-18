@@ -14,6 +14,7 @@ import { Building2, Plus, Search } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import ClientFormDialog from '@/components/ClientFormDialog.vue'
+import FiltersPanel from '@/components/FiltersPanel.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
 import {
@@ -125,7 +126,7 @@ function onCreated(client: Client): void {
     </PageHeader>
 
     <div class="stack">
-      <Card padding="md">
+      <FiltersPanel :active="[q, status].filter(Boolean).length">
         <div class="filters">
           <TextField v-model="q" type="search" label="Buscar" placeholder="Código o nombre" data-test="clients-search">
             <template #prefix><Search :size="15" /></template>
@@ -133,7 +134,7 @@ function onCreated(client: Client): void {
           <Select v-model="status" label="Estado" placeholder="Todos" :options="STATUS_OPTIONS" />
           <Select v-model="sort" label="Ordenar por" :options="SORT_OPTIONS" />
         </div>
-      </Card>
+      </FiltersPanel>
 
       <Alert v-if="error" tone="danger">
         {{ error }}

@@ -15,6 +15,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import AlertResolveDialog from '@/components/AlertResolveDialog.vue'
 import AlertRowActions from '@/components/AlertRowActions.vue'
+import FiltersPanel from '@/components/FiltersPanel.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useAlertActions } from '@/composables/useAlertActions'
 import { useClientOptions } from '@/composables/useClientOptions'
@@ -118,7 +119,7 @@ async function acknowledgeSelected(): Promise<void> {
     />
 
     <div class="stack">
-      <Card padding="md">
+      <FiltersPanel :active="[status !== 'open', severity, clientId].filter(Boolean).length">
         <div class="filters">
           <Select
             v-model="status"
@@ -142,7 +143,7 @@ async function acknowledgeSelected(): Promise<void> {
             :options="clientOptions"
           />
         </div>
-      </Card>
+      </FiltersPanel>
 
       <AlertBox v-if="error" tone="danger">
         {{ error }}

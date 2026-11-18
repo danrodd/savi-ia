@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Badge, Button, Card, toast } from '@savi/ui'
+import { Card, Switch, toast } from '@savi/ui'
 import { Fingerprint, Lock, TerminalSquare } from 'lucide-vue-next'
 import { type Component, computed, ref } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -35,7 +35,7 @@ const POLICY_COPY: Record<
   named: {
     title: 'Identificar a las personas por su usuario',
     message:
-      'Cloud va a guardar el código de usuario de quienes inician sesión (por ejemplo JPEREZ), no solo un seudónimo. Corresponde a la organización interna: no lo actives para un cliente que no lo autorizó.',
+      'Cloud va a guardar el código de usuario de quienes inician sesión (por ejemplo JPEREZ), no solo un seudónimo. Corresponde a la organización interna: no lo active para un cliente que no lo autorizó.',
     confirm: 'Identificar personas',
     done: 'Ahora se identifica a las personas',
   },
@@ -67,9 +67,9 @@ interface PolicyRow {
   icon: Component
   title: string
   state: string
-  tone: 'success' | 'warning' | 'neutral' | 'info'
+  /** Estado del interruptor: encendido = la opción menos común (bloquear, identificar, CLI). */
+  on: boolean
   description: string
-  action: string
   change: PolicyChange
   test: string
 }
@@ -80,11 +80,10 @@ const rows = computed<PolicyRow[]>(() => [
     icon: Lock,
     title: 'Configuración en cada equipo',
     state: props.client.config_locked ? 'Bloqueada' : 'Libre',
-    tone: props.client.config_locked ? 'warning' : 'success',
+    on: props.client.config_locked,
     description: props.client.config_locked
       ? 'Cada equipo queda solo con el chat: no se ve Administración.'
       : 'Las personas administradoras de cada equipo pueden configurar.',
-    action: props.client.config_locked ? 'Permitir configuración' : 'Bloquear configuración',
     change: props.client.config_locked ? 'unlock' : 'lock',
     test: 'toggle-lock',
   },
@@ -93,12 +92,11 @@ const rows = computed<PolicyRow[]>(() => [
     icon: Fingerprint,
     title: 'Identidad de las personas',
     state: props.client.identity_mode === 'named' ? 'Por usuario' : 'Seudónimo',
-    tone: props.client.identity_mode === 'named' ? 'info' : 'neutral',
+    on: props.client.identity_mode === 'named',
     description:
       props.client.identity_mode === 'named'
         ? 'Cloud guarda el código de usuario (solo para la organización interna).'
         : 'Cloud no sabe quiénes son: solo ve un seudónimo por persona.',
-    action: props.client.identity_mode === 'named' ? 'Usar seudónimos' : 'Identificar personas',
     change: props.client.identity_mode === 'named' ? 'pseudonym' : 'named',
     test: 'toggle-identity',
   },
@@ -107,11 +105,10 @@ const rows = computed<PolicyRow[]>(() => [
     icon: TerminalSquare,
     title: 'CLI de Claude en el equipo',
     state: props.client.allow_local_cli ? 'Permitido' : 'No permitido',
-    tone: props.client.allow_local_cli ? 'info' : 'neutral',
+    on: props.client.allow_local_cli,
     description: props.client.allow_local_cli
       ? 'La instalación local puede usar la sesión de Claude de la persona.'
       : 'Solo se usan las claves de IA que configure el administrador.',
-    action: props.client.allow_local_cli ? 'No permitir' : 'Permitir CLI de Claude',
     change: props.client.allow_local_cli ? 'cli_off' : 'cli_on',
     test: 'toggle-cli',
   },
@@ -155,13 +152,18 @@ async function applyPolicy(): Promise<void> {
         <div class="policy__text">
           <div class="policy__title">
             <strong>{{ row.title }}</strong>
-            <Badge :tone="row.tone">{{ row.state }}</Badge>
           </div>
           <p>{{ row.description }}</p>
         </div>
-        <Button variant="secondary" size="sm" :data-test="row.test" @click="policyChange = row.change">
-          {{ row.action }}
-        </Button>
+        <!-- El interruptor no cambia solo: pide confirmación y se mueve cuando se guarda. -->
+        <Switch
+          :model-value="row.on"
+          :label="row.state"
+          :aria-label="row.title"
+          :disabled="policyBusy"
+          :data-test="row.test"
+          @update:model-value="policyChange = row.change"
+        />
       </li>
     </ul>
   </Card>
@@ -238,7 +240,7 @@ async function applyPolicy(): Promise<void> {
     flex-wrap: wrap;
   }
 
-  .policy__row :deep(.btn) {
+  .policy__row :deep(.ui-switch) {
     margin-left: calc(38px + var(--space-4));
   }
 }

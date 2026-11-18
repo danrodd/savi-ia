@@ -15,6 +15,7 @@ import {
 import { Monitor, Server } from 'lucide-vue-next'
 import { computed, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import FiltersPanel from '@/components/FiltersPanel.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useQueryFlag, useQueryParam } from '@/composables/useQueryParam'
@@ -110,7 +111,7 @@ function open(instance: Instance): void {
     />
 
     <div class="stack">
-      <Card padding="md">
+      <FiltersPanel :active="[status, connectivity, clientId, version, search, outdated].filter(Boolean).length">
         <div class="filters">
           <TextField
             v-model="search"
@@ -149,7 +150,7 @@ function open(instance: Instance): void {
           />
           <Checkbox v-model="outdated" class="filters__check" label="Solo desactualizadas" />
         </div>
-      </Card>
+      </FiltersPanel>
 
       <Alert v-if="error" tone="danger">
         {{ error }}

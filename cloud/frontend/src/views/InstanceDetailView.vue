@@ -11,16 +11,35 @@ import {
   type TableColumn,
   toast,
 } from '@savi/ui'
-import { ArrowLeft, Ban, Pause, Play, RefreshCw, ShieldCheck, Users } from 'lucide-vue-next'
+import {
+  Activity,
+  ArrowLeft,
+  Ban,
+  CircleAlert,
+  DollarSign,
+  Pause,
+  Play,
+  RefreshCw,
+  ShieldCheck,
+  Users,
+} from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import BarChart from '@/components/BarChart.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import KpiCard from '@/components/KpiCard.vue'
+import MoreActionsMenu, { type MenuAction } from '@/components/MoreActionsMenu.vue'
+import PersonLabel from '@/components/PersonLabel.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
 import {
   dbEngineLabel,
   deploymentModeLabel,
   formatDateTime,
+  formatDay,
+  formatInt,
+  formatPercent,
+  formatUsd,
   instanceState,
   providerLabel,
   reasonLabel,
@@ -38,6 +57,7 @@ const id = computed(() => String(route.params.id))
 
 const instance = useAsync(() => consoleApi.instance(id.value))
 const people = useAsync(() => consoleApi.instancePeople(id.value))
+const metrics = useAsync(() => consoleApi.instanceMetrics(id.value))
 const technical = computed(() => auth.can('instances.read_technical'))
 
 const history = ref<Heartbeat[]>([])
@@ -67,8 +87,23 @@ void loadHistory()
 watch(id, () => {
   void instance.reload()
   void people.reload()
+  void metrics.reload()
   void loadHistory()
 })
+
+const usage = computed(() => metrics.data.value?.totals ?? null)
+const usageTrend = computed(() =>
+  (metrics.data.value?.series ?? []).map((d) => ({
+    label: formatDay(d.day).slice(0, 5),
+    value: d.turns,
+  })),
+)
+
+// Lo habitual queda a la vista; renovar y revocar, en el menú (revocar al final).
+const MORE_ACTIONS: MenuAction<Action>[] = [
+  { id: 'request-rotation', label: 'Renovar credenciales', icon: RefreshCw },
+  { id: 'revoke', label: 'Revocar instalación', icon: Ban, danger: true },
+]
 
 interface HeartbeatView {
   llm: { provider?: string; model?: string; usable?: boolean } | null
@@ -247,12 +282,7 @@ async function run(): Promise<void> {
           <Button v-else variant="secondary" @click="pending = 'activate'">
             <Play :size="14" aria-hidden="true" /> Reactivar
           </Button>
-          <Button variant="secondary" @click="pending = 'request-rotation'">
-            <RefreshCw :size="14" aria-hidden="true" /> Renovar credenciales
-          </Button>
-          <Button variant="danger" @click="pending = 'revoke'">
-            <Ban :size="14" aria-hidden="true" /> Revocar
-          </Button>
+          <MoreActionsMenu :actions="MORE_ACTIONS" @select="pending = $event" />
         </template>
       </PageHeader>
 
@@ -270,6 +300,43 @@ async function run(): Promise<void> {
             </Button>
           </template>
         </Alert>
+
+        <section class="usage" aria-label="Uso de esta instalación en los últimos 30 días">
+          <div class="kpis">
+            <KpiCard
+              label="Turnos"
+              metric="turns"
+              :icon="Activity"
+              :value="usage ? formatInt(usage.turns) : '—'"
+              hint="Últimos 30 días"
+            />
+            <KpiCard
+              label="Costo"
+              metric="cost_usd"
+              :icon="DollarSign"
+              :value="usage ? formatUsd(usage.cost_usd) : '—'"
+              hint="Últimos 30 días"
+            />
+            <KpiCard
+              label="Personas activas"
+              metric="active_users"
+              :icon="Users"
+              :value="usage ? formatInt(usage.active_users) : '—'"
+              hint="Últimos 30 días"
+            />
+            <KpiCard
+              label="Turnos con error"
+              metric="error_rate"
+              :icon="CircleAlert"
+              :value="usage ? formatPercent(usage.error_rate) : '—'"
+              :hint="usage ? `${formatInt(usage.turns_with_error)} de ${formatInt(usage.turns)}` : ''"
+            />
+          </div>
+          <Card title="Turnos por día" data-test="instance-usage">
+            <Alert v-if="metrics.error.value" tone="danger">{{ metrics.error.value }}</Alert>
+            <BarChart v-else :data="usageTrend" :format="formatInt" />
+          </Card>
+        </section>
 
         <Card title="Datos de la instalación">
           <dl class="facts">
@@ -291,8 +358,7 @@ async function run(): Promise<void> {
               <EmptyState :icon="Users" title="Todavía nadie inició sesión en esta instalación" />
             </template>
             <template #cell-user_ref="{ row }">
-              <strong v-if="row.label">{{ row.label }}</strong>
-              <code v-else>{{ row.user_ref.slice(0, 8) }}…</code>
+              <PersonLabel :user-ref="row.user_ref" :label="row.label" :number="row.number" />
             </template>
             <template #cell-last_session_at="{ row }">{{ relativeTime(row.last_session_at) }}</template>
           </DataTable>
@@ -379,7 +445,7 @@ async function run(): Promise<void> {
       :message="pending ? COPY[pending].message : ''"
       :confirm-label="pending ? COPY[pending].confirm : 'Confirmar'"
       :danger="pending ? COPY[pending].danger : false"
-      :type-to-confirm="pending === 'revoke' ? 'REVOCAR' : undefined"
+      :type-to-confirm="pending === 'revoke' ? instance.data.value?.name : undefined"
       :busy="busy"
       @confirm="run"
       @cancel="pending = null"
@@ -388,6 +454,29 @@ async function run(): Promise<void> {
 </template>
 
 <style scoped>
+.usage {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 1100px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .back {
   display: inline-flex;
   align-items: center;

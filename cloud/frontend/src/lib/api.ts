@@ -21,6 +21,7 @@ import type {
   EnrollmentToken,
   Heartbeat,
   Instance,
+  InstanceMetrics,
   LedgerEntry,
   LedgerEntryInput,
   LoginStep,
@@ -122,6 +123,8 @@ export const consoleApi = {
   }) => http.get<Instance[]>(`${API}/instances`, query),
   instance: (id: string) => http.get<Instance>(`${API}/instances/${id}`),
   instancePeople: (id: string) => http.get<Person[]>(`${API}/instances/${id}/people`),
+  instanceMetrics: (id: string, period: Period = {}) =>
+    http.get<InstanceMetrics>(`${API}/instances/${id}/metrics`, { ...period }),
   heartbeats: (id: string, cursor?: string) =>
     http.get<Cursored<Heartbeat>>(`${API}/instances/${id}/heartbeats`, { limit: 20, cursor }),
   instanceAction: (

@@ -106,7 +106,7 @@ describe('política de las instalaciones del cliente', () => {
   it('bloquear la configuración pide confirmación, llama al API y confirma', async () => {
     const wrapper = mountCard()
 
-    await wrapper.get('[data-test="toggle-lock"]').trigger('click')
+    await wrapper.get('[data-test="toggle-lock"] [role="switch"]').trigger('click')
     expect(api.setClientPolicy).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Dejar las instalaciones solo con el chat')
 
@@ -121,7 +121,7 @@ describe('política de las instalaciones del cliente', () => {
   it('identificar a las personas advierte que es solo para la organización interna', async () => {
     const wrapper = mountCard()
 
-    await wrapper.get('[data-test="toggle-identity"]').trigger('click')
+    await wrapper.get('[data-test="toggle-identity"] [role="switch"]').trigger('click')
 
     expect(wrapper.text()).toContain('organización interna')
     await wrapper.get('[data-test="confirm-accept"]').trigger('click')
@@ -132,7 +132,7 @@ describe('política de las instalaciones del cliente', () => {
   it('permitir el CLI de Claude pide confirmación y manda solo ese campo', async () => {
     const wrapper = mountCard()
 
-    await wrapper.get('[data-test="toggle-cli"]').trigger('click')
+    await wrapper.get('[data-test="toggle-cli"] [role="switch"]').trigger('click')
     expect(wrapper.text()).toContain('con su propia cuenta')
     await wrapper.get('[data-test="confirm-accept"]').trigger('click')
     await flushPromises()
@@ -140,18 +140,20 @@ describe('política de las instalaciones del cliente', () => {
     expect(api.setClientPolicy).toHaveBeenCalledWith('c1', { allow_local_cli: true })
   })
 
-  it('un cliente ya bloqueado ofrece permitir la configuración', () => {
+  it('un cliente ya bloqueado muestra el interruptor encendido', () => {
     const wrapper = mountCard({ ...CLIENT, config_locked: true })
 
-    expect(wrapper.get('[data-test="toggle-lock"]').text()).toBe('Permitir configuración')
-    expect(wrapper.text()).toContain('Bloqueada')
+    expect(
+      wrapper.get('[data-test="toggle-lock"] [role="switch"]').attributes('aria-checked'),
+    ).toBe('true')
+    expect(wrapper.get('[data-test="toggle-lock"]').text()).toContain('Bloqueada')
   })
 
   it('si el servidor rechaza, avisa con un toast de error', async () => {
     api.setClientPolicy.mockRejectedValue(new Error('Sin permiso.'))
     const wrapper = mountCard()
 
-    await wrapper.get('[data-test="toggle-lock"]').trigger('click')
+    await wrapper.get('[data-test="toggle-lock"] [role="switch"]').trigger('click')
     await wrapper.get('[data-test="confirm-accept"]').trigger('click')
     await flushPromises()
 

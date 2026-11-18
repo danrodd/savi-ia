@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Badge, Card } from '@savi/ui'
-import { Check, CircleCheck } from 'lucide-vue-next'
-import { computed, watch } from 'vue'
+import { Badge } from '@savi/ui'
+import { Check, ChevronDown } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { consoleApi } from '@/lib/api'
 import { clientPath } from '@/lib/clientRoutes'
@@ -11,7 +11,8 @@ import { useAuthStore } from '@/stores/authStore'
 
 /**
  * "Puesta en marcha" de un cliente nuevo: cada paso se marca solo con lo que Cloud ya sabe.
- * Al completarse queda una línea; si no carga, no estorba: los KPIs de abajo no dependen de esto.
+ * Es una barra compacta ("3 de 6 · Siguiente: …") que se despliega al hacer clic, y desaparece
+ * al completarse. Si no carga, no estorba: los KPIs de abajo no dependen de esto.
  */
 const props = defineProps<{ clientId: string }>()
 
@@ -29,20 +30,33 @@ const doneCount = computed(() => steps.value.filter((s) => s.done).length)
 const complete = computed(() => steps.value.length > 0 && doneCount.value === steps.value.length)
 /** El primer paso pendiente que esta persona puede hacer: lo que sigue. */
 const nextKey = computed(() => steps.value.find((s) => !s.done && !s.pendingRole)?.key ?? null)
+const nextLabel = computed(() => steps.value.find((s) => s.key === nextKey.value)?.label ?? null)
+const progress = computed(() =>
+  steps.value.length ? Math.round((doneCount.value / steps.value.length) * 100) : 0,
+)
+const expanded = ref(false)
 </script>
 
 <template>
-  <p v-if="complete" class="onboarding-done" data-test="onboarding-complete">
-    <CircleCheck :size="15" aria-hidden="true" /> Puesta en marcha completa
-  </p>
+  <section v-if="steps.length && !complete" class="onboarding-bar" data-test="onboarding">
+    <button
+      type="button"
+      class="onboarding-bar__head"
+      :aria-expanded="expanded"
+      aria-controls="onboarding-steps"
+      data-test="onboarding-toggle"
+      @click="expanded = !expanded"
+    >
+      <span class="onboarding-bar__title">Puesta en marcha</span>
+      <span class="onboarding-bar__count">{{ doneCount }} de {{ steps.length }}</span>
+      <span class="onboarding-bar__track" aria-hidden="true">
+        <span class="onboarding-bar__fill" :style="{ width: `${progress}%` }" />
+      </span>
+      <span v-if="nextLabel" class="onboarding-bar__next">Siguiente: {{ nextLabel }}</span>
+      <ChevronDown :size="16" class="onboarding-bar__chevron" :class="{ open: expanded }" aria-hidden="true" />
+    </button>
 
-  <Card
-    v-else-if="steps.length"
-    title="Puesta en marcha"
-    :description="`${doneCount} de ${steps.length} pasos completos. Se marcan solos a medida que avanza la instalación.`"
-    data-test="onboarding"
-  >
-    <ol class="onboarding">
+    <ol v-show="expanded" id="onboarding-steps" class="onboarding">
       <li
         v-for="(step, index) in steps"
         :key="step.key"
@@ -70,25 +84,84 @@ const nextKey = computed(() => steps.value.find((s) => !s.done && !s.pendingRole
         </div>
       </li>
     </ol>
-  </Card>
+  </section>
 </template>
 
 <style scoped>
-.onboarding-done {
+.onboarding-bar {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-elev);
+}
+
+.onboarding-bar__head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  color: var(--success);
-  font-size: 12.5px;
-  font-weight: var(--fw-medium);
+  gap: var(--space-2) var(--space-4);
+  width: 100%;
+  padding: var(--space-3) var(--space-5);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.onboarding-bar__head:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: -2px;
+  border-radius: var(--r-lg);
+}
+
+.onboarding-bar__title {
+  font-weight: var(--fw-semibold, 600);
+}
+
+.onboarding-bar__count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.onboarding-bar__track {
+  flex: 1 1 120px;
+  max-width: 240px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.onboarding-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success);
+}
+
+.onboarding-bar__next {
+  color: var(--text-muted);
+}
+
+.onboarding-bar__chevron {
+  margin-left: auto;
+  color: var(--text-muted);
+  transition: transform 150ms ease;
+}
+
+.onboarding-bar__chevron.open {
+  transform: rotate(180deg);
 }
 
 .onboarding {
   display: grid;
   gap: var(--space-4);
   margin: 0;
-  padding: 0;
+  padding: var(--space-2) var(--space-5) var(--space-5);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
   list-style: none;
 }
 

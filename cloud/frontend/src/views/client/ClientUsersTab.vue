@@ -3,6 +3,7 @@ import { Alert, Card, DataTable, EmptyState, type TableColumn, TextField } from 
 import { Users } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 import LinkingEmptyState from '@/components/LinkingEmptyState.vue'
+import PersonLabel from '@/components/PersonLabel.vue'
 import { consoleApi } from '@/lib/api'
 import { useClientContext } from '@/lib/clientContext'
 import { formatInt, formatUsd, relativeTime } from '@/lib/format'
@@ -78,8 +79,7 @@ const COLUMNS: TableColumn[] = [
           />
         </template>
         <template #cell-user_ref="{ row }">
-          <strong v-if="row.label">{{ row.label }}</strong>
-          <code v-else>{{ row.user_ref.slice(0, 8) }}…</code>
+          <PersonLabel :user-ref="row.user_ref" :label="row.label" :number="row.number" />
         </template>
         <template #cell-turns="{ row }"><span class="num">{{ formatInt(row.turns) }}</span></template>
         <template #cell-cost_usd="{ row }">

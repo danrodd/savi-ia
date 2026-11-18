@@ -9,9 +9,10 @@ import { useClientContext } from '@/lib/clientContext'
 import { CONFIG_SECTIONS, type ConfigSection } from '@/lib/clientRoutes'
 
 /**
- * Configuración del cliente en una sola página: Instalaciones, IA y Acceso. Cada tarjeta
- * guarda por su cuenta (con su propia barra de cambios y aviso al salir); aquí solo se ubican
- * y se enlazan con anclas (`#ia`), que es lo que usan los enlaces de la puesta en marcha.
+ * Configuración del cliente: Instalaciones, IA y Acceso, una sección a la vez (antes eran
+ * nueve tarjetas en una sola página). La sección va en el ancla (`#ia`), que es lo que usan
+ * los enlaces de la puesta en marcha. Las otras secciones se ocultan pero no se desmontan:
+ * cada tarjeta guarda por su cuenta y sus cambios sin guardar sobreviven al cambio de sección.
  */
 const { id, client, reload } = useClientContext()
 const route = useRoute()
@@ -57,18 +58,28 @@ watch(() => route.hash, reveal)
       </RouterLink>
     </nav>
 
-    <section id="config-instalaciones" class="config__section" aria-labelledby="config-h-instalaciones">
+    <section
+      v-show="current() === 'instalaciones'"
+      id="config-instalaciones"
+      class="config__section"
+      aria-labelledby="config-h-instalaciones"
+    >
       <h2 id="config-h-instalaciones" class="config__title">Instalaciones</h2>
       <ClientPolicyCard :client-id="id" :client="client" @saved="reload()" />
     </section>
 
-    <section id="config-ia" class="config__section" aria-labelledby="config-h-ia">
+    <section v-show="current() === 'ia'" id="config-ia" class="config__section" aria-labelledby="config-h-ia">
       <h2 id="config-h-ia" class="config__title">IA</h2>
       <AiPolicyCard :client-id="id" :policy="client.ai_policy" @saved="reload()" />
       <GroupCapsSummary :groups="client.access_policy.groups" />
     </section>
 
-    <section id="config-acceso" class="config__section" aria-labelledby="config-h-acceso">
+    <section
+      v-show="current() === 'acceso'"
+      id="config-acceso"
+      class="config__section"
+      aria-labelledby="config-h-acceso"
+    >
       <h2 id="config-h-acceso" class="config__title">Acceso</h2>
       <AccessPolicyCard :client-id="id" :policy="client.access_policy" @saved="reload()" />
     </section>
@@ -78,7 +89,7 @@ watch(() => route.hash, reveal)
 <style scoped>
 .config {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-6);
 }
 
 .config__nav {

@@ -127,6 +127,8 @@ export interface Instance {
   enrolled_at: string
   last_seen_at: string | null
   turns_30d?: number
+  cost_30d_usd?: string
+  errors_30d?: number
   status_reason: string | null
   fingerprint: string | null
   clock_skew_seconds: number | null
@@ -311,6 +313,12 @@ export interface Overview {
   open_alerts: Record<Severity, number>
 }
 
+export interface InstanceMetrics {
+  period: { start: string; end: string }
+  totals: Usage
+  series: DayPoint[]
+}
+
 export interface ClientUsage {
   client_id: string
   code: string
@@ -398,6 +406,8 @@ export interface LedgerEntryInput {
 
 export interface Person {
   user_ref: string
+  /** Número estable de la persona dentro del cliente ("Persona 4"). */
+  number?: number | null
   /** Solo en clientes con identidad `named`. */
   label: string | null
   sessions: number
@@ -406,6 +416,7 @@ export interface Person {
 
 export interface ClientUser {
   user_ref: string
+  number?: number | null
   label: string | null
   turns: number
   cost_usd: string

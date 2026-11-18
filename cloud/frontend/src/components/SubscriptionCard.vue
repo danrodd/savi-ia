@@ -46,6 +46,9 @@ const LEDGER_COLUMNS: TableColumn[] = [
 ]
 
 const subscription = ref<Subscription | null>(null)
+// Los formularios quedan plegados: la pantalla muestra el plan, no un formulario abierto.
+const editingPlan = ref(false)
+const recordingOpen = ref(false)
 const ledger = ref<LedgerEntry[]>([])
 const loading = ref(true)
 const loadError = ref<string | null>(null)
@@ -110,6 +113,7 @@ async function savePlan(): Promise<void> {
     try {
       hydrate(await consoleApi.setSubscription(props.clientId, data))
       toast.success('Plan guardado')
+      editingPlan.value = false
     } catch (e) {
       toast.error('No se pudo guardar el plan', { description: errorMessage(e) })
     }
@@ -139,6 +143,7 @@ async function refreshBilling(): Promise<void> {
 function discardPlan(): void {
   if (subscription.value) hydrate(subscription.value)
   else plan.reset()
+  editingPlan.value = false
 }
 
 // Registrar un movimiento no se puede deshacer: primero se pide confirmación.
@@ -190,6 +195,7 @@ async function recordEntry(): Promise<void> {
   }
   toast.success(data.kind === 'payment' ? 'Pago registrado' : 'Ajuste registrado')
   entry.reset({ kind: 'payment', amount_usd: '', note: '', extends_until: '' })
+  recordingOpen.value = false
   try {
     await refreshBilling()
   } catch (e) {
@@ -209,7 +215,23 @@ async function recordEntry(): Promise<void> {
       </template>
     </Alert>
 
-    <Card padding="md">
+    <Card title="Plan del cliente">
+      <template #actions>
+        <div class="billing__head-actions">
+          <Button
+            variant="secondary"
+            size="sm"
+            :aria-expanded="editingPlan"
+            data-test="plan-edit"
+            @click="editingPlan = !editingPlan"
+          >
+            Editar plan
+          </Button>
+          <Button size="sm" :aria-expanded="recordingOpen" data-test="entry-open" @click="recordingOpen = !recordingOpen">
+            Registrar pago o ajuste
+          </Button>
+        </div>
+      </template>
       <div v-if="loading" class="billing__summary">
         <Skeleton height="20px" width="40%" />
         <Skeleton height="14px" width="60%" />
@@ -243,8 +265,8 @@ async function recordEntry(): Promise<void> {
       </p>
     </Card>
 
-    <div class="billing__forms">
-      <Card title="Plan" description="Lo que se acordó con el cliente.">
+    <div v-show="editingPlan || recordingOpen" class="billing__forms">
+      <Card v-show="editingPlan" title="Editar plan" description="Lo que se acordó con el cliente." data-test="plan-panel">
         <form class="form-grid" novalidate @submit.prevent="savePlan">
           <TextField
             v-model="plan.values.plan_name"
@@ -293,13 +315,8 @@ async function recordEntry(): Promise<void> {
             @blur="plan.touch('notes')"
           />
           <div class="form-grid__wide billing__actions">
-            <Button
-              v-if="plan.isDirty.value"
-              variant="ghost"
-              :disabled="plan.submitting.value"
-              @click="discardPlan"
-            >
-              Descartar
+            <Button variant="ghost" :disabled="plan.submitting.value" @click="discardPlan">
+              {{ plan.isDirty.value ? 'Descartar' : 'Cerrar' }}
             </Button>
             <Button
               type="submit"
@@ -313,7 +330,7 @@ async function recordEntry(): Promise<void> {
         </form>
       </Card>
 
-      <Card title="Registrar movimiento" description="Un pago recibido o un ajuste manual.">
+      <Card v-show="recordingOpen" title="Registrar movimiento" description="Un pago recibido o un ajuste manual." data-test="entry-panel">
         <form class="form-grid" novalidate @submit.prevent="askToRecord">
           <Select v-model="entry.values.kind" label="Tipo" :options="KINDS" data-test="entry-kind" />
           <TextField
@@ -346,6 +363,9 @@ async function recordEntry(): Promise<void> {
             @blur="entry.touch('extends_until')"
           />
           <div class="form-grid__wide billing__actions">
+            <Button variant="ghost" :disabled="entry.submitting.value" @click="recordingOpen = false">
+              Cerrar
+            </Button>
             <Button type="submit" :loading="entry.submitting.value" data-test="entry-save">
               Registrar movimiento
             </Button>
@@ -399,6 +419,12 @@ async function recordEntry(): Promise<void> {
 .billing {
   display: grid;
   gap: var(--space-6);
+}
+
+.billing__head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .billing__summary {

@@ -140,15 +140,17 @@ async function save(): Promise<void> {
       <div class="form-grid">
         <TextField
           v-model="form.values.userMonthly"
-          class="form-grid__wide"
-          label="Por persona (USD)"
+          class="money"
+          label="Por persona"
           inputmode="decimal"
           placeholder="Sin tope"
           hint="Lo máximo que puede gastar cada persona en el mes, con cualquier proveedor."
           :error="form.errors.value.userMonthly"
           data-test="ai-user-cap"
           @blur="form.touch('userMonthly')"
-        />
+        >
+          <template #prefix>US$</template>
+        </TextField>
       </div>
       <p class="ai__subtitle">De toda la instalación, por proveedor</p>
       <div class="form-grid form-grid--3">
@@ -156,14 +158,17 @@ async function save(): Promise<void> {
           v-for="p in PROVIDERS"
           :key="p.key"
           v-model="form.values.caps[p.key]"
-          :label="`${p.label} (USD)`"
+          class="money"
+          :label="p.label"
           inputmode="decimal"
           placeholder="Sin tope"
           :disabled="!form.values.allowed[p.key]"
           :error="form.errors.value[`caps.${p.key}`]"
           :data-test="`ai-provider-cap-${p.key}`"
           @blur="form.touch(`caps.${p.key}`)"
-        />
+        >
+          <template #prefix>US$</template>
+        </TextField>
       </div>
       <Alert v-if="priceWarning" tone="warning" class="ai__alert" data-test="ai-price-warning">
         Gemini y OpenAI no informan su costo: para que el tope funcione, el administrador de la
@@ -217,12 +222,15 @@ async function save(): Promise<void> {
         />
         <TextField
           v-model="newAmount"
-          label="Tope (USD)"
+          class="money"
+          label="Tope"
           inputmode="decimal"
           placeholder="20"
           :error="newError.amount"
           data-test="ai-override-amount"
-        />
+        >
+          <template #prefix>US$</template>
+        </TextField>
         <Button variant="secondary" class="ai__add-button" data-test="ai-override-add" @click="addOverride">
           Agregar excepción
         </Button>
@@ -250,6 +258,11 @@ async function save(): Promise<void> {
 </template>
 
 <style scoped>
+/* Montos: campo corto con prefijo US$; la ayuda y el error conservan todo el ancho. */
+.money :deep(.ui-text) {
+  max-width: 200px;
+}
+
 .ai {
   display: grid;
   gap: var(--space-6);

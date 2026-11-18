@@ -90,7 +90,7 @@ describe('tarjeta "Puesta en marcha"', () => {
   it('lista los seis pasos con su avance y enlaza cada uno a su pestaña', async () => {
     const wrapper = await mountChecklist({ ...NOTHING, plan_loaded: true })
 
-    expect(wrapper.text()).toContain('1 de 6 pasos completos')
+    expect(wrapper.text()).toContain('1 de 6')
     expect(wrapper.get('[data-test="onboarding-plan_loaded"]').attributes('data-state')).toBe(
       'done',
     )
@@ -133,7 +133,7 @@ describe('tarjeta "Puesta en marcha"', () => {
     ).toBe(true)
   })
 
-  it('con todo hecho se reduce a una línea y no deja la tarjeta', async () => {
+  it('con todo hecho desaparece: ya no aporta', async () => {
     const wrapper = await mountChecklist({
       plan_loaded: true,
       policy_defined: true,
@@ -143,10 +143,28 @@ describe('tarjeta "Puesta en marcha"', () => {
       report_received: true,
     })
 
-    expect(wrapper.get('[data-test="onboarding-complete"]').text()).toBe(
-      'Puesta en marcha completa',
-    )
     expect(wrapper.find('[data-test="onboarding"]').exists()).toBe(false)
+  })
+
+  it('es una barra plegada que muestra el avance y se despliega al hacer clic', async () => {
+    const wrapper = await mountChecklist({
+      plan_loaded: true,
+      policy_defined: true,
+      ai_defined: false,
+      token_created: false,
+      instance_connected: false,
+      report_received: false,
+    })
+    const toggle = wrapper.get('[data-test="onboarding-toggle"]')
+    expect(toggle.text()).toContain('2 de 6')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(wrapper.get('#onboarding-steps').attributes('style')).toContain('display: none')
+
+    await toggle.trigger('click')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+    expect(wrapper.get('#onboarding-steps').attributes('style') ?? '').not.toContain(
+      'display: none',
+    )
   })
 
   it('si no carga, no muestra nada: no estorba al resto del resumen', async () => {
