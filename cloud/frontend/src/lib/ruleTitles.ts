@@ -8,8 +8,10 @@ let loading: Promise<void> | null = null
 /** Título legible de cada regla de alerta (`subscription_due` → "Suscripción por vencer"). */
 export function useRuleTitles() {
   if (!loading) {
-    loading = consoleApi
-      .alertRules()
+    // `Promise.resolve().then` también atrapa un fallo síncrono: los títulos son ayuda y, si no
+    // cargan, se muestra el código de la regla.
+    loading = Promise.resolve()
+      .then(() => consoleApi.alertRules())
       .then((rules) => {
         titles.value = Object.fromEntries(rules.map((rule) => [rule.code, rule.title]))
       })

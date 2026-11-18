@@ -37,7 +37,11 @@ Rama `develop`. El usuario autorizó el trabajo el 2026-11-18. Las instalaciones
   - vincular el Master a Cloud;
   - poner el tope por persona y por proveedor;
   - bajar los límites del chat.
-- [ ] **S5. Avisos de alertas.** Depende de una decisión: el canal de aviso.
+- [ ] **S5. Avisos de alertas dentro de la consola.** El usuario decidió el 2026-11-18 que no salgan por correo ni por chat.
+  - Un toast cuando aparece una alerta nueva crítica o de aviso, con un botón "Ver".
+  - Una campana en el menú con las últimas alertas abiertas.
+  - El conteo en el título de la pestaña.
+  - El sondeo baja a 30 s.
 
 ## Verificación
 

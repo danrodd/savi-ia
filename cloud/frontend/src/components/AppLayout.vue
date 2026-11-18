@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ThemeMode, useTheme } from '@savi/ui'
+import { type ThemeMode, toast, useTheme } from '@savi/ui'
 import { onKeyStroke } from '@vueuse/core'
 import {
   Bell,
@@ -18,8 +18,11 @@ import {
 } from 'lucide-vue-next'
 import { type Component, computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { openAlerts, refreshOpenAlerts } from '@/composables/useOpenAlerts'
+import AlertBell from '@/components/AlertBell.vue'
+import { freshAlerts, openAlerts, refreshOpenAlerts } from '@/composables/useOpenAlerts'
+import { clientPath } from '@/lib/clientRoutes'
 import { roleLabel } from '@/lib/format'
+import { useRuleTitles } from '@/lib/ruleTitles'
 import { THEME_STORAGE_KEY } from '@/lib/theme'
 import type { Permission } from '@/lib/types'
 import { useAuthStore } from '@/stores/authStore'
@@ -76,9 +79,9 @@ const groups = computed(() =>
   })).filter((group) => group.items.length > 0),
 )
 
-// Contador de alertas abiertas junto a "Alertas": solo con permiso de verlas. Se relee al
-// navegar y cada minuto, y no mientras la pestaña del navegador está oculta.
-const ALERTS_POLL_MS = 60_000
+// Alertas abiertas (contador, campana y avisos): solo con permiso de verlas. Se releen al
+// navegar y cada 30 s, y no mientras la pestaña del navegador está oculta.
+const ALERTS_POLL_MS = 30_000
 const showAlertBadge = computed(() => auth.can('alerts.read'))
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
@@ -96,6 +99,36 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', pollAlerts)
 })
 watch(() => route.path, pollAlerts)
+
+// Aviso dentro de la consola cuando aparece una alerta nueva. Las informativas solo suman al
+// contador; las críticas quedan a la vista hasta que la persona las cierre.
+const ruleTitle = useRuleTitles()
+watch(freshAlerts, (alerts) => {
+  for (const alert of alerts) {
+    if (alert.severity === 'info') continue
+    const notify = alert.severity === 'critical' ? toast.error : toast.warning
+    notify(ruleTitle(alert.rule_code), {
+      description: alert.client_name ?? undefined,
+      duration: alert.severity === 'critical' ? Number.POSITIVE_INFINITY : 10_000,
+      action: {
+        label: 'Ver',
+        onClick: () => void router.push(clientPath(alert.client_id, 'alertas')),
+      },
+    })
+  }
+})
+
+// El título de la pestaña lleva el conteo, así se ve aunque la consola esté detrás de otra.
+const TITLE_COUNT = /^\(\d+\+?\) /
+watch(
+  [openAlerts, () => route.fullPath],
+  () => {
+    const base = document.title.replace(TITLE_COUNT, '')
+    const n = showAlertBadge.value ? (openAlerts.value ?? 0) : 0
+    document.title = n > 0 ? `(${n > 99 ? '99+' : n}) ${base}` : base
+  },
+  { flush: 'post' },
+)
 
 function badgeFor(item: NavItem): number | null {
   if (item.to !== '/alertas' || !showAlertBadge.value) return null
@@ -155,6 +188,7 @@ const MARK = '/savi-mark.png'
         <Menu v-else :size="18" aria-hidden="true" />
       </button>
       <span class="topbar__brand"><img class="mark" :src="MARK" alt="" width="28" height="28">SAVI Cloud</span>
+      <AlertBell v-if="showAlertBadge" class="topbar__bell" />
     </header>
 
     <div v-if="menuOpen" class="scrim" aria-hidden="true" @click="menuOpen = false" />
@@ -166,6 +200,7 @@ const MARK = '/savi-mark.png'
           <strong>SAVI Cloud</strong>
           <small>Consola del staff</small>
         </div>
+        <AlertBell v-if="showAlertBadge" class="identity__bell" />
       </div>
 
       <nav class="nav" aria-label="Principal">
@@ -227,6 +262,14 @@ const MARK = '/savi-mark.png'
 </template>
 
 <style scoped>
+.identity__bell {
+  margin-left: auto;
+}
+
+.topbar__bell {
+  margin-left: auto;
+}
+
 /* El documento no hace scroll (tokens de SAVI): la barra lateral queda fija y solo se
    desplaza el contenido. */
 .shell {
@@ -426,6 +469,11 @@ const MARK = '/savi-mark.png'
 @media (max-width: 860px) {
   .shell {
     flex-direction: column;
+  }
+
+  /* En el celular la campana va en la barra de arriba, no repetida en el menú. */
+  .identity__bell {
+    display: none;
   }
 
   .topbar {

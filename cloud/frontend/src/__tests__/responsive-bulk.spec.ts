@@ -231,7 +231,7 @@ describe('acciones masivas en Alertas', () => {
     expect(api.acknowledgeAlerts).toHaveBeenCalledTimes(1)
     expect(api.acknowledgeAlerts).toHaveBeenCalledWith(['a1', 'a2'])
     expect(toast.success).toHaveBeenCalledWith('2 alertas reconocidas', { description: undefined })
-    expect(api.alerts).toHaveBeenCalledTimes(2) // recarga la lista
+    expect(api.alerts).toHaveBeenCalledTimes(3) // recarga la lista y la campana de avisos
     expect(openAlerts.value).toBe(0) // y el contador del menú
     expect(wrapper.get('[data-test="alerts-selected-count"]').text()).toBe('Ninguna seleccionada')
   })
@@ -267,7 +267,7 @@ describe('acciones masivas en Alertas', () => {
     expect(api.resolveAlerts).toHaveBeenCalledTimes(1)
     expect(api.resolveAlerts).toHaveBeenCalledWith(['a1', 'a2', 'a3'], 'Revisadas')
     expect(toast.success).toHaveBeenCalledWith('3 alertas resueltas', { description: undefined })
-    expect(api.alerts).toHaveBeenCalledTimes(2)
+    expect(api.alerts).toHaveBeenCalledTimes(3) // la vista recarga y la campana de avisos se pone al día
   })
 
   it('si el backend falla avisa y deja la selección para reintentar', async () => {

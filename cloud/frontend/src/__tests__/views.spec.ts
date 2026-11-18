@@ -246,7 +246,7 @@ describe('alertas', () => {
 
     expect(api.acknowledgeAlert).toHaveBeenCalledWith('a1')
     expect(toast.success).toHaveBeenCalledWith('Alerta reconocida')
-    expect(api.alerts).toHaveBeenCalledTimes(2)
+    expect(api.alerts).toHaveBeenCalledTimes(3) // la vista recarga y la campana de avisos se pone al día
   })
 
   it('resolver pide una nota en un diálogo y la envía', async () => {

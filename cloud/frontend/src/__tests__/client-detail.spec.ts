@@ -272,7 +272,7 @@ describe('detalle del cliente', () => {
     await button('Reconocer')?.trigger('click')
     await flushPromises()
     expect(api.acknowledgeAlert).toHaveBeenCalledWith('a1')
-    expect(api.alerts).toHaveBeenCalledTimes(2)
+    expect(api.alerts).toHaveBeenCalledTimes(3) // la vista recarga y la campana de avisos se pone al día
     expect(api.clientCounts).toHaveBeenCalledTimes(2)
 
     await button('Resolver')?.trigger('click')
