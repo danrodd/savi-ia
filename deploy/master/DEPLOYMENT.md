@@ -130,6 +130,35 @@ docker compose up -d --build              # aplicar cambios del repositorio
   alcance de red a cada base (VPN o regla de firewall del lado del ERP).
 - **Proveedores de IA:** salida HTTPS a Anthropic, Google y OpenAI.
 
+### 6.1 Demo pública: tope de costo
+
+Una cuenta de demostración abierta puede gastar en IA sin freno: cada turno cuesta dinero. SAVI corta
+antes de responder cuando la política de Cloud lo indica. Por eso, el Master se vincula a su propia Cloud
+como un cliente más y se le pone el tope desde la consola. No hace falta código.
+
+1. **Crear el cliente** en la consola, por ejemplo `SEO-DEMO`, y generar un token en Vinculación.
+2. **Vincular el Master:** en SAVI, entrar a Administración → SAVI Cloud y pegar el token. Requiere
+   `SAVI_CLOUD_URL=https://<CLOUD_DOMAIN>` en el `.env`.
+3. **Poner los topes** en la consola, en Configuración → IA del cliente:
+   - **Por persona:** lo máximo que puede gastar al mes cada cuenta, por ejemplo US$ 5. Para cortar a
+     una persona puntual se le pone una excepción con US$ 0.
+   - **Por proveedor, para toda la instalación:** por ejemplo US$ 50. Es el techo total de la demo.
+   - **Gemini y OpenAI no informan su costo.** Para que el tope funcione hay que cargar sus precios en
+     SAVI, en Proveedores de IA. Sin precio, esos turnos se bloquean con un aviso.
+4. **Bajar el ritmo del chat** en el `.env`:
+
+   ```
+   SAVI_RATE_LIMIT_CHAT_PER_MINUTE=6
+   SAVI_RATE_LIMIT_CHAT_PER_HOUR=40
+   ```
+
+   Después, `docker compose up -d savi` para que tome los valores.
+5. **Comprobarlo:** con la cuenta de demo, chatear hasta el tope. SAVI debe responder que se alcanzó
+   el límite mensual, y la consola debe mostrar el consumo en el Resumen del cliente.
+
+Los topes se reinician el primer día de cada mes. La regla "Pico de costo" de Cloud avisa si un día
+sale de lo normal.
+
 ## 7. Estándar de monitoreo
 
 | Qué | Cómo |

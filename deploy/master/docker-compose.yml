@@ -97,6 +97,9 @@ services:
       # correría con la cuenta del servidor. Las claves del Master van como API key.
       LOCAL_CLI_ENABLED: "false"
       SAVI_CLOUD_URL: ${SAVI_CLOUD_URL:-}
+      # Turnos de chat por persona. Con una demo abierta conviene bajarlos (ver DEPLOYMENT.md §6.1).
+      RATE_LIMIT_CHAT_PER_MINUTE: ${SAVI_RATE_LIMIT_CHAT_PER_MINUTE:-20}
+      RATE_LIMIT_CHAT_PER_HOUR: ${SAVI_RATE_LIMIT_CHAT_PER_HOUR:-200}
     secrets:
       - savi_db_password
       - jwt_secret
