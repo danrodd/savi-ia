@@ -56,6 +56,10 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
     - Cloud backend: 372 ✅.
   - [x] Commit del merge: `0536233`, más `754cbc7`, que trae `c6bb6eb`, el arreglo de `xlsx` en `staging`.
 - [ ] **T2. `v1.5.0` estable.**
+  - [x] `main` avanzó hasta `staging` (`c6bb6eb`) sin crear un merge; tag `v1.5.0` publicado.
+  - [x] Instalador `SAVI-Setup-v1.5.0.exe` (164 MB, SHA-256 `f9595a69…aa28`).
+  - [x] Manifiestos firmados de `beta` y `stable`, con notas para el usuario y la misma versión mínima que la rc.1.
+  - [ ] Subida y verificación: bloqueadas. El 2026-11-18 el servidor `178.105.211.179` no respondía ni por SSH (22) ni por HTTPS (443), aunque este equipo sí tenía internet. Los archivos listos para subir están en `installer/output/updates/`.
 - [ ] **T3. Desplegar el Master.**
 - [ ] **T4. Base de demo ficticia.**
 - [ ] **T5. Vincular las instalaciones internas.**
@@ -67,4 +71,4 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
 
 ## Próximo paso
 
-T2: `v1.5.0` estable desde `staging` (`c6bb6eb`), con el OK del usuario.
+Revisar el servidor en la consola de Hetzner. Cuando vuelva, subir `stable` y `beta` y verificar los dos canales.
