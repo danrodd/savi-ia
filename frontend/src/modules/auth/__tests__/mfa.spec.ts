@@ -1,4 +1,4 @@
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -116,14 +116,24 @@ describe('authStore con segundo factor', () => {
   })
 })
 
+/** Escribe el código en las casillas: al completarse, el panel lo envía solo. */
+async function typeCode(wrapper: VueWrapper, code: string): Promise<void> {
+  const cells = wrapper.findAll('[data-test="two-factor"] input')
+  for (const [i, digit] of code.split('').entries()) {
+    await cells[i]?.setValue(digit)
+  }
+  await flushPromises()
+}
+
 describe('MfaPanel', () => {
   it('con el factor ya configurado pide el código y no genera un secreto', async () => {
     const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE } })
     await flushPromises()
 
     expect(service.mfaSetup).not.toHaveBeenCalled()
-    expect(wrapper.find('[data-testid="mfa-qr"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Verificación en dos pasos')
+    expect(wrapper.find('[data-test="two-factor-qr"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Código de verificación')
+    expect(wrapper.text()).toContain('Administración → Seguridad')
   })
 
   it('en el primer ingreso muestra el QR y la clave para cargar a mano', async () => {
@@ -135,71 +145,78 @@ describe('MfaPanel', () => {
     await flushPromises()
 
     expect(service.mfaSetup).toHaveBeenCalledWith('setup-tok')
-    expect(wrapper.get('[data-testid="mfa-qr"]').attributes('src')).toBe('data:image/png;base64,QR')
-    expect(wrapper.get('[data-testid="mfa-secret"]').text()).toBe('ABCD2345ABCD2345')
+    expect(wrapper.get('[data-test="two-factor-qr"]').attributes('src')).toBe(
+      'data:image/png;base64,QR',
+    )
+    await wrapper.get('[data-test="two-factor-show-key"]').trigger('click')
+    expect(wrapper.get('[data-test="two-factor-secret"]').text()).toBe('ABCD 2345 ABCD 2345')
   })
 
-  it('un código correcto abre la sesión y avisa que terminó', async () => {
+  it('un código correcto abre la sesión sin un clic extra', async () => {
     service.mfaVerify.mockResolvedValue(TOKENS)
-    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE } })
+    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE }, attachTo: document.body })
 
-    await wrapper.get('[data-testid="mfa-code"]').setValue('123 456')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await typeCode(wrapper, '123456')
 
-    // Los espacios se descartan: lo pegan con el espacio que muestra la aplicación.
     expect(service.mfaVerify).toHaveBeenCalledWith('mfa-tok', '123456')
     expect(wrapper.emitted('done')).toHaveLength(1)
+    wrapper.unmount()
   })
 
-  it('un código incorrecto muestra el aviso, limpia el campo y no termina', async () => {
+  it('un código incorrecto muestra el aviso, limpia las casillas y no termina', async () => {
     service.mfaVerify.mockRejectedValue(rejected(401, 'invalid_mfa_code'))
-    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE } })
+    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE }, attachTo: document.body })
 
-    await wrapper.get('[data-testid="mfa-code"]').setValue('000000')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await typeCode(wrapper, '000000')
 
     expect(wrapper.get('[role="alert"]').text()).toContain('El código no es válido')
-    expect((wrapper.get('[data-testid="mfa-code"]').element as HTMLInputElement).value).toBe('')
+    const cells = wrapper.findAll('[data-test="two-factor"] input')
+    expect(cells.every((c) => (c.element as HTMLInputElement).value === '')).toBe(true)
     expect(wrapper.emitted('done')).toBeUndefined()
+    wrapper.unmount()
   })
 
   it('si el desafío venció vuelve al formulario con un aviso', async () => {
     service.mfaVerify.mockRejectedValue(rejected(401))
-    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE } })
+    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE }, attachTo: document.body })
 
-    await wrapper.get('[data-testid="mfa-code"]').setValue('123456')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await typeCode(wrapper, '123456')
 
     expect(wrapper.emitted('cancel')?.[0]).toEqual([
       'La verificación venció. Vuelva a iniciar sesión.',
     ])
+    wrapper.unmount()
   })
 
   it('no envía un código incompleto', async () => {
-    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE } })
+    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE }, attachTo: document.body })
 
-    await wrapper.get('[data-testid="mfa-code"]').setValue('12')
-    await wrapper.get('form').trigger('submit')
+    await typeCode(wrapper, '12')
 
     expect(service.mfaVerify).not.toHaveBeenCalled()
-    expect(wrapper.get('[role="alert"]').text()).toContain('6 dígitos')
+    wrapper.unmount()
   })
 
   it('el primer ingreso confirma con el primer código', async () => {
     service.mfaSetup.mockResolvedValue({ secret: 'ABCD2345ABCD2345', otpauth_uri: 'otpauth://x' })
     service.mfaConfirm.mockResolvedValue(TOKENS)
-    const wrapper = mount(MfaPanel, { props: { challenge: SETUP_CHALLENGE } })
+    const wrapper = mount(MfaPanel, {
+      props: { challenge: SETUP_CHALLENGE },
+      attachTo: document.body,
+    })
     await flushPromises()
 
-    await wrapper.get('[data-testid="mfa-code"]').setValue('654321')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await typeCode(wrapper, '654321')
 
     expect(service.mfaConfirm).toHaveBeenCalledWith('setup-tok', '654321')
     expect(wrapper.emitted('done')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('volver cancela el segundo paso', async () => {
+    const wrapper = mount(MfaPanel, { props: { challenge: CHALLENGE } })
+    await wrapper.get('.ui-2fa__back').trigger('click')
+    expect(wrapper.emitted('cancel')).toHaveLength(1)
   })
 })
 

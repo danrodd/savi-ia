@@ -2,14 +2,13 @@
 import {
   Alert,
   Button,
-  CopyField,
-  OtpInput,
   PasswordField,
   Stepper,
   TextField,
+  TwoFactorPanel,
   useZodForm,
 } from '@savi/ui'
-import { ArrowLeft, ShieldCheck } from 'lucide-vue-next'
+import { ArrowLeft } from 'lucide-vue-next'
 import QRCode from 'qrcode'
 import { computed, nextTick, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -43,7 +42,7 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 const code = ref('')
 const qr = ref<string | null>(null)
-const otp = ref<InstanceType<typeof OtpInput> | null>(null)
+const otp = ref<InstanceType<typeof TwoFactorPanel> | null>(null)
 
 const login = useZodForm(credentialsSchema, { email: '', password: '' })
 
@@ -74,7 +73,7 @@ watch(step, async (value) => {
   error.value = null
   qr.value =
     value.kind === 'setup'
-      ? await QRCode.toDataURL(value.setup.otpauth_uri, { margin: 1, width: 200 })
+      ? await QRCode.toDataURL(value.setup.otpauth_uri, { margin: 1, width: 296 })
       : null
 })
 
@@ -170,7 +169,12 @@ async function submitCode(value: string): Promise<void> {
     <div class="login__glow login__glow--top" aria-hidden="true" />
     <div class="login__glow login__glow--bottom" aria-hidden="true" />
 
-    <div class="login__card">
+    <!-- Pasado el primer paso, la marca se achica y la configuración del segundo factor usa una
+         tarjeta más ancha: así el QR y las casillas entran en una sola pantalla. -->
+    <div
+      class="login__card"
+      :class="{ 'login__card--wide': step.kind === 'setup', 'login__card--compact': step.kind !== 'credentials' }"
+    >
       <div class="login__brand">
         <img class="login__logo" :src="LOGO" alt="SAVI" width="150" height="119" />
         <p class="login__product">SAVI <span>Cloud</span></p>
@@ -243,60 +247,22 @@ async function submitCode(value: string): Promise<void> {
         </button>
       </form>
 
-      <!-- 3. Configurar el segundo factor -->
-      <div v-else-if="step.kind === 'setup'" class="login__form">
-        <div class="login__intro">
-          <h1><ShieldCheck :size="18" aria-hidden="true" /> Verificación en dos pasos</h1>
-          <p>Es obligatoria para entrar a la consola. Le toma un minuto.</p>
-        </div>
-        <ol class="login__steps">
-          <li>Abra su aplicación de autenticación (Google Authenticator, Microsoft Authenticator…).</li>
-          <li>Escanee este código, o cargue la clave a mano.</li>
-          <li>Escriba el código de 6 dígitos que muestra la aplicación.</li>
-        </ol>
-        <div class="login__qr">
-          <img v-if="qr" :src="qr" alt="Código QR para la aplicación de autenticación" width="168" height="168" />
-        </div>
-        <CopyField :value="step.setup.secret" label="Clave para cargar a mano" />
-        <OtpInput
-          ref="otp"
-          v-model="code"
-          label="Código de la aplicación"
-          :error="error"
-          :disabled="busy"
-          autofocus
-          @complete="submitCode"
-        />
-        <p class="login__hint" aria-live="polite">
-          {{ busy ? 'Verificando…' : 'Se envía solo al completar los 6 dígitos.' }}
-        </p>
-        <button type="button" class="login__back" :disabled="busy" @click="backToCredentials()">
-          <ArrowLeft :size="14" aria-hidden="true" /> Cancelar y volver al ingreso
-        </button>
-      </div>
-
-      <!-- Ingreso con el segundo factor ya configurado -->
-      <div v-else class="login__form">
-        <div class="login__intro">
-          <h1><ShieldCheck :size="18" aria-hidden="true" /> Código de verificación</h1>
-          <p>Escriba el código de 6 dígitos de su aplicación de autenticación.</p>
-        </div>
-        <OtpInput
-          ref="otp"
-          v-model="code"
-          label="Código"
-          :error="error"
-          :disabled="busy"
-          autofocus
-          @complete="submitCode"
-        />
-        <p class="login__hint" aria-live="polite">
-          {{ busy ? 'Verificando…' : 'Se envía solo al completar los 6 dígitos.' }}
-        </p>
-        <button type="button" class="login__back" :disabled="busy" @click="backToCredentials()">
-          <ArrowLeft :size="14" aria-hidden="true" /> Volver al ingreso
-        </button>
-      </div>
+      <!-- 3. Configurar el segundo factor / ingreso con el segundo factor ya configurado -->
+      <TwoFactorPanel
+        v-else
+        ref="otp"
+        v-model:code="code"
+        :mode="step.kind === 'setup' ? 'setup' : 'verify'"
+        :qr="qr"
+        :secret="step.kind === 'setup' ? step.setup.secret : null"
+        :busy="busy"
+        :error="error"
+        reason="Es obligatoria para entrar a la consola. Se configura una sola vez."
+        recovery-hint="Pida a otra persona administradora de la consola que restablezca su verificación desde Equipo."
+        :back-label="step.kind === 'setup' ? 'Cancelar y volver al ingreso' : 'Volver al ingreso'"
+        @complete="submitCode"
+        @back="backToCredentials()"
+      />
     </div>
   </main>
 </template>
@@ -385,6 +351,27 @@ async function submitCode(value: string): Promise<void> {
   color: var(--brand);
 }
 
+.login__card--wide {
+  width: min(560px, 100%);
+}
+
+.login__card--compact .login__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.login__card--compact .login__logo {
+  width: 52px;
+  margin: 0;
+}
+
+.login__card--compact .login__subtitle {
+  display: none;
+}
+
 .login__subtitle {
   margin: var(--space-1) 0 0;
   font-size: 13px;
@@ -421,30 +408,8 @@ async function submitCode(value: string): Promise<void> {
   color: var(--text-muted);
 }
 
-.login__steps {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding-left: var(--space-6);
-  font-size: 13px;
-  color: var(--text-muted);
-}
 
-.login__qr {
-  display: grid;
-  place-items: center;
-  min-height: 184px;
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: #ffffff;
-}
 
-.login__hint {
-  margin: calc(-1 * var(--space-3)) 0 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
 
 .login__back {
   display: inline-flex;

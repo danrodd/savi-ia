@@ -160,8 +160,10 @@ describe('primer ingreso', () => {
     await wrapper.get('[data-test="password-continue"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Verificación en dos pasos')
-    expect(wrapper.text()).toContain('JBSWY3DPEHPK3PXP')
+    expect(wrapper.text()).toContain('Proteja su cuenta')
+    // La clave para cargar a mano está plegada y se muestra en bloques de cuatro.
+    await wrapper.get('[data-test="two-factor-show-key"]').trigger('click')
+    expect(wrapper.text()).toContain('JBSW Y3DP EHPK 3PXP')
 
     await completeCode(wrapper, '654321')
 

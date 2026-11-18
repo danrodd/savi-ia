@@ -13,7 +13,10 @@ const MAX_CODES = 10
 export function extractDatabaseCode(login: string): string | null {
   const at = login.lastIndexOf('@')
   if (at === -1) return null
-  const code = login.slice(at + 1).trim().toUpperCase()
+  const code = login
+    .slice(at + 1)
+    .trim()
+    .toUpperCase()
   return code === '' ? null : code
 }
 
@@ -29,7 +32,10 @@ export function readRememberedCodes(storage: Storage = window.localStorage): str
 export function rememberCodeFromLogin(login: string, storage: Storage = window.localStorage): void {
   const code = extractDatabaseCode(login)
   if (!code) return
-  const codes = [code, ...readRememberedCodes(storage).filter((c) => c !== code)].slice(0, MAX_CODES)
+  const codes = [code, ...readRememberedCodes(storage).filter((c) => c !== code)].slice(
+    0,
+    MAX_CODES,
+  )
   storage.setItem(STORAGE_KEYS.LOGIN_DATABASE_CODES, JSON.stringify(codes))
 }
 

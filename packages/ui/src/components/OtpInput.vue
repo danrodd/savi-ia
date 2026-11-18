@@ -13,6 +13,8 @@ const props = withDefaults(
     error?: string | null
     disabled?: boolean
     autofocus?: boolean
+    /** Las casillas ocupan todo el ancho, en dos grupos de tres (123 456). */
+    stretch?: boolean
   }>(),
   { length: 6, label: 'Código de verificación' },
 )
@@ -95,7 +97,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <fieldset class="ui-otp" :disabled="disabled">
+  <fieldset class="ui-otp" :class="{ 'ui-otp--stretch': stretch }" :disabled="disabled">
     <legend class="ui-otp__label">{{ label }}</legend>
     <div class="ui-otp__cells">
       <input
@@ -165,6 +167,21 @@ onMounted(() => {
   outline: none;
   border-color: var(--brand);
   box-shadow: var(--focus-ring);
+}
+
+/* Dos grupos de tres con un hueco en el medio: se lee y se dicta como "123 456". */
+.ui-otp--stretch .ui-otp__cells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) var(--space-2) repeat(3, minmax(0, 1fr));
+}
+
+.ui-otp--stretch .ui-otp__cell {
+  width: 100%;
+  height: 56px;
+}
+
+.ui-otp--stretch .ui-otp__cell:nth-child(4) {
+  grid-column: 5;
 }
 
 .ui-otp__cell--invalid {
