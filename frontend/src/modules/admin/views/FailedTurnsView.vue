@@ -5,9 +5,9 @@
  * Sirve para que el administrador del cliente le mande a soporte qué falló y
  * cuándo, sin tener que buscar el log en el equipo.
  */
-import { onMounted, ref } from 'vue'
 
 import { Button } from '@savi/ui'
+import { onMounted, ref } from 'vue'
 import { formatFullDateTime } from '@/lib/dateTime'
 import { HttpRequestError } from '@/lib/HttpClient'
 import { type FailedTurn, failedTurnsService } from '../services/failedTurnsService'

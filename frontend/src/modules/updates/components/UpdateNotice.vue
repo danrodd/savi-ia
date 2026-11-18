@@ -10,9 +10,9 @@
  * En una instalación en servidor, desde otro equipo no se puede aceptar el
  * permiso de administrador: en lugar del botón se pide avisar a sistemas.
  */
-import { computed, ref } from 'vue'
 
 import { Button, Dialog } from '@savi/ui'
+import { computed, ref } from 'vue'
 import { renderMarkdown } from '@/lib/markdown'
 import { useUpdateStatus } from '../composables/useUpdateStatus'
 import {

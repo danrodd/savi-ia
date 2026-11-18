@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-
 import { Button } from '@savi/ui'
+import { computed, onMounted, ref } from 'vue'
 import { formatFullDateTime } from '@/lib/dateTime'
 import { HttpRequestError } from '@/lib/HttpClient'
 import { renderMarkdown } from '@/lib/markdown'
