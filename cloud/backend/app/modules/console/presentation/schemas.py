@@ -131,6 +131,8 @@ class InstanceOut(BaseModel):
     enrolled_at: datetime
     last_seen_at: datetime | None
     turns_30d: int = 0
+    cost_30d_usd: str = "0"
+    errors_30d: int = 0
     # Solo con `instances.read_technical`:
     status_reason: str | None = None
     fingerprint: str | None = None
@@ -156,7 +158,9 @@ class InstanceOut(BaseModel):
             online=item.online,
             outdated=item.outdated,
             enrolled_at=i.enrolled_at,
-            turns_30d=item.turns_30d,
+            turns_30d=item.usage.turns if item.usage else 0,
+            cost_30d_usd=str(item.usage.cost_usd) if item.usage else "0",
+            errors_30d=item.usage.turns_with_error if item.usage else 0,
             last_seen_at=i.last_seen_at,
         )
         if technical:

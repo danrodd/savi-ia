@@ -152,6 +152,12 @@ class FreshnessOut(BaseModel):
     last_seen_at: datetime | None
 
 
+class InstanceMetricsOut(BaseModel):
+    period: PeriodOut
+    totals: UsageOut
+    series: list[DayOut]
+
+
 class ClientMetricsOut(BaseModel):
     period: PeriodOut
     freshness: FreshnessOut
@@ -189,6 +195,8 @@ class DatabaseOut(BaseModel):
 
 class UserOut(BaseModel):
     user_ref: str
+    # Número estable de la persona dentro del cliente ("Persona 4").
+    number: int | None = None
     # Código de usuario: solo en la organización interna (modo `named`).
     label: str | None
     turns: int
@@ -199,6 +207,7 @@ class UserOut(BaseModel):
 
 class PersonOut(BaseModel):
     user_ref: str
+    number: int | None = None
     label: str | None
     sessions: int
     last_session_at: datetime
@@ -481,18 +490,46 @@ async def instance_people(
 ) -> list[PersonOut]:
     """Quiénes usan esta instalación. En clientes con seudónimo, solo se ven los seudónimos."""
     async with transaction(request) as session:
-        if await session.get(InstanceModel, instance_id) is None:
+        model = await session.get(InstanceModel, instance_id)
+        if model is None:
             raise InstanceNotFound("No existe la instancia.")
-        rows = await MetricsQueries(session).people_of_instance(instance_id)
+        queries = MetricsQueries(session)
+        rows = await queries.people_of_instance(instance_id)
+        numbers = await queries.person_numbers(model.client_id)
     return [
         PersonOut(
             user_ref=p.user_ref,
+            number=numbers.get(p.user_ref),
             label=p.label,
             sessions=p.sessions,
             last_session_at=p.last_session_at,
         )
         for p in rows
     ]
+
+
+@router.get("/instances/{instance_id}/metrics", response_model=InstanceMetricsOut)
+async def instance_metrics(
+    instance_id: UUID,
+    request: Request,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    _: Principal = Depends(RequirePermission(Permission.INSTANCES_READ)),
+) -> InstanceMetricsOut:
+    """El mismo uso del cliente, filtrado por esta instalación."""
+    period = _period(request, start, end)
+    async with transaction(request) as session:
+        model = await session.get(InstanceModel, instance_id)
+        if model is None:
+            raise InstanceNotFound("No existe la instancia.")
+        queries = MetricsQueries(session)
+        totals = await queries.totals(model.client_id, period, instance_id)
+        series = await queries.series(model.client_id, period, instance_id)
+    return InstanceMetricsOut(
+        period=PeriodOut(start=period.start, end=period.end),
+        totals=UsageOut.of(totals),
+        series=[DayOut.of(p) for p in series],
+    )
 
 
 @router.get("/clients/{client_id}/people", response_model=list[PersonOut])
@@ -505,10 +542,13 @@ async def client_people(
     """Padrón de personas del cliente (sin ventana de tiempo), para los selectores de la consola."""
     async with transaction(request) as session:
         await _require_client(session, client_id)
-        rows = await MetricsQueries(session).people_of_client(client_id, limit)
+        queries = MetricsQueries(session)
+        rows = await queries.people_of_client(client_id, limit)
+        numbers = await queries.person_numbers(client_id)
     return [
         PersonOut(
             user_ref=p.user_ref,
+            number=numbers.get(p.user_ref),
             label=p.label,
             sessions=p.sessions,
             last_session_at=p.last_session_at,
@@ -642,10 +682,13 @@ async def client_users(
     period = _period(request, start, end)
     async with transaction(request) as session:
         await _require_client(session, client_id)
-        rows = await MetricsQueries(session).users(client_id, period, limit)
+        queries = MetricsQueries(session)
+        rows = await queries.users(client_id, period, limit)
+        numbers = await queries.person_numbers(client_id)
     return [
         UserOut(
             user_ref=u.user_ref,
+            number=numbers.get(u.user_ref),
             label=u.label,
             turns=u.turns,
             cost_usd=str(u.cost_usd),

@@ -379,8 +379,10 @@ async def test_users_ranking_is_pseudonymous(fx: Fixture) -> None:
     assert users[0]["turns"] == 2
     assert Decimal(users[0]["cost_usd"]) == Decimal("0.011000")
     assert users[0]["databases_used"] == 1
+    # `number` es el orden de aparición dentro del cliente ("Persona 1"), no un dato personal.
     assert set(users[0]) == {
         "user_ref",
+        "number",
         "label",
         "turns",
         "cost_usd",

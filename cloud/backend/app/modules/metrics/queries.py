@@ -188,6 +188,13 @@ class DatabaseInfo:
 
 
 @dataclass(frozen=True)
+class InstanceUsage:
+    turns: int
+    cost_usd: Decimal
+    turns_with_error: int
+
+
+@dataclass(frozen=True)
 class ClientUsage:
     client_id: UUID
     turns: int
@@ -212,17 +219,23 @@ class MetricsQueries:
     # ------------------------------------------------------------ filtros
 
     @staticmethod
-    def _turn_scope(stmt: AnySelect, client_id: UUID | None, period: Period) -> AnySelect:
+    def _turn_scope(
+        stmt: AnySelect, client_id: UUID | None, period: Period, instance_id: UUID | None = None
+    ) -> AnySelect:
         stmt = stmt.where(
             EvTurnModel.occurred_at >= period.start, EvTurnModel.occurred_at < period.end
         )
         if client_id is not None:
             stmt = stmt.where(EvTurnModel.client_id == client_id)
+        if instance_id is not None:
+            stmt = stmt.where(EvTurnModel.instance_id == instance_id)
         return stmt
 
     # ------------------------------------------------------------ totales
 
-    async def totals(self, client_id: UUID | None, period: Period) -> Totals:
+    async def totals(
+        self, client_id: UUID | None, period: Period, instance_id: UUID | None = None
+    ) -> Totals:
         t = EvTurnModel
         tokens = (
             t.input_tokens
@@ -243,6 +256,7 @@ class MetricsQueries:
             ),
             client_id,
             period,
+            instance_id,
         )
         row = (await self._s.execute(stmt)).one()
         totals = Totals(
@@ -273,23 +287,31 @@ class MetricsQueries:
             sess = sess.where(EvSessionModel.client_id == client_id)
             fq_total = fq_total.where(EvFreeQueryModel.client_id == client_id)
             fq_failed = fq_failed.where(EvFreeQueryModel.client_id == client_id)
+        if instance_id is not None:
+            conv = conv.where(EvConversationModel.instance_id == instance_id)
+            sess = sess.where(EvSessionModel.instance_id == instance_id)
+            fq_total = fq_total.where(EvFreeQueryModel.instance_id == instance_id)
+            fq_failed = fq_failed.where(EvFreeQueryModel.instance_id == instance_id)
         totals.conversations = int((await self._s.execute(conv)).scalar_one())
         totals.entering_users = int((await self._s.execute(sess)).scalar_one())
         totals.free_queries = int((await self._s.execute(fq_total)).scalar_one())
         totals.free_queries_failed = int((await self._s.execute(fq_failed)).scalar_one())
 
-        latencies = await self._latencies(client_id, period)
+        latencies = await self._latencies(client_id, period, instance_id)
         flat = [value for values in latencies.values() for value in values]
         totals.latency_p50_ms = percentile(flat, 0.5)
         totals.latency_p90_ms = percentile(flat, 0.9)
         return totals
 
-    async def _latencies(self, client_id: UUID | None, period: Period) -> dict[date, list[int]]:
+    async def _latencies(
+        self, client_id: UUID | None, period: Period, instance_id: UUID | None = None
+    ) -> dict[date, list[int]]:
         day = _day(self._s, EvTurnModel.occurred_at)
         stmt = self._turn_scope(
             select(day, EvTurnModel.latency_ms).where(EvTurnModel.latency_ms.is_not(None)),
             client_id,
             period,
+            instance_id,
         )
         out: dict[date, list[int]] = defaultdict(list)
         for d, value in (await self._s.execute(stmt)).all():
@@ -298,7 +320,9 @@ class MetricsQueries:
 
     # ------------------------------------------------------------ serie diaria
 
-    async def series(self, client_id: UUID | None, period: Period) -> list[DayPoint]:
+    async def series(
+        self, client_id: UUID | None, period: Period, instance_id: UUID | None = None
+    ) -> list[DayPoint]:
         t = EvTurnModel
         day = _day(self._s, t.occurred_at).label("day")
         tokens = (
@@ -319,11 +343,12 @@ class MetricsQueries:
                 ),
                 client_id,
                 period,
+                instance_id,
             )
             .group_by(day)
             .order_by(day)
         )
-        latencies = await self._latencies(client_id, period)
+        latencies = await self._latencies(client_id, period, instance_id)
         points: list[DayPoint] = []
         for d, turns, users, toks, cost, errors in (await self._s.execute(stmt)).all():
             key = _as_date(d)
@@ -413,14 +438,45 @@ class MetricsQueries:
             key=lambda r: (r[0], r[1] is None, str(r[1])),
         )
 
-    async def turns_by_instance(
+    async def usage_by_instance(
         self, period: Period, client_id: UUID | None = None
-    ) -> dict[UUID, int]:
+    ) -> dict[UUID, InstanceUsage]:
         t = EvTurnModel
-        stmt = self._turn_scope(select(t.instance_id, func.count()), client_id, period).group_by(
-            t.instance_id
-        )
-        return {iid: int(n) for iid, n in (await self._s.execute(stmt)).all()}
+        stmt = self._turn_scope(
+            select(
+                t.instance_id,
+                func.count(),
+                func.sum(t.cost_usd),
+                func.sum(case((t.finish_reason == ERROR_FINISH_REASON, 1), else_=0)),
+            ),
+            client_id,
+            period,
+        ).group_by(t.instance_id)
+        return {
+            iid: InstanceUsage(int(n), _money(cost), int(errors or 0))
+            for iid, n, cost, errors in (await self._s.execute(stmt)).all()
+        }
+
+    async def person_numbers(self, client_id: UUID) -> dict[str, int]:
+        """Número estable de cada persona del cliente: el orden en que apareció por primera vez.
+
+        Sirve para hablar de "la persona 4" en una llamada sin dictar un seudónimo. Una persona
+        nueva siempre toma el número siguiente; los anteriores no se mueven.
+        """
+        s, t = EvSessionModel, EvTurnModel
+        first: dict[str, datetime] = {}
+        for model in (s, t):
+            rows = await self._s.execute(
+                select(model.user_ref, func.min(model.occurred_at))
+                .where(model.client_id == client_id)
+                .group_by(model.user_ref)
+            )
+            for ref, at in rows.all():
+                seen = _utc(at)
+                if ref not in first or seen < first[ref]:
+                    first[ref] = seen
+        ordered = sorted(first.items(), key=lambda kv: (kv[1], kv[0]))
+        return {ref: index for index, (ref, _) in enumerate(ordered, start=1)}
 
     async def by_database(self, client_id: UUID, period: Period) -> list[DatabaseUsage]:
         t = EvTurnModel

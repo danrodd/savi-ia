@@ -26,7 +26,13 @@ from app.modules.instances.infrastructure import (
 from app.modules.instances.infrastructure import (
     to_entity as instance_entity,
 )
-from app.modules.metrics.queries import ClientUsage, MetricsQueries, Period, bogota_today
+from app.modules.metrics.queries import (
+    ClientUsage,
+    InstanceUsage,
+    MetricsQueries,
+    Period,
+    bogota_today,
+)
 from app.shared.clock import Clock, as_utc
 
 # Una instancia está "online" si habló hace menos de esto (§4.1).
@@ -105,7 +111,7 @@ class InstanceListItem:
     client_name: str
     online: bool
     outdated: bool
-    turns_30d: int = 0
+    usage: InstanceUsage | None = None
 
 
 @dataclass(frozen=True)
@@ -248,7 +254,7 @@ class ConsoleQueries:
             stmt = stmt.where(InstanceModel.version == version)
         stmt = stmt.order_by(ClientModel.code, InstanceModel.name)
         now = self._clock()
-        turns = await MetricsQueries(self._session).turns_by_instance(
+        usage = await MetricsQueries(self._session).usage_by_instance(
             Period.resolve(None, None, now), client_id
         )
         items: list[InstanceListItem] = []
@@ -263,7 +269,7 @@ class ConsoleQueries:
             if outdated is True and not old:
                 continue
             items.append(
-                InstanceListItem(instance, code, name, online, old, turns.get(instance.id, 0))
+                InstanceListItem(instance, code, name, online, old, usage.get(instance.id))
             )
         return items
 
