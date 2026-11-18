@@ -61,7 +61,7 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
   - [x] Manifiestos firmados de `beta` y `stable`, con notas para el usuario y la misma versión mínima que la rc.1.
   - [ ] Subida y verificación: bloqueadas. El 2026-11-18 el servidor `178.105.211.179` no respondía ni por SSH (22) ni por HTTPS (443), aunque este equipo sí tenía internet. Los archivos listos para subir están en `installer/output/updates/`.
 - [ ] **T3. Desplegar el Master.**
-- [ ] **T4. Base de demo ficticia.** El usuario eligió una empresa inventada desde cero y no anonimizar una copia de Imporllantas, porque una demo pública no debe llevar ni el catálogo de un cliente. Ruta: inline.
+- [x] **T4. Base de demo ficticia.** El usuario eligió una empresa inventada desde cero y no anonimizar una copia de Imporllantas, porque una demo pública no debe llevar ni el catálogo de un cliente. Ruta: inline.
   - [x] T4.1 Generador reproducible en `scripts/demo-erp/` con semilla fija:
     - estructura del ERP sin datos;
     - catálogos públicos o de SEO: municipios, formularios del ERP, tarifas de IVA;
@@ -74,9 +74,18 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
     - saldos de inventario por mes;
     - cartera por cobrar y por pagar;
     - usuarios con perfiles distintos y sus permisos.
-  - [ ] T4.3 Validación con SAVI en local: las preguntas de la demo (ventas por vendedor, productos sin movimiento, clientes de una referencia con celular, cartera, informe PDF con gráficos).
-  - [ ] T4.4 Volcado restaurable para el Master y la guía para cargarlo.
+  - [x] T4.3 Validación con SAVI en local: las preguntas de la demo (ventas por vendedor, productos sin movimiento, clientes de una referencia con celular, cartera, informe PDF con gráficos).
+  - [x] T4.4 Volcado restaurable para el Master y la guía para cargarlo.
   - Fuera de alcance: contabilidad, nómina y los demás módulos quedan vacíos.
+  - Evidencia de T4.3 (2026-11-18), con el backend de `develop` y OpenAI, la base registrada como `DEMO_LLANTAS`:
+    - Ventas por vendedor de los últimos 12 meses: 8.489 millones, con 6 vendedores.
+    - Productos sin venta en más de un año: 16, con 281 unidades. Coincide con la base.
+    - Clientes de la 205/55R16 con su celular: como `DEMO` muestra los celulares; como `VENDEDOR` los oculta y pide el permiso de Terceros.
+    - Cartera vencida: 300 millones, con los 5 clientes que más deben. Coincide con la base.
+    - PDF con gráfico de líneas por mes y de torta por vendedor: la primera vez salió sin la torta; las dos repeticiones salieron completas. Es variación del modelo.
+    - De paso: la base del agente subió de `f1a6c3d8e2b4` (develop) a `08f236755fc9`, pasando por las tres migraciones de staging y la de unión.
+  - Hallazgo, fuera del alcance de T4: la entidad `ventas` de `consultar_datos` no tiene la dimensión vendedor (`idTerceroEmpleado`). Para "ventas por vendedor", que es la pregunta estrella de la demo, el modelo hace entre 6 y 10 consultas libres. Responde bien, pero tarda más y gasta más.
+  - El volcado (`--dump`, unos 8 MB) no se versiona: se genera al desplegar. Los pasos para cargarlo están en `scripts/demo-erp/README.md`.
   - Evidencia de T4.1 y T4.2 (2026-11-18), generando desde `imporllantas`:
     - 151 productos, 467 terceros, 5439 facturas de venta, 217 de compra, 6960 saldos y 196 documentos de cartera con saldo.
     - Ventas por 15.016 millones.
@@ -92,4 +101,4 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
 
 ## Próximo paso
 
-Revisar el servidor en la consola de Hetzner. Cuando vuelva, subir `stable` y `beta` y verificar los dos canales.
+Cuando vuelva el servidor: T2, subir y verificar los canales `stable` y `beta`. Después T3, el Master con la base de demo. Pendiente de decidir: la dimensión vendedor en `ventas`.
