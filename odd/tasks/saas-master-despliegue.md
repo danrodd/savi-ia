@@ -54,7 +54,7 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
     - `packages/ui`: 51 ✅;
     - Cloud frontend: 212 ✅;
     - Cloud backend: 372 ✅.
-  - [ ] Commit del merge.
+  - [x] Commit del merge: `0536233`, más `754cbc7`, que trae `c6bb6eb`, el arreglo de `xlsx` en `staging`.
 - [ ] **T2. `v1.5.0` estable.**
 - [ ] **T3. Desplegar el Master.**
 - [ ] **T4. Base de demo ficticia.**
@@ -67,4 +67,4 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
 
 ## Próximo paso
 
-T2: `v1.5.0` estable, con el OK del usuario. Antes hay que llevar a `staging` la corrección de `xlsx`.
+T2: `v1.5.0` estable desde `staging` (`c6bb6eb`), con el OK del usuario.
