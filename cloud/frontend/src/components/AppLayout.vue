@@ -135,6 +135,9 @@ async function logout(): Promise<void> {
   await auth.logout()
   await router.push({ name: 'login' })
 }
+
+// Archivo de `public/`: como binding, Vite no intenta resolverlo como import.
+const MARK = '/savi-mark.png'
 </script>
 
 <template>
@@ -151,14 +154,14 @@ async function logout(): Promise<void> {
         <X v-if="menuOpen" :size="18" aria-hidden="true" />
         <Menu v-else :size="18" aria-hidden="true" />
       </button>
-      <span class="topbar__brand"><span class="mark" aria-hidden="true">S</span>SAVI Cloud</span>
+      <span class="topbar__brand"><img class="mark" :src="MARK" alt="" width="28" height="28">SAVI Cloud</span>
     </header>
 
     <div v-if="menuOpen" class="scrim" aria-hidden="true" @click="menuOpen = false" />
 
     <aside id="console-nav" class="side" :class="{ 'side--open': menuOpen }">
       <div class="identity">
-        <span class="mark" aria-hidden="true">S</span>
+        <img class="mark" :src="MARK" alt="" width="34" height="34">
         <div>
           <strong>SAVI Cloud</strong>
           <small>Consola del staff</small>
@@ -266,16 +269,12 @@ async function logout(): Promise<void> {
 }
 
 .mark {
-  display: grid;
-  place-items: center;
+  display: block;
   flex-shrink: 0;
   width: 34px;
   height: 34px;
+  object-fit: cover;
   border-radius: 11px;
-  color: var(--text-on-brand);
-  background: var(--brand-solid);
-  font-family: var(--font-display);
-  font-weight: var(--fw-bold);
   box-shadow: var(--shadow-brand);
 }
 
@@ -464,7 +463,6 @@ async function logout(): Promise<void> {
     width: 28px;
     height: 28px;
     border-radius: 9px;
-    font-size: 13px;
   }
 
   .scrim {

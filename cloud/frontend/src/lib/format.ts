@@ -113,17 +113,121 @@ export function reasonLabel(reason: string | null): string {
   return reason ? (REASONS[reason] ?? reason) : '—'
 }
 
-/** Estado visible de una instancia: suspendida/revocada manda sobre la conexión. */
-export function instanceState(instance: { status: string; online: boolean }): {
+/**
+ * Estado visible de una instancia: suspendida/revocada manda sobre la conexión.
+ * Una vinculada que todavía no habló con Cloud no está "sin conexión": nunca se
+ * conectó, y eso se resuelve distinto (revisar la instalación, no la red).
+ */
+export function instanceState(instance: {
+  status: string
+  online: boolean
+  last_seen_at?: string | null
+}): {
   label: string
   tone: Tone
 } {
   if (instance.status !== 'active') {
     return { label: instanceStatusLabel(instance.status), tone: 'bad' }
   }
-  return instance.online
-    ? { label: 'En línea', tone: 'ok' }
-    : { label: 'Sin conexión', tone: 'warn' }
+  if (instance.online) return { label: 'En línea', tone: 'ok' }
+  if (instance.last_seen_at === null) return { label: 'Nunca se conectó', tone: 'bad' }
+  return { label: 'Sin conexión', tone: 'warn' }
+}
+
+// ── Nombres de negocio ────────────────────────────────────────────────────
+// La consola muestra lo que la persona del staff reconoce; el valor técnico
+// queda en el `title` para soporte.
+
+const DEPLOYMENT_MODES: Record<string, string> = {
+  server: 'Servidor',
+  desktop: 'Equipo de escritorio',
+}
+
+export function deploymentModeLabel(mode: string | null | undefined): string {
+  return mode ? (DEPLOYMENT_MODES[mode] ?? mode) : '—'
+}
+
+const DB_ENGINES: Record<string, string> = {
+  postgresql: 'PostgreSQL',
+  sqlite: 'SQLite (archivo local)',
+}
+
+export function dbEngineLabel(engine: string | null | undefined): string {
+  return engine ? (DB_ENGINES[engine] ?? engine) : '—'
+}
+
+const PROVIDERS: Record<string, string> = {
+  claude: 'Claude',
+  anthropic: 'Claude',
+  openai: 'OpenAI',
+  gemini: 'Gemini',
+}
+
+export function providerLabel(provider: string | null | undefined): string {
+  return provider ? (PROVIDERS[provider] ?? provider) : '—'
+}
+
+const TOOLS: Record<string, string> = {
+  consultar_datos: 'Consultas del ERP',
+  consultar_libre: 'Consultas libres',
+  consultar_conocimiento: 'Conocimiento del ERP',
+  info_empresa: 'Datos de la empresa',
+  entregar_archivo: 'Archivos generados',
+}
+
+export function toolLabel(name: string): string {
+  return TOOLS[name] ?? name
+}
+
+const AUDIT_ACTIONS: Record<string, string> = {
+  'auth.login': 'Inició sesión',
+  'auth.login_failed': 'Intento de ingreso fallido',
+  'auth.logout': 'Cerró sesión',
+  'auth.mfa_enabled': 'Activó la verificación en dos pasos',
+  'auth.mfa_failed': 'Código de verificación incorrecto',
+  'auth.mfa_setup_failed': 'Falló la configuración de la verificación',
+  'auth.refresh_reuse_detected': 'Sesión reutilizada: se cerró por seguridad',
+  'alert.acknowledge': 'Reconoció una alerta',
+  'alert.resolve': 'Resolvió una alerta',
+  'alert_rule.update': 'Cambió una regla de alerta',
+  'client.create': 'Creó un cliente',
+  'client.update': 'Editó un cliente',
+  'client.suspend': 'Suspendió un cliente',
+  'client.activate': 'Reactivó un cliente',
+  'client.policy': 'Cambió la política de las instalaciones',
+  'client.ai_policy': 'Cambió los límites de IA',
+  'client.access_policy': 'Cambió las bases por persona',
+  'client.subscription': 'Cambió el plan',
+  'client.ledger_entry': 'Registró un movimiento',
+  'instance.suspend': 'Suspendió una instalación',
+  'instance.activate': 'Reactivó una instalación',
+  'instance.revoke': 'Revocó una instalación',
+  'instance.request_rotation': 'Pidió renovar credenciales',
+  'instance.confirm_fingerprint': 'Confirmó la huella de una instalación',
+  'staff.create': 'Creó un usuario del equipo',
+  'staff.update': 'Editó un usuario del equipo',
+  'staff.activate': 'Reactivó un usuario del equipo',
+  'staff.deactivate': 'Desactivó un usuario del equipo',
+  'staff.reset_mfa': 'Restableció la verificación de un usuario',
+  'token.create': 'Generó un token de vinculación',
+  'token.revoke': 'Revocó un token de vinculación',
+}
+
+export function auditActionLabel(action: string): string {
+  return AUDIT_ACTIONS[action] ?? action
+}
+
+/** Opciones del filtro de auditoría, ordenadas por nombre. */
+export const AUDIT_ACTION_OPTIONS: { value: string; label: string }[] = Object.entries(
+  AUDIT_ACTIONS,
+)
+  .map(([value, label]) => ({ value, label }))
+  .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+
+/** Quién hizo algo: la línea de comandos del servidor no es una persona. */
+export function authorLabel(author: string | null | undefined): string {
+  if (!author) return '—'
+  return author === 'cloud-admin' ? 'Línea de comandos' : author
 }
 
 export const SEVERITY: Record<'info' | 'warning' | 'critical', { label: string; tone: Tone }> = {

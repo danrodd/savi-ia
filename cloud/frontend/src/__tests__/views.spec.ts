@@ -366,9 +366,9 @@ describe('auditoría', () => {
     api.audit.mockResolvedValue({ items: [], next_cursor: null })
     const { wrapper } = await mountView(AuditView, ['audit.read'])
 
-    const [actor, action] = wrapper.findAll('form input')
-    await actor?.setValue('ana@seo.example')
-    await action?.setValue('client.update')
+    await wrapper.get('form input').setValue('ana@seo.example')
+    // La acción se elige por su nombre; al API viaja el código.
+    await wrapper.get('form select').setValue('client.update')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
@@ -377,6 +377,30 @@ describe('auditoría', () => {
       action: 'client.update',
       cursor: undefined,
     })
+    expect(wrapper.get('form select').text()).toContain('Editó un cliente')
     expect(wrapper.text()).toContain('No hay registros con esos filtros')
+  })
+
+  it('muestra cada acción con su nombre y el código en el título', async () => {
+    api.audit.mockResolvedValue({
+      items: [
+        {
+          id: 'a1',
+          occurred_at: '2026-11-18T15:00:00Z',
+          actor_email: 'ana@seo.example',
+          action: 'instance.revoke',
+          target_type: null,
+          target_id: null,
+          ip: '127.0.0.1',
+          before: null,
+          after: null,
+        },
+      ],
+      next_cursor: null,
+    })
+    const { wrapper } = await mountView(AuditView, ['audit.read'])
+
+    const cell = wrapper.get('[title="instance.revoke"]')
+    expect(cell.text()).toBe('Revocó una instalación')
   })
 })

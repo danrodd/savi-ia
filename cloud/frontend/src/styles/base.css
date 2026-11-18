@@ -8,13 +8,35 @@ h3 {
   line-height: 1.25;
 }
 
+/* El rojo de marca queda para la marca, la acción principal y lo crítico. Un
+   enlace es texto: se reconoce por el subrayado cuando está entre datos. */
+:root {
+  --chart-1: #3f6fb5;
+}
+
+:root.dark {
+  --chart-1: #6f9ce0;
+}
+
 a {
-  color: var(--brand);
+  color: var(--text);
   text-decoration: none;
 }
 
 a:hover {
   text-decoration: underline;
+}
+
+td a,
+p a {
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+
+td a:hover,
+p a:hover {
+  text-decoration-color: currentColor;
 }
 
 code,

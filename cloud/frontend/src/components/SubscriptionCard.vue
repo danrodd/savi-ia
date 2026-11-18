@@ -18,7 +18,7 @@ import { computed, onMounted, ref } from 'vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useLeaveGuard } from '@/composables/useLeaveGuard'
 import { consoleApi } from '@/lib/api'
-import { formatDateTime, formatDay, formatUsd } from '@/lib/format'
+import { authorLabel, formatDateTime, formatDay, formatUsd } from '@/lib/format'
 import { ledgerEntrySchema, planSchema } from '@/lib/schemas/billing'
 import type { LedgerEntry, LedgerEntryInput, Subscription } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
@@ -377,6 +377,7 @@ async function recordEntry(): Promise<void> {
           <span data-test="ledger-empty">Todavía no se registró ningún movimiento.</span>
         </template>
         <template #cell-created_at="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        <template #cell-created_by="{ row }">{{ authorLabel(row.created_by) }}</template>
         <template #cell-kind="{ row }">
           <Badge :tone="row.kind === 'payment' ? 'success' : 'info'">
             {{ row.kind === 'payment' ? 'Pago' : 'Ajuste' }}

@@ -8,7 +8,15 @@ import KpiCard from '@/components/KpiCard.vue'
 import OnboardingChecklist from '@/components/OnboardingChecklist.vue'
 import { consoleApi } from '@/lib/api'
 import { useClientContext } from '@/lib/clientContext'
-import { formatDay, formatInt, formatMs, formatPercent, formatUsd } from '@/lib/format'
+import {
+  formatDay,
+  formatInt,
+  formatMs,
+  formatPercent,
+  formatUsd,
+  providerLabel,
+  toolLabel,
+} from '@/lib/format'
 import { useAsync } from '@/lib/useAsync'
 
 const { id } = useClientContext()
@@ -112,7 +120,7 @@ const tools = computed(() =>
           :loading="metrics.loading.value"
           empty-text="Sin turnos en el período."
         >
-          <template #cell-provider="{ row }">{{ row.provider ?? '—' }}</template>
+          <template #cell-provider="{ row }">{{ providerLabel(row.provider) }}</template>
           <template #cell-model="{ row }">{{ row.model ?? '—' }}</template>
           <template #cell-turns="{ row }"><span class="num">{{ formatInt(row.turns) }}</span></template>
           <template #cell-tokens="{ row }"><span class="num">{{ formatInt(row.tokens) }}</span></template>
@@ -128,6 +136,7 @@ const tools = computed(() =>
           :loading="metrics.loading.value"
           empty-text="Sin uso de herramientas."
         >
+          <template #cell-name="{ row }"><span :title="row.name">{{ toolLabel(row.name) }}</span></template>
           <template #cell-tipo="{ row }">{{ row.tipo ?? '—' }}</template>
           <template #cell-uses="{ row }"><span class="num">{{ formatInt(row.uses) }}</span></template>
           <template #cell-errors="{ row }"><span class="num">{{ formatInt(row.errors) }}</span></template>

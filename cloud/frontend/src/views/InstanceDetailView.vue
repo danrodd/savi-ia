@@ -17,7 +17,15 @@ import { RouterLink, useRoute } from 'vue-router'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
-import { formatDateTime, instanceState, reasonLabel, relativeTime } from '@/lib/format'
+import {
+  dbEngineLabel,
+  deploymentModeLabel,
+  formatDateTime,
+  instanceState,
+  providerLabel,
+  reasonLabel,
+  relativeTime,
+} from '@/lib/format'
 import type { Heartbeat } from '@/lib/types'
 import { errorMessage, useAsync } from '@/lib/useAsync'
 import { useAuthStore } from '@/stores/authStore'
@@ -97,9 +105,9 @@ const facts = computed(() => {
   const list: { label: string; value: string; mono?: boolean }[] = [
     { label: 'Versión', value: i.version ?? '—', mono: true },
     { label: 'Commit', value: i.commit ?? '—', mono: true },
-    { label: 'Modo', value: i.deployment_mode },
+    { label: 'Modo', value: deploymentModeLabel(i.deployment_mode) },
     { label: 'Sistema', value: i.os },
-    { label: 'Base del agente', value: i.agent_db_engine },
+    { label: 'Base del agente', value: dbEngineLabel(i.agent_db_engine) },
     { label: 'Vinculada', value: formatDateTime(i.enrolled_at) },
     { label: 'Último contacto', value: relativeTime(i.last_seen_at) },
   ]
@@ -290,12 +298,12 @@ async function run(): Promise<void> {
           </DataTable>
         </Card>
 
-        <Card v-if="technical && readable" title="Último heartbeat">
+        <Card v-if="technical && readable" title="Estado en el último contacto">
           <dl class="facts">
             <div v-if="readable.llm">
               <dt>Proveedor de IA</dt>
               <dd>
-                {{ readable.llm.provider ?? '—' }} · {{ readable.llm.model ?? '—' }}
+                {{ providerLabel(readable.llm.provider) }} · {{ readable.llm.model ?? '—' }}
                 <StatusBadge
                   :tone="readable.llm.usable ? 'ok' : 'bad'"
                   :label="readable.llm.usable ? 'Usable' : 'No usable'"

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AUDIT_ACTION_OPTIONS,
+  auditActionLabel,
+  authorLabel,
+  dbEngineLabel,
+  deploymentModeLabel,
   durationLabel,
   formatDay,
   formatMs,
@@ -7,7 +12,10 @@ import {
   formatUsd,
   freshnessLabel,
   freshnessTone,
+  instanceState,
+  providerLabel,
   relativeTime,
+  toolLabel,
 } from '@/lib/format'
 
 describe('frescura de datos', () => {
@@ -59,5 +67,45 @@ describe('formato', () => {
     expect(formatMs(850)).toBe('850 ms')
     expect(formatMs(2500)).toBe('2,5 s')
     expect(formatDay('2026-01-05')).toBe('05/01/2026')
+  })
+})
+
+describe('estado de una instancia', () => {
+  it('distingue la que nunca se conectó de la que perdió la conexión', () => {
+    expect(instanceState({ status: 'active', online: false, last_seen_at: null })).toEqual({
+      label: 'Nunca se conectó',
+      tone: 'bad',
+    })
+    expect(
+      instanceState({ status: 'active', online: false, last_seen_at: '2026-11-01T10:00:00Z' }),
+    ).toEqual({ label: 'Sin conexión', tone: 'warn' })
+    expect(instanceState({ status: 'active', online: true, last_seen_at: null }).label).toBe(
+      'En línea',
+    )
+  })
+
+  it('una suspendida o revocada manda sobre la conexión', () => {
+    expect(instanceState({ status: 'revoked', online: false, last_seen_at: null }).tone).toBe('bad')
+  })
+})
+
+describe('nombres de negocio', () => {
+  it('traduce los valores técnicos y deja pasar los que no conoce', () => {
+    expect(deploymentModeLabel('server')).toBe('Servidor')
+    expect(dbEngineLabel('sqlite')).toBe('SQLite (archivo local)')
+    expect(providerLabel('openai')).toBe('OpenAI')
+    expect(providerLabel(null)).toBe('—')
+    expect(toolLabel('info_empresa')).toBe('Datos de la empresa')
+    expect(toolLabel('herramienta_nueva')).toBe('herramienta_nueva')
+    expect(auditActionLabel('auth.login')).toBe('Inició sesión')
+    expect(auditActionLabel('accion.desconocida')).toBe('accion.desconocida')
+    expect(authorLabel('cloud-admin')).toBe('Línea de comandos')
+    expect(authorLabel('ana@seo.example')).toBe('ana@seo.example')
+  })
+
+  it('el filtro de auditoría ofrece cada acción una vez, ordenada por nombre', () => {
+    const labels = AUDIT_ACTION_OPTIONS.map((o) => o.label)
+    expect(new Set(AUDIT_ACTION_OPTIONS.map((o) => o.value)).size).toBe(AUDIT_ACTION_OPTIONS.length)
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, 'es')))
   })
 })

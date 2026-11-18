@@ -7,7 +7,7 @@ import BarChart from '@/components/BarChart.vue'
 import FreshnessChip from '@/components/FreshnessChip.vue'
 import KpiCard from '@/components/KpiCard.vue'
 import { consoleApi } from '@/lib/api'
-import { formatDay, formatInt, formatUsd } from '@/lib/format'
+import { formatDay, formatInt, formatUsd, providerLabel } from '@/lib/format'
 import { useAsync } from '@/lib/useAsync'
 
 const router = useRouter()
@@ -109,7 +109,7 @@ const versions = computed(() =>
         <div class="two">
           <Card title="Proveedores y modelos" padding="none">
             <DataTable :columns="PROVIDER_COLUMNS" :rows="providers" row-key="key" empty-text="Sin turnos en el período.">
-              <template #cell-provider="{ row }">{{ row.provider ?? '—' }}</template>
+              <template #cell-provider="{ row }">{{ providerLabel(row.provider) }}</template>
               <template #cell-model="{ row }">{{ row.model ?? '—' }}</template>
               <template #cell-turns="{ row }"><span class="num">{{ formatInt(row.turns) }}</span></template>
               <template #cell-cost_usd="{ row }"><span class="num">{{ formatUsd(row.cost_usd) }}</span></template>

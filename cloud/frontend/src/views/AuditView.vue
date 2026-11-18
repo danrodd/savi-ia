@@ -7,6 +7,7 @@ import {
   Dialog,
   EmptyState,
   PageHeader,
+  Select,
   type TableColumn,
   TextField,
 } from '@savi/ui'
@@ -16,7 +17,7 @@ import { RouterLink } from 'vue-router'
 import { useQueryParam } from '@/composables/useQueryParam'
 import { useTargetNames } from '@/composables/useTargetNames'
 import { consoleApi } from '@/lib/api'
-import { formatDateTime } from '@/lib/format'
+import { AUDIT_ACTION_OPTIONS, auditActionLabel, formatDateTime } from '@/lib/format'
 import type { AuditEntry } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
@@ -25,7 +26,7 @@ const nextCursor = ref<string | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const actor = ref('')
-const action = ref('')
+const action = ref<string | null>(null)
 const viewing = ref<AuditEntry | null>(null)
 // Filtro por objeto (id), en la URL: `/auditoria?target=<id>`. Se activa al pulsar un objeto.
 const target = useQueryParam('target')
@@ -34,7 +35,7 @@ const { describe } = useTargetNames()
 const COLUMNS: TableColumn[] = [
   { key: 'occurred_at', label: 'Cuándo', width: '170px' },
   { key: 'actor_email', label: 'Quién' },
-  { key: 'action', label: 'Acción', mono: true },
+  { key: 'action', label: 'Acción' },
   { key: 'target', label: 'Objeto' },
   { key: 'ip', label: 'IP', width: '130px', mono: true },
   { key: 'change', label: '', align: 'right', width: '120px' },
@@ -46,7 +47,7 @@ async function load(more = false): Promise<void> {
   try {
     const page = await consoleApi.audit({
       actor: actor.value.trim() || undefined,
-      action: action.value.trim() || undefined,
+      action: action.value ?? undefined,
       target: target.value ?? undefined,
       cursor: more ? (nextCursor.value ?? undefined) : undefined,
     })
@@ -66,7 +67,7 @@ watch(target, () => void load())
 function clearFilters(): void {
   const hadTarget = target.value !== null
   actor.value = ''
-  action.value = ''
+  action.value = null
   target.value = null
   if (!hadTarget) void load()
 }
@@ -98,7 +99,7 @@ function pretty(value: Record<string, unknown> | null): string {
       <Card padding="md">
         <form class="filters" novalidate @submit.prevent="load()">
           <TextField v-model="actor" type="email" label="Quién" placeholder="correo@seogroup.com" />
-          <TextField v-model="action" label="Acción" placeholder="instance.revoke" mono />
+          <Select v-model="action" label="Acción" placeholder="Todas las acciones" :options="AUDIT_ACTION_OPTIONS" />
           <div class="filters__buttons">
             <Button type="submit" :loading="loading">
               <Search :size="14" aria-hidden="true" /> Filtrar
@@ -136,6 +137,7 @@ function pretty(value: Record<string, unknown> | null): string {
           </template>
           <template #cell-occurred_at="{ row }">{{ formatDateTime(row.occurred_at) }}</template>
           <template #cell-actor_email="{ row }">{{ row.actor_email ?? 'Sistema' }}</template>
+          <template #cell-action="{ row }"><span :title="row.action">{{ auditActionLabel(row.action) }}</span></template>
           <template #cell-target="{ row }">
             <div v-if="describe(row.target_type, row.target_id)" class="target">
               <button
@@ -175,7 +177,7 @@ function pretty(value: Record<string, unknown> | null): string {
 
     <Dialog
       :open="viewing !== null"
-      :title="viewing?.action ?? ''"
+      :title="viewing ? auditActionLabel(viewing.action) : ''"
       :description="viewing ? `${viewing.actor_email ?? 'Sistema'} · ${formatDateTime(viewing.occurred_at)}` : ''"
       :max-width="760"
       @update:open="(open) => !open && (viewing = null)"

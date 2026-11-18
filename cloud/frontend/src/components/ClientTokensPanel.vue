@@ -20,7 +20,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import SecretDialog from '@/components/SecretDialog.vue'
 import { useNewInstanceWatch } from '@/composables/useNewInstanceWatch'
 import { consoleApi } from '@/lib/api'
-import { formatDateTime } from '@/lib/format'
+import { authorLabel, formatDateTime } from '@/lib/format'
 import type { EnrollmentToken } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 
@@ -232,6 +232,7 @@ async function revokeToken(): Promise<void> {
           </Badge>
         </template>
         <template #cell-created_at="{ row }">{{ formatDateTime(row.created_at) }}</template>
+        <template #cell-created_by="{ row }">{{ authorLabel(row.created_by) }}</template>
         <template #cell-expires_at="{ row }">{{ formatDateTime(row.expires_at) }}</template>
         <template #cell-actions="{ row }">
           <Button
