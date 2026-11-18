@@ -16,7 +16,14 @@ import { useRouter } from 'vue-router'
 import ClientFormDialog from '@/components/ClientFormDialog.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { consoleApi } from '@/lib/api'
-import { relativeTime } from '@/lib/format'
+import {
+  formatInt,
+  formatUsd,
+  HEALTH,
+  instancesSummary,
+  planSummary,
+  relativeTime,
+} from '@/lib/format'
 import type { Client } from '@/lib/types'
 import { errorMessage } from '@/lib/useAsync'
 import { useAuthStore } from '@/stores/authStore'
@@ -26,25 +33,29 @@ const router = useRouter()
 
 const q = ref('')
 const status = ref<string | null>(null)
-const sort = ref<string | null>('code')
+const sort = ref<string | null>('attention')
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Activos' },
   { value: 'suspended', label: 'Suspendidos' },
 ]
 const SORT_OPTIONS = [
+  { value: 'attention', label: 'Requieren atención primero' },
+  { value: 'usage', label: 'Más uso' },
   { value: 'code', label: 'Código' },
   { value: 'name', label: 'Nombre' },
   { value: 'last_seen', label: 'Última actividad' },
 ]
 
-const COLUMNS: TableColumn[] = [
+// El plan solo llega con `clients.billing`; sin ese permiso la columna no aparece.
+const COLUMNS = computed<TableColumn[]>(() => [
   { key: 'code', label: 'Cliente', card: 'title' },
-  { key: 'status', label: 'Estado', width: '130px' },
-  { key: 'instances', label: 'En línea', align: 'right', width: '110px' },
-  { key: 'last_seen_at', label: 'Última actividad', width: '160px' },
-  { key: 'oldest_version', label: 'Versión más antigua', width: '170px', mono: true },
-]
+  ...(auth.can('clients.billing') ? [{ key: 'plan', label: 'Plan', width: '170px' }] : []),
+  { key: 'active_users_30d', label: 'Personas', align: 'right', width: '100px' },
+  { key: 'turns_30d', label: 'Turnos', align: 'right', width: '100px' },
+  { key: 'cost_30d_usd', label: 'Costo', align: 'right', width: '110px' },
+  { key: 'instances', label: 'Instalaciones', width: '200px' },
+])
 
 // El backend pagina (`limit`/`offset`): se pide de a PAGE_SIZE y "Ver más" agrega la siguiente.
 const PAGE_SIZE = 50
@@ -155,21 +166,45 @@ function onCreated(client: Client): void {
           </template>
           <template #cell-code="{ row }">
             <div class="client">
-              <strong>{{ row.name }}</strong>
-              <code>{{ row.code }}</code>
+              <span
+                class="dot"
+                :class="`dot--${row.health ?? 'ok'}`"
+                role="img"
+                :aria-label="HEALTH[row.health ?? 'ok']"
+                :title="HEALTH[row.health ?? 'ok']"
+                data-test="health-dot"
+              />
+              <div class="client__name">
+                <strong>{{ row.name }}</strong>
+                <span class="client__meta">
+                  <code>{{ row.code }}</code>
+                  <StatusBadge v-if="row.status !== 'active'" tone="bad" label="Suspendido" />
+                </span>
+              </div>
             </div>
           </template>
-          <template #cell-status="{ row }">
-            <StatusBadge
-              :tone="row.status === 'active' ? 'ok' : 'bad'"
-              :label="row.status === 'active' ? 'Activo' : 'Suspendido'"
-            />
+          <template #cell-plan="{ row }">
+            <div v-if="row.plan" class="plan">
+              <span>{{ planSummary(row.plan).name }}</span>
+              <small :class="`plan--${planSummary(row.plan).tone}`">{{ planSummary(row.plan).detail }}</small>
+            </div>
+            <span v-else class="muted">Sin plan</span>
           </template>
+          <template #cell-active_users_30d="{ row }">
+            <span class="num">
+              {{ formatInt(row.active_users_30d ?? 0) }}<template v-if="row.plan?.max_users">
+                <span class="muted"> / {{ formatInt(row.plan.max_users) }}</span></template
+              >
+            </span>
+          </template>
+          <template #cell-turns_30d="{ row }"><span class="num">{{ formatInt(row.turns_30d ?? 0) }}</span></template>
+          <template #cell-cost_30d_usd="{ row }"><span class="num">{{ formatUsd(row.cost_30d_usd ?? 0) }}</span></template>
           <template #cell-instances="{ row }">
-            <span class="num">{{ row.instances_online }} / {{ row.instances_total }}</span>
+            <div class="instances">
+              <StatusBadge :tone="instancesSummary(row).tone" :label="instancesSummary(row).label" />
+              <small v-if="row.last_seen_at" class="muted">Último contacto {{ relativeTime(row.last_seen_at) }}</small>
+            </div>
           </template>
-          <template #cell-last_seen_at="{ row }">{{ relativeTime(row.last_seen_at) }}</template>
-          <template #cell-oldest_version="{ row }">{{ row.oldest_version ?? '—' }}</template>
         </DataTable>
         <template v-if="hasMore" #footer>
           <Button variant="secondary" :loading="loading" data-test="clients-more" @click="load(true)">
@@ -195,13 +230,71 @@ function onCreated(client: Client): void {
 }
 
 .client {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.client__name {
   display: grid;
   gap: 2px;
+  min-width: 0;
+}
+
+.client__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .client code {
   font-size: 11.5px;
   color: var(--text-muted);
+}
+
+/* Punto de salud: el color se acompaña siempre del texto (title y aria-label). */
+.dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.dot--info {
+  background: var(--chart-1);
+}
+
+.dot--warning {
+  background: var(--text-warning);
+}
+
+.dot--critical {
+  background: var(--text-danger);
+}
+
+.plan,
+.instances {
+  display: grid;
+  gap: 2px;
+}
+
+.plan small,
+.instances small {
+  font-size: 12px;
+}
+
+.plan--muted {
+  color: var(--text-muted);
+}
+
+.plan--warn {
+  color: var(--text-warning);
+}
+
+.plan--bad {
+  color: var(--text-danger);
 }
 
 .total {

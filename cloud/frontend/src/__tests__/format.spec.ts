@@ -109,3 +109,57 @@ describe('nombres de negocio', () => {
     expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, 'es')))
   })
 })
+
+describe('resumen y listas', () => {
+  it('variación: sin base no se compara; con base, signo y porcentaje', async () => {
+    const { variation } = await import('@/lib/format')
+    expect(variation(10, 0)).toBeNull()
+    expect(variation(10, undefined)).toBeNull()
+    expect(variation(150, 100)).toEqual({ text: '+50 %', direction: 'up' })
+    expect(variation(75, 100)).toEqual({ text: '−25 %', direction: 'down' })
+    expect(variation(100, 100)).toEqual({ text: 'Sin cambio', direction: 'flat' })
+  })
+
+  it('instalaciones: una etiqueta por caso', async () => {
+    const { instancesSummary } = await import('@/lib/format')
+    const base = {
+      instances_total: 0,
+      instances_online: 0,
+      instances_waiting: 0,
+      instances_offline: 0,
+    }
+    expect(instancesSummary(base).label).toBe('Sin instalaciones')
+    expect(instancesSummary({ ...base, instances_total: 1, instances_waiting: 1 }).label).toBe(
+      'Esperando primera conexión',
+    )
+    expect(
+      instancesSummary({ ...base, instances_total: 2, instances_online: 1, instances_offline: 1 }),
+    ).toEqual({
+      label: '1 sin conexión',
+      tone: 'warn',
+    })
+    expect(instancesSummary({ ...base, instances_total: 1, instances_online: 1 }).label).toBe(
+      'En línea',
+    )
+    expect(instancesSummary({ ...base, instances_total: 3, instances_online: 3 }).label).toBe(
+      '3 en línea',
+    )
+  })
+
+  it('plan: vencido, por vencer y sin vencimiento', async () => {
+    const { planSummary } = await import('@/lib/format')
+    expect(
+      planSummary({ name: 'Pro', valid_until: '2026-01-01', status: 'expired' }),
+    ).toMatchObject({
+      detail: 'Vencido',
+      tone: 'bad',
+    })
+    expect(
+      planSummary({ name: 'Pro', valid_until: '2026-11-20', status: 'expiring' }).detail,
+    ).toMatch(/^Vence pronto: 20/)
+    expect(planSummary({ name: null, valid_until: null, status: 'none' })).toMatchObject({
+      name: 'Sin nombre',
+      detail: 'Sin vencimiento',
+    })
+  })
+})

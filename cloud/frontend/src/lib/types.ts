@@ -65,6 +65,28 @@ export interface Client {
   allow_local_cli: boolean
   ai_policy: AiPolicy
   access_policy: AccessPolicy
+  /** Activas que todavía no se conectaron nunca. */
+  instances_waiting?: number
+  /** Activas que ya se conectaron, pero hoy no están en línea. */
+  instances_offline?: number
+  /** Consumo de los últimos 30 días. */
+  turns_30d?: number
+  active_users_30d?: number
+  cost_30d_usd?: string
+  open_alerts?: Partial<Record<Severity, number>>
+  /** Qué tan urgente es mirarlo: ordena la lista y pinta el punto de estado. */
+  health?: ClientHealth
+  /** Solo con `clients.billing`. */
+  plan?: ClientPlan | null
+}
+
+export type ClientHealth = 'ok' | 'info' | 'warning' | 'critical'
+
+export interface ClientPlan {
+  name: string | null
+  max_users: number | null
+  valid_until: string | null
+  status: 'none' | 'active' | 'expiring' | 'expired'
 }
 
 /** Contadores de las pestañas del cliente que no vienen en el detalle. */
@@ -104,6 +126,7 @@ export interface Instance {
   outdated: boolean
   enrolled_at: string
   last_seen_at: string | null
+  turns_30d?: number
   status_reason: string | null
   fingerprint: string | null
   clock_skew_seconds: number | null
@@ -277,10 +300,24 @@ export interface Overview {
   period: { start: string; end: string }
   freshness: Freshness
   usage: Usage
+  /** Mismas cifras en el periodo anterior de igual duración. */
+  previous_usage?: Usage
   trend: DayPoint[]
+  top_clients?: ClientUsage[]
+  /** Turnos por día de los tres primeros de `top_clients`; `client_id` nulo = Otros. */
+  trend_by_client?: { day: string; client_id: string | null; turns: number }[]
   providers: ModelUsage[]
   versions: { version: string | null; instances: number }[]
   open_alerts: Record<Severity, number>
+}
+
+export interface ClientUsage {
+  client_id: string
+  code: string
+  name: string
+  turns: number
+  active_users: number
+  cost_usd: string
 }
 
 export interface ClientDatabase {

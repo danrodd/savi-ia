@@ -161,8 +161,8 @@ describe('tarjetas', () => {
     const card = wrapper.get('[data-test="table-card"]')
 
     expect(card.text()).toContain('Cliente c1')
-    expect(card.text()).toContain('Última actividad')
-    expect(card.text()).toContain('Versión más antigua')
+    expect(card.text()).toContain('Turnos')
+    expect(card.text()).toContain('Instalaciones')
     expect(card.attributes('tabindex')).toBe('0')
   })
 

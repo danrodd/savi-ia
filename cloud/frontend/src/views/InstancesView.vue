@@ -12,14 +12,14 @@ import {
   type TableColumn,
   TextField,
 } from '@savi/ui'
-import { Server } from 'lucide-vue-next'
+import { Monitor, Server } from 'lucide-vue-next'
 import { computed, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useQueryFlag, useQueryParam } from '@/composables/useQueryParam'
 import { consoleApi } from '@/lib/api'
-import { instanceState, relativeTime } from '@/lib/format'
+import { deploymentModeLabel, formatInt, instanceState, relativeTime } from '@/lib/format'
 import type { Instance } from '@/lib/types'
 import { useAsync } from '@/lib/useAsync'
 
@@ -49,8 +49,9 @@ const COLUMNS: TableColumn[] = [
   { key: 'name', label: 'Instalación', card: 'title' },
   { key: 'client_code', label: 'Cliente', width: '160px' },
   { key: 'state', label: 'Estado', width: '150px' },
+  { key: 'turns_30d', label: 'Turnos (30 días)', align: 'right', width: '130px' },
   { key: 'version', label: 'Versión', width: '190px' },
-  { key: 'last_seen_at', label: 'Último contacto', width: '160px' },
+  { key: 'last_seen_at', label: 'Último contacto', width: '170px' },
 ]
 
 // Estado, conexión y desactualizadas las filtra el backend. Cliente y versión también se
@@ -179,7 +180,21 @@ function open(instance: Instance): void {
               "
             />
           </template>
-          <template #cell-name="{ row }"><strong>{{ row.name }}</strong></template>
+          <template #cell-name="{ row }">
+            <span class="name">
+              <component
+                :is="row.deployment_mode === 'desktop' ? Monitor : Server"
+                :size="15"
+                class="mode"
+                role="img"
+                :aria-label="deploymentModeLabel(row.deployment_mode)"
+                :title="deploymentModeLabel(row.deployment_mode)"
+                data-test="instance-mode"
+              />
+              <strong>{{ row.name }}</strong>
+            </span>
+          </template>
+          <template #cell-turns_30d="{ row }"><span class="num">{{ formatInt(row.turns_30d ?? 0) }}</span></template>
           <template #cell-client_code="{ row }">
             <RouterLink :to="`/clientes/${row.client_id}`" @click.stop>{{ row.client_code }}</RouterLink>
           </template>
@@ -192,7 +207,10 @@ function open(instance: Instance): void {
               <Badge v-if="row.outdated" tone="warning">Desactualizada</Badge>
             </span>
           </template>
-          <template #cell-last_seen_at="{ row }">{{ relativeTime(row.last_seen_at) }}</template>
+          <template #cell-last_seen_at="{ row }">
+            <template v-if="row.last_seen_at">{{ relativeTime(row.last_seen_at) }}</template>
+            <span v-else class="muted">Vinculada {{ relativeTime(row.enrolled_at) }}</span>
+          </template>
         </DataTable>
       </Card>
     </div>
@@ -200,6 +218,17 @@ function open(instance: Instance): void {
 </template>
 
 <style scoped>
+.name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mode {
+  flex: none;
+  color: var(--text-muted);
+}
+
 .filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));

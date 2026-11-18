@@ -241,3 +241,78 @@ export const ALERT_STATUS: Record<'open' | 'acknowledged' | 'resolved', string> 
   acknowledged: 'Reconocida',
   resolved: 'Resuelta',
 }
+
+// ── Resumen y listas ──────────────────────────────────────────────────────
+
+/**
+ * Variación frente al periodo anterior. `null` cuando no hay base para comparar
+ * (el periodo anterior fue cero): un "+∞ %" no le dice nada a nadie.
+ */
+export function variation(
+  current: number,
+  previous: number | null | undefined,
+): { text: string; direction: 'up' | 'down' | 'flat' } | null {
+  if (previous === null || previous === undefined || previous === 0) return null
+  const change = (current - previous) / previous
+  if (Math.abs(change) < 0.005) return { text: 'Sin cambio', direction: 'flat' }
+  const pct = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(
+    Math.abs(change) * 100,
+  )
+  return change > 0
+    ? { text: `+${pct} %`, direction: 'up' }
+    : { text: `−${pct} %`, direction: 'down' }
+}
+
+/** Una etiqueta por caso, en vez de "0 / 0" y "nunca". */
+export function instancesSummary(client: {
+  instances_total: number
+  instances_online: number
+  instances_waiting?: number
+  instances_offline?: number
+}): { label: string; tone: Tone } {
+  const waiting = client.instances_waiting ?? 0
+  const offline = client.instances_offline ?? 0
+  if (client.instances_total === 0) return { label: 'Sin instalaciones', tone: 'muted' }
+  if (offline > 0) {
+    return { label: offline === 1 ? '1 sin conexión' : `${offline} sin conexión`, tone: 'warn' }
+  }
+  if (client.instances_online === 0 && waiting > 0) {
+    return { label: 'Esperando primera conexión', tone: 'muted' }
+  }
+  if (client.instances_online === client.instances_total) {
+    return {
+      label: client.instances_total === 1 ? 'En línea' : `${client.instances_total} en línea`,
+      tone: 'ok',
+    }
+  }
+  return { label: `${client.instances_online} de ${client.instances_total} en línea`, tone: 'ok' }
+}
+
+export const HEALTH: Record<'ok' | 'info' | 'warning' | 'critical', string> = {
+  ok: 'Sin pendientes',
+  info: 'Para revisar',
+  warning: 'Requiere atención',
+  critical: 'Urgente',
+}
+
+const PLAN_STATUS: Record<string, string> = {
+  expiring: 'por vencer',
+  expired: 'vencido',
+}
+
+/** "Empresarial · vence 30 nov." o "Empresarial · vencido". */
+export function planSummary(plan: {
+  name: string | null
+  valid_until: string | null
+  status: string
+}): { name: string; detail: string; tone: Tone } {
+  const name = plan.name ?? 'Sin nombre'
+  if (plan.status === 'expired') return { name, detail: 'Vencido', tone: 'bad' }
+  if (!plan.valid_until) return { name, detail: 'Sin vencimiento', tone: 'muted' }
+  const day = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(
+    new Date(`${plan.valid_until}T12:00:00`),
+  )
+  const tone: Tone = plan.status === 'expiring' ? 'warn' : 'muted'
+  const prefix = PLAN_STATUS[plan.status] ? 'Vence pronto: ' : 'Vence '
+  return { name, detail: `${prefix}${day}`, tone }
+}
