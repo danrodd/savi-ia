@@ -12,7 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 import app.main as main_module
 from app.infrastructure.config import get_settings
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.infrastructure.http.admin import require_company_admin
+from app.modules.auth.infrastructure.http.admin import (
+    require_company_admin,
+    require_unlocked_company_admin,
+)
 from app.modules.company_knowledge.infrastructure.http.dependencies import (
     get_knowledge_settings_repository,
 )
@@ -64,6 +67,7 @@ def client(
     knowledge_settings = SqlAlchemyKnowledgeSettingsRepository(sessionmaker_)
     admin = _admin()
     app.dependency_overrides[require_company_admin] = lambda: admin
+    app.dependency_overrides[require_unlocked_company_admin] = lambda: admin
     app.dependency_overrides[get_document_repository] = lambda: documents
     app.dependency_overrides[get_knowledge_settings_repository] = lambda: knowledge_settings
     app.dependency_overrides[get_erp_database_repository] = lambda: _ErpRepo()

@@ -107,6 +107,28 @@ export interface StoredMessage {
   attachments?: ChatAttachment[]
   /** Calificación propia. Un backend anterior no lo manda. */
   feedback?: MessageFeedback | null
+  /** Turno fallido: categoría, texto que vio el usuario y código de soporte. */
+  error_code?: string | null
+  error_message?: string | null
+  support_code?: string | null
+  data_tables?: DataTableRef[]
+  files?: GeneratedFileRef[]
+}
+
+/** Un archivo generado para la respuesta (`/files/{id}`). */
+export interface GeneratedFileRef {
+  id: string
+  filename: string
+  media_type: string
+  size_bytes: number
+}
+
+/** Un conjunto de resultados de la respuesta (`/result-sets/{id}`). */
+export interface DataTableRef {
+  id: string
+  title: string
+  total_rows: number
+  total_is_lower_bound: boolean
 }
 
 export interface ConversationDetail {
@@ -127,13 +149,15 @@ export type ChatEvent =
   | { type: 'superseded'; message_ids: string[] }
   | { type: 'title_update'; title: string }
   | { type: 'sources'; sources: MessageSource[] }
+  | { type: 'data_tables'; tables: DataTableRef[] }
+  | { type: 'files'; files: GeneratedFileRef[] }
   | {
       type: 'done'
       usage: Record<string, unknown> | null
       cost_usd: number | null
       finish_reason: string
     }
-  | { type: 'error'; message: string; code?: string | null }
+  | { type: 'error'; message: string; code?: string | null; support_code?: string | null }
 
 export type ToolCallStatus = 'running' | 'success' | 'error'
 
@@ -174,6 +198,12 @@ export interface UIMessage {
   done: boolean
   interrupted?: boolean
   error?: string
+  /** Código corto del turno fallido, el mismo que queda en el log del servidor. */
+  supportCode?: string
+  /** Tablas de datos de la respuesta: vista previa y exportación completa. */
+  dataTables?: DataTableRef[]
+  /** Archivos que SAVI generó para la respuesta. */
+  files?: GeneratedFileRef[]
   sources?: MessageSource[]
   /** Calificación propia de la respuesta (`null`/ausente = sin calificar). */
   feedback?: MessageFeedback | null

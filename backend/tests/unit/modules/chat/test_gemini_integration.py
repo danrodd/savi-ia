@@ -8,7 +8,9 @@ from google.genai import types
 
 from app.infrastructure.config import Settings
 from app.modules.chat.domain.entities import (
+    PROVIDER_BUSY_MESSAGE,
     DoneEvent,
+    ErrorCode,
     ErrorEvent,
     TextDeltaEvent,
     ToolResultEvent,
@@ -326,7 +328,8 @@ async def test_runner_emits_neutral_error_when_all_models_are_exhausted(
         ).stream_turn("consulta")
     ]
     error = next(event for event in events if isinstance(event, ErrorEvent))
-    assert error.message == "No pude generar una respuesta para esa consulta."
+    assert error.message == PROVIDER_BUSY_MESSAGE
+    assert error.code is ErrorCode.PROVIDER_BUSY
 
 
 @pytest.mark.asyncio

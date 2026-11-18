@@ -15,7 +15,7 @@ import pytest
 from claude_agent_sdk import AssistantMessage, TextBlock
 
 from app.infrastructure.config import Settings
-from app.modules.chat.domain.entities.chat_event import ErrorCode, ErrorEvent
+from app.modules.chat.domain.entities.chat_event import PROVIDER_BUSY_MESSAGE, ErrorCode, ErrorEvent
 from app.modules.chat.domain.interfaces.active_provider import ActiveProvider
 from app.modules.chat.infrastructure.llm.claude import runner as claude_runner
 from app.modules.chat.infrastructure.llm.claude.runner import (
@@ -79,9 +79,15 @@ def test_a_normal_message_is_not_an_error() -> None:
 
 
 def test_an_unknown_error_keeps_the_detail_for_support() -> None:
-    message = provider_error_message("server_error", "Overloaded")
+    message = provider_error_message("invalid_request", "Overloaded")
 
     assert message is not None and "Overloaded" in message
+
+
+def test_a_busy_provider_asks_to_wait_and_regenerate() -> None:
+    message = provider_error_message("server_error", "Overloaded")
+
+    assert message == PROVIDER_BUSY_MESSAGE
 
 
 async def test_the_runner_does_not_stream_the_rejection_as_the_answer(

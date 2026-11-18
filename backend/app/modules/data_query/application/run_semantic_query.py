@@ -9,13 +9,18 @@ nunca propaga stack traces ni detalle de la BD.
 from __future__ import annotations
 
 import logging
-from collections.abc import Collection, Sequence
-from dataclasses import replace
+from collections.abc import Awaitable, Callable, Collection, Sequence
+from dataclasses import dataclass, replace
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
-from app.modules.data_query.application.query_compiler import compile_query, search_terms
+from app.modules.data_query.application.permission_text import permission_denied_text
+from app.modules.data_query.application.query_compiler import (
+    compile_query,
+    search_terms,
+    widen_limit,
+)
 from app.modules.data_query.application.query_parser import parse_semantic_query
 from app.modules.data_query.domain.exceptions import (
     SemanticQueryError,
@@ -30,9 +35,64 @@ from app.modules.data_query.domain.semantic_query import (
     SemanticQuery,
 )
 from app.modules.data_query.infrastructure.catalog import entity_names, get_entity
-from app.modules.data_query.infrastructure.erp_query_executor import execute_compiled
+from app.modules.data_query.infrastructure.erp_query_executor import (
+    count_compiled,
+    execute_compiled,
+)
 
 log = logging.getLogger(__name__)
+audit_log = logging.getLogger("savi.audit")
+
+
+# Recibe el resultado completo para guardarlo: título, columnas, etiquetas,
+# filas y si trae datos personales. Lo arma la capa del chat; acá no se sabe
+# dónde se guarda.
+RowsRecorder = Callable[
+    [str, list[str], dict[str, str], list[dict[str, Any]], bool, int | None], Awaitable[str]
+]
+
+_TITLES = {
+    "ventas": "Ventas",
+    "ventas_detalle": "Ventas por producto",
+    "terceros": "Terceros",
+    "cartera": "Cartera",
+    "inventario": "Inventario",
+    "inventario_rotacion": "Rotación de inventario",
+    "compras": "Compras",
+    "compras_detalle": "Compras por producto",
+}
+
+
+def _value_text(value: object) -> str:
+    if isinstance(value, list):
+        return " y ".join(str(v) for v in cast(list[object], value))
+    return str(value)
+
+
+# Cómo se lee cada operador en el título (que también es el nombre del archivo).
+_OP_WORDS = {
+    "=": "",
+    "!=": "distinto de",
+    ">": "mayor a",
+    ">=": "desde",
+    "<": "menor a",
+    "<=": "hasta",
+    "entre": "entre",
+    "contiene": "con",
+    "en": "en",
+}
+
+
+def _title(query: SemanticQuery, entity: SemanticEntity) -> str:
+    """Título legible: "Rotación de inventario · Días sin venta desde 365"."""
+    base = _TITLES.get(query.entidad, query.entidad.replace("_", " ").capitalize())
+    parts: list[str] = []
+    for f in query.filtros:
+        field = entity.fields.get(f.campo)
+        label = field.label if field is not None else f.campo.replace("_", " ").capitalize()
+        words = _OP_WORDS.get(f.op.value, f.op.value)
+        parts.append(" ".join(p for p in (label, words, _value_text(f.valor)) if p))
+    return f"{base} · {', '.join(parts)}"[:150] if parts else base
 
 
 async def run_semantic_query(
@@ -40,15 +100,25 @@ async def run_semantic_query(
     *,
     erp_database_id: UUID | None = None,
     modules: Collection[str] | None = None,
+    recorder: RowsRecorder | None = None,
+    full_fetch: int | None = None,
+    viewer_id: int | None = None,
 ) -> str:
     """Devuelve texto markdown listo para que el LLM lo presente, o un
-    mensaje de error accionable (también texto)."""
+    mensaje de error accionable (también texto).
+
+    Con `recorder` y `full_fetch`, la consulta lee hasta `full_fetch` filas: el
+    modelo recibe las de su límite y el total, y `recorder` guarda todas.
+    """
     try:
         query = parse_semantic_query(raw)
         entity = get_entity(query.entidad)
         if entity is None:
             raise UnknownEntityError(query.entidad, entity_names())
-        entity = entity.scoped_for(modules)
+        denied = _denied_names(query, entity.restricted_names(modules))
+        if denied:
+            return permission_denied_text(denied)
+        entity = entity.scoped_for(modules, viewer_id)
         if not entity.allowed_for(modules):
             # Defensa en profundidad: la descripción de la tool ya la oculta.
             needed = entity.required_modules or tuple(
@@ -63,10 +133,28 @@ async def run_semantic_query(
     except SemanticQueryError as e:
         return f"No pude armar la consulta: {e}"
 
+    keep_all = recorder is not None and full_fetch is not None and query.modo != QueryMode.RECORD
+    shown_limit = compiled.limit
     try:
-        result = await execute_compiled(
-            compiled, query.entidad, query.modo, erp_database_id=erp_database_id
-        )
+        if keep_all and full_fetch is not None:
+            full = await execute_compiled(
+                widen_limit(compiled, full_fetch),
+                query.entidad,
+                query.modo,
+                erp_database_id=erp_database_id,
+                max_rows=full_fetch,
+            )
+            result = replace(
+                full,
+                rows=full.rows[:shown_limit] if shown_limit else full.rows,
+                row_count=min(len(full.rows), shown_limit or len(full.rows)),
+                truncated=shown_limit is not None and len(full.rows) > shown_limit,
+            )
+        else:
+            full = None
+            result = await execute_compiled(
+                compiled, query.entidad, query.modo, erp_database_id=erp_database_id
+            )
     except Exception:
         log.exception("semantic_query_execution_failed entity=%s", query.entidad)
         return (
@@ -79,8 +167,89 @@ async def run_semantic_query(
         if hint:
             return hint
         return _format_result(result, compiled.select_labels)
+    _audit_personal_data(query, entity, erp_database_id, result.row_count)
+    total: _Total | None = None
+    saved_id: str | None = None
+    if full is not None and recorder is not None and full_fetch is not None:
+        exact: int | None = None
+        if len(full.rows) >= full_fetch:
+            # Más que lo que se guarda: se cuenta el total real.
+            try:
+                exact = await count_compiled(compiled, erp_database_id=erp_database_id)
+            except Exception:  # noqa: BLE001 — sin el conteo, se informa "más de"
+                log.warning("semantic_query_count_failed entity=%s", query.entidad, exc_info=True)
+        total = (
+            _Total(rows=exact, more=False)
+            if exact is not None
+            else _Total(rows=min(len(full.rows), full_fetch - 1), more=len(full.rows) >= full_fetch)
+        )
+        if len(full.rows) >= 2:
+            personal = any(
+                (item := entity.fields.get(c) or entity.dimensions.get(c)) is not None
+                and item.required_modules
+                for c in full.columns
+            )
+            try:
+                saved_id = await recorder(
+                    _title(query, entity),
+                    full.columns,
+                    compiled.select_labels,
+                    full.rows,
+                    personal,
+                    exact,
+                )
+            except Exception:  # noqa: BLE001 — guardar no puede tumbar la respuesta
+                log.exception("result_set_record_failed entity=%s", query.entidad)
+                total = None
     note = await _mixed_matches_note(query, entity, erp_database_id)
-    return _format_result(result, compiled.select_labels) + note
+    if saved_id:
+        note += (
+            f"\n\n_(Conjunto de datos: {saved_id}. Si el usuario quiere estos datos en un "
+            "archivo o en un informe, usa entregar_archivo con este conjunto.)_"
+        )
+    return _format_result(result, compiled.select_labels, total) + note
+
+
+@dataclass(frozen=True)
+class _Total:
+    rows: int
+    more: bool
+
+
+def _audit_personal_data(
+    query: SemanticQuery, entity: SemanticEntity, erp_database_id: UUID | None, rows: int
+) -> None:
+    """Deja constancia de cada consulta que devolvió datos personales o bancarios.
+
+    Quién, qué entidad, qué campos y cuántas filas; nunca los valores. El SQL
+    libre ya queda en su propia tabla de auditoría.
+    """
+    sensitive = [
+        name
+        for name in (*query.campos, *query.dimensiones)
+        if (item := entity.fields.get(name) or entity.dimensions.get(name)) is not None
+        and item.required_modules
+    ]
+    if sensitive:
+        audit_log.info(
+            "personal_data_access erp_database_id=%s entity=%s fields=%s rows=%s",
+            erp_database_id,
+            entity.name,
+            ",".join(sensitive),
+            rows,
+        )
+
+
+def _denied_names(
+    query: SemanticQuery, restricted: dict[str, tuple[str, ...]]
+) -> dict[str, tuple[str, ...]]:
+    """Lo que la consulta pide y el usuario no puede ver, con su módulo."""
+    if not restricted:
+        return {}
+    asked = [*query.campos, *query.dimensiones, *(f.campo for f in query.filtros)]
+    if query.orden is not None:
+        asked.append(query.orden.campo)
+    return {name: restricted[name] for name in asked if name in restricted}
 
 
 # Cuántos valores distintos se nombran en el aviso de coincidencias mezcladas.
@@ -184,7 +353,7 @@ def _fmt_value(v: Any) -> str:
     return str(v)
 
 
-def _format_result(result: QueryResult, labels: dict[str, str]) -> str:
+def _format_result(result: QueryResult, labels: dict[str, str], total: _Total | None = None) -> str:
     if not result.rows:
         return "No encontré datos que coincidan con esa consulta."
 
@@ -206,7 +375,19 @@ def _format_result(result: QueryResult, labels: dict[str, str]) -> str:
     table = "\n".join(out)
 
     note = ""
-    if result.truncated:
+    if total is not None and result.truncated:
+        # El usuario tiene la tabla completa: el modelo lo dice y no la copia.
+        # Separador de miles colombiano solo en el número: la frase lleva comas.
+        number = f"{total.rows:,}".replace(",", ".")
+        count = f"más de {number}" if total.more else number
+        note = (
+            f"\n\n_(Mostrando {result.row_count} de {count} filas. NO sumes estas filas "
+            "para dar un total: para totales usa modo 'agregado' con métricas. La tabla "
+            f"completa ({count} filas) ya le aparece al usuario debajo de tu respuesta, "
+            "con el botón Exportar para bajarla en Excel, PDF o CSV: díselo con el total "
+            "exacto y no copies todas las filas.)_"
+        )
+    elif result.truncated:
         # El aviso tiene que decir QUÉ HACER, no solo que se cortó: sin la
         # instrucción, el modelo sumaba las filas visibles y presentaba ese
         # subtotal como el total del negocio.

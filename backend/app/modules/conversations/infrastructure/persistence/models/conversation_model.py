@@ -120,6 +120,14 @@ class MessageModel(Base):
     model: Mapped[str | None] = mapped_column(String(120), nullable=True)
     # Documentos de la empresa citados (`MessageSource.to_dict`). NULL = sin citas.
     sources: Mapped[list[dict[str, Any]] | None] = mapped_column(JsonType, nullable=True)
+    # Turno fallido: categoría, texto mostrado y código de soporte.
+    error_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    support_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Conjuntos de resultados que acompañan a la respuesta: id, título y filas.
+    data_tables: Mapped[list[dict[str, Any]] | None] = mapped_column(JsonType, nullable=True)
+    # Archivos generados para la respuesta: id, nombre, tipo y tamaño.
+    files: Mapped[list[dict[str, Any]] | None] = mapped_column(JsonType, nullable=True)
     # Revisiones: cuando un mensaje se edita o se regenera, el viejo NO se
     # borra: queda con `superseded_at=now()` y `superseded_by_id` apuntando
     # al mensaje que lo reemplazó. El hilo activo se filtra por

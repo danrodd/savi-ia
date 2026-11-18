@@ -19,9 +19,11 @@ Las tres reglas (en orden):
 Devuelve también el `version_hash` SHA-256 estable del set, para que
 el frontend pueda detectar cambios sin recargar el bootstrap completo.
 """
+
 from __future__ import annotations
 
 import hashlib
+import logging
 from dataclasses import dataclass
 
 from app.modules.auth.domain.interfaces import (
@@ -32,7 +34,10 @@ from app.modules.auth.domain.value_objects import (
     ADMIN_ONLY_MODULES,
     MODULE_TO_SEO_FLAG,
     ModuleCode,
+    parse_erp_module,
 )
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,14 +65,19 @@ class ResolveUserModulesUseCase:
         # Strings que el ERP guardó en `Formulario.modulo` para este user.
         raw_modules = await self._permissions.get_modules_with_active_form(user_id)
 
-        # Match con ModuleCode. Strings desconocidos se ignoran (fail-closed).
+        # Match con ModuleCode sin tildes ni mayúsculas. Lo desconocido se
+        # ignora (fail-closed), pero queda en el log: antes se perdía en
+        # silencio un módulo que el ERP escribía distinto (`NOMINA`).
         candidate: set[ModuleCode] = set()
+        unknown: set[str] = set()
         for raw in raw_modules:
-            try:
-                candidate.add(ModuleCode(raw))
-            except ValueError:
-                # Módulo no mapeado en SAVI — se ignora silencioso.
-                continue
+            module = parse_erp_module(raw)
+            if module is None:
+                unknown.add(raw)
+            else:
+                candidate.add(module)
+        if unknown:
+            log.info("erp_modules_unknown user_id=%s modules=%s", user_id, sorted(unknown))
 
         # ADMIN_ONLY no aplica a no-admin.
         candidate -= ADMIN_ONLY_MODULES

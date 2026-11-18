@@ -58,6 +58,15 @@ def test_rejects_anything_that_is_not_a_select(sql: str) -> None:
         _valida(sql)
 
 
+def test_a_non_recursive_with_is_allowed_for_analysis() -> None:
+    sql = _valida(
+        "WITH ventas AS (SELECT idproducto, MAX(fecha) AS ultima FROM detalle GROUP BY 1) "
+        "SELECT p.codigo, v.ultima FROM producto p JOIN ventas v ON v.idproducto = p.idproducto"
+    )
+
+    assert sql.upper().startswith("WITH") and "LIMIT" in sql.upper()
+
+
 def test_rejects_multiple_statements() -> None:
     with pytest.raises(AstValidationError, match="UNA sentencia"):
         _valida("SELECT nombre FROM terceros; DROP TABLE terceros")
@@ -66,7 +75,7 @@ def test_rejects_multiple_statements() -> None:
 @pytest.mark.parametrize(
     ("sql", "motivo"),
     [
-        ("WITH t AS (SELECT 1 AS a) SELECT a FROM t", "WITH"),
+        ("WITH RECURSIVE t AS (SELECT 1 AS a) SELECT a FROM t", "RECURSIVE"),
         ("SELECT a FROM x UNION SELECT b FROM y", "UNION"),
         ("SELECT a FROM x INTERSECT SELECT b FROM y", "INTERSECT"),
         ("SELECT a FROM x EXCEPT SELECT b FROM y", "EXCEPT"),
@@ -185,34 +194,43 @@ def test_allows_ordinary_query_functions(sql: str) -> None:
     assert _valida(sql)
 
 
-# ── Datos personales de terceros ─────────────────────────────────────────
+# ── Datos personales y prohibidos ────────────────────────────────────────
 
 
 @pytest.mark.parametrize(
     "sql",
     [
+        # El SQL libre es de administradores, que en el ERP ven el contacto.
         'SELECT "numeroIdentificacion" FROM "Tercero"."Tercero" LIMIT 5',
         'SELECT t."nombreCompleto", t."celular" FROM "Tercero"."Tercero" t LIMIT 5',
-        'SELECT CONCAT(t."email", \'\') AS x FROM "Tercero"."Tercero" t LIMIT 5',
-        'SELECT x FROM (SELECT "direccion" AS x FROM "Tercero"."Tercero") s LIMIT 5',
+        # La dirección de una bodega o de la empresa no es un dato personal.
+        'SELECT a."direccion" FROM "Inventario"."Almacen" a LIMIT 5',
+        # `foto` de un producto tampoco.
+        'SELECT p."foto" FROM "Inventario"."Producto" p LIMIT 5',
     ],
 )
-def test_personal_data_is_never_returned(sql: str) -> None:
-    with pytest.raises(AstValidationError, match="dato personal"):
-        _valida(sql)
+def test_contact_data_is_available_to_the_admin(sql: str) -> None:
+    assert _valida(sql)
 
 
 @pytest.mark.parametrize(
     "sql",
     [
-        # Buscar por identificación no la muestra.
-        'SELECT "idTercero" FROM "Tercero"."Tercero" WHERE "numeroIdentificacion" = \'1\' LIMIT 1',
-        # Un agregado no expone el valor.
-        'SELECT COUNT("email") FROM "Tercero"."Tercero" LIMIT 1',
+        'SELECT "codigo", "clave" FROM "Seguridad"."Usuario" LIMIT 5',
+        'SELECT x FROM (SELECT "claveApp" AS x FROM "Seguridad"."Usuario") s LIMIT 5',
+        # Ni para adivinar una clave comparando.
+        'SELECT "codigo" FROM "Seguridad"."Usuario" WHERE "clave" = \'abc\' LIMIT 1',
+        'SELECT t."huella" FROM "Tercero"."Tercero" t LIMIT 5',
+        'SELECT "puntajeSisben", "estrato", "genero" FROM "Tercero"."Tercero" LIMIT 5',
+        'SELECT t."foto" FROM "Tercero"."Tercero" t LIMIT 5',
+        'SELECT "foto" FROM "Tercero"."Tercero" LIMIT 5',
+        'SELECT COUNT(*) FROM "Seguridad"."SesionActiva" LIMIT 1',
+        'SELECT 1 FROM "Seguridad"."RecuperacionClave" LIMIT 1',
     ],
 )
-def test_personal_data_can_still_be_used_to_search_or_count(sql: str) -> None:
-    assert _valida(sql)
+def test_credentials_biometrics_and_sensitive_data_are_prohibited(sql: str) -> None:
+    with pytest.raises(AstValidationError, match="no entrega a nadie"):
+        _valida(sql)
 
 
 # ── Rangos de fechas ─────────────────────────────────────────────────────

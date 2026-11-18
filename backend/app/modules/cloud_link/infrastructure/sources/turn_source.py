@@ -54,6 +54,7 @@ KNOWLEDGE_TIPOS_WHITELIST: frozenset[str] = frozenset(
         "formulario",
         "documentos",
         "documentos_disponibles",
+        "empresa",
     }
 )
 _MAX_TOOLS = 100

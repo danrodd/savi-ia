@@ -9,6 +9,7 @@ Aquí solo agregamos:
 Cuando entren las views curadas + DB user dedicado (`savi_query`), basta
 con cambiar el engine que se inyecta — no toca este código.
 """
+
 from __future__ import annotations
 
 import json
@@ -33,10 +34,30 @@ class SqlAlchemyQueryExecutor(QueryExecutor):
         try:
             root_rows = int(plan[0]["Plan"]["Plan Rows"])
         except (KeyError, IndexError, TypeError, ValueError) as e:
-            raise RuntimeError(
-                f"No se pudo leer el plan del EXPLAIN: {e!r}"
-            ) from e
+            raise RuntimeError(f"No se pudo leer el plan del EXPLAIN: {e!r}") from e
         return root_rows
+
+    async def count_rows(self, sql: str) -> int | None:
+        import sqlglot
+        from sqlglot import exp
+
+        root = sqlglot.parse_one(sql, dialect="postgres")
+        if not isinstance(root, exp.Select):
+            return None
+        root.set("limit", None)
+        inner = root.sql(dialect="postgres")
+        async with self._engine.connect() as conn:
+            result = await conn.execute(text(f"SELECT COUNT(*) FROM ({inner}) AS total"))
+            return int(result.scalar_one())
+
+    async def estimate_cost(self, sql: str) -> float:
+        async with self._engine.connect() as conn:
+            raw = (await conn.execute(text(f"EXPLAIN (FORMAT JSON) {sql}"))).scalar_one()
+        plan = _parse_explain_json(raw)
+        try:
+            return float(plan[0]["Plan"]["Total Cost"])
+        except (KeyError, IndexError, TypeError, ValueError) as e:
+            raise RuntimeError(f"No se pudo leer el costo del EXPLAIN: {e!r}") from e
 
     async def execute_select(
         self, sql: str, *, max_rows: int

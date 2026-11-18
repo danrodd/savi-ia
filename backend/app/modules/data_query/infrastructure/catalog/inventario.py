@@ -67,6 +67,7 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
+from app.modules.data_query.infrastructure.catalog._names import product_search_text
 
 _NUMBER_OPS = (FilterOp.GT, FilterOp.GTE, FilterOp.LT, FilterOp.LTE, FilterOp.EQ)
 
@@ -156,7 +157,7 @@ INVENTARIO = SemanticEntity(
     },
     filters={
         # Por palabras: "tornillo 6" encuentra "TORNILLO MAD 6 * 2".
-        "producto": FilterDef("producto", 'p."descripcion"', (FilterOp.CONTAINS,)),
+        "producto": FilterDef("producto", product_search_text(), (FilterOp.CONTAINS,)),
         "codigo": FilterDef("codigo", 'p."codigo"', (FilterOp.EQ,)),
         "producto_id": FilterDef(
             "producto_id",

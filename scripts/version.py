@@ -14,10 +14,16 @@ Uso (desde la raíz del monorepo, sin dependencias fuera de la stdlib):
     python scripts/version.py --proponer   # calcula la siguiente y muestra las notas
     python scripts/version.py --crear      # crea el tag anotado calculado
     python scripts/version.py --crear v1.2.0   # o el que decida una persona
+    python scripts/version.py --crear --rc     # candidata v1.2.0-rc.N (solo en staging)
+
+Las versiones finales se taguean solo en `main`. Las candidatas (`-rc.N`) se
+taguean solo en `staging` y sirven para probar en el canal `beta`: nunca llegan
+a `stable`. Orden: v1.4.0-rc.1 < v1.4.0-rc.2 < v1.4.0 < v1.4.1-rc.1.
 
 Qué imprime la versión actual:
 
     v1.4.0              exactamente en esa versión publicada
+    v1.4.0-rc.2         exactamente en esa candidata
     v1.4.0-14-gbf8eee7  14 commits después de v1.4.0, en el commit bf8eee7
     cf07443             todavía no hay ningún tag
     ...-sucio           se construyó con cambios sin commitear
@@ -41,6 +47,8 @@ ROOT = Path(__file__).resolve().parent.parent
 DEV_VERSION = "0.0.0-dev"
 DIRTY_SUFFIX = "-sucio"
 TAG_PATTERN = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+# Candidata: `v1.4.0-rc.2`. Va a `beta`, nunca a `stable`.
+RC_TAG_PATTERN = re.compile(r"^v(\d+)\.(\d+)\.(\d+)-rc\.([1-9]\d*)$")
 _COMMIT_PATTERN = re.compile(
     r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]*)\))?(?P<bang>!)?:\s*(?P<subject>.+)$"
 )
@@ -98,14 +106,36 @@ def _git(*args: str) -> str:
 
 
 def describe() -> str:
+    # Si el commit tiene la final y también una candidata (la final se crea
+    # sobre el mismo commit que se probó), manda la final.
+    finals = [t for t in _git("tag", "--points-at", "HEAD").split() if TAG_PATTERN.match(t)]
+    if finals:
+        return max(finals, key=parse_tag) + (DIRTY_SUFFIX if is_dirty() else "")
     return _git("describe", "--tags", "--always", f"--dirty={DIRTY_SUFFIX}", "--match", "v*")
 
 
 def last_tag() -> str | None:
+    """La última versión **final**: las candidatas no cuentan como versión publicada."""
     try:
-        return _git("describe", "--tags", "--abbrev=0", "--match", "v*")
+        return _git("describe", "--tags", "--abbrev=0", "--match", "v*", "--exclude", "*-rc.*")
     except VersionError:
         return None
+
+
+def version_number() -> str:
+    """`X.Y.Z` de la versión que se está construyendo (lo pide Inno Setup).
+
+    Cuenta también las candidatas: un build de `v1.4.0-rc.1` es `1.4.0`, no la
+    última final.
+    """
+    try:
+        tag = _git("describe", "--tags", "--abbrev=0", "--match", "v*")
+    except VersionError:
+        return "0.0.0"
+    match = TAG_PATTERN.match(tag) or RC_TAG_PATTERN.match(tag)
+    if match is None:
+        raise VersionError(f"'{tag}' no tiene el formato vMAYOR.MENOR.PARCHE[-rc.N].")
+    return "{}.{}.{}".format(*match.groups()[:3])
 
 
 def is_dirty() -> bool:
@@ -206,14 +236,29 @@ def _proposal() -> tuple[str, str]:
     return version, release_notes(version, releasable)
 
 
-def cmd_create(explicit: str | None) -> None:
+def next_candidate_tag(base: str, existing_tags: list[str]) -> str:
+    """`v1.4.0` y las candidatas que ya hay → la siguiente (`v1.4.0-rc.3`)."""
+    numbers = [
+        int(match[4])
+        for tag in existing_tags
+        if (match := RC_TAG_PATTERN.match(tag)) and tag.startswith(f"{base}-rc.")
+    ]
+    return f"{base}-rc.{max(numbers, default=0) + 1}"
+
+
+def cmd_create(explicit: str | None, *, candidate: bool = False) -> None:
     if is_dirty():
         raise VersionError("Hay cambios sin commitear: el tag apuntaría a un árbol que no existe.")
-    if _git("tag", "--points-at", "HEAD"):
+    here = _git("tag", "--points-at", "HEAD").split()
+    # La final se crea sobre el mismo commit que se probó como candidata.
+    blocking = here if candidate else [t for t in here if not RC_TAG_PATTERN.match(t)]
+    if blocking:
         raise VersionError("HEAD ya tiene un tag: no se versiona dos veces el mismo commit.")
     branch = _git("rev-parse", "--abbrev-ref", "HEAD")
-    if branch != "main":
-        raise VersionError(f"Los tags se crean solo en main (estás en '{branch}').")
+    allowed = "staging" if candidate else "main"
+    if branch != allowed:
+        what = "Las candidatas se crean" if candidate else "Los tags se crean"
+        raise VersionError(f"{what} solo en {allowed} (estás en '{branch}').")
 
     previous = last_tag()
     if explicit:
@@ -225,6 +270,12 @@ def cmd_create(explicit: str | None) -> None:
         notes = release_notes(version, [c for c in parsed if c.releasable])
     else:
         version, notes = _proposal()
+
+    if candidate:
+        # Mismas notas que la final, con el nombre de la candidata en el título.
+        tag = next_candidate_tag(version, _git("tag", "--list", f"{version}-rc.*").split())
+        notes = tag + notes[len(version) :]
+        version = tag
 
     # `--cleanup=verbatim`: por defecto git borra del mensaje las líneas que
     # empiezan con `#` (las toma como comentarios) y las notas perderían
@@ -246,7 +297,12 @@ def main(argv: list[str] | None = None) -> int:
     group.add_argument("--json", action="store_true", help="versión, commit, número y estado")
     group.add_argument("--proponer", action="store_true", help="calcula la siguiente versión")
     group.add_argument("--crear", nargs="?", const="", metavar="vX.Y.Z", help="crea el tag anotado")
+    parser.add_argument(
+        "--rc", action="store_true", help="con --crear: una candidata (-rc.N), solo en staging"
+    )
     args = parser.parse_args(argv)
+    if args.rc and args.crear is None:
+        parser.error("--rc va junto con --crear.")
 
     # Windows abre la consola en cp1252: las notas y los errores llevan acentos.
     for stream in (sys.stdout, sys.stderr):
@@ -255,16 +311,14 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.numero:
-            tag = last_tag()
-            print("{}.{}.{}".format(*parse_tag(tag)) if tag else "0.0.0")
+            print(version_number())
         elif args.json:
-            tag = last_tag()
             print(
                 json.dumps(
                     {
                         "version": describe(),
                         "commit": short_commit(),
-                        "numero": "{}.{}.{}".format(*parse_tag(tag)) if tag else "0.0.0",
+                        "numero": version_number(),
                         "sucio": is_dirty(),
                     }
                 )
@@ -274,7 +328,7 @@ def main(argv: list[str] | None = None) -> int:
             print(notes)
             print(f"Siguiente versión propuesta: {version}")
         elif args.crear is not None:
-            cmd_create(args.crear or None)
+            cmd_create(args.crear or None, candidate=args.rc)
         else:
             print(describe())
     except VersionError as e:

@@ -11,6 +11,8 @@ class ChatEventType(StrEnum):
     TITLE_UPDATE = "title_update"
     SUPERSEDED = "superseded"
     SOURCES = "sources"
+    DATA_TABLES = "data_tables"
+    FILES = "files"
     DONE = "done"
     ERROR = "error"
 
@@ -74,6 +76,31 @@ class SourcesEvent:
 
 
 @dataclass(slots=True)
+class DataTablesEvent:
+    """Conjuntos de resultados que acompañan a la respuesta.
+
+    Llega justo antes de `done`. Cada uno es `{id, title, total_rows,
+    total_is_lower_bound}`; el frontend pide la vista previa a
+    `/result-sets/{id}` y exporta desde ahí.
+    """
+
+    tables: list[dict[str, Any]]
+    type: ChatEventType = ChatEventType.DATA_TABLES
+
+
+@dataclass(slots=True)
+class FilesEvent:
+    """Archivos que SAVI generó en el turno (`entregar_archivo`).
+
+    Llega justo antes de `done`. Cada uno es `{id, filename, media_type,
+    size_bytes}`; se descarga de `/files/{id}`.
+    """
+
+    files: list[dict[str, Any]]
+    type: ChatEventType = ChatEventType.FILES
+
+
+@dataclass(slots=True)
 class DoneEvent:
     usage: dict[str, Any] | None = None
     cost_usd: float | None = None
@@ -90,21 +117,49 @@ class ErrorCode(StrEnum):
     sin saldo, cuota agotada, proveedor caído). Es un problema que sólo un
     administrador puede resolver: el mensaje trae detalle técnico que un
     usuario funcional no necesita ver.
+    `PROVIDER_BUSY`: el proveedor está saturado o alcanzó su límite de uso
+    (429, 5xx) y no respondió ni después de reintentar. Se resuelve
+    esperando: cualquier usuario puede tocar Regenerar.
+    `PROVIDER_REFUSED`: el proveedor se negó o bloqueó la respuesta.
     `INTERNAL`: falla inesperada del turno; el mensaje es el texto crudo.
     """
 
     PROVIDER = "provider_error"
+    PROVIDER_BUSY = "provider_busy"
+    PROVIDER_REFUSED = "provider_refused"
     INTERNAL = "internal_error"
+
+
+# Textos de usted por categoría. Una sola fuente: los runners los usan y el
+# frontend tiene los mismos para lo que guarda el historial.
+PROVIDER_BUSY_MESSAGE = (
+    "El servicio de inteligencia artificial está saturado en este momento. "
+    "Espere un minuto y toque Regenerar."
+)
+PROVIDER_REFUSED_MESSAGE = (
+    "El proveedor de inteligencia artificial no quiso responder esta consulta. "
+    "Reformúlela con otras palabras."
+)
+INTERNAL_ERROR_MESSAGE = (
+    "No pude completar la respuesta por un problema interno. Toque Regenerar; "
+    "si se repite, avise a soporte."
+)
 
 
 @dataclass(slots=True)
 class ErrorEvent:
     message: str
     type: ChatEventType = ChatEventType.ERROR
-    # `None` = mensaje ya pensado para cualquier usuario (p.ej. "No pude
-    # generar una respuesta para esa consulta."). Campo aditivo: los clientes
-    # que no lo conocen siguen mostrando `message`.
+    # `None` = mensaje ya pensado para cualquier usuario. Campo aditivo: los
+    # clientes que no lo conocen siguen mostrando `message`.
     code: ErrorCode | None = None
+    # Identificador corto del turno, el mismo que queda en el log y en el
+    # mensaje guardado: con él soporte encuentra la causa sin pedir el equipo.
+    support_code: str | None = None
+    # Proveedor y modelo del turno que falló, para el historial y la vista de
+    # turnos fallidos (en un turno que termina bien llegan con `done`).
+    provider: str | None = None
+    model: str | None = None
 
 
 ChatEvent = (
@@ -115,6 +170,8 @@ ChatEvent = (
     | TitleUpdateEvent
     | SupersededEvent
     | SourcesEvent
+    | DataTablesEvent
+    | FilesEvent
     | DoneEvent
     | ErrorEvent
 )

@@ -4,6 +4,7 @@ Constantes ajustables que definen los límites técnicos. Si en el futuro
 hay que aflojar/apretar, todo se cambia desde acá (no esparcir mágicos
 por el código).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,8 +16,17 @@ class FreeQueryPolicy:
     # post-ejecución (por si la BD igual devuelve más).
     max_rows: int = 50
 
-    # EXPLAIN gate: si el planner estima más filas que esto, rechazo.
+    # Filas que se leen de verdad: el modelo ve `max_rows` y el resto va al
+    # conjunto de resultados que el usuario exporta. Por defecto, lo mismo.
+    fetch_rows: int = 50
+
+    # EXPLAIN gate: si el planner estima más filas que esto, rechazo. Solo se
+    # usa cuando no se mide el costo (`max_estimated_cost` en 0).
     max_estimated_rows: int = 1000
+
+    # EXPLAIN gate por costo: lo que se protege es la carga sobre el ERP, no
+    # la cantidad de filas, que ya no viajan por el modelo. 0 = no se mide.
+    max_estimated_cost: float = 0.0
 
     # Profundidad máxima de subqueries anidadas. > 2 es señal de
     # complejidad sospechosa o intento de evasión.

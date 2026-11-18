@@ -5,7 +5,9 @@ import type { MessageVersion, UIMessage } from '../types'
 import { linkCitations } from '../utils/citations'
 import { groupToolCalls } from '../utils/groupToolCalls'
 import BrandMark from './BrandMark.vue'
+import DataTableCard from './DataTableCard.vue'
 import FeedbackButtons from './FeedbackButtons.vue'
+import FileCard from './FileCard.vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import MessageSources from './MessageSources.vue'
 import ShareMenu from './ShareMenu.vue'
@@ -139,6 +141,13 @@ function next(): void {
         </template>
       </div>
 
+      <template v-if="message.done && !isViewingHistorical && message.dataTables?.length">
+        <DataTableCard v-for="table in message.dataTables" :key="table.id" :table="table" />
+      </template>
+      <template v-if="message.done && !isViewingHistorical && message.files?.length">
+        <FileCard v-for="file in message.files" :key="file.id" :file="file" />
+      </template>
+
       <MessageSources
         v-if="message.done && displayedSources.length > 0"
         :sources="displayedSources"
@@ -146,9 +155,22 @@ function next(): void {
         :read-only="readOnly"
       />
 
-      <p v-if="message.error && !isViewingHistorical" class="assistant-message__error">
-        {{ message.error }}
-      </p>
+      <div v-if="message.error && !isViewingHistorical" class="assistant-message__error" role="alert">
+        <p class="assistant-message__error-text">{{ message.error }}</p>
+        <div class="assistant-message__error-footer">
+          <span v-if="message.supportCode" class="assistant-message__support">
+            Código de soporte: <code>{{ message.supportCode }}</code>
+          </span>
+          <button
+            v-if="canRegenerate"
+            type="button"
+            class="action-btn assistant-message__retry"
+            @click="emit('regenerate')"
+          >
+            Regenerar
+          </button>
+        </div>
+      </div>
       <p v-if="displayedInterrupted" class="assistant-message__hint">Respuesta detenida.</p>
 
       <div v-if="message.done && !message.error" class="assistant-message__actions">
@@ -351,6 +373,38 @@ function next(): void {
   border-radius: var(--r-md);
   color: var(--brand);
   font-size: 13px;
+}
+
+.assistant-message__error-text {
+  margin: 0;
+}
+
+.assistant-message__error-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.assistant-message__error-footer:empty {
+  display: none;
+}
+
+.assistant-message__support {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+.assistant-message__support code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.assistant-message__retry {
+  margin-left: auto;
 }
 
 .assistant-message__hint {

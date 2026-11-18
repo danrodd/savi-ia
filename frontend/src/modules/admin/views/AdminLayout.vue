@@ -6,8 +6,10 @@ import {
   Database,
   FileText,
   MessageSquareHeart,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
+  TriangleAlert,
 } from 'lucide-vue-next'
 import { RouterLink, RouterView } from 'vue-router'
 
@@ -20,6 +22,8 @@ const NAV = [
   { to: { name: 'admin-company-knowledge' }, label: 'Conocimiento de la empresa', icon: FileText },
   { to: { name: 'admin-usage' }, label: 'Consumo', icon: ChartColumn },
   { to: { name: 'admin-feedback' }, label: 'Feedback del piloto', icon: MessageSquareHeart },
+  { to: { name: 'admin-updates' }, label: 'Actualizaciones', icon: RefreshCw },
+  { to: { name: 'admin-failed-turns' }, label: 'Turnos fallidos', icon: TriangleAlert },
   { to: { name: 'admin-cloud' }, label: 'SAVI Cloud', icon: CloudUpload },
   { to: { name: 'admin-security' }, label: 'Seguridad', icon: ShieldCheck },
 ] as const

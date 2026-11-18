@@ -23,6 +23,10 @@ import {
  *       <button @click="open = false">Cerrar</button>
  *     </template>
  *   </Dialog>
+ *
+ * Con `:dismissible="false"` no se puede cerrar: sin la X, sin Esc y sin
+ * clic afuera. Es para avisos que bloquean, como una actualización
+ * obligatoria; el componente que lo usa decide cuándo cerrarlo.
  */
 
 withDefaults(
@@ -31,12 +35,14 @@ withDefaults(
     title?: string
     description?: string
     closeOnOverlay?: boolean
+    dismissible?: boolean
     maxWidth?: number
     /** Muestra la X de cerrar. Apagarla obliga a usar las acciones del pie. */
     showClose?: boolean
   }>(),
   {
     closeOnOverlay: true,
+    dismissible: true,
     maxWidth: 440,
     showClose: true,
   },
@@ -56,7 +62,8 @@ function onUpdateOpen(value: boolean): void {
         class="dialog-content"
         :style="{ maxWidth: `${maxWidth}px` }"
         :trap-focus="true"
-        @pointer-down-outside="(e) => !closeOnOverlay && e.preventDefault()"
+        @pointer-down-outside="(e) => (!closeOnOverlay || !dismissible) && e.preventDefault()"
+        @escape-key-down="(e) => !dismissible && e.preventDefault()"
       >
         <header v-if="title || $slots.header" class="dialog-header">
           <slot name="header">
@@ -80,7 +87,7 @@ function onUpdateOpen(value: boolean): void {
           <slot name="footer" :close="() => onUpdateOpen(false)" />
         </footer>
 
-        <DialogClose v-if="showClose" class="dialog-close" aria-label="Cerrar">
+        <DialogClose v-if="showClose && dismissible" class="dialog-close" aria-label="Cerrar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>

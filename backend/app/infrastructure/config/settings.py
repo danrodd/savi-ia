@@ -101,6 +101,13 @@ class Settings(BaseSettings):
     claude_code_git_bash_path: str = Field(default="")
     max_response_chars: int = Field(default=20000)
     max_agent_turns: int = Field(default=40)
+    # Consultas al ERP por turno. En la demo un turno hizo 14 y los siguientes
+    # fallaron por el volumen de contexto: al llegar al tope, el modelo
+    # responde con lo que tiene y dice qué faltó.
+    erp_queries_per_turn: int = Field(default=12, gt=0)
+    # Tope de texto que vuelve al modelo de una sola herramienta. Lo que pasa
+    # se recorta con un aviso, para que un resultado ancho no llene el contexto.
+    tool_result_max_chars: int = Field(default=12000, gt=0)
     # Timeout corto para la fase 2 del título inline al cierre del turno.
     # Si tarda más, dejamos el de la fase 1 (que ya está en BD) y seguimos.
     title_phase2_timeout_s: float = Field(default=4.0)
@@ -122,6 +129,9 @@ class Settings(BaseSettings):
     # EXPLAIN gate: si el planner estima más que esto, rechazamos antes
     # de ejecutar.
     free_query_max_estimated_rows: int = Field(default=1000)
+    # EXPLAIN gate por costo del plan (unidades de Postgres). Con esto el de
+    # filas deja de aplicar: las filas ya no viajan por el modelo.
+    free_query_max_estimated_cost: float = Field(default=2_000_000.0, ge=0)
 
     # ── Imágenes adjuntas al chat ────────────────────────────────────────
     # Peso máximo del archivo subido (antes de reducirlo).
@@ -304,6 +314,16 @@ class Settings(BaseSettings):
     # Zona horaria con la que se agrupan los consumos por día. Colombia es
     # UTC-5; agrupar en UTC partiría los días a las 19:00 hora local.
     reporting_timezone: str = Field(default="America/Bogota")
+
+    # ── Actualización automática ─────────────────────────────────────────
+    # Spec: docs/plataforma/09-actualizacion-automatica.md. Carpeta servida
+    # por HTTPS donde están `<canal>.json`, su `.sig` y `releases/`. Vacío
+    # usa el servidor oficial (`modules/updates/infrastructure/trust.py`);
+    # se cambia, por ejemplo, para probar contra un servidor local.
+    update_url: str = Field(default="")
+    # `beta` solo para los equipos de SEO (D5).
+    update_channel: Literal["stable", "beta"] = Field(default="stable")
+    update_check_interval_hours: float = Field(default=6.0, gt=0)
 
     @model_validator(mode="after")
     def _require_agent_pg_credentials(self) -> "Settings":

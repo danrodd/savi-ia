@@ -154,6 +154,15 @@ Filename: "{app}\{#AppExe}"; Parameters: "--login"; \
     Description: "Iniciar sesión con la cuenta de Claude (abre el navegador)"; \
     Flags: postinstall skipifsilent; Check: NeedsClaudeLogin
 Filename: "{app}\{#AppExe}"; Description: "Iniciar {#AppName} ahora"; Flags: postinstall nowait skipifsilent
+; Actualización automática (spec 09): SAVI lanza este instalador con
+; /VERYSILENT y se cierra. Las entradas de arriba no corren en silencio, así
+; que esta lo vuelve a abrir. `runasoriginaluser` porque, si el instalador se
+; elevó con UAC, SAVI tiene que abrir con el perfil de quien lo usa, no con
+; el del administrador. `--no-browser`: la pestaña que pidió la actualización
+; se recarga sola cuando SAVI vuelve, y abrir otra la dejaría duplicada. Si
+; esta entrada no corre (la instalación falló), el vigilante de la
+; actualización abre SAVI con la misma bandera.
+Filename: "{app}\{#AppExe}"; Parameters: "--no-browser"; Flags: nowait runasoriginaluser; Check: WizardSilent
 
 [Dirs]
 ; Reporte del diagnóstico que muestra el instalador. Lo escribe SAVI.exe

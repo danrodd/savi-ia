@@ -31,6 +31,10 @@ from app.modules.conversations.infrastructure.persistence.models import (  # noq
     ConversationModel,
     MessageModel,
 )
+from app.modules.documents.infrastructure.models import (  # noqa: F401
+    ResultSetModel,
+    StoredFileModel,
+)
 from app.modules.erp_databases.infrastructure.persistence.models import (  # noqa: F401
     ErpDatabaseModel,
 )
@@ -58,11 +62,13 @@ config = context.config
 if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name)
 
-settings = get_settings()
+# La URL la pasa `ensure_schema` con los settings con que arrancó SAVI; desde
+# la línea de comandos (`alembic upgrade head`) sale del `.env`.
+agent_db_url: str = config.attributes.get("agent_db_url") or get_settings().agent_db_url
 # `%%`: `set_main_option` pasa por la interpolación de ConfigParser, que lee
 # un `%` suelto de la contraseña (ej. `100%`, `p%40`) como una referencia y
 # falla con "invalid interpolation syntax".
-config.set_main_option("sqlalchemy.url", settings.agent_db_url.replace("%", "%%"))
+config.set_main_option("sqlalchemy.url", agent_db_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

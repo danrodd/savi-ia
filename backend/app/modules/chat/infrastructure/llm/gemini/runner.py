@@ -13,6 +13,9 @@ from google.genai import types
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import (
+    INTERNAL_ERROR_MESSAGE,
+    PROVIDER_BUSY_MESSAGE,
+    PROVIDER_REFUSED_MESSAGE,
     ChatEvent,
     DoneEvent,
     ErrorCode,
@@ -41,10 +44,9 @@ from app.shared.provider_quota import QuotaFailure, classify_quota_error
 
 log = logging.getLogger(__name__)
 
-_RETRYABLE_STATUS = (429, 503)
+_RETRYABLE_STATUS = (429, 500, 502, 503, 504)
 _AUTH_STATUS = (401, 403)
 _SECURITY_REASONS = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"}
-_SECURITY_MESSAGE = "No pude generar una respuesta para esa consulta."
 _CREDENTIAL_REMEDY = (
     "La API key de Gemini no es válida o no tiene permisos. Revise la configuración "
     "del proveedor y vuelva a intentar."
@@ -245,6 +247,9 @@ class GeminiRunner(LLMRunner):
                     yield ErrorEvent(message=_DAILY_QUOTA_MESSAGE, code=ErrorCode.PROVIDER)
                     return
                 if code in _RETRYABLE_STATUS and not first_token:
+                    # Reintentar no repite las tools ya hechas ni gasta una
+                    # iteración del agente.
+                    iteration -= 1
                     retry_attempt += 1
                     if retry_attempt <= self._settings.gemini_retry_attempts:
                         log.warning(
@@ -275,10 +280,7 @@ class GeminiRunner(LLMRunner):
                         code,
                         retry_attempt,
                     )
-                    yield ErrorEvent(
-                        message="No pude generar una respuesta para esa consulta.",
-                        code=ErrorCode.PROVIDER,
-                    )
+                    yield ErrorEvent(message=PROVIDER_BUSY_MESSAGE, code=ErrorCode.PROVIDER_BUSY)
                     return
                 if _is_thinking_error(error) and not first_token and not thinking_retry:
                     thinking_retry = True
@@ -290,14 +292,12 @@ class GeminiRunner(LLMRunner):
                     code,
                     retry_attempt,
                 )
-                if first_token:
-                    yield ErrorEvent(message=str(error), code=ErrorCode.INTERNAL)
-                else:
-                    yield ErrorEvent(message="No pude generar una respuesta para esa consulta.")
+                yield ErrorEvent(message=INTERNAL_ERROR_MESSAGE, code=ErrorCode.INTERNAL)
                 return
 
             if last_reason in _SECURITY_REASONS:
-                yield ErrorEvent(message=_SECURITY_MESSAGE)
+                log.warning("gemini_blocked model=%s reason=%s", selected_model, last_reason)
+                yield ErrorEvent(message=PROVIDER_REFUSED_MESSAGE, code=ErrorCode.PROVIDER_REFUSED)
                 return
             if iteration_usage is not None:
                 usage = TokenUsage(

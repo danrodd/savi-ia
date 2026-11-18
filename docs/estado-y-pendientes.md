@@ -1,13 +1,13 @@
 # Estado del proyecto y pendientes
 
-**Actualizado:** 2026-10-20. Este archivo hay que actualizarlo cada vez que cambie el estado: se publica una versión, se cierra un pendiente o se toma una decisión.
+**Actualizado:** 2026-10-22. Este archivo hay que actualizarlo cada vez que cambie el estado: se publica una versión, se cierra un pendiente o se toma una decisión.
 
 ## Ramas
 
 | Rama | Commit | Qué es |
 |---|---|---|
 | `main` | `b9b6a0e` | **Producción.** Tags `v1.3.0`, `v1.3.1` y `v1.3.2`. |
-| `staging` | `b9b6a0e` | Rama de preparación de producción. Hoy coincide con `main`. |
+| `staging` | `59423c8` | Rama de preparación de producción. Suma la actualización automática sobre `main`. |
 | `develop` | `bdd1ee6` | SAVI Cloud, la UI compartida (`packages/ui`) y las mejoras de la consola. **No va a producción todavía.** Desde el 2026-10-20 incluye todo `staging` (merge `d0251d3`). |
 
 **Flujo:**
@@ -90,8 +90,21 @@ Instalador: `installer/output/SAVI-Setup-v1.3.1.exe` (162 MB, no se versiona).
      - No se corrió la suite completa.
    - Deuda heredada de `develop`, sin tocar: 9 avisos de Ruff y unos 120 archivos sin el formato de Ruff.
 5. **Actualización automática** ([spec 09](plataforma/09-actualizacion-automatica.md)). Es un requisito antes del SaaS.
-   - Decisiones abiertas D1–D5: dónde se aloja, cuándo pasar al servicio sin UAC, el certificado de firma de código, el plazo de la actualización obligatoria y el canal por cliente.
-   - Falta incorporar a la spec una fase previa propuesta:
+   - **Decisiones D1–D5 cerradas el 2026-10-21** (sección 10 de la spec):
+     - **D1:** en el servidor Linux de SEO, como un dominio más del Caddy de SAVI Master.
+     - **D2:** instalador de dos modos y sin servicio `SAVIUpdate`.
+     - **D3:** sin certificado de firma por ahora.
+     - **D4:** el plazo se decide en cada versión, 72 h por defecto.
+     - **D5:** `UPDATE_CHANNEL`, con `beta` solo para SEO.
+   - **U0 y U1 hechos** (2026-10-21) y en `staging`. **Plan de lo que sigue**, con las fases 1 a 3 y el diseño de cada tarea: `odd/tasks/actualizacion-automatica.md`.
+     - Clave pública en `trust.py` (2026-10-22). La privada no se versiona. `DEFAULT_UPDATE_URL` queda vacío hasta decidir el dominio oficial; las pruebas usan `UPDATE_URL` en el `.env`.
+     - Backend: módulo `updates`, con firma Ed25519, SHA-256, el plazo de `min_version_from`, chequeo cada 6 h y los endpoints `/updates/*`.
+     - Frontend: barra de aviso, bloqueo y progreso.
+     - `scripts/publish-release.py`, con `keygen`, `build`, `promote`, `upload` y `verify`.
+     - Instalador: SAVI vuelve a abrir solo después de una instalación silenciosa.
+     - Probado de punta a punta contra un servidor HTTP local. No se compiló el instalador.
+   - Para desplegar falta el acceso SSH con llave al servidor, que tiene que conseguir el usuario. Los pasos están en la spec 09, sección 7, "Puesta en marcha".
+   - Falta incorporar a la spec una fase previa propuesta. El modo por usuario de D2 cubre en parte el instalador sin administrador:
      - Claude con clave de API directo por la API. Hoy todo Claude pasa por `claude-agent-sdk`/`claude.exe`.
      - Instalador por usuario sin administrador por defecto (`PrivilegesRequired=lowest` + diálogo).
      - Claude Code opcional, instalable desde Administración → Proveedores de IA.

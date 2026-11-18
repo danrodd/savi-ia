@@ -5,8 +5,9 @@ Por turno y no una sola vez: las clausuras atan el contexto del turno
 usuario en la base consultada —D3— y la base del ERP). Reutilizar tools
 entre turnos cruzaría ese contexto.
 
-Siguen siendo exactamente 4 tools, con el patrón dispatcher en el
-knowledge. Ver `backend/docs/mcp_deferred_tools_gotcha.md`.
+Siguen siendo como máximo 4 tools, con el patrón dispatcher en el
+knowledge (que incluye los datos de la empresa) y en `entregar_archivo`.
+Ver `backend/docs/mcp_deferred_tools_gotcha.md`.
 """
 
 import json
@@ -15,6 +16,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, cast
 from uuid import UUID
 
+from app.infrastructure.config.settings import get_settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.domain.entities import ToolResult, ToolSpec
 from app.modules.chat.infrastructure.llm.tools.consultar_datos import (
@@ -30,6 +32,11 @@ from app.modules.chat.infrastructure.llm.tools.documents import (
     build_document_listing,
     build_document_search,
 )
+from app.modules.chat.infrastructure.llm.tools.entregar_archivo import (
+    ENTREGAR_ARCHIVO_DESCRIPTION,
+    ENTREGAR_ARCHIVO_SCHEMA,
+    build_entregar_archivo_impl,
+)
 from app.modules.chat.infrastructure.llm.tools.info_empresa import info_empresa_impl
 from app.modules.chat.infrastructure.llm.tools.knowledge import (
     build_consultar_conocimiento_impl,
@@ -38,8 +45,8 @@ from app.modules.chat.infrastructure.llm.tools.schemas import (
     CONSULTAR_CONOCIMIENTO_SCHEMA,
     CONSULTAR_DATOS_SCHEMA,
     CONSULTAR_LIBRE_SCHEMA,
-    INFO_EMPRESA_SCHEMA,
 )
+from app.modules.chat.infrastructure.llm.tools.turn_budget import TurnBudget
 from app.modules.company_knowledge.domain.services import TurnDocumentContext
 from app.modules.company_knowledge.infrastructure.provider import (
     get_company_knowledge_runtime,
@@ -58,14 +65,6 @@ _RawHandler = Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]
 # puede traer host, ruta o SQL y el modelo se lo repite al usuario.
 _EXPLAINABLE_ERRORS = (FreeQueryError, SemanticQueryError, DomainError)
 
-_INFO_EMPRESA_DESCRIPTION = (
-    "Devuelve los datos básicos de la empresa registrada en el ERP: "
-    "NIT, razón social, dirección, teléfono, correo y representante "
-    "legal. Úsala cuando el usuario pregunte por la información de "
-    '"mi empresa", "los datos de la empresa", "quién es el '
-    'representante legal" o similares.'
-)
-
 _CONSULTAR_LIBRE_DESCRIPTION = (
     "Ejecuta un SELECT SQL contra la base de datos del ERP del cliente. "
     "Úsalo SOLO cuando `consultar_datos` (semantic layer) no cubra el "
@@ -74,12 +73,13 @@ _CONSULTAR_LIBRE_DESCRIPTION = (
     "Reglas DURAS — si no las respetas, la consulta se rechaza:\n"
     "- Solo UN SELECT por llamada (sin ; multi-statement).\n"
     "- Sin OFFSET. Si necesitas otro subconjunto, afina filtros.\n"
-    "- Sin CTE (WITH), UNION, INTERSECT, EXCEPT, LATERAL.\n"
+    "- Sin UNION, INTERSECT, EXCEPT, LATERAL. WITH se permite sin RECURSIVE, "
+    "útil para cruzar existencias con ventas o compras.\n"
     "- Sin SELECT * en la raíz: lista las columnas que necesitas.\n"
-    "- LIMIT obligatorio ≤ 50 (si lo omites se inyecta 50; si pones más, "
-    "se baja a 50).\n"
-    "- El planner debe estimar ≤ 1000 filas; si no, se rechaza por "
-    "demasiado amplia.\n"
+    "- Tú ves hasta 50 filas y el total; el usuario recibe todas (hasta 10.000) "
+    "para exportarlas. No achiques el LIMIT si te piden un listado completo.\n"
+    "- Si el plan es demasiado pesado para el ERP, se rechaza: agrega filtros.\n"
+    "- Claves, biometría y datos sensibles no se pueden consultar.\n"
     "- Subqueries: máximo 2 niveles de anidamiento.\n\n"
     "Estilo recomendado: usa nombres entre comillas dobles para schemas, "
     "tablas y columnas si tienen mayúsculas o caracteres especiales "
@@ -113,6 +113,9 @@ _CONSULTAR_CONOCIMIENTO_DESCRIPTION = (
     "procedimientos, reglamentos, actas, normas internas). `consulta` = la "
     "pregunta del usuario. Cada resultado trae `ref` (D1, D2…): cítala entre"
     "corchetes, [D1], justo después de la afirmación que respalda.\n"
+    "  * 'empresa': datos de la empresa del usuario registrada en el ERP (NIT, "
+    "razón social, dirección, teléfono, correo, representante legal). `consulta` = '' "
+    "(vacío).\n"
     "  * 'documentos_disponibles': lista los títulos de los documentos de la "
     "empresa que el usuario puede consultar. `consulta` = '' (vacío).\n\n"
     "El response trae `matches` (para intencion), `module`, `workflow`, "
@@ -151,8 +154,25 @@ def to_tool_result(raw: dict[str, Any]) -> ToolResult:
     )
 
 
-def _spec(name: str, description: str, parameters: dict[str, Any], raw: _RawHandler) -> ToolSpec:
+def _spec(
+    name: str,
+    description: str,
+    parameters: dict[str, Any],
+    raw: _RawHandler,
+    *,
+    budget: TurnBudget | None = None,
+    counts_query: bool = False,
+) -> ToolSpec:
     async def handler(args: dict[str, Any]) -> ToolResult:
+        if budget is not None and counts_query:
+            refused = budget.take_query()
+            if refused is not None:
+                log.info("tool_query_limit name=%s", name)
+                return refused
+        result = await call(args)
+        return budget.fit(result) if budget is not None else result
+
+    async def call(args: dict[str, Any]) -> ToolResult:
         try:
             return to_tool_result(await raw(args))
         except _EXPLAINABLE_ERRORS as e:
@@ -203,35 +223,53 @@ def build_savi_tools(
     document_context: TurnDocumentContext | None = None,
 ) -> list[ToolSpec]:
     """`allowed_modules=None` significa admin sin filtro (D3)."""
-
-    async def info_empresa(args: dict[str, Any]) -> dict[str, Any]:
-        return await info_empresa_impl(args, erp_database_id=erp_database_id)
+    settings = get_settings()
+    budget = TurnBudget(
+        max_queries=settings.erp_queries_per_turn, max_chars=settings.tool_result_max_chars
+    )
 
     async def consultar_datos(args: dict[str, Any]) -> dict[str, Any]:
         return await consultar_datos_impl(
-            args, erp_database_id=erp_database_id, modules=allowed_modules
+            args,
+            erp_database_id=erp_database_id,
+            modules=allowed_modules,
+            conversation_id=conversation_id,
+            viewer_id=document_context.access.user_id_in_database if document_context else None,
         )
+
+    async def company_info() -> dict[str, Any]:
+        return await info_empresa_impl({}, erp_database_id=erp_database_id)
 
     consultar_conocimiento = build_consultar_conocimiento_impl(
         get_catalog(),
         allowed_modules,
         _document_search(document_context),
         _document_listing(document_context),
+        company_info,
     )
 
     tools = [
-        _spec("info_empresa", _INFO_EMPRESA_DESCRIPTION, INFO_EMPRESA_SCHEMA, info_empresa),
+        _spec(
+            "entregar_archivo",
+            ENTREGAR_ARCHIVO_DESCRIPTION,
+            ENTREGAR_ARCHIVO_SCHEMA,
+            build_entregar_archivo_impl(conversation_id, erp_database_id),
+            budget=budget,
+        ),
         _spec(
             "consultar_datos",
             build_description(allowed_modules),
             CONSULTAR_DATOS_SCHEMA,
             consultar_datos,
+            budget=budget,
+            counts_query=True,
         ),
         _spec(
             "consultar_conocimiento",
             _CONSULTAR_CONOCIMIENTO_DESCRIPTION,
             CONSULTAR_CONOCIMIENTO_SCHEMA,
             consultar_conocimiento,
+            budget=budget,
         ),
     ]
 
@@ -254,6 +292,8 @@ def build_savi_tools(
                 _CONSULTAR_LIBRE_DESCRIPTION,
                 CONSULTAR_LIBRE_SCHEMA,
                 build_consultar_libre_impl(conversation_id, erp_database_id),
+                budget=budget,
+                counts_query=True,
             ),
         )
     return tools

@@ -1190,9 +1190,13 @@ def main() -> None:
     if not _port_is_free(browse_host, port):
         _splash("Verificando si SAVI ya está abierto...")
         if _savi_already_running(url):
-            logger.info("SAVI ya estaba corriendo en %s; abriendo el navegador.", url)
+            # Con `--no-browser` (el vigilante de las actualizaciones y el
+            # instalador) nadie espera una pestaña nueva: la que pidió la
+            # actualización se recarga sola.
+            logger.info("SAVI ya estaba corriendo en %s.", url)
             _splash(close=True)
-            webbrowser.open(url)
+            if "--no-browser" not in sys.argv:
+                webbrowser.open(url)
             return
 
         # Lo tiene otra aplicación. Se busca otro puerto en vez de abortar:

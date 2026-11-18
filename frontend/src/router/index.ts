@@ -18,6 +18,8 @@ const FeedbackPilotView = () => import('@/modules/admin/views/FeedbackPilotView.
 const CloudLinkView = () => import('@/modules/admin/views/CloudLinkView.vue')
 const SecurityView = () => import('@/modules/admin/views/SecurityView.vue')
 const CompanyKnowledgeView = () => import('@/modules/admin/views/CompanyKnowledgeView.vue')
+const UpdatesAdminView = () => import('@/modules/updates/views/UpdatesAdminView.vue')
+const FailedTurnsView = () => import('@/modules/admin/views/FailedTurnsView.vue')
 const NotFoundView = () => import('@/components/NotFoundView.vue')
 const LandingView = () => import('@/modules/landing/views/LandingView.vue')
 
@@ -107,6 +109,8 @@ const router = createRouter({
           component: CompanyKnowledgeView,
         },
         { path: 'consumo', name: 'admin-usage', component: AdminUsageView },
+        { path: 'actualizaciones', name: 'admin-updates', component: UpdatesAdminView },
+        { path: 'turnos-fallidos', name: 'admin-failed-turns', component: FailedTurnsView },
         // `/admin/feedback` es del API: la pantalla vive en otro segmento.
         { path: 'piloto', name: 'admin-feedback', component: FeedbackPilotView },
         // `/admin/cloud-link` es del API: la pantalla vive en otro segmento.

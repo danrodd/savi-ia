@@ -22,4 +22,5 @@ def build_access_context(
         modules=frozenset(access.modules),
         is_admin_in_database=access.is_admin_in_database,
         is_savi_admin_login=login.strip().upper() in savi_admin_logins,
+        user_id_in_database=access.user_id_in_database,
     )

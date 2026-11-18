@@ -14,8 +14,6 @@ from typing import Any
 from app.modules.chat.infrastructure.llm.tools.knowledge import KNOWLEDGE_TIPOS
 from app.modules.data_query.domain.semantic_query import FilterOp, QueryMode
 
-INFO_EMPRESA_SCHEMA: dict[str, Any] = {"type": "object", "properties": {}}
-
 _FILTER_VALUE: dict[str, Any] = {
     "anyOf": [
         {"type": "string"},
@@ -84,7 +82,8 @@ CONSULTAR_CONOCIMIENTO_SCHEMA: dict[str, Any] = {
         "consulta": {
             "type": "string",
             "description": (
-                "Texto de la búsqueda. Vacío para 'modulos_disponibles' y 'documentos_disponibles'."
+                "Texto de la búsqueda. Vacío para 'modulos_disponibles', "
+                "'documentos_disponibles' y 'empresa'."
             ),
         },
     },

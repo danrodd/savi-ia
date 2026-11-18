@@ -3,10 +3,12 @@
 Único lugar del chat que sabe qué adaptador corresponde a cada
 proveedor. Agregar uno es sumar una rama acá.
 """
+
 from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator, Sequence
+from dataclasses import replace
 from uuid import UUID
 
 from app.infrastructure.config import Settings
@@ -86,7 +88,8 @@ class ResolvingLLMRunner(LLMRunner):
         images: Sequence[ImageInput] = (),
     ) -> AsyncIterator[ChatEvent]:
         try:
-            runner = self._factory.build(await self._resolver.resolve())
+            provider = await self._resolver.resolve()
+            runner = self._factory.build(provider)
         except LlmProviderUnavailableError as e:
             yield ErrorEvent(message=e.reason, code=ErrorCode.PROVIDER)
             return
@@ -98,6 +101,8 @@ class ResolvingLLMRunner(LLMRunner):
             document_context=document_context,
             images=images,
         ):
+            if isinstance(event, ErrorEvent) and event.provider is None:
+                event = replace(event, provider=provider.kind, model=provider.chat_model)
             yield event
 
 
@@ -109,9 +114,7 @@ class ResolvingTitleGenerator(TitleGenerator):
     nuevo.
     """
 
-    def __init__(
-        self, resolver: ActiveProviderResolver, factory: TitleGeneratorFactory
-    ) -> None:
+    def __init__(self, resolver: ActiveProviderResolver, factory: TitleGeneratorFactory) -> None:
         self._resolver = resolver
         self._factory = factory
 

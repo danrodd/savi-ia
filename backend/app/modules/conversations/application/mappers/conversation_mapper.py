@@ -35,4 +35,9 @@ class ConversationMapper:
             superseded_by_id=entity.superseded_by_id,
             sources=tuple(entity.sources),
             attachments=tuple(entity.attachments),
+            error_code=entity.error_code,
+            error_message=entity.error_message,
+            support_code=entity.support_code,
+            data_tables=tuple(entity.data_tables),
+            files=tuple(entity.files),
         )

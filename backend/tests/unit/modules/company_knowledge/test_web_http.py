@@ -12,7 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 import app.main as main_module
 from app.infrastructure.config import get_settings
 from app.modules.auth.domain.entities import AuthenticatedUser
-from app.modules.auth.infrastructure.http.admin import require_company_admin
+from app.modules.auth.infrastructure.http.admin import (
+    require_company_admin,
+    require_unlocked_company_admin,
+)
 from app.modules.company_knowledge.infrastructure.http import web_routes
 from app.modules.company_knowledge.infrastructure.http.dependencies import (
     get_knowledge_settings_repository,
@@ -73,6 +76,7 @@ def _client(
     sources = SqlAlchemyWebSourceRepository(sessionmaker_)
     documents = SqlAlchemyDocumentRepository(sessionmaker_)
     app.dependency_overrides[require_company_admin] = lambda: ADMIN
+    app.dependency_overrides[require_unlocked_company_admin] = lambda: ADMIN
     app.dependency_overrides[get_web_source_repository] = lambda: sources
     app.dependency_overrides[get_document_repository] = lambda: documents
     knowledge_settings = SqlAlchemyKnowledgeSettingsRepository(sessionmaker_)

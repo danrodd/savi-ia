@@ -22,3 +22,13 @@ def tercero_display_name(alias: str = "t") -> str:
         f"NULLIF(TRIM(CONCAT_WS(' ', {alias}.\"primerNombre\", "
         f"{alias}.\"primerApellido\")), ''))"
     )
+
+
+def product_search_text(alias: str = "p") -> str:
+    """Texto donde se busca un producto: la descripción y el código.
+
+    El usuario nombra el producto por su referencia ("LLANTAS0183") tanto como
+    por su descripción. En la prueba con un cliente, el modelo buscó la
+    referencia en la descripción y respondió que no había ventas.
+    """
+    return f"(COALESCE({alias}.\"descripcion\", '') || ' ' || COALESCE({alias}.\"codigo\", ''))"

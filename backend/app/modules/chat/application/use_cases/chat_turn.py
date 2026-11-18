@@ -19,17 +19,23 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Coroutine, Sequence
+from dataclasses import replace
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.infrastructure.config import Settings
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
 from app.modules.chat.application.requests import ChatAction
 from app.modules.chat.domain.entities import (
+    INTERNAL_ERROR_MESSAGE,
     ChatEvent,
+    DataTablesEvent,
     DoneEvent,
+    ErrorCode,
     ErrorEvent,
+    FilesEvent,
     ImageInput,
     SourcesEvent,
     SupersededEvent,
@@ -63,6 +69,7 @@ from app.modules.conversations.domain.value_objects import (
     ToolInvocation,
     ToolInvocationStatus,
 )
+from app.modules.documents.domain.interfaces import ResultSetRepository, StoredFileRepository
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +103,11 @@ def _format_history_block(messages: list[Message]) -> str:
             body = body[:_HISTORY_CHAR_LIMIT] + " …"
         if m.role == MessageRole.ASSISTANT and m.finish_reason == MessageFinishReason.INTERRUPTED:
             body += "\n\n[respuesta interrumpida por el usuario]"
+        if m.role == MessageRole.ASSISTANT and m.finish_reason == MessageFinishReason.ERROR:
+            # Sin esta marca, el modelo recibía dos preguntas seguidas del
+            # usuario y no sabía a cuál responder ("¿Por qué?" de qué).
+            marker = "[esta respuesta falló por un problema técnico; no se respondió]"
+            body = f"{body}\n\n{marker}" if body else marker
         if m.attachments:
             markers = "\n".join(f"[imagen adjunta: {a.filename}]" for a in m.attachments)
             body = f"{body}\n{markers}" if body else markers
@@ -140,6 +152,11 @@ class _TurnAccumulator:
         self.model: str | None = None
         self.finish_reason: MessageFinishReason = MessageFinishReason.COMPLETE
         self.sources: list[MessageSource] = []
+        self.error_code: str | None = None
+        self.error_message: str | None = None
+        self.support_code: str | None = None
+        self.data_tables: list[dict[str, Any]] = []
+        self.files: list[dict[str, Any]] = []
         # Hubo una tool entre el último texto y el próximo.
         self._tool_since_text = False
 
@@ -207,9 +224,23 @@ class _TurnAccumulator:
             self.model = event.model
         elif isinstance(event, ErrorEvent):
             self.finish_reason = MessageFinishReason.ERROR
+            self.error_code = event.code.value if event.code else None
+            self.error_message = event.message
+            self.support_code = event.support_code
+            self.provider = self.provider or event.provider
+            self.model = self.model or event.model
 
     def has_content(self) -> bool:
         return bool(self.text_parts)
+
+    def should_persist(self) -> bool:
+        """Se guarda si hay texto o si el turno falló.
+
+        Un turno que fallaba antes del primer texto no se guardaba: al
+        recargar, la pregunta quedaba sin respuesta y no había rastro del
+        error ni de las consultas que sí se hicieron.
+        """
+        return self.has_content() or self.finish_reason == MessageFinishReason.ERROR
 
     def build_message(self, conversation_id: UUID) -> Message:
         return Message(
@@ -223,7 +254,25 @@ class _TurnAccumulator:
             provider=self.provider,
             model=self.model,
             sources=list(self.sources),
+            error_code=self.error_code,
+            error_message=self.error_message,
+            support_code=self.support_code,
+            data_tables=list(self.data_tables),
+            files=list(self.files),
         )
+
+
+# Tablas de datos que se muestran con una respuesta: las últimas consultas del
+# turno, que son las que la responden. Más que esto llena la pantalla.
+DATA_TABLES_PER_TURN = 3
+# Menos filas que esto es una búsqueda auxiliar (el id de un producto o un
+# cliente), no un listado que el usuario quiera ver o exportar.
+DATA_TABLE_MIN_ROWS = 5
+
+
+def new_support_code() -> str:
+    """Código corto del turno para soporte: 8 caracteres, fácil de dictar."""
+    return uuid4().hex[:8].upper()
 
 
 class ChatTurnUseCase:
@@ -234,7 +283,11 @@ class ChatTurnUseCase:
         assistant_writer: AssistantMessageWriter,
         title_updater: ConversationTitleUpdater,
         settings: Settings,
+        result_sets: ResultSetRepository | None = None,
+        files: StoredFileRepository | None = None,
     ) -> None:
+        self._result_sets = result_sets
+        self._files = files
         self._repository = repository
         self._runner = runner
         self._assistant_writer = assistant_writer
@@ -612,6 +665,8 @@ class ChatTurnUseCase:
             )
 
         accumulator = _TurnAccumulator()
+        support_code = new_support_code()
+        turn_started = datetime.now(UTC)
         try:
             async for event in self._runner.stream_turn(
                 prompt,
@@ -625,8 +680,25 @@ class ChatTurnUseCase:
                 if separator is not None:
                     accumulator.consume(separator)
                     yield separator
+                if isinstance(event, ErrorEvent):
+                    event = replace(event, support_code=support_code)
+                    log.warning(
+                        "chat_turn_error support_code=%s code=%s conversation_id=%s tools=%s",
+                        support_code,
+                        event.code.value if event.code else None,
+                        conversation_id,
+                        len(accumulator.tool_invocations),
+                    )
                 accumulator.consume(event)
                 if isinstance(event, DoneEvent):
+                    tables = await self._turn_data_tables(conversation_id, turn_started)
+                    if tables:
+                        accumulator.data_tables = tables
+                        yield DataTablesEvent(tables=tables)
+                    files = await self._turn_files(conversation_id, turn_started)
+                    if files:
+                        accumulator.files = files
+                        yield FilesEvent(files=files)
                     # Las fuentes llegan ANTES de `done`: el frontend cierra
                     # el mensaje al recibir `done`.
                     sources = accumulator.resolve_sources(document_context)
@@ -646,11 +718,16 @@ class ChatTurnUseCase:
             accumulator.finish_reason = MessageFinishReason.INTERRUPTED
             raise
         except Exception:
-            accumulator.finish_reason = MessageFinishReason.ERROR
-            log.exception("chat_turn_stream_failed")
-            raise
+            # Antes se relanzaba y el stream se cortaba sin decirle nada al
+            # usuario. Ahora termina como cualquier otro error del turno.
+            log.exception("chat_turn_stream_failed support_code=%s", support_code)
+            failure = ErrorEvent(
+                message=INTERNAL_ERROR_MESSAGE, code=ErrorCode.INTERNAL, support_code=support_code
+            )
+            accumulator.consume(failure)
+            yield failure
         finally:
-            if accumulator.has_content():
+            if accumulator.should_persist():
                 # Con cancelación no hubo `done`: se resuelven acá las
                 # referencias válidas citadas hasta el corte.
                 accumulator.resolve_sources(document_context)
@@ -681,6 +758,40 @@ class ChatTurnUseCase:
             )
             if refined:
                 yield TitleUpdateEvent(title=refined)
+
+    async def _turn_data_tables(
+        self, conversation_id: UUID, since: datetime
+    ) -> list[dict[str, Any]]:
+        """Las tablas de datos que dejaron las consultas de este turno."""
+        if self._result_sets is None:
+            return []
+        try:
+            created = await self._result_sets.created_since(conversation_id, since)
+        except Exception:  # noqa: BLE001 — sin tablas, la respuesta igual sale
+            log.exception("chat_turn_data_tables_failed conversation_id=%s", conversation_id)
+            return []
+        return [
+            {
+                "id": str(table.id),
+                "title": table.title,
+                "total_rows": table.total_rows,
+                "total_is_lower_bound": table.total_is_lower_bound,
+            }
+            for table in [t for t in created if t.total_rows >= DATA_TABLE_MIN_ROWS][
+                -DATA_TABLES_PER_TURN:
+            ]
+        ]
+
+    async def _turn_files(self, conversation_id: UUID, since: datetime) -> list[dict[str, Any]]:
+        """Los archivos que `entregar_archivo` generó en este turno."""
+        if self._files is None:
+            return []
+        try:
+            created = await self._files.created_since(conversation_id, since)
+        except Exception:  # noqa: BLE001 — sin la tarjeta, la respuesta igual sale
+            log.exception("chat_turn_files_failed conversation_id=%s", conversation_id)
+            return []
+        return [stored.summary() for stored in created]
 
     async def _safe_write(self, message: Message, *, supersedes_id: UUID | None) -> None:
         try:

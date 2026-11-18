@@ -102,8 +102,7 @@ def _form_to_payload(form: FormEntry) -> dict[str, Any]:
         payload["requisitos_previos"] = form.prerequisites
     if form.how_to:
         payload["pasos"] = [
-            {"paso": s.step, "accion": s.action, "detalle": s.detail}
-            for s in form.how_to
+            {"paso": s.step, "accion": s.action, "detalle": s.detail} for s in form.how_to
         ]
     if form.actions:
         payload["acciones_disponibles"] = form.actions
@@ -371,6 +370,7 @@ KNOWLEDGE_TIPOS: tuple[str, ...] = (
     "formulario",
     "documentos",
     "documentos_disponibles",
+    "empresa",
 )
 
 
@@ -379,6 +379,7 @@ def build_consultar_conocimiento_impl(
     allowed_modules: frozenset[ModuleCode] | None,
     document_search: Callable[[str], Awaitable[dict[str, Any]]] | None = None,
     document_listing: Callable[[], Awaitable[dict[str, Any]]] | None = None,
+    company_info: Callable[[], Awaitable[dict[str, Any]]] | None = None,
 ) -> Callable[[dict[str, Any]], Any]:
     """Constructor de la tool unificada del catálogo.
 
@@ -416,6 +417,12 @@ def build_consultar_conocimiento_impl(
             if document_search is None:
                 return {"matches": [], "nota": "No hay documentos de la empresa disponibles."}
             return await document_search(consulta)
+        if tipo == "empresa":
+            # Antes era la tool `info_empresa`: entró acá para que
+            # `entregar_archivo` cupiera en el máximo de 4 tools.
+            if company_info is None:
+                return {"nota": "No hay datos de la empresa disponibles."}
+            return await company_info()
         if tipo == "documentos_disponibles":
             if document_listing is None:
                 return {"documentos": [], "nota": "No hay documentos de la empresa disponibles."}
@@ -423,8 +430,7 @@ def build_consultar_conocimiento_impl(
 
         return {
             "error": (
-                f"Tipo '{tipo}' no reconocido. Valores válidos: "
-                f"{', '.join(KNOWLEDGE_TIPOS)}."
+                f"Tipo '{tipo}' no reconocido. Valores válidos: {', '.join(KNOWLEDGE_TIPOS)}."
             ),
         }
 

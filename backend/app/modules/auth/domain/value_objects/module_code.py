@@ -8,8 +8,10 @@ contra la BD del ERP — son inmutables.
 Los nombres de Python siguen UPPER_SNAKE_CASE; el valor del enum
 respeta exactamente el string del ERP (`NÓMINA` con tilde, no `NOMINA`).
 """
+
 from __future__ import annotations
 
+import unicodedata
 from enum import StrEnum
 
 
@@ -39,3 +41,23 @@ class ModuleCode(StrEnum):
     EMPRESA = "EMPRESA"
     GENERAL = "GENERAL"
     BUSQUEDA = "BÚSQUEDA"
+
+
+def _fold(text: str) -> str:
+    """Mayúsculas y sin tildes: `Nómina`, `NOMINA` y `NÓMINA` comparan igual."""
+    decomposed = unicodedata.normalize("NFKD", text.strip().upper())
+    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+
+
+# Cómo escribe el ERP algunos módulos. Medido en la base de un cliente: 37
+# formularios de nómina dicen `NOMINA` (sin tilde), los de herramientas dicen
+# `HERRAMIENTAS` y uno de cuentas por pagar dice `CuentaPagar`. Con la
+# comparación exacta de antes, esos usuarios perdían el módulo en silencio.
+_ALIASES: dict[str, ModuleCode] = {"HERRAMIENTAS": ModuleCode.HERRAMIENTA}
+_BY_FOLDED: dict[str, ModuleCode] = {_fold(code.value): code for code in ModuleCode}
+
+
+def parse_erp_module(raw: str) -> ModuleCode | None:
+    """El `ModuleCode` de un texto de `Formulario.modulo`, o `None` si no se conoce."""
+    folded = _fold(raw)
+    return _BY_FOLDED.get(folded) or _ALIASES.get(folded)

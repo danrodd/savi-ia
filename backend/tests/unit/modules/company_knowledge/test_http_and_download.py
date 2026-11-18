@@ -18,7 +18,10 @@ from app.modules.auth.application.use_cases import (
 )
 from app.modules.auth.domain.entities import AuthenticatedUser
 from app.modules.auth.domain.value_objects.module_code import ModuleCode
-from app.modules.auth.infrastructure.http.admin import require_company_admin
+from app.modules.auth.infrastructure.http.admin import (
+    require_company_admin,
+    require_unlocked_company_admin,
+)
 from app.modules.company_knowledge.application.use_cases import (
     DownloadCompanyDocumentUseCase,
     RepositorySourceAvailabilityResolver,
@@ -75,6 +78,7 @@ def client(
     app = main_module.create_app()
     repo = SqlAlchemyDocumentRepository(sessionmaker_)
     app.dependency_overrides[require_company_admin] = lambda: ADMIN
+    app.dependency_overrides[require_unlocked_company_admin] = lambda: ADMIN
     app.dependency_overrides[get_document_repository] = lambda: repo
     knowledge_settings = SqlAlchemyKnowledgeSettingsRepository(sessionmaker_)
     app.dependency_overrides[get_knowledge_settings_repository] = lambda: knowledge_settings

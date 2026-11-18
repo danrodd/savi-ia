@@ -57,6 +57,11 @@ from app.modules.data_query.domain.semantic_model import (
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
 from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
+from app.modules.data_query.infrastructure.catalog._tercero_fields import (
+    contact_dimensions,
+    contact_fields,
+    municipality_sql,
+)
 
 _TERCERO_NAME = tercero_display_name()
 
@@ -161,6 +166,7 @@ CARTERA = SemanticEntity(
         "valor_pagado": MetricDef("valor_pagado", 'SUM(ft."valorPagado")', "Valor pagado"),
     },
     dimensions={
+        **contact_dimensions(requires=("tercero",)),
         "lado": DimensionDef("lado", _LADO_LABEL, "Clientes o proveedores"),
         "tipo": DimensionDef("tipo", _TIPO_LABEL, "Tipo de documento"),
         "tercero": DimensionDef(
@@ -173,6 +179,10 @@ CARTERA = SemanticEntity(
         ),
     },
     fields={
+        **contact_fields(requires=("tercero",)),
+        "municipio": FieldDef(
+            "municipio", municipality_sql(), "Municipio", requires=("tercero",), default=False
+        ),
         "numero": FieldDef("numero", 'ft."numero"', "Número"),
         "cuota": FieldDef("cuota", 'ft."cuota"', "Cuota"),
         "fecha_factura": FieldDef("fecha_factura", 'ft."fechaFactura"', "Fecha del documento"),

@@ -44,6 +44,11 @@ from app.modules.company_knowledge.infrastructure.provider import (
 )
 from app.modules.conversations.infrastructure.http import attachments_router
 from app.modules.conversations.infrastructure.http import router as conversations_router
+from app.modules.conversations.infrastructure.http.admin_routes import (
+    router as failed_turns_admin_router,
+)
+from app.modules.documents.infrastructure.http.routes import files_router
+from app.modules.documents.infrastructure.http.routes import router as result_sets_router
 from app.modules.erp_databases.infrastructure import (
     ErpConnectionProvider,
     backfill_legacy_rows,
@@ -74,6 +79,8 @@ from app.modules.llm_providers.infrastructure.http.dependencies import (
 )
 from app.modules.llm_providers.infrastructure.local_cli_policy import local_cli_allowed
 from app.modules.llm_providers.infrastructure.seed import seed_llm_providers
+from app.modules.updates.infrastructure.http import router as updates_router
+from app.modules.updates.infrastructure.provider import start_updates, stop_updates
 from app.modules.usage.infrastructure.http import router as usage_router
 from app.paths import resource_dir
 from app.shared.exceptions import register_exception_handlers
@@ -180,9 +187,12 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     if settings.savi_cloud_sync_enabled:
         cloud_link_scheduler = CloudLinkScheduler(cloud_link_services)
         cloud_link_scheduler.start()
+    # Chequeo de versiones nuevas: al arrancar y cada 6 h, en segundo plano.
+    await start_updates(settings)
     try:
         yield
     finally:
+        await stop_updates()
         if cloud_link_scheduler is not None:
             await cloud_link_scheduler.stop()
         await cloud_link_services.drain_background()
@@ -264,9 +274,13 @@ def create_app() -> FastAPI:
     app.include_router(feedback_router)
     app.include_router(feedback_admin_router)
     app.include_router(cloud_link_router)
+    app.include_router(failed_turns_admin_router)
+    app.include_router(result_sets_router)
+    app.include_router(files_router)
     app.include_router(chat_router)
     app.include_router(attachments_router)
     app.include_router(usage_router)
+    app.include_router(updates_router)
     app.include_router(erp_databases_router)
     app.include_router(erp_databases_public_router)
     app.include_router(llm_providers_router)

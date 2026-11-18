@@ -527,3 +527,150 @@ async def test_runner_max_turns_truncates(monkeypatch: pytest.MonkeyPatch) -> No
 
     done = next(e for e in events if isinstance(e, DoneEvent))
     assert done.finish_reason == "truncated"
+
+
+def _failed(code: object):
+    return SimpleNamespace(
+        type="response.failed",
+        response=SimpleNamespace(error=SimpleNamespace(code=code, message="falla")),
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_transient_response_failed_is_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Así terminó la demo: la falla llegó como evento del stream y se mostraba
+    # "No pude generar una respuesta" sin reintentar.
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [],
+    )
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr("asyncio.sleep", no_sleep)
+    client = _Client([[_failed("server_error")], [_text("listo"), _completed()]])
+
+    events = [
+        event
+        async for event in OpenAIRunner(
+            Settings(openai_retry_attempts=2, openai_retry_base_delay_s=0),
+            _provider(),
+            client=client,
+        ).stream_turn("consulta")
+    ]
+
+    assert len(client.responses.calls) == 2
+    assert not any(isinstance(e, ErrorEvent) for e in events)
+    assert any(isinstance(e, DoneEvent) for e in events)
+
+
+@pytest.mark.asyncio
+async def test_a_retry_after_tools_does_not_repeat_the_erp_queries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[object] = []
+
+    async def handler(args: dict[str, object]):
+        from app.modules.chat.domain.entities import ToolResult
+
+        calls.append(args)
+        return ToolResult("filas")
+
+    tool = ToolSpec("consultar_datos", "consulta", {"type": "object"}, handler)
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [tool],
+    )
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr("asyncio.sleep", no_sleep)
+    client = _Client(
+        [
+            [_function_call("consultar_datos", "c1", "{}"), _completed()],
+            [_function_call("consultar_datos", "c2", "{}"), _completed()],
+            [_failed("rate_limit_exceeded")],
+            [_text("respuesta"), _completed()],
+        ]
+    )
+
+    events = [
+        event
+        async for event in OpenAIRunner(
+            Settings(openai_retry_attempts=2, openai_retry_base_delay_s=0),
+            _provider(),
+            client=client,
+        ).stream_turn("consulta")
+    ]
+
+    assert len(calls) == 2
+    assert any(isinstance(e, DoneEvent) for e in events)
+    # El reintento manda los mismos resultados de las tools que el intento fallido.
+    assert client.responses.calls[3]["input"] == client.responses.calls[2]["input"]
+
+
+@pytest.mark.asyncio
+async def test_a_provider_that_stays_busy_ends_in_the_busy_category(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [],
+    )
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr("asyncio.sleep", no_sleep)
+    client = _Client([[_failed("server_error")] for _ in range(3)])
+
+    events = [
+        event
+        async for event in OpenAIRunner(
+            Settings(
+                openai_retry_attempts=2, openai_retry_base_delay_s=0, openai_fallback_models=""
+            ),
+            _provider(),
+            client=client,
+        ).stream_turn("consulta")
+    ]
+
+    error = next(e for e in events if isinstance(e, ErrorEvent))
+    assert error.code is ErrorCode.PROVIDER_BUSY
+    assert "Regenerar" in error.message
+
+
+@pytest.mark.asyncio
+async def test_a_refusal_is_its_own_category(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.modules.chat.infrastructure.llm.openai.runner.build_savi_tools",
+        lambda **_: [],
+    )
+    refusal = SimpleNamespace(type="response.refusal.done", refusal="no puedo")
+    client = _Client([[refusal, _completed()]])
+
+    events = [
+        event
+        async for event in OpenAIRunner(Settings(), _provider(), client=client).stream_turn(
+            "consulta"
+        )
+    ]
+
+    error = next(e for e in events if isinstance(e, ErrorEvent))
+    assert error.code is ErrorCode.PROVIDER_REFUSED
+    assert "datos personales" not in error.message
+
+
+def test_retry_after_is_respected_with_a_ceiling() -> None:
+    from app.modules.chat.infrastructure.llm.openai.runner import _retry_delay
+
+    def error_with(value: str) -> Exception:
+        failure = Exception("429")
+        failure.response = SimpleNamespace(headers={"retry-after": value})  # type: ignore[attr-defined]
+        return failure
+
+    assert _retry_delay(error_with("3"), 1, 1.0) == 3.0
+    assert _retry_delay(error_with("600"), 1, 1.0) == 20.0
+    assert _retry_delay(Exception("sin cabecera"), 3, 1.0) == 4.0
