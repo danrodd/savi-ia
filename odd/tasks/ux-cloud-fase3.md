@@ -43,7 +43,7 @@ Rama `develop`. El usuario autorizó la fase 3 el 2026-11-18. Las instalaciones 
   - Revocar dentro de "Más acciones", confirmando con el nombre de la instalación.
 - [x] **F3.3 Operación del cliente (D4).** Turnos, costo y errores por instalación, y la versión marcada cuando está atrasada.
 - [x] **F3.4 Puesta en marcha (D1).** Barra compacta ("3 de 6") que se despliega al hacer clic y desaparece al completarse.
-- [x] **F3.5 Plan (D2).** Resumen con "Editar plan" en un diálogo, y los movimientos en una tabla.
+- [x] **F3.5 Plan (D2).** Resumen con "Editar plan" y "Registrar pago o ajuste" como paneles plegables (no diálogos, para no perder cambios sin guardar), y los movimientos en una tabla.
 - [x] **F3.6 Configuración (D3).** Una sección a la vez, interruptores para los estados y campos cortos con prefijo US$.
 - [x] **F3.7 Reglas de alerta (A2).** Tabla compacta con regla, severidad, umbral e interruptor.
 - [x] **F3.8 Celular (M1).** Filtros plegables detrás de un botón "Filtros".
