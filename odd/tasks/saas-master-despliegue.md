@@ -84,7 +84,10 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
     - Cartera vencida: 300 millones, con los 5 clientes que más deben. Coincide con la base.
     - PDF con gráfico de líneas por mes y de torta por vendedor: la primera vez salió sin la torta; las dos repeticiones salieron completas. Es variación del modelo.
     - De paso: la base del agente subió de `f1a6c3d8e2b4` (develop) a `08f236755fc9`, pasando por las tres migraciones de staging y la de unión.
-  - Hallazgo, fuera del alcance de T4: la entidad `ventas` de `consultar_datos` no tiene la dimensión vendedor (`idTerceroEmpleado`). Para "ventas por vendedor", que es la pregunta estrella de la demo, el modelo hace entre 6 y 10 consultas libres. Responde bien, pero tarda más y gasta más.
+  - Hallazgo, fuera del alcance de T4, resuelto con el OK del usuario en `75947c7` (staging, integrado en develop con `d6afd3d`):
+    - Antes, `ventas` no tenía la dimensión vendedor y el modelo hacía 7 consultas libres. Además, el total que dio no coincidía con la suma de sus filas: 8.489.477.100 contra 8.489.911.100.
+    - Ahora `ventas` y `ventas_detalle` tienen la dimensión, el campo y el filtro `vendedor`, con una prueba contra las tres bases reales. Las 209 pruebas de `data_query` pasan.
+    - En vivo, "ventas por vendedor" se resuelve con 1 consulta y el total coincide con la suma. "¿Cuánto vendió Mateo en octubre?" dio $281.218.659, igual que en SQL.
   - El volcado (`--dump`, unos 8 MB) no se versiona: se genera al desplegar. Los pasos para cargarlo están en `scripts/demo-erp/README.md`.
   - Evidencia de T4.1 y T4.2 (2026-11-18), generando desde `imporllantas`:
     - 151 productos, 467 terceros, 5439 facturas de venta, 217 de compra, 6960 saldos y 196 documentos de cartera con saldo.
@@ -101,4 +104,4 @@ La demo con Imporllantas quedó corregida y validada por soporte con la `v1.5.0-
 
 ## Próximo paso
 
-Cuando vuelva el servidor: T2, subir y verificar los canales `stable` y `beta`. Después T3, el Master con la base de demo. Pendiente de decidir: la dimensión vendedor en `ventas`.
+Cuando vuelva el servidor: T2, subir y verificar los canales `stable` y `beta`. Después T3, el Master con la base de demo.
