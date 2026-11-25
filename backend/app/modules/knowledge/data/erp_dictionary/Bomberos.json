@@ -1,0 +1,65 @@
+{
+ "Bomberos.ParametroServicio": {
+  "descripcion": "Guarda parámetros asociados posiblemente a la configuración de servicios de Bomberos, incluidos su código, descripción, tipo de entrada y, cuando corresponde, sus opciones. La relación consigo misma permite organizar los parámetros en una jerarquía; otros registros de visitas técnicas comerciales y resultados de servicio los referencian.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idParametroServicio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del parámetro de servicio al que pueden apuntar otros registros."
+   },
+   "idPadre": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del parámetro superior; referencia Bomberos.ParametroServicio(idParametroServicio) y puede ser nulo."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del parámetro; su formato y significado funcional no se deducen de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o etiqueta del parámetro."
+   },
+   "indice": {
+    "tipo": "integer",
+    "descripcion": "Valor numérico posiblemente usado para ordenar los parámetros."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Tipo de entrada: 0 texto, 1 opciones en combo, 2 opciones en botones de radio y 3 casilla de verificación."
+   },
+   "opcion": {
+    "tipo": "character varying",
+    "descripcion": "Lista de valores posibles, posiblemente separados por comas, según el tipo de parámetro."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del parámetro; no se puede determinar qué valor representa activo o inactivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   }
+  },
+  "apunta_a": [
+   "idPadre -> Bomberos.ParametroServicio(idParametroServicio)"
+  ],
+  "la_referencian": [
+   "Bomberos.ParametroServicio(idPadre)",
+   "Bomberos.PrimeroAuxiliosVisitaTecnicaComercial(idParametroServicio)",
+   "Bomberos.ResultadoServicio(idParametroServicio)"
+  ]
+ }
+}

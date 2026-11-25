@@ -97,3 +97,23 @@ def test_the_free_sql_rules_send_the_model_to_the_dictionary_first() -> None:
     prompt = build_system_prompt(date(2026, 11, 25))
 
     assert prompt.index('`tipo: "tablas_erp"`') < prompt.index("explora ANTES de inventar")
+
+
+def test_plurals_match_singular_table_names() -> None:
+    from app.modules.knowledge.infrastructure.erp_dictionary import stem
+
+    assert [stem(w) for w in ("retenciones", "compras", "facturas", "naturaleza", "iva")] == [
+        "retencion",
+        "compra",
+        "factura",
+        "naturaleza",
+        "iva",
+    ]
+
+
+def test_the_shipped_dictionary_finds_the_withholdings_of_a_purchase() -> None:
+    from app.modules.knowledge.infrastructure.erp_dictionary import get_erp_dictionary
+
+    result = get_erp_dictionary().search("retenciones de compras")
+
+    assert result["matches"][0]["tabla"] == "CuentaPagar.FacturaIndicadorRetencionCompra"

@@ -1,0 +1,601 @@
+{
+ "Seguridad.Accion": {
+  "descripcion": "Guarda acciones que pueden asociarse a un formulario o definirse como globales cuando `idFormulario` es nulo. Sirve posiblemente como catálogo de acciones que pueden relacionarse con permisos de formularios; la tabla `Seguridad.PermisoFormulario` referencia estas acciones.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idAccion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la acción; la estructura no declara una clave primaria."
+   },
+   "idFormulario": {
+    "tipo": "integer",
+    "descripcion": "Formulario al que corresponde la acción; referencia `Seguridad.Formulario(idFormulario)` y, según el comentario, si es nulo la acción es global."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código de la acción; su formato y significado no se deducen de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo de la acción."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; posiblemente señala si la acción está habilitada, pero debe confirmarse qué representan `true` y `false`."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica una referencia a otra tabla."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica una referencia a otra tabla."
+   }
+  },
+  "apunta_a": [
+   "idFormulario -> Seguridad.Formulario(idFormulario)"
+  ],
+  "la_referencian": [
+   "Seguridad.PermisoFormulario(idAccion)"
+  ]
+ },
+ "Seguridad.Formulario": {
+  "descripcion": "Posiblemente es un catálogo de formularios que guarda su identificación y parámetros de presentación, búsqueda y reportes. La tabla también registra fechas y usuarios de creación y modificación; otras tablas de seguridad y de módulos funcionales la referencian para asociar permisos y configuraciones.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFormulario": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del formulario; la estructura no declara que sea clave primaria."
+   },
+   "tag": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al formulario, según el comentario de la base de datos."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del formulario."
+   },
+   "modulo": {
+    "tipo": "character varying",
+    "descripcion": "Código o nombre del módulo al que pertenece el formulario; el formato y los valores posibles no se especifican."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del formulario; no se puede deducir si true significa activo o inactivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró el formulario."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea ni se especifica la tabla de usuarios."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea ni se especifica la tabla de usuarios."
+   },
+   "cantidadRegistro": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de registros que se muestran en los formularios de búsqueda."
+   },
+   "campoAdicionalVisible": {
+    "tipo": "character varying",
+    "descripcion": "Define qué campos adicionales pueden mostrarse en la búsqueda; el formato y los valores posibles no se especifican."
+   },
+   "ordenado": {
+    "tipo": "integer",
+    "descripcion": "Valor numérico relacionado posiblemente con el orden de presentación del formulario; su criterio no se especifica."
+   },
+   "plantilla": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario de una plantilla de reporte, si el formulario la requiere y no tiene un tipo de documento definido."
+   },
+   "plantillaAdicional": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario de una plantilla de reporte adicional, si el formulario la requiere y no tiene un tipo de documento definido."
+   },
+   "plantillaAdicional2": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario de una segunda plantilla de reporte adicional, si el formulario la requiere y no tiene un tipo de documento definido."
+   },
+   "formularioFlotante": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el formulario se presenta como ventana flotante o se incorpora al menú principal; no se especifica qué valor booleano representa cada opción."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Auditoria.BitacoraPermisoEspecial(idFormulario)",
+   "Contabilidad.AperturaFechaFormulario(idFormulario)",
+   "General.DocumentoModifica(idFormulario)",
+   "Seguridad.Accion(idFormulario)",
+   "Seguridad.PermisoFormulario(idFormulario)"
+  ]
+ },
+ "Seguridad.PermisoFormulario": {
+  "descripcion": "Registra permisos asociados a usuarios y formularios, con una acción opcional y un estado. Sirve posiblemente para determinar qué acciones puede realizar un usuario en un formulario; el significado exacto de los permisos depende de las reglas del ERP.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPermisoFormulario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de permiso; la estructura no declara una clave primaria."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario al que se asocia el permiso; apunta a Seguridad.Usuario(idUsuario)."
+   },
+   "idFormulario": {
+    "tipo": "integer",
+    "descripcion": "Formulario al que corresponde el permiso; apunta a Seguridad.Formulario(idFormulario)."
+   },
+   "idAccion": {
+    "tipo": "integer",
+    "descripcion": "Acción a la que corresponde el permiso; puede quedar sin valor y apunta a Seguridad.Accion(idAccion)."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del permiso; no se puede deducir qué representan true y false."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; posiblemente corresponde a Seguridad.Usuario, pero no se declara la referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; posiblemente corresponde a Seguridad.Usuario, pero no se declara la referencia."
+   }
+  },
+  "apunta_a": [
+   "idAccion -> Seguridad.Accion(idAccion)",
+   "idFormulario -> Seguridad.Formulario(idFormulario)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ },
+ "Seguridad.RecuperacionClave": {
+  "descripcion": "Registra solicitudes de recuperación de clave asociadas a usuarios externos. Guarda el hash del token y fechas que posiblemente permiten controlar su vigencia, uso e invalidación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRecuperacionClave": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la solicitud de recuperación de clave."
+   },
+   "idUsuarioExterno": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario externo asociado; la estructura no especifica a qué tabla apunta."
+   },
+   "tokenHash": {
+    "tipo": "character varying",
+    "descripcion": "Hash del token usado para la recuperación; no se indica el algoritmo ni su formato."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se creó la solicitud."
+   },
+   "fechaExpiracion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora hasta la que posiblemente es válido el token."
+   },
+   "fechaUso": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que posiblemente se utilizó el token; puede estar vacía."
+   },
+   "usado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la solicitud figura como usada; no se especifica cómo se actualiza."
+   },
+   "fechaInvalidacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se invalidó la solicitud; puede estar vacía."
+   },
+   "invalidado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la solicitud figura como invalidada; no se especifica qué acciones la invalidan."
+   },
+   "ipSolicitud": {
+    "tipo": "character varying",
+    "descripcion": "Dirección IP desde la que se realizó la solicitud, si se registró."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Seguridad.RefreshToken": {
+  "descripcion": "Registra tokens de renovación asociados a usuarios externos, junto con sus fechas de creación, expiración y revocación. Posiblemente se utiliza para administrar la vigencia y revocación de sesiones autenticadas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRefreshToken": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del token; la estructura no indica si es clave primaria."
+   },
+   "idUsuarioExterno": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario externo asociado; apunta a Seguridad.UsuarioExterno(idUsuarioExterno)."
+   },
+   "tokenHash": {
+    "tipo": "character varying",
+    "descripcion": "Valor hash asociado al token de renovación; no permite deducir el algoritmo ni el formato utilizado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se creó el registro del token."
+   },
+   "fechaExpiracion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora hasta la que se considera vigente el token, según las reglas del sistema."
+   },
+   "fechaRevocacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se revocó el token; admite nulos, posiblemente porque aún no fue revocado."
+   },
+   "revocado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el token está revocado; no se pueden deducir otros valores posibles por ser booleano."
+   }
+  },
+  "apunta_a": [
+   "idUsuarioExterno -> Seguridad.UsuarioExterno(idUsuarioExterno)"
+  ],
+  "la_referencian": []
+ },
+ "Seguridad.Usuario": {
+  "descripcion": "Registra las cuentas de usuario del sistema, sus credenciales y algunas preferencias o configuraciones asociadas. También almacena datos de auditoría, opciones relacionadas con aplicaciones y caja, y claves usadas para permisos especiales. Se utiliza para identificar usuarios y vincularlos con funciones y registros de otros módulos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del usuario; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al usuario; posiblemente se utiliza para iniciar sesión o identificarlo en el sistema."
+   },
+   "nombre": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del usuario."
+   },
+   "clave": {
+    "tipo": "character varying",
+    "descripcion": "Dato asociado a la clave o contraseña del usuario; no se puede deducir cómo se almacena."
+   },
+   "fechaVencimientoClave": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento de la clave del usuario."
+   },
+   "diasVencimiento": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días relacionada con el vencimiento de la clave."
+   },
+   "administrador": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el usuario tiene condición o privilegios de administrador; el alcance exacto debe confirmarse."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero empleado asociado al usuario; apunta a Tercero.Tercero(idTercero)."
+   },
+   "usaApp": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el usuario utiliza una aplicación; no se especifica cuál."
+   },
+   "versionApp": {
+    "tipo": "character varying",
+    "descripcion": "Versión de la aplicación asociada al usuario."
+   },
+   "claveApp": {
+    "tipo": "character varying",
+    "descripcion": "Clave asociada a la aplicación; no se especifica su uso ni forma de almacenamiento."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Estado del usuario; posiblemente indica si está habilitado, pero no se detallan los valores."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   },
+   "clavePermiso": {
+    "tipo": "character varying",
+    "descripcion": "Almacena claves para permisos especiales."
+   },
+   "claveCodigoBarra": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el código del permiso corresponde a un código de barras."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento asociado al usuario; apunta a General.Documento(idDocumento)."
+   },
+   "rutaTemporalPlantillasUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Ruta local para las plantillas del sistema asociadas al usuario."
+   },
+   "rutaDescargaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Ruta de descarga de archivos Excel definida para el usuario."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina o PC asociada a la generación de registros."
+   },
+   "tipoUsuario": {
+    "tipo": "integer",
+    "descripcion": "Tipo de usuario: 0 = Normal, 1 = POS, 2 = Pedido Restaurante, 3 = Cocina Restaurante."
+   },
+   "usuarioPos": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el usuario está marcado como usuario POS; su relación con tipoUsuario debe confirmarse."
+   },
+   "configuracionBarraAccesoRapido": {
+    "tipo": "xml",
+    "descripcion": "Configuración XML de la barra de acceso rápido de DevExpress."
+   },
+   "clavePermiso2": {
+    "tipo": "character varying",
+    "descripcion": "Almacena claves especiales para permisos específicos del sistema."
+   },
+   "idCaja": {
+    "tipo": "integer",
+    "descripcion": "Caja definida para el usuario POS; apunta a Venta.Caja(idCaja)."
+   },
+   "idDocumentoPedido": {
+    "tipo": "integer",
+    "descripcion": "Identificador de documento relacionado con pedidos; no se declara una clave foránea."
+   },
+   "clavePermiso3": {
+    "tipo": "character varying",
+    "descripcion": "Almacena claves especiales para permisos específicos del sistema."
+   }
+  },
+  "apunta_a": [
+   "idCaja -> Venta.Caja(idCaja)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idDocumento -> General.Documento(idDocumento)"
+  ],
+  "la_referencian": [
+   "Agenda.Agenda(idUsuario)",
+   "Arriendo.ContratoArriendoNotificacion(idUsuario)",
+   "Auditoria.BitacoraIngreso(idUsuario)",
+   "Auditoria.BitacoraPermisoEspecial(idUsuario)",
+   "Contabilidad.AperturaFechaFormulario(idUsuario)",
+   "CuentaPagar.AutorizaOrdenCompra(idUsuarioAprobador)",
+   "CuentaPagar.AutorizaOrdenCompra(idUsuarioGenera)",
+   "CuentaPagar.DetallePropuestaPagoExcluido(idUsuarioExclusion)",
+   "General.DocumentoModifica(idUsuario)",
+   "Seguridad.PermisoFormulario(idUsuario)",
+   "Seguridad.TerceroVip(idUsuario)",
+   "Seguridad.UsuarioAlmacen(idUsuario)",
+   "Seguridad.UsuarioCentroCosto(idUsuario)",
+   "Seguridad.UsuarioDocumento(idUsuario)",
+   "Seguridad.UsuarioDocumentoAprobacion(idUsuario)"
+  ]
+ },
+ "Seguridad.UsuarioAlmacen": {
+  "descripcion": "Relaciona usuarios con almacenes y posiblemente registra a qué almacenes está asociado cada usuario. Puede servir para configurar la asignación o el acceso de usuarios a almacenes, aunque la estructura no permite confirmar el uso exacto.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUsuarioAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la relación entre un usuario y un almacén; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario asociado; clave foránea que apunta a Seguridad.Usuario(idUsuario)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado; clave foránea que apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ },
+ "Seguridad.UsuarioCentroCosto": {
+  "descripcion": "Registra asociaciones entre usuarios y centros de costo. Posiblemente sirve para asignar centros de costo a usuarios o definir su ámbito de trabajo, pero la estructura no permite confirmar si también controla permisos de acceso.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUsuarioCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la asociación; no se informa si es único o clave primaria."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado; apunta a Seguridad.Usuario(idUsuario)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identificador del centro de costo asociado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica una clave foránea."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ },
+ "Seguridad.UsuarioDocumento": {
+  "descripcion": "Relaciona usuarios con documentos y permite registrar información de creación y modificación del vínculo. Posiblemente se utiliza para asociar documentos con usuarios en procesos como la creación de clientes; la función que la usa se llama Seguridad.fnCrearClienteDocumento.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUsuarioDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de relación entre un usuario y un documento; la estructura no declara una clave primaria."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado al documento; apunta a Seguridad.Usuario(idUsuario)."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento asociado al usuario; apunta a General.Documento(idDocumento)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea para esta columna."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se declara una clave foránea para esta columna."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ },
+ "Seguridad.UsuarioExterno": {
+  "descripcion": "Guarda registros de usuarios externos para gestionar su acceso al ERP, posiblemente vinculados a un tercero proveedor y, de forma opcional, a un usuario interno de SEO. También almacena datos de vigencia de la clave y de administración del registro; la tabla Seguridad.RefreshToken la referencia.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUsuarioExterno": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de usuario externo."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asociado al usuario externo; su uso específico no se puede deducir."
+   },
+   "clave": {
+    "tipo": "character varying",
+    "descripcion": "Clave asociada al acceso del usuario externo; no se puede deducir si es una contraseña u otro tipo de credencial."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero proveedor relacionado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "fechaVencimientoClave": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento de la clave."
+   },
+   "administrador": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el usuario tiene condición de administrador; posiblemente true significa que sí y false que no."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica el estado del usuario; posiblemente true significa activo y false inactivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador opcional del usuario interno de SEO relacionado."
+   },
+   "identificacion": {
+    "tipo": "character varying",
+    "descripcion": "Dato de identificación asociado al usuario externo; su tipo concreto no se puede deducir."
+   },
+   "nombreEmpresa": {
+    "tipo": "character varying",
+    "descripcion": "Nombre de la empresa asociado al usuario externo."
+   }
+  },
+  "apunta_a": [
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Seguridad.RefreshToken(idUsuarioExterno)"
+  ]
+ }
+}

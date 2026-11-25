@@ -1,0 +1,106 @@
+{
+ "Auditoria.AuditoriaModificacion": {
+  "descripcion": "Registra eventos de auditoría asociados a modificaciones en distintas tablas del ERP. Permite identificar la tabla y el registro afectado, consultar un mensaje sobre el cambio y conocer el usuario y la fecha registrados. También incluye los campos codigo y descripcion, cuyo uso específico no se puede determinar solo con la estructura.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idAuditoriaModificacion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de auditoría; la estructura proporcionada no indica que sea una clave primaria."
+   },
+   "tabla": {
+    "tipo": "character varying",
+    "descripcion": "Nombre de la tabla en la que se realizó la modificación."
+   },
+   "idTransaccion": {
+    "tipo": "bigint",
+    "descripcion": "ID maestro del registro modificado; su tabla de destino depende del valor de tabla."
+   },
+   "mensajeAuditoria": {
+    "tipo": "text",
+    "descripcion": "Mensaje relacionado con la modificación auditada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que realizó la modificación; no se especifica a qué tabla o entidad de usuarios apunta."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro de auditoría."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asociado al registro de auditoría; su significado no se puede deducir de la estructura."
+   },
+   "descripcion": {
+    "tipo": "text",
+    "descripcion": "Descripción asociada al registro de auditoría; su contenido o propósito específico no se puede deducir de la estructura."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Auditoria.BitacoraIngreso": {
+  "descripcion": "Registra eventos relacionados con ingresos al sistema, junto con su fecha y hora y, cuando están disponibles, el usuario y la dirección IP de la máquina. Puede servir para auditoría o revisión de accesos; la estructura no permite confirmar qué tipos de ingreso registra ni cómo se usa el mensaje.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idBitacoraIngreso": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de ingreso; la estructura no indica si es clave primaria."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario asociado al registro; referencia a Seguridad.Usuario(idUsuario) y puede quedar vacío."
+   },
+   "fechaHoraIngreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al ingreso, con zona horaria."
+   },
+   "ipMaquina": {
+    "tipo": "character varying",
+    "descripcion": "Dirección IP de la máquina asociada al registro; puede quedar vacía."
+   },
+   "mensaje": {
+    "tipo": "character varying",
+    "descripcion": "Texto asociado al registro; su contenido y propósito no se pueden deducir."
+   }
+  },
+  "apunta_a": [
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ },
+ "Auditoria.BitacoraPermisoEspecial": {
+  "descripcion": "Registra posiblemente eventos relacionados con permisos especiales, vinculando un usuario con un formulario y una fecha. Puede servir para consultar o auditar cuándo se generó una anotación sobre ese permiso. La estructura no permite determinar qué evento específico registra.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idBitacoraPermisoEspecial": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la entrada de bitácora; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario asociado a la entrada; referencia a Seguridad.Usuario(idUsuario)."
+   },
+   "idFormulario": {
+    "tipo": "integer",
+    "descripcion": "Formulario asociado a la entrada; referencia a Seguridad.Formulario(idFormulario)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a la entrada, con zona horaria."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional con detalles de la entrada."
+   }
+  },
+  "apunta_a": [
+   "idFormulario -> Seguridad.Formulario(idFormulario)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ }
+}

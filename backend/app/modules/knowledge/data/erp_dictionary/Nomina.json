@@ -1,0 +1,2846 @@
+{
+ "Nomina.Cargo": {
+  "descripcion": "Catálogo de cargos utilizado en nómina y referenciado también por registros de empleados, contratos y otras entidades. Guarda el código y la descripción del cargo, su estado y datos asociados al riesgo pensional y a la condición de vendedor. La estructura proporcionada no declara una clave primaria.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCargo": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del cargo; la estructura no indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al cargo; no se especifica el formato ni la convención de codificación."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del cargo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de estado del cargo; posiblemente true significa activo y false inactivo, pero debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica la tabla a la que apunta."
+   },
+   "altoRiesgo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el cargo se considera de alto riesgo para determinar aportes especiales a pensión."
+   },
+   "porcentajePension": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje adicional de pensión que debe pagar el empleador por el cargo."
+   },
+   "esVendedor": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de si el cargo corresponde a un vendedor; no se especifican las consecuencias de esta clasificación."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CarteraFinanciera.Asociado(idCargo)",
+   "Nomina.ContratoEmpleado(idCargo)",
+   "Nomina.Empleado(idCargo)",
+   "Nomina.LiquidacionNomina(idCargo)",
+   "Tercero.Tercero(idCargo)"
+  ]
+ },
+ "Nomina.Categoria": {
+  "descripcion": "Guarda categorías utilizadas en el módulo de Nómina, identificadas por un código y una descripción. Incluye un valor por hora asociado a cada categoría, posiblemente para calcular pagos. También conserva un estado y datos de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCategoria": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la categoría; la estructura no indica si es clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la categoría; no se especifica su formato ni significado."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la categoría."
+   },
+   "valorxhora": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico por hora asociado a la categoría; no se especifican la moneda ni su aplicación."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; posiblemente señala si la categoría está activa."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora registradas para la creación de la categoría."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora registradas para la última modificación de la categoría."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Nomina.CausaTerminacionContrato": {
+  "descripcion": "Catálogo de causas de terminación de contrato en el módulo de Nómina, utilizado para registrar opciones que pueden asociarse a contratos y empleados. Permite mantener un código, una descripción y un estado para cada causa.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCausaTerminacionContrato": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la causa de terminación; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la causa de terminación."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o explicación de la causa de terminación."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la causa; posiblemente señala si está activa, pero su significado exacto debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Nomina.ContratoEmpleado(idCausaTerminacionContrato)",
+   "Nomina.Empleado(idCausaTerminacionContrato)"
+  ]
+ },
+ "Nomina.Concepto": {
+  "descripcion": "Guarda el catálogo de conceptos de nómina, como devengados y deducciones, junto con reglas que orientan su captura y cálculo durante la liquidación. También configura aspectos relacionados con novedades, auxilio de transporte, contabilización, desprendibles y nómina electrónica.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identificador del concepto; la estructura suministrada no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al concepto."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del concepto."
+   },
+   "tipo": {
+    "tipo": "boolean",
+    "descripcion": "Clasifica el concepto: true significa devengado y false, deducido."
+   },
+   "idParametroLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Parámetro de liquidación relacionado; referencia a Nomina.ParametroLiquidacion(idParametroLiquidacion)."
+   },
+   "descontarDia": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto debe descontar días en la liquidación de nómina."
+   },
+   "licenciaIncapacidad": {
+    "tipo": "boolean",
+    "descripcion": "Indica si para este concepto se solicitan fechas de inicio y fin."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla de usuarios relacionada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla de usuarios relacionada."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica el estado del concepto; no se especifica qué valor representa cada estado."
+   },
+   "calculoAutomatico": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto se calcula automáticamente durante la liquidación."
+   },
+   "solicitaCantidad": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al capturar novedades se solicita una cantidad para calcular el valor, en lugar de capturar directamente el valor."
+   },
+   "afectaFactorSalarial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto se suma al salario para calcular otros conceptos."
+   },
+   "idTipoConcepto": {
+    "tipo": "integer",
+    "descripcion": "Tipo de concepto relacionado; referencia a Nomina.TipoConcepto(idTipoConcepto)."
+   },
+   "descontarDiaAuxilioTransporte": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto descuenta días específicamente para el cálculo del auxilio de transporte."
+   },
+   "tipoNovedad": {
+    "tipo": "character varying",
+    "descripcion": "Código de tipo de novedad para planilla única: LR corresponde a licencia remunerada, VAC a vacaciones, IGE a incapacidad general, SLN a suspensión temporal o licencia no remunerada y LMA a licencia de maternidad."
+   },
+   "visibleDesprendible": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto se muestra en el desprendible de nómina."
+   },
+   "excluirContabilizacion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto debe excluirse de la contabilización de nómina; por el nombre, true posiblemente significa excluirlo."
+   },
+   "otroDevengadoDeducido": {
+    "tipo": "integer",
+    "descripcion": "Entero que identifica el concepto que se debe relacionar cuando se trata de otro devengado u otra deducción; no se declara una clave foránea."
+   },
+   "acumularCalculoAuxilioTransporte": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto se suma para determinar el pago del auxilio de transporte."
+   },
+   "noSincronizarNominaElectronica": {
+    "tipo": "boolean",
+    "descripcion": "Campo relacionado con la sincronización del concepto a la DIAN; el nombre sugiere que controla la exclusión de la sincronización."
+   },
+   "calculoSegunTipoLiquidacionConcepto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el cálculo del concepto depende del tipo de liquidación, por ejemplo, mensual o quincenal."
+   }
+  },
+  "apunta_a": [
+   "idParametroLiquidacion -> Nomina.ParametroLiquidacion(idParametroLiquidacion)",
+   "idTipoConcepto -> Nomina.TipoConcepto(idTipoConcepto)"
+  ],
+  "la_referencian": [
+   "Contabilidad.DocumentoCuentaContable(idConceptoNomina)",
+   "Nomina.CreditoEmpleado(idConceptoNovedad)",
+   "Nomina.DetalleLiquidacionNomina(idConcepto)",
+   "Nomina.DetalleLiquidacionVacaciones(idConcepto)",
+   "Nomina.DetalleNovedad(idConcepto)",
+   "Nomina.DetalleNovedadLiquidacionVacaciones(idConcepto)",
+   "Nomina.LiquidacionPila(idConcepto)",
+   "Nomina.LiquidacionVacaciones(idConcepto)"
+  ]
+ },
+ "Nomina.ContratoEmpleado": {
+  "descripcion": "Guarda contratos asociados a empleados, incluidas sus condiciones laborales, sueldo, fechas y estado. Sirve para gestionar la vigencia y renovación de los contratos y para apoyar procesos de nómina, liquidación y vacaciones. También registra datos de auditoría y, cuando corresponda, fechas de etapas lectivas y productivas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del contrato de empleado."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Empleado al que corresponde el contrato; apunta a Nomina.Empleado(idEmpleado)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado al contrato; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "numeroContrato": {
+    "tipo": "integer",
+    "descripcion": "Número asignado al contrato; puede quedar sin informar."
+   },
+   "idCargo": {
+    "tipo": "integer",
+    "descripcion": "Cargo asociado al contrato; apunta a Nomina.Cargo(idCargo)."
+   },
+   "idTipoContrato": {
+    "tipo": "integer",
+    "descripcion": "Tipo de contrato; apunta a Nomina.TipoContrato(idTipoContrato)."
+   },
+   "duracion": {
+    "tipo": "integer",
+    "descripcion": "Duración del contrato expresada en meses."
+   },
+   "idDependencia": {
+    "tipo": "integer",
+    "descripcion": "Dependencia asociada al contrato; apunta a Nomina.Dependencia(idDependencia)."
+   },
+   "sueldo": {
+    "tipo": "numeric",
+    "descripcion": "Sueldo básico que devenga el empleado según el contrato."
+   },
+   "fechaIngreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de ingreso del empleado según el contrato."
+   },
+   "fechaRetiro": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de retiro del empleado, si se registra."
+   },
+   "idCausaTerminacionContrato": {
+    "tipo": "integer",
+    "descripcion": "Causal de terminación del contrato; apunta a Nomina.CausaTerminacionContrato(idCausaTerminacionContrato)."
+   },
+   "comentarioTerminacion": {
+    "tipo": "character varying",
+    "descripcion": "Comentario libre relacionado con la terminación del contrato."
+   },
+   "estado": {
+    "tipo": "integer",
+    "descripcion": "Estado del contrato: 0 = Activo, 1 = Inactivo, 2 = Liquidado, 3 = Renovado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "fechaFinalizacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de finalización prevista o registrada para el contrato; la estructura no precisa cuál de estas situaciones representa."
+   },
+   "sabadoLaborable": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el sábado se considera laborable para el contrato."
+   },
+   "calculoSaludPensionSueldoBase": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el IBC para salud y pensión se calcula con el sueldo básico; la regla descrita aplica cuando el empleado gana menos del mínimo, como en medio tiempo."
+   },
+   "fechaInicioEtapaLectiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de inicio de la etapa lectiva, si aplica."
+   },
+   "fechaFinEtapaLectiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de fin de la etapa lectiva, si aplica."
+   },
+   "fechaInicioEtapaProductiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de inicio de la etapa productiva, si aplica."
+   },
+   "fechaFinEtapaProductiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de fin de la etapa productiva, si aplica."
+   },
+   "esUniversitario": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el empleado está clasificado como universitario; no se especifica el efecto de esta clasificación."
+   }
+  },
+  "apunta_a": [
+   "idCargo -> Nomina.Cargo(idCargo)",
+   "idCausaTerminacionContrato -> Nomina.CausaTerminacionContrato(idCausaTerminacionContrato)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDependencia -> Nomina.Dependencia(idDependencia)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)",
+   "idTipoContrato -> Nomina.TipoContrato(idTipoContrato)"
+  ],
+  "la_referencian": [
+   "Nomina.ContratoEmpleadoDetalle(idContratoEmpleado)",
+   "Nomina.DocumentoNominaElectronica(idContratoEmpleado)",
+   "Nomina.EmpleadoContratoActual(idContratoEmpleado)",
+   "Nomina.HistoricoSueldoEmpleado(idContratoEmpleado)",
+   "Nomina.LiquidacionNomina(idContratoEmpleado)",
+   "Nomina.LiquidacionPila(idContratoEmpleado)",
+   "Nomina.LiquidacionVacaciones(idContratoEmpleado)",
+   "Nomina.OtroDevengadoNominaElectronica(idContratoEmpleado)",
+   "Nomina.PeriodoPendienteVacaciones(idContratoEmpleado)"
+  ]
+ },
+ "Nomina.CreditoEmpleado": {
+  "descripcion": "Registra información de créditos asociados a empleados, incluidos el monto, el número y valor de las cuotas y las fechas relacionadas con su aprobación, desembolso y pago. Puede servir como base para generar novedades automáticas de nómina y para gestionar las cuotas vinculadas en Nomina.CuotaCreditoEmpleado.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCreditoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador interno del registro del crédito; la estructura no indica que sea clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Referencia al documento asociado, en General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asociado al crédito; no se puede deducir si es un consecutivo o un número de documento."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Referencia al empleado, en Nomina.Empleado(idEmpleado)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Referencia al tercero asociado al empleado, en Tercero.Tercero(idTercero)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al registro del crédito; el evento que representa no está especificado."
+   },
+   "montoTotal": {
+    "tipo": "numeric",
+    "descripcion": "Monto total registrado para el crédito."
+   },
+   "numeroCuota": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cuotas del crédito."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Referencia a la forma de pago, en General.FormaPago(idFormaPago)."
+   },
+   "tipoRecaudo": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de recaudo aplicado al crédito; sus valores no se pueden deducir."
+   },
+   "fechaAprobacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de aprobación del crédito; puede quedar sin informar."
+   },
+   "fechaPrimeraCuota": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora previstas para la primera cuota."
+   },
+   "valorCuota": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado para cada cuota."
+   },
+   "estado": {
+    "tipo": "integer",
+    "descripcion": "Código del estado del crédito; sus valores no se pueden deducir."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla de referencia."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Referencia al centro de costo, en Empresa.CentroCosto(idCentroCosto)."
+   },
+   "motivoAnulado": {
+    "tipo": "character varying",
+    "descripcion": "Motivo registrado para la anulación; puede quedar sin informar."
+   },
+   "fechaDesembolso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora del desembolso; puede quedar sin informar."
+   },
+   "idBancoCheque": {
+    "tipo": "integer",
+    "descripcion": "Referencia al banco asociado al cheque, en Tercero.Banco(idBanco); puede quedar sin informar."
+   },
+   "idConceptoNovedad": {
+    "tipo": "integer",
+    "descripcion": "Referencia al concepto de nómina que se aplicará en la novedad automática, en Nomina.Concepto(idConcepto); puede quedar sin informar."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idConceptoNovedad -> Nomina.Concepto(idConcepto)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idBancoCheque -> Tercero.Banco(idBanco)"
+  ],
+  "la_referencian": [
+   "Nomina.CuotaCreditoEmpleado(idCreditoEmpleado)"
+  ]
+ },
+ "Nomina.CuotaCreditoEmpleado": {
+  "descripcion": "Registra las cuotas asociadas a créditos de empleados y sus importes, saldos y estado de cancelación. Sirve para controlar el pago de cada cuota y relacionarlo con novedades o liquidaciones de nómina. También conserva datos usados en la reliquidación del crédito y observaciones del proceso de cancelación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCuotaCreditoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la cuota; la estructura no indica si es clave primaria."
+   },
+   "idCreditoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el crédito del empleado al que pertenece la cuota; apunta a Nomina.CreditoEmpleado(idCreditoEmpleado)."
+   },
+   "numeroCuota": {
+    "tipo": "integer",
+    "descripcion": "Número de orden de la cuota dentro del crédito."
+   },
+   "fechaPago": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al pago de la cuota; no se puede deducir si corresponde a la fecha prevista o a la fecha efectiva."
+   },
+   "valorCuota": {
+    "tipo": "numeric",
+    "descripcion": "Valor neto de la cuota."
+   },
+   "valorCapital": {
+    "tipo": "numeric",
+    "descripcion": "Importe de capital incluido en la cuota."
+   },
+   "saldoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Saldo informativo del crédito."
+   },
+   "saldoCuota": {
+    "tipo": "numeric",
+    "descripcion": "Saldo pendiente de la cuota cuando existen pagos parciales."
+   },
+   "cancelada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuota está cancelada en su totalidad."
+   },
+   "mesPlazo": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de meses del plazo del crédito, usada para reliquidación."
+   },
+   "cantidadCuota": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cuotas del crédito, usada para reliquidación."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   },
+   "saldoCapital": {
+    "tipo": "numeric",
+    "descripcion": "Saldo de capital pendiente de cancelar."
+   },
+   "idDetalleLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el detalle de liquidación asociado cuando la liquidación es definitiva; apunta a Nomina.DetalleLiquidacionNomina(idDetalleLiquidacionNomina)."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Observación opcional del proceso de cancelación."
+   }
+  },
+  "apunta_a": [
+   "idCreditoEmpleado -> Nomina.CreditoEmpleado(idCreditoEmpleado)",
+   "idDetalleLiquidacionNomina -> Nomina.DetalleLiquidacionNomina(idDetalleLiquidacionNomina)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleNovedad(idCuotaCreditoEmpleado)"
+  ]
+ },
+ "Nomina.Dependencia": {
+  "descripcion": "Guarda dependencias de nómina, identificadas por un código y una descripción, y sus parámetros de liquidación. Sirve para asociar empleados, contratos, novedades y liquidaciones con una dependencia y definir si su periodicidad es mensual, quincenal o semanal.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDependencia": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la dependencia; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la dependencia."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la dependencia."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado operativo no se especifica; posiblemente señala si la dependencia está activa."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   },
+   "tipoLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Periodicidad de liquidación: 0 = mensual, 1 = quincenal y 2 = semanal."
+   },
+   "calculoSegunTipoLiquidacion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si algunos conceptos de ley se calculan según el tipo de liquidación."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Nomina.ContratoEmpleado(idDependencia)",
+   "Nomina.Empleado(idDependencia)",
+   "Nomina.LiquidacionNomina(idDependencia)",
+   "Nomina.Novedad(idDependencia)",
+   "Nomina.OtroDevengadoNominaElectronica(idDependencia)",
+   "Nomina.TrazabilidadDetalleNovedad(idDependencia)"
+  ]
+ },
+ "Nomina.DetalleApropiacionNomina": {
+  "descripcion": "Guarda el detalle de las apropiaciones asociadas a una liquidación de nómina. Registra el parámetro de liquidación aplicado, el porcentaje, la base de cálculo y el valor resultante; posiblemente se genera durante el proceso de liquidación de un empleado.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleApropiacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de apropiación; la estructura no indica si es clave primaria."
+   },
+   "idLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la liquidación de nómina a la que pertenece el detalle; apunta a Nomina.LiquidacionNomina(idLiquidacionNomina)."
+   },
+   "idParametroLiquidacion": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el parámetro usado para calcular la apropiación; apunta a Nomina.ParametroLiquidacion(idParametroLiquidacion)."
+   },
+   "porcentajeAplicado": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje aplicado para calcular la apropiación, según el comentario de la columna."
+   },
+   "valor": {
+    "tipo": "numeric",
+    "descripcion": "Valor calculado de la apropiación."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "valorBaseCalculo": {
+    "tipo": "numeric",
+    "descripcion": "Base usada para calcular el valor de la apropiación, según el comentario de la columna."
+   }
+  },
+  "apunta_a": [
+   "idLiquidacionNomina -> Nomina.LiquidacionNomina(idLiquidacionNomina)",
+   "idParametroLiquidacion -> Nomina.ParametroLiquidacion(idParametroLiquidacion)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.DetalleLiquidacionNomina": {
+  "descripcion": "Registra los conceptos y valores que componen una liquidación de nómina. Permite asociar cada detalle con la liquidación, el concepto de nómina y, cuando corresponde, una novedad; también guarda cantidades de horas y bases de cálculo. Incluye valores relacionados con el desprendible de pago y datos de auditoría de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de liquidación; la estructura no declara una clave primaria."
+   },
+   "idLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la liquidación de nómina a la que pertenece el detalle; referencia a Nomina.LiquidacionNomina(idLiquidacionNomina)."
+   },
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto de nómina aplicado en el detalle; referencia a Nomina.Concepto(idConcepto)."
+   },
+   "idDetalleNovedad": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la novedad asociada al detalle, si corresponde; referencia a Nomina.DetalleNovedad(idDetalleNovedad)."
+   },
+   "cantidadHora": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de horas liquidadas por el concepto, según el comentario de la columna."
+   },
+   "valorConcepto": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario asociado al concepto liquidado; la estructura no especifica cómo se interpreta su signo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   },
+   "valorBaseCalculo": {
+    "tipo": "numeric",
+    "descripcion": "Valor que determina la base para calcular el concepto, según el comentario de la columna."
+   },
+   "valorVisibleDesprendible": {
+    "tipo": "numeric",
+    "descripcion": "Valor destinado a mostrarse en el desprendible de pago, según el comentario de la columna."
+   }
+  },
+  "apunta_a": [
+   "idConcepto -> Nomina.Concepto(idConcepto)",
+   "idDetalleNovedad -> Nomina.DetalleNovedad(idDetalleNovedad)",
+   "idLiquidacionNomina -> Nomina.LiquidacionNomina(idLiquidacionNomina)"
+  ],
+  "la_referencian": [
+   "Nomina.CuotaCreditoEmpleado(idDetalleLiquidacionNomina)"
+  ]
+ },
+ "Nomina.DetalleLiquidacionVacaciones": {
+  "descripcion": "Guarda los conceptos y valores que componen una liquidación de vacaciones, vinculados a la liquidación correspondiente. Puede asociar cada detalle con una novedad de vacaciones y con un documento de nómina electrónica. Sirve para registrar las cantidades y los valores liquidados, así como distinguir si el detalle es definitivo o de prueba.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleLiquidacionVacaciones": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el registro de detalle de la liquidación de vacaciones; la estructura no declara una clave primaria."
+   },
+   "idLiquidacionVacaciones": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la liquidación de vacaciones a la que pertenece este detalle; apunta a Nomina.LiquidacionVacaciones."
+   },
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto aplicado en el detalle; apunta a Nomina.Concepto."
+   },
+   "idDetalleNovedadLiquidacionVacaciones": {
+    "tipo": "bigint",
+    "descripcion": "Vincula el detalle con una novedad de vacaciones de la liquidación, si corresponde; apunta a Nomina.DetalleNovedadLiquidacionVacaciones."
+   },
+   "cantidadHora": {
+    "tipo": "integer",
+    "descripcion": "Registra una cantidad asociada al concepto, posiblemente expresada en horas."
+   },
+   "valorConcepto": {
+    "tipo": "numeric",
+    "descripcion": "Registra el valor monetario asociado al concepto."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Indica cuándo se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Indica cuándo se modificó el registro por última vez."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identifica al usuario que creó el registro; no se informa a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identifica al usuario que modificó el registro; no se informa a qué tabla apunta."
+   },
+   "liquidadoDefinitivo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto del detalle es definitivo (true) o de prueba (false)."
+   },
+   "idDocumentoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el documento de nómina electrónica con el que se sincroniza el detalle con la DIAN, si corresponde; apunta a Nomina.DocumentoNominaElectronica."
+   }
+  },
+  "apunta_a": [
+   "idConcepto -> Nomina.Concepto(idConcepto)",
+   "idDetalleNovedadLiquidacionVacaciones -> Nomina.DetalleNovedadLiquidacionVacaciones(idDetalleNovedadLiquidacionVacaciones)",
+   "idDocumentoNominaElectronica -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)",
+   "idLiquidacionVacaciones -> Nomina.LiquidacionVacaciones(idLiquidacionVacaciones)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleNovedad(idDetalleLiquidacionVacaciones)"
+  ]
+ },
+ "Nomina.DetalleNovedad": {
+  "descripcion": "Guarda los detalles asociados a una novedad de nómina, vinculándolos con un concepto y, cuando corresponde, con registros de crédito o vacaciones. Incluye cantidades, valores, fechas y días descontados que pueden intervenir en la liquidación. También registra si se calculan aportes a salud y pensión, además de datos de auditoría.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleNovedad": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle; la estructura no declara una clave primaria."
+   },
+   "idNovedad": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la novedad de nómina a la que pertenece; apunta a Nomina.Novedad(idNovedad)."
+   },
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto asociado al detalle; apunta a Nomina.Concepto(idConcepto)."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada a la novedad, por ejemplo horas extra o días de licencia o incapacidad."
+   },
+   "valorNovedad": {
+    "tipo": "numeric",
+    "descripcion": "Valor asociado a la novedad; no se puede deducir si representa un total, un valor unitario ni qué signo utiliza."
+   },
+   "fechaInicial": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de inicio de la novedad; el comentario indica que se usa para incapacidades."
+   },
+   "fechaFinal": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de finalización de la novedad; el comentario indica que se usa para incapacidades."
+   },
+   "diaDescontado": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días descontados en la liquidación."
+   },
+   "liquidado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el detalle está liquidado; no se especifica el alcance exacto de este estado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   },
+   "tipoNovedad": {
+    "tipo": "character varying",
+    "descripcion": "Tipo de novedad para la planilla única: LR = licencia remunerada, VAC = vacaciones, IGE = incapacidad general, SLN = suspensión temporal o licencia no remunerada y LMA = licencia de maternidad."
+   },
+   "idCuotaCreditoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la cuota de crédito generada mediante la liquidación; apunta a Nomina.CuotaCreditoEmpleado(idCuotaCreditoEmpleado)."
+   },
+   "idLiquidacionVacacionesDetallado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica un registro de generación de vacaciones para el periodo; apunta a Nomina.LiquidacionVacacionesDetallado(idLiquidacionVacacionesDetallado)."
+   },
+   "idDetalleLiquidacionVacaciones": {
+    "tipo": "bigint",
+    "descripcion": "Identifica un registro de detalle de liquidación de vacaciones para el periodo; apunta a Nomina.DetalleLiquidacionVacaciones(idDetalleLiquidacionVacaciones)."
+   },
+   "calculaPension": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la novedad debe incluirse en el cálculo de pensión."
+   },
+   "calculaSalud": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la novedad debe incluirse en el cálculo de salud."
+   }
+  },
+  "apunta_a": [
+   "idConcepto -> Nomina.Concepto(idConcepto)",
+   "idCuotaCreditoEmpleado -> Nomina.CuotaCreditoEmpleado(idCuotaCreditoEmpleado)",
+   "idDetalleLiquidacionVacaciones -> Nomina.DetalleLiquidacionVacaciones(idDetalleLiquidacionVacaciones)",
+   "idLiquidacionVacacionesDetallado -> Nomina.LiquidacionVacacionesDetallado(idLiquidacionVacacionesDetallado)",
+   "idNovedad -> Nomina.Novedad(idNovedad)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleLiquidacionNomina(idDetalleNovedad)",
+   "Nomina.TrazabilidadDetalleNovedad(idDetalleNovedad)"
+  ]
+ },
+ "Nomina.DiaFestivo": {
+  "descripcion": "Registra fechas marcadas como festivas dentro del módulo de Nómina. Posiblemente sirve como referencia para aplicar reglas de cálculo o gestión relacionadas con días festivos; la estructura no confirma cómo se usan.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDiaFestivo": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del registro; la estructura no declara una clave primaria."
+   },
+   "fecha": {
+    "tipo": "date",
+    "descripcion": "Fecha registrada como festiva."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional para describir o identificar el día festivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una relación con otra tabla."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se declara una relación con otra tabla."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Nomina.DocumentoNominaElectronica": {
+  "descripcion": "Registra datos generales de documentos de nómina electrónica, asociados a un empleado, un contrato y un documento del sistema. Incluye el número, la fecha de generación y el año y mes relacionados; posiblemente sirve como encabezado para liquidaciones, ajustes y otros detalles de nómina electrónica.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDocumentoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de documento de nómina electrónica; la estructura no confirma que sea clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Referencia a General.Documento; identifica el documento asociado, pero no se puede deducir qué tipo o clasificación representa."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al documento de nómina electrónica."
+   },
+   "fechaGeneracion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se generó el documento."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Referencia a Nomina.Empleado; identifica al empleado relacionado."
+   },
+   "idContratoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Referencia a Nomina.ContratoEmpleado; identifica el contrato relacionado."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año asociado al documento o período de nómina."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes asociado al documento o período de nómina."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idContratoEmpleado -> Nomina.ContratoEmpleado(idContratoEmpleado)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleLiquidacionVacaciones(idDocumentoNominaElectronica)",
+   "Nomina.LiquidacionNomina(idDocumentoNominaElectronica)",
+   "Nomina.LiquidacionVacacionesDetallado(idDocumentoNominaElectronica)",
+   "Nomina.NotaAjusteNominaElectronica(idDocumentoNominaElectronica)",
+   "Nomina.NotaAjusteNominaElectronica(idDocumentoNominaElectronicaNotaAjuste)",
+   "Nomina.OtroDevengadoNominaElectronica(idDocumentoNominaElectronica)",
+   "Nomina.SincronizacionNominaElectronica(idDocumentoNominaElectronica)",
+   "Nomina.SincronizacionNominaElectronica(idDocumentoNominaElectronicaNovedad)"
+  ]
+ },
+ "Nomina.Empleado": {
+  "descripcion": "Guarda información laboral, contractual, salarial y de pago de las personas empleadas, vinculada con sus datos de tercero. Sirve para administrar aspectos de la relación laboral, como el cargo, el centro de costo, las afiliaciones, el contrato y la fecha de ingreso o retiro.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del empleado; la estructura proporcionada no declara una clave primaria."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado al empleado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asignado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "libretaMilitar": {
+    "tipo": "character varying",
+    "descripcion": "Número o dato de la libreta militar del empleado."
+   },
+   "tipoLibretaMilitar": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de libreta militar; no se pueden deducir sus valores."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado a la cuenta de pago; apunta a Tercero.Banco(idBanco)."
+   },
+   "numeroCuentaAhorro": {
+    "tipo": "character varying",
+    "descripcion": "Número de la cuenta bancaria registrada para el empleado; aunque el nombre menciona cuenta de ahorro, el tipo de cuenta se guarda aparte."
+   },
+   "idCargo": {
+    "tipo": "integer",
+    "descripcion": "Cargo asignado al empleado; apunta a Nomina.Cargo(idCargo)."
+   },
+   "idDependencia": {
+    "tipo": "integer",
+    "descripcion": "Dependencia a la que está asignado; apunta a Nomina.Dependencia(idDependencia)."
+   },
+   "sueldo": {
+    "tipo": "numeric",
+    "descripcion": "Sueldo registrado para el empleado."
+   },
+   "idTipoRiesgoLaboral": {
+    "tipo": "integer",
+    "descripcion": "Tipo de riesgo laboral asociado; apunta a Nomina.RiesgoProfesional(idRiesgoProfesional)."
+   },
+   "fechaIngreso": {
+    "tipo": "date",
+    "descripcion": "Fecha de ingreso del empleado."
+   },
+   "fechaRetiro": {
+    "tipo": "date",
+    "descripcion": "Fecha de retiro del empleado, si aplica."
+   },
+   "idTipoContrato": {
+    "tipo": "integer",
+    "descripcion": "Tipo de contrato del empleado; apunta a Nomina.TipoContrato(idTipoContrato)."
+   },
+   "pasadoJudicialFechaExpedicion": {
+    "tipo": "date",
+    "descripcion": "Fecha de expedición del documento de pasado judicial, si está registrada."
+   },
+   "pasadoJudicialFechaVencimiento": {
+    "tipo": "date",
+    "descripcion": "Fecha de vencimiento del documento de pasado judicial, si está registrada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "retirado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el empleado está marcado como retirado."
+   },
+   "idEntidadPromotoraSalud": {
+    "tipo": "integer",
+    "descripcion": "Entidad promotora de salud del empleado; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "idEntidadPromotoraPension": {
+    "tipo": "integer",
+    "descripcion": "Entidad promotora o administradora de pensión del empleado; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "idEntidadPromotoraArl": {
+    "tipo": "integer",
+    "descripcion": "Entidad promotora de riesgos laborales (ARL) del empleado; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "idEntidadPromotoraCaja": {
+    "tipo": "integer",
+    "descripcion": "Entidad de caja de compensación del empleado; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "idEntidadPromotoraFondoSolidaridad": {
+    "tipo": "integer",
+    "descripcion": "Entidad asociada al fondo de solidaridad pensional; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "exonerado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el empleado está exonerado del pago empresarial de seguridad social y parafiscales."
+   },
+   "subTipoCotizante": {
+    "tipo": "integer",
+    "descripcion": "Código del subtipo de cotizante aplicable al empleado; no se pueden deducir sus valores."
+   },
+   "numeroContrato": {
+    "tipo": "integer",
+    "descripcion": "Número del contrato actual, si está registrado."
+   },
+   "duracion": {
+    "tipo": "integer",
+    "descripcion": "Duración registrada para el contrato actual; no se especifican la unidad ni el criterio de cómputo."
+   },
+   "idCausaTerminacionContrato": {
+    "tipo": "integer",
+    "descripcion": "Causa de terminación del contrato actual, si aplica; apunta a Nomina.CausaTerminacionContrato(idCausaTerminacionContrato)."
+   },
+   "comentarioTerminacion": {
+    "tipo": "character varying",
+    "descripcion": "Comentario asociado a la terminación del contrato, si existe."
+   },
+   "fechaFinalizacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de finalización del contrato actual."
+   },
+   "sabadoLaborable": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el sábado se considera laborable para el empleado."
+   },
+   "pagoAuxilioTransporte": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se paga auxilio de transporte al empleado."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago del empleado; apunta a General.FormaPago(idFormaPago)."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC asociada a la máquina del usuario, si está registrada."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto, si está registrado."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina donde se generó el registro, según el comentario de la columna."
+   },
+   "tipoCuenta": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de cuenta bancaria: 1 corresponde a ahorros y 2 a corriente."
+   },
+   "calculoSaludPensionSueldoBase": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el IBC de salud y pensión se calcula sobre el sueldo base; el comentario señala su aplicación cuando el empleado gana menos del mínimo, por ejemplo, por trabajar medio tiempo."
+   },
+   "fechaInicioEtapaLectiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de inicio de la etapa lectiva, si aplica."
+   },
+   "fechaFinEtapaLectiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de fin de la etapa lectiva, si aplica."
+   },
+   "fechaInicioEtapaProductiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de inicio de la etapa productiva, si aplica."
+   },
+   "fechaFinEtapaProductiva": {
+    "tipo": "date",
+    "descripcion": "Fecha de fin de la etapa productiva, si aplica."
+   },
+   "esUniversitario": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el empleado es universitario."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCargo -> Nomina.Cargo(idCargo)",
+   "idCausaTerminacionContrato -> Nomina.CausaTerminacionContrato(idCausaTerminacionContrato)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDependencia -> Nomina.Dependencia(idDependencia)",
+   "idEntidadPromotoraArl -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraCaja -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraFondoSolidaridad -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraPension -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraSalud -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idTipoRiesgoLaboral -> Nomina.RiesgoProfesional(idRiesgoProfesional)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idTipoContrato -> Nomina.TipoContrato(idTipoContrato)"
+  ],
+  "la_referencian": [
+   "ActivoFijo.UbicacionActivo(idEmpleado)",
+   "Nomina.ContratoEmpleado(idEmpleado)",
+   "Nomina.CreditoEmpleado(idEmpleado)",
+   "Nomina.DatosRetencionEmpleado(idEmpleado)",
+   "Nomina.DocumentoNominaElectronica(idEmpleado)",
+   "Nomina.EmpleadoContratoActual(idEmpleado)",
+   "Nomina.EstudioEmpleado(idEmpleado)",
+   "Nomina.LiquidacionNomina(idEmpleado)",
+   "Nomina.LiquidacionPila(idEmpleado)",
+   "Nomina.LiquidacionVacaciones(idEmpleado)",
+   "Nomina.Novedad(idEmpleado)",
+   "Nomina.OtroDevengadoNominaElectronica(idEmpleado)",
+   "Nomina.PeriodoPendienteVacaciones(idEmpleado)",
+   "Nomina.PorcentajeFijoRetencion(idEmpleado)",
+   "Nomina.ReferenciaEmpleado(idEmpleado)"
+  ]
+ },
+ "Nomina.EmpleadoContratoActual": {
+  "descripcion": "Registra la relación entre un empleado y un contrato de empleado que se identifica como actual. Posiblemente permite consultar el contrato aplicable en procesos de nómina, liquidaciones, vacaciones y renovación de contratos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEmpleadoContratoActual": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro; la estructura no declara una clave primaria."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al empleado relacionado; apunta a Nomina.Empleado(idEmpleado)."
+   },
+   "idContratoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato relacionado; apunta a Nomina.ContratoEmpleado(idContratoEmpleado)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idContratoEmpleado -> Nomina.ContratoEmpleado(idContratoEmpleado)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.EntidadPromotora": {
+  "descripcion": "Guarda entidades promotoras relacionadas con la nómina, vinculando cada registro con un tercero y clasificándolo por tipo. Sirve para asociar entidades como EPS, AFP o ARL con empleados y con registros de liquidación de aportes (PILA).",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEntidadPromotora": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la entidad promotora; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la entidad promotora; no se especifica su formato ni su significado."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el tercero asociado; es una clave foránea a Tercero.Tercero(idTercero)."
+   },
+   "tipoEntidadPromotora": {
+    "tipo": "integer",
+    "descripcion": "Clasifica la entidad: 0 = ARL, 1 = EPS, 2 = AFP, 3 = Caja de Compensación, 4 = ICBF, 5 = SENA y 6 = Medicina Prepagada."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la entidad; no se especifica qué significan true y false."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica la tabla a la que apunta."
+   }
+  },
+  "apunta_a": [
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Nomina.Empleado(idEntidadPromotoraArl)",
+   "Nomina.Empleado(idEntidadPromotoraCaja)",
+   "Nomina.Empleado(idEntidadPromotoraFondoSolidaridad)",
+   "Nomina.Empleado(idEntidadPromotoraPension)",
+   "Nomina.Empleado(idEntidadPromotoraSalud)",
+   "Nomina.LiquidacionPila(idEntidadPromotoraCaja)",
+   "Nomina.LiquidacionPila(idEntidadPromotoraIcbf)",
+   "Nomina.LiquidacionPila(idEntidadPromotoraPension)",
+   "Nomina.LiquidacionPila(idEntidadPromotoraRiesgoProfesional)",
+   "Nomina.LiquidacionPila(idEntidadPromotoraSalud)",
+   "Nomina.LiquidacionPila(idEntidadPromotoraSena)"
+  ]
+ },
+ "Nomina.GrupoConcepto": {
+  "descripcion": "Guarda grupos de conceptos de nómina clasificados como prima, cesantías o intereses a las cesantías. Estos grupos se usan en funciones de cálculo de valores devengados y liquidación de nómina.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idGrupoConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identificador del grupo de conceptos; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al grupo de conceptos."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del grupo de conceptos."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasifica el grupo: 1 = prima, 2 = cesantías, 3 = intereses a las cesantías."
+   },
+   "concepto": {
+    "tipo": "character varying",
+    "descripcion": "Guarda los conceptos que agrupa; no se especifica el formato ni cómo se identifican."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica el estado del grupo; no se especifica qué significan los valores verdadero y falso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Nomina.LiquidacionNomina": {
+  "descripcion": "Registra liquidaciones de nómina asociadas a un empleado, una dependencia y un período, junto con los valores salariales y datos de cálculo pertinentes. Sirve como cabecera de la liquidación, que puede relacionarse con detalles de liquidación, apropiaciones y una liquidación de PILA. También almacena información sobre contabilización, pago y documentos de nómina electrónica.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la liquidación de nómina; la estructura no declara una clave primaria."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al empleado de la liquidación; referencia a Nomina.Empleado(idEmpleado)."
+   },
+   "idDependencia": {
+    "tipo": "integer",
+    "descripcion": "Identifica la dependencia asociada a la liquidación; referencia a Nomina.Dependencia(idDependencia)."
+   },
+   "salarioBasico": {
+    "tipo": "numeric",
+    "descripcion": "Valor del salario básico registrado para la liquidación; su relación con sueldoBasicoEmpleado requiere confirmación."
+   },
+   "auxilioTransporte": {
+    "tipo": "numeric",
+    "descripcion": "Valor del auxilio de transporte considerado en la liquidación."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el período de liquidación."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde el período de liquidación."
+   },
+   "tipoLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de liquidación; sus valores y significado no se deducen de la estructura."
+   },
+   "numeroPeriodo": {
+    "tipo": "integer",
+    "descripcion": "Número de período de liquidación; su convención y significado exactos no se deducen de la estructura."
+   },
+   "liquidadoDefinitivo": {
+    "tipo": "boolean",
+    "descripcion": "Indica posiblemente si la liquidación se marcó como definitiva; el efecto de cada valor requiere confirmación."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "contabilizado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la liquidación está contabilizada; el alcance y efecto de cada valor requieren confirmación."
+   },
+   "numeroHoras": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de horas asociada a la liquidación, si corresponde; puede quedar sin valor."
+   },
+   "contabilizadoPago": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la liquidación fue contabilizada para el pago."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Identifica la forma de pago de la nómina; referencia a General.FormaPago(idFormaPago)."
+   },
+   "fechaDesde": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Inicio del intervalo cubierto por la liquidación."
+   },
+   "fechaHasta": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fin del intervalo cubierto por la liquidación."
+   },
+   "idContratoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato empleado para liquidar la nómina; referencia a Nomina.ContratoEmpleado(idContratoEmpleado)."
+   },
+   "idDocumentoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el documento generado en la transmisión de nómina electrónica; referencia a Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)."
+   },
+   "sueldoBasicoEmpleado": {
+    "tipo": "numeric",
+    "descripcion": "Sueldo básico del empleado según el contrato laboral al momento de la liquidación."
+   },
+   "idCargo": {
+    "tipo": "integer",
+    "descripcion": "Identifica el cargo del empleado al momento de liquidar la nómina; referencia a Nomina.Cargo(idCargo)."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la cuenta contable a la que se acreditará el valor en el pago de nómina; referencia a Contabilidad.PlanContable(idPlanContable)."
+   }
+  },
+  "apunta_a": [
+   "idContratoEmpleado -> Nomina.ContratoEmpleado(idContratoEmpleado)",
+   "idDependencia -> Nomina.Dependencia(idDependencia)",
+   "idDocumentoNominaElectronica -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idCargo -> Nomina.Cargo(idCargo)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleApropiacionNomina(idLiquidacionNomina)",
+   "Nomina.DetalleLiquidacionNomina(idLiquidacionNomina)",
+   "Nomina.LiquidacionPila(idLiquidacionNomina)"
+  ]
+ },
+ "Nomina.LiquidacionPila": {
+  "descripcion": "Guarda información de liquidación de aportes asociados a empleados y contratos dentro de una liquidación de nómina. Incluye días cotizados, bases de cotización, aportes y porcentajes para pensión, salud, caja de compensación, riesgos profesionales y entidades parafiscales. También registra fechas y novedades que pueden afectar esa liquidación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLiquidacionPila": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el registro de liquidación PILA; la estructura no indica si es clave primaria."
+   },
+   "idLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la liquidación de nómina asociada; apunta a Nomina.LiquidacionNomina(idLiquidacionNomina)."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al empleado de la liquidación; apunta a Nomina.Empleado(idEmpleado)."
+   },
+   "idContratoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato del empleado asociado; apunta a Nomina.ContratoEmpleado(idContratoEmpleado)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde la información de liquidación."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde la información de liquidación."
+   },
+   "periodo": {
+    "tipo": "integer",
+    "descripcion": "Código o número del periodo de liquidación; su significado exacto no se deduce de la estructura."
+   },
+   "tipoNovedad": {
+    "tipo": "character varying",
+    "descripcion": "Código o descripción de una novedad relacionada con la liquidación; sus valores no se deducen de la estructura."
+   },
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identifica un concepto de nómina relacionado, posiblemente una novedad o concepto liquidado; apunta a Nomina.Concepto(idConcepto)."
+   },
+   "fechaIngreso": {
+    "tipo": "date",
+    "descripcion": "Fecha de ingreso del empleado considerada para la liquidación."
+   },
+   "fechaRetiro": {
+    "tipo": "date",
+    "descripcion": "Fecha de retiro del empleado considerada para la liquidación."
+   },
+   "idEntidadPromotoraPension": {
+    "tipo": "integer",
+    "descripcion": "Identifica la entidad asociada a los aportes de pensión; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "diasCotizacionPension": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días cotizados para pensión."
+   },
+   "ibcPension": {
+    "tipo": "numeric",
+    "descripcion": "Ingreso base de cotización considerado para pensión."
+   },
+   "aportePension": {
+    "tipo": "numeric",
+    "descripcion": "Importe total del aporte de pensión registrado."
+   },
+   "aportePensionEmpleado": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte de pensión atribuido al empleado."
+   },
+   "aportePensionEmpresa": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte de pensión atribuido a la empresa."
+   },
+   "idEntidadPromotoraSalud": {
+    "tipo": "integer",
+    "descripcion": "Identifica la entidad asociada a los aportes de salud; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "diasCotizacionSalud": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días cotizados para salud."
+   },
+   "ibcSalud": {
+    "tipo": "numeric",
+    "descripcion": "Ingreso base de cotización considerado para salud."
+   },
+   "aporteSalud": {
+    "tipo": "numeric",
+    "descripcion": "Importe total del aporte de salud registrado."
+   },
+   "aporteSaludEmpleado": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte de salud atribuido al empleado."
+   },
+   "aporteSaludEmpresa": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte de salud atribuido a la empresa."
+   },
+   "idEntidadPromotoraCaja": {
+    "tipo": "integer",
+    "descripcion": "Identifica la entidad asociada a los aportes de caja; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "diasCotizacionCaja": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días cotizados para caja de compensación."
+   },
+   "ibcCaja": {
+    "tipo": "numeric",
+    "descripcion": "Ingreso base de cotización considerado para caja de compensación."
+   },
+   "aporteCaja": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte a caja de compensación registrado."
+   },
+   "idEntidadPromotoraRiesgoProfesional": {
+    "tipo": "integer",
+    "descripcion": "Identifica la entidad asociada a los aportes de riesgos profesionales; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "diasCotizacionRiesgoProfesional": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días cotizados para riesgos profesionales."
+   },
+   "ibcRiesgoProfesional": {
+    "tipo": "numeric",
+    "descripcion": "Ingreso base de cotización considerado para riesgos profesionales."
+   },
+   "aporteRiesgoProfesional": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte a riesgos profesionales registrado."
+   },
+   "idEntidadPromotoraSena": {
+    "tipo": "integer",
+    "descripcion": "Identifica la entidad asociada a los aportes de Sena; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "diasCotizacionSena": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días cotizados considerados para Sena."
+   },
+   "ibcSena": {
+    "tipo": "numeric",
+    "descripcion": "Ingreso base de cotización considerado para Sena."
+   },
+   "aporteSena": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte a Sena registrado."
+   },
+   "idEntidadPromotoraIcbf": {
+    "tipo": "integer",
+    "descripcion": "Identifica la entidad asociada a los aportes de ICBF; apunta a Nomina.EntidadPromotora(idEntidadPromotora)."
+   },
+   "diasCotizacionIcbf": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días cotizados considerados para ICBF."
+   },
+   "ibcIcbf": {
+    "tipo": "numeric",
+    "descripcion": "Ingreso base de cotización considerado para ICBF."
+   },
+   "aporteIcbf": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte a ICBF registrado."
+   },
+   "exonerado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si aplica una exoneración a esta liquidación; el alcance de la exoneración no se deduce de la estructura."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez."
+   },
+   "porcentajePension": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje utilizado o registrado para el aporte de pensión."
+   },
+   "porcentajeSalud": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje utilizado o registrado para el aporte de salud."
+   },
+   "porcentajeCaja": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje utilizado o registrado para el aporte a caja de compensación."
+   },
+   "porcentajeRiesgoProfesional": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje utilizado o registrado para el aporte a riesgos profesionales."
+   },
+   "porcentajeSena": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje utilizado o registrado para el aporte a Sena."
+   },
+   "porcentajeIcbf": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje utilizado o registrado para el aporte a ICBF."
+   },
+   "variacionTransitoriaSalario": {
+    "tipo": "character varying",
+    "descripcion": "Código o indicador relacionado con una variación transitoria del salario; su formato y valores no se deducen de la estructura."
+   },
+   "fechaInicioNovedad": {
+    "tipo": "date",
+    "descripcion": "Fecha de inicio de la novedad asociada, si corresponde."
+   },
+   "fechaFinNovedad": {
+    "tipo": "date",
+    "descripcion": "Fecha de fin de la novedad asociada, si corresponde."
+   },
+   "numeroHorasLaboradas": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de horas laboradas considerada en el registro."
+   },
+   "porcentajeFondoSolidaridadPensional": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al Fondo de Solidaridad Pensional."
+   },
+   "aporteFondoSolidaridadPensional": {
+    "tipo": "numeric",
+    "descripcion": "Importe del aporte al Fondo de Solidaridad Pensional."
+   },
+   "tipoCotizante": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de cotizante; sus valores no se deducen de la estructura."
+   }
+  },
+  "apunta_a": [
+   "idConcepto -> Nomina.Concepto(idConcepto)",
+   "idContratoEmpleado -> Nomina.ContratoEmpleado(idContratoEmpleado)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)",
+   "idEntidadPromotoraCaja -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraIcbf -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraPension -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraRiesgoProfesional -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraSalud -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idEntidadPromotoraSena -> Nomina.EntidadPromotora(idEntidadPromotora)",
+   "idLiquidacionNomina -> Nomina.LiquidacionNomina(idLiquidacionNomina)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.LiquidacionVacaciones": {
+  "descripcion": "Guarda registros de liquidaciones de vacaciones asociados a un empleado y a su contrato, incluyendo el periodo, los días pagados y el valor neto. Sirve para gestionar el pago de las vacaciones y su posible integración con novedades de nómina y procesos contables.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLiquidacionVacaciones": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la liquidación de vacaciones; la estructura no indica si es clave primaria."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al empleado al que corresponde la liquidación; apunta a Nomina.Empleado(idEmpleado)."
+   },
+   "idContratoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato asociado a la liquidación; apunta a Nomina.ContratoEmpleado(idContratoEmpleado)."
+   },
+   "sueldoBasico": {
+    "tipo": "numeric",
+    "descripcion": "Sueldo básico usado para calcular la liquidación de vacaciones."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional con observaciones sobre la liquidación."
+   },
+   "fechaInicio": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de inicio de las vacaciones."
+   },
+   "fechaFinal": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de finalización de las vacaciones."
+   },
+   "fechaReingreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora prevista o registrada para la reincorporación del empleado."
+   },
+   "diasPagados": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de vacaciones pagados."
+   },
+   "valorNetoPagado": {
+    "tipo": "numeric",
+    "descripcion": "Valor neto total pagado por las vacaciones."
+   },
+   "liquidado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano relacionado con el estado de liquidación; su significado operativo exacto no está definido."
+   },
+   "contabilizado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano relacionado con la contabilización de la liquidación; no se especifica exactamente qué proceso representa."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se proporciona una relación con una tabla de usuarios."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se proporciona una relación con una tabla de usuarios."
+   },
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Concepto usado para aplicar novedades automáticas en cada periodo; apunta a Nomina.Concepto(idConcepto)."
+   },
+   "contabilizadoPago": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la liquidación fue contabilizada para el pago."
+   }
+  },
+  "apunta_a": [
+   "idConcepto -> Nomina.Concepto(idConcepto)",
+   "idContratoEmpleado -> Nomina.ContratoEmpleado(idContratoEmpleado)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleLiquidacionVacaciones(idLiquidacionVacaciones)",
+   "Nomina.DetalleNovedadLiquidacionVacaciones(idLiquidacionVacaciones)",
+   "Nomina.LiquidacionVacacionesDetallado(idLiquidacionVacaciones)"
+  ]
+ },
+ "Nomina.LiquidacionVacacionesDetallado": {
+  "descripcion": "Guarda el detalle de una liquidación de vacaciones por período, incluyendo las fechas, los días pagados y el valor pagado. También registra si el detalle está liquidado en nómina y, cuando corresponde, el documento de nómina electrónica relacionado para su sincronización con la DIAN.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLiquidacionVacacionesDetallado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de detalle; la estructura no declara explícitamente una clave primaria."
+   },
+   "idLiquidacionVacaciones": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la liquidación de vacaciones a la que pertenece este detalle; referencia Nomina.LiquidacionVacaciones(idLiquidacionVacaciones)."
+   },
+   "fechaInicio": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de inicio del período de pago."
+   },
+   "fechaFinal": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de finalización del período de pago."
+   },
+   "valorPagado": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado en el período, posiblemente correspondiente a una quincena."
+   },
+   "cantidadDia": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días pagados en el período."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla o catálogo apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla o catálogo apunta."
+   },
+   "liquidadoNomina": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el detalle figura como liquidado en nómina; el significado operativo exacto no se especifica."
+   },
+   "idDocumentoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el documento de nómina electrónica con el que se sincroniza el detalle con la DIAN; referencia Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica) y puede ser nulo."
+   }
+  },
+  "apunta_a": [
+   "idDocumentoNominaElectronica -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)",
+   "idLiquidacionVacaciones -> Nomina.LiquidacionVacaciones(idLiquidacionVacaciones)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleNovedad(idLiquidacionVacacionesDetallado)"
+  ]
+ },
+ "Nomina.NivelAcademico": {
+  "descripcion": "Catálogo de niveles académicos, posiblemente usado para clasificar la formación de asociados y los estudios de empleados. Las tablas CarteraFinanciera.Asociado y Nomina.EstudioEmpleado hacen referencia a este catálogo mediante idNivelAcademico.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idNivelAcademico": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del nivel académico; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al nivel académico; su formato y significado no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del nivel académico."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del nivel; posiblemente distingue entre vigente y no vigente, pero no se conocen los valores."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CarteraFinanciera.Asociado(idNivelAcademico)",
+   "Nomina.EstudioEmpleado(idNivelAcademico)"
+  ]
+ },
+ "Nomina.NotaAjusteNominaElectronica": {
+  "descripcion": "Registra la relación entre un documento electrónico de nómina y otro documento electrónico asociado a su ajuste. Según los comentarios, el documento relacionado puede reemplazar o anular al documento ajustado; la estructura no permite determinar las reglas de negocio ni los casos exactos en que se usa cada opción.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idNotaAjusteNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de ajuste; la estructura no indica si es clave primaria."
+   },
+   "idDocumentoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Documento electrónico de nómina al cual se realiza el ajuste; referencia a Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)."
+   },
+   "idDocumentoNominaElectronicaNotaAjuste": {
+    "tipo": "bigint",
+    "descripcion": "Documento electrónico que reemplaza o anula al documento ajustado; referencia a Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla referencia."
+   }
+  },
+  "apunta_a": [
+   "idDocumentoNominaElectronica -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)",
+   "idDocumentoNominaElectronicaNotaAjuste -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.Novedad": {
+  "descripcion": "Registra información de una novedad o liquidación de nómina asociada a un empleado, una dependencia y un período. Guarda también los valores de salario básico y auxilio de transporte vigentes al realizar la liquidación, además de datos de control y del estado de cierre. Nomina.DetalleNovedad utiliza sus registros para asociarles el detalle correspondiente.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idNovedad": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la novedad; la estructura proporcionada no declara una clave primaria."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al empleado asociado; apunta a Nomina.Empleado(idEmpleado)."
+   },
+   "idDependencia": {
+    "tipo": "integer",
+    "descripcion": "Identifica la dependencia asociada; apunta a Nomina.Dependencia(idDependencia)."
+   },
+   "salarioBasico": {
+    "tipo": "numeric",
+    "descripcion": "Salario básico del empleado al momento de realizar la liquidación."
+   },
+   "auxilioTransporte": {
+    "tipo": "numeric",
+    "descripcion": "Auxilio de transporte del empleado al momento de realizar la liquidación."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el período de nómina."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde el período de nómina."
+   },
+   "tipoLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Tipo de período: 0 = mensual, 1 = quincenal, 2 = semanal."
+   },
+   "numeroPeriodo": {
+    "tipo": "integer",
+    "descripcion": "Número del período dentro del mes: 0 para mensual, 1 o 2 para quincenal, y de 1 a 5 para semanal."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   },
+   "liquidado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la novedad está cerrada o liquidada; posiblemente true significa cerrada y false pendiente."
+   }
+  },
+  "apunta_a": [
+   "idDependencia -> Nomina.Dependencia(idDependencia)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)"
+  ],
+  "la_referencian": [
+   "Nomina.DetalleNovedad(idNovedad)"
+  ]
+ },
+ "Nomina.OtroDevengadoNominaElectronica": {
+  "descripcion": "Registra valores de otros devengados asociados a un empleado y a su contrato, organizados por dependencia, año, mes y tipo de liquidación. Sirve para conservar importes y datos de la novedad que pueden vincularse a un documento de nómina electrónica. La estructura no permite identificar qué conceptos específicos se consideran “otros devengados”.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idOtroDevengadoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de otro devengado; la estructura no declara una clave primaria."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Empleado relacionado; apunta a Nomina.Empleado(idEmpleado)."
+   },
+   "idContratoEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Contrato del empleado relacionado; apunta a Nomina.ContratoEmpleado(idContratoEmpleado)."
+   },
+   "idDependencia": {
+    "tipo": "integer",
+    "descripcion": "Dependencia relacionada; apunta a Nomina.Dependencia(idDependencia)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el registro."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde el registro."
+   },
+   "tipoLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de liquidación; sus valores no se pueden deducir de la estructura."
+   },
+   "valorPrincipal": {
+    "tipo": "numeric",
+    "descripcion": "Valor principal del devengado; la estructura no especifica la regla de cálculo ni el significado de su signo."
+   },
+   "valorComplemento": {
+    "tipo": "numeric",
+    "descripcion": "Valor complementario derivado del valor principal; el comentario indica que corresponde a intereses a las cesantías."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al registro; la estructura no especifica su base ni cómo se aplica."
+   },
+   "idDocumentoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Documento de nómina electrónica relacionado, si existe; apunta a Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se declara a qué tabla apunta."
+   },
+   "numeroDias": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de días asociada al registro; la estructura no indica cómo se calcula."
+   },
+   "fechaInicio": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de inicio de la novedad, según el comentario; puede estar vacía."
+   },
+   "fechaFin": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de fin de la novedad; puede estar vacía."
+   }
+  },
+  "apunta_a": [
+   "idContratoEmpleado -> Nomina.ContratoEmpleado(idContratoEmpleado)",
+   "idDependencia -> Nomina.Dependencia(idDependencia)",
+   "idDocumentoNominaElectronica -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.ParametroFondoSolidaridad": {
+  "descripcion": "Guarda tramos de sueldo y el porcentaje de descuento posiblemente aplicable al Fondo de Solidaridad durante una liquidación de nómina. Se relaciona con un parámetro de liquidación y sus datos son utilizados por funciones de liquidación de nómina y de vacaciones.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idParametroFondoSolidaridad": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de parámetros; la estructura proporcionada no declara una clave primaria."
+   },
+   "idParametroLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del parámetro de liquidación al que pertenece; referencia Nomina.ParametroLiquidacion(idParametroLiquidacion)."
+   },
+   "sueldoDesde": {
+    "tipo": "numeric",
+    "descripcion": "Límite inferior del tramo de sueldo al que posiblemente se aplica el porcentaje."
+   },
+   "sueldoHasta": {
+    "tipo": "numeric",
+    "descripcion": "Límite superior del tramo de sueldo al que posiblemente se aplica el porcentaje."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento posiblemente aplicable a los sueldos comprendidos en el tramo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idParametroLiquidacion -> Nomina.ParametroLiquidacion(idParametroLiquidacion)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.ParametroFondoSolidaridad_bak0048": {
+  "descripcion": "La tabla almacena parámetros del fondo de solidaridad de nómina, posiblemente para determinar un descuento según un rango de sueldo asociado a una liquidación. El sufijo «bak0048» sugiere que podría ser una copia de respaldo, pero no permite confirmar si se usa en la operación actual.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idParametroFondoSolidaridad": {
+    "tipo": "integer",
+    "descripcion": "Identificador del parámetro del fondo de solidaridad; la estructura no indica si es clave primaria."
+   },
+   "idParametroLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de un parámetro de liquidación posiblemente relacionado; no se declara una clave foránea ni se especifica la tabla de destino."
+   },
+   "sueldoDesde": {
+    "tipo": "numeric",
+    "descripcion": "Límite inferior del sueldo al que podría aplicarse el parámetro."
+   },
+   "sueldoHasta": {
+    "tipo": "numeric",
+    "descripcion": "Límite superior del sueldo al que podría aplicarse el parámetro."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento posiblemente aplicable al rango de sueldo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara la tabla a la que apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Nomina.ParametroLiquidacion": {
+  "descripcion": "Guarda parámetros utilizados en procesos de liquidación de nómina, como retenciones, novedades, vacaciones o aportes, según las funciones que la consultan. Sus registros también pueden relacionarse con conceptos de nómina, apropiaciones y documentos contables. El alcance exacto de cada parámetro depende de los códigos y valores configurados.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idParametroLiquidacion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del parámetro; la estructura no lo declara como clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código que identifica el parámetro; su formato y catálogo no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción funcional del parámetro."
+   },
+   "valor": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al parámetro; no se puede deducir si representa un importe, porcentaje u otra magnitud."
+   },
+   "tipoLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de liquidación al que aplica; sus valores no se pueden deducir."
+   },
+   "tipoParametro": {
+    "tipo": "integer",
+    "descripcion": "Código que clasifica el parámetro; sus valores no se pueden deducir."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado exacto no se puede confirmar; posiblemente señala si el parámetro está activo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa la tabla a la que apunta."
+   },
+   "valorAporteTotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor o porcentaje total destinado al sistema, según el comentario de la columna."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.DocumentoCuentaContable(idParametroLiquidacion)",
+   "Nomina.Concepto(idParametroLiquidacion)",
+   "Nomina.DetalleApropiacionNomina(idParametroLiquidacion)",
+   "Nomina.ParametroFondoSolidaridad(idParametroLiquidacion)"
+  ]
+ },
+ "Nomina.ReferenciaEmpleado": {
+  "descripcion": "Guarda datos de contacto de personas asociadas a un empleado, clasificadas como referencias personales, familiares o laborales. Sirve posiblemente para consultar referencias relacionadas con el empleado; la estructura no especifica cómo se usan en los procesos de nómina.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idReferenciaEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la referencia del empleado; la estructura no declara que sea clave primaria."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del empleado al que corresponde la referencia; apunta a Nomina.Empleado(idEmpleado)."
+   },
+   "nombreReferencia": {
+    "tipo": "character varying",
+    "descripcion": "Nombre de la persona registrada como referencia."
+   },
+   "telefonoContacto": {
+    "tipo": "character varying",
+    "descripcion": "Teléfono de contacto de la referencia."
+   },
+   "emailContacto": {
+    "tipo": "character varying",
+    "descripcion": "Correo electrónico de la referencia, si se registra."
+   },
+   "tipoReferencia": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de referencia: 1 = Personal, 2 = Familiar, 3 = Laboral."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación del registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idEmpleado -> Nomina.Empleado(idEmpleado)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.RiesgoProfesional": {
+  "descripcion": "Guarda información de los riesgos profesionales utilizados en Nómina. Sirve posiblemente para asociar un tipo de riesgo a los empleados y para que la liquidación de nómina utilice sus datos; la columna claseRiesgo se usa para reportar la clase en la planilla única. La tabla es referenciada por Nomina.Empleado mediante idTipoRiesgoLaboral.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRiesgoProfesional": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de riesgo profesional; Nomina.Empleado lo referencia mediante idTipoRiesgoLaboral."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al riesgo profesional; su formato y significado no se deducen de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo del riesgo profesional."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro, posiblemente para distinguir registros habilitados de no habilitados; el significado de cada valor no está confirmado."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al riesgo profesional; no se deduce su unidad, base de cálculo ni uso exacto."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla corresponde."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla corresponde."
+   },
+   "claseRiesgo": {
+    "tipo": "integer",
+    "descripcion": "Clase de riesgo profesional que se reporta a la planilla única; su correspondencia con códigos o categorías no se deduce."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Nomina.Empleado(idTipoRiesgoLaboral)"
+  ]
+ },
+ "Nomina.RptLiquidacionNomina": {
+  "descripcion": "Guarda información usada para generar el reporte de una liquidación de nómina, con datos de conceptos devengados y deducidos, sus cantidades de horas y sus valores. También incluye importes y horas destinados a mostrarse en el desprendible de pago. La función Nomina.fnGenerarReporteLiquidacion la utiliza.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRptLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del reporte de liquidación; no se informa una clave primaria."
+   },
+   "idLiquidacionNomina": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la liquidación de nómina asociada; no se informa una clave foránea."
+   },
+   "idConceptoDevengado": {
+    "tipo": "integer",
+    "descripcion": "Código o identificador del concepto devengado; no se informa a qué catálogo corresponde."
+   },
+   "descripcionDevengado": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del concepto devengado, posiblemente usada para presentarlo en el reporte."
+   },
+   "cantidadHoras": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de horas asociada al concepto devengado."
+   },
+   "valorDevengado": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario asociado al concepto devengado."
+   },
+   "idConceptoDeducido": {
+    "tipo": "integer",
+    "descripcion": "Código o identificador del concepto deducido; no se informa a qué catálogo corresponde."
+   },
+   "descripcionDeducido": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del concepto deducido, posiblemente usada para presentarlo en el reporte."
+   },
+   "valorDeducido": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario asociado al concepto deducido."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de un usuario asociado al registro; no se informa a qué tabla o entidad corresponde."
+   },
+   "cantidadHorasDeducido": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de horas deducidas que, según el comentario, se muestra solo en el desprendible."
+   },
+   "valorVisibleDesprendible": {
+    "tipo": "numeric",
+    "descripcion": "Valor que, según el comentario, se muestra solo en el desprendible."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Nomina.SincronizacionNominaElectronica": {
+  "descripcion": "Registra información de sincronización asociada a documentos de nómina electrónica y, posiblemente, a sus novedades. Vincula un documento general con un documento de nómina electrónica y conserva datos como el CUNE, el QR y fechas relacionadas con la respuesta y el mantenimiento del registro. La estructura no permite determinar el sistema externo ni el flujo exacto de sincronización.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idSincronizacionNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de sincronización; no está declarado como clave primaria en la estructura proporcionada."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento general asociado; es clave foránea a General.Documento(idDocumento)."
+   },
+   "idDocumentoNominaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del documento de nómina electrónica asociado; es clave foránea a Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)."
+   },
+   "tipoDocumento": {
+    "tipo": "character varying",
+    "descripcion": "Código o descripción del tipo de documento; sus valores no se pueden deducir."
+   },
+   "cune": {
+    "tipo": "character varying",
+    "descripcion": "Posiblemente almacena el Código Único de Documento Soporte de Pago de Nómina Electrónica; su formato y cuándo se asigna no se pueden deducir."
+   },
+   "qr": {
+    "tipo": "character varying",
+    "descripcion": "Dato relacionado con un código QR del documento; no se puede deducir si almacena su contenido, una URL u otro valor."
+   },
+   "cuneNovedad": {
+    "tipo": "character varying",
+    "descripcion": "Posiblemente almacena el CUNE asociado a una novedad de nómina electrónica; su uso exacto no se puede deducir."
+   },
+   "idDocumentoNominaElectronicaNovedad": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del documento de nómina electrónica asociado a una novedad; es clave foránea a Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)."
+   },
+   "fechaRespuesta": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de una respuesta relacionada con la sincronización; no se puede deducir qué evento la genera."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla referenciada no se indica."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la tabla referenciada no se indica."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)",
+   "idDocumentoNominaElectronica -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)",
+   "idDocumentoNominaElectronicaNovedad -> Nomina.DocumentoNominaElectronica(idDocumentoNominaElectronica)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.TablaRetencionFuente": {
+  "descripcion": "Guarda los rangos de ingresos expresados en UVT y los parámetros asociados a la retención en la fuente del artículo 383 del Estatuto Tributario, organizados por año. Sirve como tabla de referencia para funciones de nómina que calculan la retención. La estructura no declara una clave primaria ni relaciones con otras tablas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTablaRetencionFuente": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la fila; la estructura no indica que sea clave primaria."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año de vigencia al que corresponden el rango y sus parámetros."
+   },
+   "rangoDesdeUvt": {
+    "tipo": "numeric",
+    "descripcion": "Límite inferior del rango, expresado en UVT."
+   },
+   "rangoHastaUvt": {
+    "tipo": "numeric",
+    "descripcion": "Límite superior del rango, expresado en UVT; puede quedar nulo, pero no se especifica qué significa en ese caso."
+   },
+   "tarifaMarginal": {
+    "tipo": "numeric",
+    "descripcion": "Tarifa marginal aplicable al rango, expresada como decimal; por ejemplo, 0.19 equivale a 19%."
+   },
+   "uvtAdicionar": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de UVT que se suma al resultado marginal, según la columna «más» de la tabla del artículo 383."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional para describir o identificar el rango."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; no se especifica qué significan los valores verdadero y falso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Nomina.TipoConcepto": {
+  "descripcion": "Catálogo de tipos que permite clasificar los conceptos de nómina. La tabla Nomina.Concepto referencia sus registros mediante idTipoConcepto; posiblemente esta clasificación se utiliza en cálculos y liquidaciones de nómina.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipoConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del tipo de concepto."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al tipo de concepto; su formato y significado específico no se deducen de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del tipo de concepto."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; posiblemente señala si está activo, pero el significado de cada valor debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Nomina.Concepto(idTipoConcepto)"
+  ]
+ },
+ "Nomina.TipoContrato": {
+  "descripcion": "Catálogo de tipos de contrato usados en nómina, con su código, descripción y atributos para clasificar la contratación. Sus registros se referencian desde Nomina.ContratoEmpleado y Nomina.Empleado, y también se usan en funciones de liquidación de nómina y vacaciones.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipoContrato": {
+    "tipo": "integer",
+    "descripcion": "Identificador del tipo de contrato; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al tipo de contrato."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del tipo de contrato."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tipo de contrato está habilitado; posiblemente true significa activo y false inactivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   },
+   "pasantia": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tipo de contrato es de pasantía."
+   },
+   "tipoCotizante": {
+    "tipo": "integer",
+    "descripcion": "Código numérico que determina el tipo de cotizante para la planilla única."
+   },
+   "duracion": {
+    "tipo": "integer",
+    "descripcion": "Duración del contrato: 0 = término fijo y 1 = indefinido."
+   },
+   "tiempoParcial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el empleado puede trabajar menos de 30 días; admite valores nulos."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Nomina.ContratoEmpleado(idTipoContrato)",
+   "Nomina.Empleado(idTipoContrato)"
+  ]
+ },
+ "Nomina.TrazabilidadDetalleNovedad": {
+  "descripcion": "Guarda datos de detalle de novedades asociados a una liquidación definitiva de nómina. Según el comentario de la base, se utiliza para conservar información que permita reversar el periodo liquidado.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTrazabilidadDetalleNovedad": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de trazabilidad; la estructura no indica si es clave primaria."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año del periodo de nómina al que corresponde el registro."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes del periodo de nómina al que corresponde el registro."
+   },
+   "numeroPeriodo": {
+    "tipo": "integer",
+    "descripcion": "Número del periodo de nómina dentro del año o mes; su convención debe confirmarse."
+   },
+   "idDependencia": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la dependencia asociada; apunta a Nomina.Dependencia(idDependencia)."
+   },
+   "diaDescontado": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de días descontados asociada al detalle de la novedad; la unidad y el criterio del signo deben confirmarse."
+   },
+   "idDetalleNovedad": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de novedad asociado; apunta a Nomina.DetalleNovedad(idDetalleNovedad)."
+   },
+   "liquidado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro está marcado como liquidado; el significado exacto de cada valor debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se creó el registro de trazabilidad."
+   }
+  },
+  "apunta_a": [
+   "idDependencia -> Nomina.Dependencia(idDependencia)",
+   "idDetalleNovedad -> Nomina.DetalleNovedad(idDetalleNovedad)"
+  ],
+  "la_referencian": []
+ },
+ "Nomina.TurnoNomina": {
+  "descripcion": "Guarda posiblemente la definición de turnos utilizados en el módulo de nómina, con un código, una descripción y sus horas de inicio y fin. Sirve posiblemente para identificar y configurar los horarios de turno disponibles; la estructura no especifica cómo se relacionan con otros registros de nómina.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTurnoNomina": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del turno; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código que identifica el turno; no se especifica su formato ni sus reglas."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del turno."
+   },
+   "horaInicial": {
+    "tipo": "time without time zone",
+    "descripcion": "Hora de inicio del turno."
+   },
+   "horaFinal": {
+    "tipo": "time without time zone",
+    "descripcion": "Hora de finalización del turno."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado concreto no está especificado; posiblemente señala si el turno está activo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea ni se especifica la tabla de usuarios."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea ni se especifica la tabla de usuarios."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Nomina.VigenciaJornada": {
+  "descripcion": "Guarda valores de horas laborales diarias y, opcionalmente, semanales asociados a una fecha de vigencia, en el contexto de la reducción de jornada de la Ley 2101. Posiblemente se consulta durante la liquidación de nómina y vacaciones para aplicar la jornada correspondiente a cada fecha.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idVigenciaJornada": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la vigencia; la estructura no indica si es clave primaria."
+   },
+   "fechaVigencia": {
+    "tipo": "date",
+    "descripcion": "Fecha desde la cual rige el valor de horas diarias."
+   },
+   "horasDiarias": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de horas laborales diarias vigentes; el comentario menciona valores de ejemplo para jornadas semanales de 44 y 42 horas."
+   },
+   "horasSemanales": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de horas laborales semanales asociada a la vigencia; no se especifica cuándo puede quedar vacía."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional para describir la vigencia."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado operativo, por ejemplo si señala que la vigencia está activa, debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una relación con otra tabla."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una relación con otra tabla."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ }
+}

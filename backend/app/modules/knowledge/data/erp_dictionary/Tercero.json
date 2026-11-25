@@ -1,0 +1,735 @@
+{
+ "Tercero.Banco": {
+  "descripcion": "Guarda registros de bancos, con su código y nombre, para que otras áreas del ERP puedan asociarlos a cuentas, documentos y operaciones financieras. También incluye códigos usados posiblemente al generar archivos de pagos y datos de auditoría sobre creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del registro de banco; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al banco; no se especifican su formato ni sus valores."
+   },
+   "nombre": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del banco."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; posiblemente distingue bancos habilitados de no habilitados."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador opcional del tercero al que se liga el banco; apunta a Tercero.Tercero(idTercero)."
+   },
+   "codigoBancoPlano1": {
+    "tipo": "character varying",
+    "descripcion": "Código de banco utilizado para generar un archivo plano; no se especifican su formato ni sus valores."
+   },
+   "codigoBancoPlano2": {
+    "tipo": "character varying",
+    "descripcion": "Código de banco descrito como especial 1; no se especifica su significado exacto."
+   },
+   "codigoBancoPlano3": {
+    "tipo": "character varying",
+    "descripcion": "Código de banco para generar el plano de pago BBVA CASH; se indica que tiene 4 dígitos."
+   }
+  },
+  "apunta_a": [
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Cartera.DetalleReciboComprobante(idBanco)",
+   "CarteraFinanciera.CreditoAsociado(idBancoCheque)",
+   "Contabilidad.Anticipo(idBanco)",
+   "Contabilidad.Anticipo(idBancoCheque)",
+   "Contabilidad.DetalleOtraCuentaCobrar(idBanco)",
+   "Contabilidad.DetalleOtroPasivo(idBanco)",
+   "Contabilidad.DocumentoCuentaContable(idBanco)",
+   "Contabilidad.PlanContable(idBanco)",
+   "CuentaCobrar.Factura(idBanco)",
+   "CuentaCobrar.Remision(idBanco)",
+   "CuentaPagar.DetallePropuestaPago(idBanco)",
+   "CuentaPagar.FacturaCompra(idBanco)",
+   "CuentaPagar.OrdenCompra(idBanco)",
+   "General.CuentaBancaria(idBanco)",
+   "General.DetalleConceptoContable(idBanco)"
+  ]
+ },
+ "Tercero.DistribucionPagoTercero": {
+  "descripcion": "Define cómo se distribuye entre uno o varios terceros destino un pago que originalmente se realizaría a un tercero padre. Cada fila identifica un destino y el porcentaje que recibe; la cuenta bancaria para el giro puede indicarse explícitamente o seleccionarse según la configuración de pago del tercero. Según el comentario de la tabla, la suma de porcentajes puede ser 100 en distribución automática o 0 durante un proceso manual.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDistribucionPagoTercero": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la distribución del pago; la estructura no indica si es clave primaria."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero padre al que originalmente se le realizaría el pago; referencia a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroDestino": {
+    "tipo": "bigint",
+    "descripcion": "Tercero que recibe esta porción del pago; referencia a Tercero.Tercero(idTercero)."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje del pago asignado a este destino, entre 0,00 y 100,00, con hasta cuatro decimales."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idTerceroBanco": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta bancaria específica del destino para el giro; referencia a Tercero.TerceroBanco(idTerceroBanco). Si es NULL, se usa posiblemente la primera cuenta del destino con pagoTerceros=true."
+   }
+  },
+  "apunta_a": [
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroBanco -> Tercero.TerceroBanco(idTerceroBanco)",
+   "idTerceroDestino -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Tercero.GrupoTercero": {
+  "descripcion": "Guarda grupos asociados a terceros, con un código y una descripción para identificarlos. Se utiliza en registros de terceros y también en convenios y amortizaciones de crédito. Puede vincularse con un grupo de Inventario, que según el comentario debe corresponder a grupos para prestación de servicios.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idGrupoTercero": {
+    "tipo": "integer",
+    "descripcion": "Identificador del grupo de tercero; la estructura no indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del grupo de tercero; no se especifica su formato ni significado."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del grupo de tercero."
+   },
+   "idGrupo": {
+    "tipo": "integer",
+    "descripcion": "Referencia a Inventario.Grupo(idGrupo); el comentario indica que debe asociarse solo con grupos de artículos para prestación de servicios."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del grupo; no se especifica qué representan los valores verdadero y falso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa una tabla de referencia."
+   }
+  },
+  "apunta_a": [
+   "idGrupo -> Inventario.Grupo(idGrupo)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.AmortizacionCredito(idGrupoTercero)",
+   "Tercero.Tercero(idGrupoTercero)",
+   "Venta.Convenio(idGrupoTercero)"
+  ]
+ },
+ "Tercero.Tercero": {
+  "descripcion": "Mantiene el registro maestro de personas y organizaciones que interactúan con el ERP, junto con sus datos de identificación, contacto, ubicación y clasificación. Sirve para habilitarlas como clientes, proveedores, empleados u otros tipos de tercero y para configurar condiciones comerciales, tributarias, contables y de facturación. La tabla también conserva datos de control, preferencias de comunicación y algunos datos biométricos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero."
+   },
+   "numeroIdentificacion": {
+    "tipo": "character varying",
+    "descripcion": "Número del documento de identificación del tercero."
+   },
+   "codigoAlterno": {
+    "tipo": "character varying",
+    "descripcion": "Código adicional asignado al tercero; su uso específico no se deduce."
+   },
+   "tipoDocumento": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de documento de identificación."
+   },
+   "razonSocial": {
+    "tipo": "character varying",
+    "descripcion": "Razón social registrada para el tercero."
+   },
+   "primerNombre": {
+    "tipo": "character varying",
+    "descripcion": "Primer nombre de la persona."
+   },
+   "segundoNombre": {
+    "tipo": "character varying",
+    "descripcion": "Segundo nombre de la persona, si aplica."
+   },
+   "primerApellido": {
+    "tipo": "character varying",
+    "descripcion": "Primer apellido de la persona."
+   },
+   "segundoApellido": {
+    "tipo": "character varying",
+    "descripcion": "Segundo apellido de la persona, si aplica."
+   },
+   "nombreComercial": {
+    "tipo": "character varying",
+    "descripcion": "Nombre comercial con el que se identifica al tercero, si aplica."
+   },
+   "direccion": {
+    "tipo": "character varying",
+    "descripcion": "Dirección del tercero."
+   },
+   "idVereda": {
+    "tipo": "integer",
+    "descripcion": "Vereda asociada; apunta a General.Vereda(idVereda)."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Plan contable asociado; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "telefonoFijo": {
+    "tipo": "character varying",
+    "descripcion": "Número de teléfono fijo del tercero."
+   },
+   "celular": {
+    "tipo": "character varying",
+    "descripcion": "Número de teléfono celular del tercero."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de otro tercero relacionado como empleado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "representanteLegal": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del representante legal, si aplica."
+   },
+   "sinCredito": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está marcado como sin crédito; el efecto operativo exacto requiere confirmación."
+   },
+   "comentarioSinCredito": {
+    "tipo": "character varying",
+    "descripcion": "Motivo o comentario asociado a la marca de tercero sin crédito."
+   },
+   "digitoVerificacion": {
+    "tipo": "integer",
+    "descripcion": "Dígito de verificación asociado a la identificación tributaria."
+   },
+   "idZona": {
+    "tipo": "integer",
+    "descripcion": "Zona asociada; apunta a General.Zona(idZona)."
+   },
+   "fechaNacimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de nacimiento, si aplica."
+   },
+   "idMunicipio": {
+    "tipo": "integer",
+    "descripcion": "Municipio asociado al tercero; apunta a General.Municipio(idMunicipio)."
+   },
+   "diasCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de crédito configurada, si aplica."
+   },
+   "periodoVisita": {
+    "tipo": "integer",
+    "descripcion": "Código o duración del período de visita; su unidad o catálogo no se deduce."
+   },
+   "cupoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Monto del cupo de crédito asignado, si aplica."
+   },
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Tarifa asociada; apunta a General.Tarifa(idTarifa)."
+   },
+   "fechaIngreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de ingreso o registro del tercero."
+   },
+   "fechaUltimoMovimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora del último movimiento registrado para el tercero, si aplica."
+   },
+   "sector": {
+    "tipo": "integer",
+    "descripcion": "Código del sector asociado; su catálogo no se deduce."
+   },
+   "estrato": {
+    "tipo": "integer",
+    "descripcion": "Estrato asignado al tercero, si aplica."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado; apunta a Tercero.Banco(idBanco)."
+   },
+   "retencionFuente": {
+    "tipo": "boolean",
+    "descripcion": "Indica si aplica la retención en la fuente al tercero."
+   },
+   "retencionFuenteBase": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se considera una base para la retención en la fuente; el significado operativo de «base» requiere confirmación."
+   },
+   "regimenSimplificado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está marcado como perteneciente al régimen simplificado."
+   },
+   "reteIca": {
+    "tipo": "boolean",
+    "descripcion": "Indica si aplica la retención de ICA al tercero."
+   },
+   "reteIcaBase": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se considera una base para la retención de ICA; su efecto exacto requiere confirmación."
+   },
+   "reteIva": {
+    "tipo": "boolean",
+    "descripcion": "Indica si aplica la retención de IVA al tercero."
+   },
+   "reteIvaBase": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se considera una base para la retención de IVA; su efecto exacto requiere confirmación."
+   },
+   "reteCree": {
+    "tipo": "boolean",
+    "descripcion": "Indica si aplica la retención de CREE al tercero."
+   },
+   "reteCreeBase": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se considera una base para la retención de CREE; su efecto exacto requiere confirmación."
+   },
+   "otrasRetenciones": {
+    "tipo": "boolean",
+    "descripcion": "Indica si aplican otras retenciones al tercero."
+   },
+   "otrasRetencionesBase": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se considera una base para otras retenciones; su efecto exacto requiere confirmación."
+   },
+   "tipoCliente": {
+    "tipo": "integer",
+    "descripcion": "Clasificación del cliente: 0 = contado y 1 = crédito."
+   },
+   "idActividadEconomica": {
+    "tipo": "integer",
+    "descripcion": "Actividad económica asociada; apunta a Contabilidad.ActividadEconomica(idActividadEconomica)."
+   },
+   "porcentajeInteres": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de interés configurado, si aplica; no se deduce a qué operación corresponde."
+   },
+   "generaRetenciones": {
+    "tipo": "integer",
+    "descripcion": "Ámbito en que genera retenciones: 0 = todos, 1 = compras y 2 = ventas."
+   },
+   "email": {
+    "tipo": "character varying",
+    "descripcion": "Correo electrónico principal del tercero."
+   },
+   "tipoContribuyente": {
+    "tipo": "integer",
+    "descripcion": "Tipo de contribuyente: 0 = persona jurídica, 1 = persona natural y 2 = gran contribuyente."
+   },
+   "proveedor": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está clasificado como proveedor."
+   },
+   "cliente": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está clasificado como cliente."
+   },
+   "tercero": {
+    "tipo": "boolean",
+    "descripcion": "Indica si está clasificado como tercero de uso contable."
+   },
+   "empleado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está clasificado como empleado."
+   },
+   "propietario": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está clasificado como propietario."
+   },
+   "transportador": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está clasificado como transportador."
+   },
+   "otros": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero pertenece a la categoría de otros terceros."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está activo o inactivo."
+   },
+   "foto": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario de la foto del tercero, si se almacena."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez."
+   },
+   "localizacionGeografica": {
+    "tipo": "character varying",
+    "descripcion": "Dato de localización geográfica del tercero; formato y uso no especificados."
+   },
+   "idGrupoTercero": {
+    "tipo": "integer",
+    "descripcion": "Grupo asociado; apunta a Tercero.GrupoTercero(idGrupoTercero)."
+   },
+   "operador": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero es operador para procesos automotrices."
+   },
+   "huella": {
+    "tipo": "bytea",
+    "descripcion": "Plantilla biométrica de huella dactilar en formato binario, si se almacena."
+   },
+   "fotoHuella": {
+    "tipo": "bytea",
+    "descripcion": "Imagen de la huella dactilar en formato binario, si se almacena."
+   },
+   "facturarSinCupo": {
+    "tipo": "boolean",
+    "descripcion": "Indica posiblemente si se permite facturar sin disponer de cupo de crédito."
+   },
+   "puntajeSisben": {
+    "tipo": "numeric",
+    "descripcion": "Puntaje del SISBEN asociado al tercero."
+   },
+   "genero": {
+    "tipo": "integer",
+    "descripcion": "Clasificación indicada: 0 = femenino, 1 = masculino y 2 = empresa."
+   },
+   "declarante": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está marcado como declarante."
+   },
+   "asociado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está clasificado como asociado."
+   },
+   "regimen": {
+    "tipo": "boolean",
+    "descripcion": "Régimen tributario: true = simple y false = ordinario."
+   },
+   "codigoPostal": {
+    "tipo": "character varying",
+    "descripcion": "Código o zona postal del tercero."
+   },
+   "nombreCompleto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre completo del tercero, posiblemente almacenado para consulta o presentación."
+   },
+   "estadoCobroCartera": {
+    "tipo": "integer",
+    "descripcion": "Estado de cobro de cartera: 0 = normal, 1 = pendiente de cobro, 2 = jurídico, 3 = difícil cobro y 4 = recuperada."
+   },
+   "exentoIva": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero tiene una condición relacionada con la exención de IVA; la descripción de la base no aclara si se cobra o no el impuesto."
+   },
+   "textoExencion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o referencia del decreto que permite la exención del impuesto."
+   },
+   "convenioEspecialMantenimiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero tiene un convenio especial de mantenimiento."
+   },
+   "tipoEnvioAdjuntoFacturaElectronica": {
+    "tipo": "integer",
+    "descripcion": "Forma de envío del adjunto de la factura electrónica: 1 = normal y 2 = se incluye en el archivo ZIP."
+   },
+   "asuntoCorreoElectronico": {
+    "tipo": "character varying",
+    "descripcion": "Asunto personalizado para correos electrónicos, si se configura."
+   },
+   "cuerpoCorreoElectronico": {
+    "tipo": "character varying",
+    "descripcion": "Cuerpo personalizado para correos electrónicos, si se configura."
+   },
+   "responderCorreoElectronico": {
+    "tipo": "character varying",
+    "descripcion": "Dirección o valor configurado para el campo «responder a» del correo."
+   },
+   "idCategoriaEjecutivo": {
+    "tipo": "integer",
+    "descripcion": "Categoría de ejecutivo asociada; apunta a Tercero.CategoriaEjecutivo(idCategoriaEjecutivo)."
+   },
+   "idFrecuenciaFacturacion": {
+    "tipo": "integer",
+    "descripcion": "Frecuencia de facturación asociada; apunta a Tercero.FrecuenciaFacturacion(idFrecuenciaFacturacion)."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC asociada a una máquina o usuario; propósito concreto no especificado."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre de cliente remoto; significado funcional no especificado."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o identificador de la máquina donde se generó la factura."
+   },
+   "terceroVip": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero tiene prioridad en algunos procesos especiales."
+   },
+   "generarFacturaElectronica": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se genera factura electrónica para el tercero en el proceso de remisión especial."
+   },
+   "emailAlterno": {
+    "tipo": "character varying",
+    "descripcion": "Correo electrónico alternativo del tercero."
+   },
+   "emailAlterno2": {
+    "tipo": "character varying",
+    "descripcion": "Segundo correo electrónico alternativo del tercero."
+   },
+   "bloqueoTercero": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tercero está bloqueado para algunos movimientos del sistema."
+   },
+   "motivoBloqueo": {
+    "tipo": "character varying",
+    "descripcion": "Motivo del bloqueo del tercero, si aplica."
+   },
+   "soloFacturaElectronica": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al tercero solo se le generan facturas electrónicas."
+   },
+   "descuentoRemesa": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se ofrece al cliente un descuento en remesas."
+   },
+   "soloFacturaPos": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al tercero solo se le generan facturas POS no electrónicas."
+   },
+   "paginaWeb": {
+    "tipo": "character varying",
+    "descripcion": "Página web del tercero."
+   },
+   "paginaWebAlterna": {
+    "tipo": "character varying",
+    "descripcion": "Página web alternativa del tercero."
+   },
+   "facturarImpoConsumo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al cliente se le factura impuesto al consumo en lugar de IVA."
+   },
+   "adjuntosFacturaElectronica": {
+    "tipo": "boolean",
+    "descripcion": "Indica posiblemente si se gestionan adjuntos para la factura electrónica; el comportamiento exacto no está descrito."
+   },
+   "idMunicipioExpedicionDocumento": {
+    "tipo": "integer",
+    "descripcion": "Municipio de expedición del documento; apunta a General.Municipio(idMunicipio)."
+   },
+   "idCargo": {
+    "tipo": "integer",
+    "descripcion": "Cargo asociado; apunta a Nomina.Cargo(idCargo)."
+   }
+  },
+  "apunta_a": [
+   "idActividadEconomica -> Contabilidad.ActividadEconomica(idActividadEconomica)",
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idFrecuenciaFacturacion -> Tercero.FrecuenciaFacturacion(idFrecuenciaFacturacion)",
+   "idGrupoTercero -> Tercero.GrupoTercero(idGrupoTercero)",
+   "idMunicipio -> General.Municipio(idMunicipio)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idTarifa -> General.Tarifa(idTarifa)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idVereda -> General.Vereda(idVereda)",
+   "idZona -> General.Zona(idZona)",
+   "idCategoriaEjecutivo -> Tercero.CategoriaEjecutivo(idCategoriaEjecutivo)",
+   "idCargo -> Nomina.Cargo(idCargo)",
+   "idMunicipioExpedicionDocumento -> General.Municipio(idMunicipio)"
+  ],
+  "la_referencian": [
+   "ActivoFijo.Activo(idTerceroProveedor)",
+   "ActivoFijo.PolizaActivo(idTerceroAseguradora)",
+   "Agenda.Agenda(idTercero)",
+   "Agenda.Ruta(idTercero)",
+   "Agenda.Ruta(idTerceroEmpleado)",
+   "Arriendo.ContratoArriendo(idTercero)",
+   "Arriendo.ContratoArriendoArrendador(idTercero)",
+   "Arriendo.ContratoArriendoConceptoRecurrente(idTercero)",
+   "Arriendo.ContratoArriendoIncremento(idTercero)",
+   "Arriendo.ContratoArriendoTerceroAdicional(idTercero)",
+   "Arriendo.ContratoArriendoTerceroRetencion(idTercero)",
+   "Arriendo.ObligacionArriendo(idTercero)",
+   "Arriendo.ObligacionArriendoDetalle(idTercero)",
+   "Arriendo.ObligacionArriendoPago(idTercero)",
+   "Bomberos.Bitacora(idTerceroOperario)"
+  ]
+ },
+ "Tercero.TerceroBanco": {
+  "descripcion": "Registra cuentas bancarias asociadas a terceros y el banco al que pertenece cada cuenta. Sirve para identificar cuentas que pueden utilizarse en procesos de pago, incluidos pagos masivos a terceros cuando así se indica. También almacena datos de auditoría y, opcionalmente, un código de convenio bancario.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTerceroBanco": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de cuenta bancaria; la estructura suministrada no declara una clave primaria."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero titular de la cuenta; referencia a Tercero.Tercero(idTercero)."
+   },
+   "idBanco": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el banco de la cuenta; referencia a Tercero.Banco(idBanco)."
+   },
+   "numeroCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Número de la cuenta bancaria."
+   },
+   "tipoCuenta": {
+    "tipo": "integer",
+    "descripcion": "Tipo de cuenta: 1 corresponde a ahorros y 2 a corriente."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "codigoConvenio": {
+    "tipo": "character varying",
+    "descripcion": "Código de convenio bancario asociado a la cuenta; para Scotiabank Colpatria ocupa las posiciones 37 a 47 del HEADER del archivo plano de pago a proveedores."
+   },
+   "pagoTerceros": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuenta se usa para pagos a terceros, como propuestas de pago masivo y el plano de Colpatria."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.DispersionDetallePropuestaPago(idTerceroBanco)",
+   "Tercero.DistribucionPagoTercero(idTerceroBanco)"
+  ]
+ },
+ "Tercero.TerceroDireccion": {
+  "descripcion": "Guarda direcciones asociadas a un tercero para que puedan utilizarse en documentos como facturas, remisiones y cotizaciones. La dirección puede incluir un municipio, dato que participa en la activación de la ReteICA junto con la actividad económica del producto. Posiblemente permite seleccionar una dirección distinta de la dirección principal del tercero.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTerceroDireccion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la dirección del tercero; la estructura no confirma si es clave primaria o cómo se genera."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero al que pertenece la dirección; apunta a Tercero.Tercero(idTercero)."
+   },
+   "direccion": {
+    "tipo": "character varying",
+    "descripcion": "Texto de la dirección asociada al tercero."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró la dirección."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación de la dirección."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "idMunicipio": {
+    "tipo": "bigint",
+    "descripcion": "Municipio de la dirección alterna; apunta a General.Municipio(idMunicipio). Puede ser NULL si no se asignó un municipio y participa en la activación de la ReteICA junto con la actividad económica del producto."
+   }
+  },
+  "apunta_a": [
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idMunicipio -> General.Municipio(idMunicipio)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.Factura(idTerceroDireccion)",
+   "CuentaCobrar.Remision(idTerceroDireccion)",
+   "Venta.Cotizacion(idTerceroDireccion)"
+  ]
+ }
+}

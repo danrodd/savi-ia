@@ -28,6 +28,16 @@ def fold(text: str) -> str:
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
 
 
+def stem(word: str) -> str:
+    """Plural a singular, lo justo para comparar con nombres de tablas:
+    "retenciones" -> "retencion", "compras" -> "compra", "facturas" -> "factura"."""
+    if len(word) > 5 and word.endswith("es") and word[-3] in "nrldz":
+        return word[:-2]
+    if len(word) > 4 and word.endswith("s"):
+        return word[:-1]
+    return word
+
+
 @dataclass(frozen=True)
 class ErpTable:
     key: str
@@ -80,7 +90,7 @@ class ErpDictionary:
         exact = self._by_folded.get(fold(text))
         if exact is not None:
             return {"tabla": exact.detail()}
-        words = [w for w in fold(text).replace(".", " ").split() if len(w) >= 3]
+        words = [stem(w) for w in fold(text).replace(".", " ").split() if len(w) >= 3]
         if not words:
             return {"matches": [], "nota": "Indique una tabla (Esquema.Tabla) o un tema."}
         scored: list[tuple[int, str]] = []

@@ -1,0 +1,701 @@
+{
+ "Arriendo.ContratoArriendo": {
+  "descripcion": "Guarda los datos generales y económicos de un contrato de arrendamiento, incluidos el inmueble, el tercero asociado, la vigencia, el canon y las condiciones de incremento e IVA. Sirve como cabecera para relacionar el contrato con sus arrendadores, obligaciones y otros detalles asociados. También registra información administrativa y valores informativos de depósito y póliza.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del contrato de arrendamiento; la estructura no declara una clave primaria."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado al contrato; referencia a Tercero.Tercero(idTercero)."
+   },
+   "direccion": {
+    "tipo": "character varying",
+    "descripcion": "Dirección del inmueble arrendado."
+   },
+   "idMunicipio": {
+    "tipo": "integer",
+    "descripcion": "Municipio donde se ubica el inmueble; referencia a General.Municipio(idMunicipio)."
+   },
+   "tipoInmueble": {
+    "tipo": "integer",
+    "descripcion": "Código de clasificación del inmueble; sus valores no se pueden deducir."
+   },
+   "areaM2": {
+    "tipo": "numeric",
+    "descripcion": "Área del inmueble en metros cuadrados."
+   },
+   "destinacion": {
+    "tipo": "character varying",
+    "descripcion": "Destinación o uso previsto para el inmueble."
+   },
+   "descripcionInmueble": {
+    "tipo": "character varying",
+    "descripcion": "Descripción adicional del inmueble."
+   },
+   "matriculaInmobiliaria": {
+    "tipo": "character varying",
+    "descripcion": "Número de matrícula inmobiliaria del inmueble, si se registra."
+   },
+   "cedulaCatastral": {
+    "tipo": "character varying",
+    "descripcion": "Identificador catastral del inmueble, si se registra."
+   },
+   "numeroEscrituraPublica": {
+    "tipo": "character varying",
+    "descripcion": "Número de la escritura pública relacionada con el inmueble o contrato, si se registra."
+   },
+   "fechaInicio": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de inicio de vigencia del contrato."
+   },
+   "fechaFinal": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de finalización de la vigencia del contrato."
+   },
+   "valorCanonMensual": {
+    "tipo": "numeric",
+    "descripcion": "Canon mensual vigente, base para las obligaciones mensuales y los incrementos."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Observaciones libres sobre el contrato."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del contrato; el significado de cada valor requiere confirmación."
+   },
+   "motivoAnulado": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de anulación, si corresponde."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa una tabla referenciada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa una tabla referenciada."
+   },
+   "idConceptoContableArriendo": {
+    "tipo": "integer",
+    "descripcion": "Concepto contable asociado al arriendo; referencia a General.ConceptoContable(idConceptoContable)."
+   },
+   "fechaProximoIncremento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha en que corresponde el próximo incremento; avanza 12 meses al aplicar un incremento y no determina la vigencia del contrato."
+   },
+   "puntosAdicionales": {
+    "tipo": "numeric",
+    "descripcion": "Puntos porcentuales pactados por encima del IPC que se aplican en cada incremento del contrato."
+   },
+   "llevaIva": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el canon del contrato está gravado con IVA."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA aplicable; referencia a Inventario.IndicadorIva(idIndicadorIva) y es obligatorio cuando llevaIva es verdadero."
+   },
+   "valorCanonOriginal": {
+    "tipo": "numeric",
+    "descripcion": "Valor original del canon registrado en el contrato; su relación exacta con el canon vigente requiere confirmación."
+   },
+   "tipoArriendo": {
+    "tipo": "integer",
+    "descripcion": "Clasificación del arriendo: 1 = Franquicias, 2 = Corporativo, 3 = Administrativo; NULL = sin clasificar."
+   },
+   "tipoContrato": {
+    "tipo": "smallint",
+    "descripcion": "Modelo del contrato: 1 = arrendador único con terceros adicionales por porcentaje; 2 = multiarrendador con arrendadores y obligaciones propias en ContratoArriendoArrendador."
+   },
+   "valorDepositoGarantia": {
+    "tipo": "numeric",
+    "descripcion": "Valor pactado para el depósito en garantía; es informativo y no genera cuota ni contabilización. 0 indica que no hay depósito."
+   },
+   "valorPoliza": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la póliza contratada para respaldar el contrato; es informativo y no genera cuota ni contabilización. 0 indica que no hay póliza."
+   }
+  },
+  "apunta_a": [
+   "idConceptoContableArriendo -> General.ConceptoContable(idConceptoContable)",
+   "idMunicipio -> General.Municipio(idMunicipio)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)"
+  ],
+  "la_referencian": [
+   "Arriendo.ContratoArriendoArrendador(idContratoArriendo)",
+   "Arriendo.ContratoArriendoCentroCosto(idContratoArriendo)",
+   "Arriendo.ContratoArriendoConceptoRecurrente(idContratoArriendo)",
+   "Arriendo.ContratoArriendoConceptoRetencion(idContratoArriendo)",
+   "Arriendo.ContratoArriendoDescuentoProntoPago(idContratoArriendo)",
+   "Arriendo.ContratoArriendoIncremento(idContratoArriendo)",
+   "Arriendo.ContratoArriendoNotificacion(idContratoArriendo)",
+   "Arriendo.ContratoArriendoTerceroAdicional(idContratoArriendo)",
+   "Arriendo.ContratoArriendoTerceroRetencion(idContratoArriendo)",
+   "Arriendo.ObligacionArriendo(idContratoArriendo)"
+  ]
+ },
+ "Arriendo.ContratoArriendoArrendador": {
+  "descripcion": "Registra la participación de cada arrendador o copropietario dentro de un contrato de arriendo, junto con su canon y parámetros de IVA, contabilización y centro de costo. Sirve para gestionar por arrendador su histórico de obligaciones, anticipo y cuenta por pagar. También identifica al representante que administra el contrato y permite registrar la vigencia de cada participación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoArriendoArrendador": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del arrendador dentro del contrato; no se informa si es la clave primaria."
+   },
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del contrato de arriendo al que pertenece; apunta a Arriendo.ContratoArriendo(idContratoArriendo)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero que actúa como arrendador; apunta a Tercero.Tercero(idTercero)."
+   },
+   "valorCanonMensual": {
+    "tipo": "numeric",
+    "descripcion": "Valor del canon mensual asignado a este arrendador."
+   },
+   "valorCanonOriginal": {
+    "tipo": "numeric",
+    "descripcion": "Valor del canon registrado como original; no se especifica cómo se diferencia del canon mensual."
+   },
+   "llevaIva": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al canon de este arrendador se le aplica IVA; el significado directo de verdadero y falso se deduce del nombre."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA asociado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "idConceptoContableArriendo": {
+    "tipo": "integer",
+    "descripcion": "Concepto contable usado para el arriendo de este arrendador; apunta a General.ConceptoContable(idConceptoContable)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo para el anticipo y la cuenta por pagar de este arrendador; apunta a Empresa.CentroCosto(idCentroCosto). Si es NULL, se toma el primero de ContratoArriendoCentroCosto."
+   },
+   "esRepresentante": {
+    "tipo": "boolean",
+    "descripcion": "Indica si este arrendador recibe la administración completa del contrato; exactamente uno por contrato debe tener este valor."
+   },
+   "fechaInicioVigencia": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha desde la que rige la participación si el arrendador se incorpora después del inicio del contrato; si es NULL, rige desde el inicio del contrato."
+   },
+   "fechaFinVigencia": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha hasta la que rige la participación si el arrendador sale antes del fin del contrato; si es NULL, rige hasta el fin del contrato."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado del registro; no se especifica qué significan sus valores."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional para registrar observaciones sobre el arrendador o su participación."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idConceptoContableArriendo -> General.ConceptoContable(idConceptoContable)",
+   "idContratoArriendo -> Arriendo.ContratoArriendo(idContratoArriendo)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Arriendo.ContratoArriendoCentroCosto": {
+  "descripcion": "Relaciona contratos de arriendo con centros de costo. Sirve posiblemente para asociar uno o más centros de costo a un contrato, aunque la estructura no permite confirmar la cardinalidad ni si se registra una distribución de costos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoArriendoCentroCosto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de asociación; la estructura no confirma si es clave primaria."
+   },
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del contrato de arriendo relacionado; apunta a Arriendo.ContratoArriendo(idContratoArriendo)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identificador del centro de costo relacionado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idContratoArriendo -> Arriendo.ContratoArriendo(idContratoArriendo)"
+  ],
+  "la_referencian": []
+ },
+ "Arriendo.ContratoArriendoConceptoRecurrente": {
+  "descripcion": "Registra conceptos recurrentes asociados a un contrato de arriendo, con su valor mensual y tratamiento de IVA. Permite identificar a quién se paga el gasto y desde qué periodo se cobra; posiblemente sirve como base para generar o calcular cargos periódicos del contrato.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoArriendoConceptoRecurrente": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el registro del concepto recurrente; la estructura no indica una clave primaria declarada."
+   },
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato de arriendo asociado; apunta a Arriendo.ContratoArriendo(idContratoArriendo)."
+   },
+   "idConceptoContable": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto contable del registro; apunta a General.ConceptoContable(idConceptoContable)."
+   },
+   "valorMensual": {
+    "tipo": "numeric",
+    "descripcion": "Valor mensual asignado al concepto; no se puede deducir si incluye impuestos ni cómo se interpreta su signo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica el estado del registro; no se puede deducir qué significan los valores verdadero y falso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identifica al usuario que creó el registro; no se informa a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identifica al usuario que modificó el registro; no se informa a qué tabla apunta."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero al que se paga el gasto; si es NULL, el gasto se cobra al arrendador junto con el canon. Apunta a Tercero.Tercero(idTercero)."
+   },
+   "llevaIva": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el concepto lleva IVA; no se informa el significado de sus valores más allá de verdadero o falso."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de IVA aplicable; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "fechaInicioVigencia": {
+    "tipo": "date",
+    "descripcion": "Primer periodo en que el gasto se cobra al beneficiario; ayuda a evitar cuotas de periodos ya vencidos al asignar el concepto a un contrato en curso."
+   },
+   "fechaFinVigencia": {
+    "tipo": "date",
+    "descripcion": "Fecha hasta la que está vigente el concepto; no se especifica cómo se interpreta si queda NULL."
+   }
+  },
+  "apunta_a": [
+   "idConceptoContable -> General.ConceptoContable(idConceptoContable)",
+   "idContratoArriendo -> Arriendo.ContratoArriendo(idContratoArriendo)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Arriendo.ContratoArriendoDescuentoProntoPago": {
+  "descripcion": "Guarda los rangos de descuento por pronto pago configurados para los gastos recurrentes de un contrato de arriendo, asociados a un concepto contable y, opcionalmente, a un beneficiario. El rango se determina según el día de la fecha de transmisión de la obligación; si ese día queda fuera de todos los rangos, se cobra el valor pleno.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoArriendoDescuentoProntoPago": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de rango de descuento; la estructura no declara una clave primaria."
+   },
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato de arriendo al que pertenece el rango; referencia Arriendo.ContratoArriendo(idContratoArriendo)."
+   },
+   "idConceptoContable": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto contable del gasto recurrente; referencia General.ConceptoContable(idConceptoContable)."
+   },
+   "diaDesde": {
+    "tipo": "integer",
+    "descripcion": "Día inicial del rango de transmisión de la obligación para aplicar el descuento."
+   },
+   "diaHasta": {
+    "tipo": "integer",
+    "descripcion": "Día final del rango de transmisión de la obligación para aplicar el descuento."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento que se aplica cuando la fecha de transmisión cae en el rango."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla referencia."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Beneficiario del gasto al que aplica el rango; si es NULL, el gasto lo cobra el arrendador."
+   }
+  },
+  "apunta_a": [
+   "idContratoArriendo -> Arriendo.ContratoArriendo(idContratoArriendo)",
+   "idConceptoContable -> General.ConceptoContable(idConceptoContable)"
+  ],
+  "la_referencian": []
+ },
+ "Arriendo.ContratoArriendoIncremento": {
+  "descripcion": "Registra los incrementos aplicados a los cánones de un contrato de arriendo, con una fila por arrendador y fecha de aplicación. Permite consultar el porcentaje aplicado y los valores anterior y nuevo de cada canon.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoArriendoIncremento": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de incremento; la estructura proporcionada no declara que sea clave primaria."
+   },
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato de arriendo al que corresponde el incremento; apunta a Arriendo.ContratoArriendo(idContratoArriendo)."
+   },
+   "fechaAplicacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se aplica el incremento al contrato."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje total aplicado al canon; según el comentario, incluye los puntos adicionales negociados sobre el IPC."
+   },
+   "valorAnterior": {
+    "tipo": "numeric",
+    "descripcion": "Valor del canon del arrendador antes del incremento."
+   },
+   "valorNuevo": {
+    "tipo": "numeric",
+    "descripcion": "Valor del canon del arrendador después del incremento."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional con detalles o contexto del incremento."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "origen": {
+    "tipo": "character varying",
+    "descripcion": "Indica si el incremento fue generado por el sistema (SISFEC) o migrado de un contrato en ejecución (HISTORICO)."
+   },
+   "puntosAdicionales": {
+    "tipo": "numeric",
+    "descripcion": "Puntos porcentuales negociados por encima del IPC; no puede ser negativo y el IPC que rigió se obtiene restando este valor a porcentaje."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al arrendador cuyo canon describe el incremento; apunta a Tercero.Tercero(idTercero)."
+   }
+  },
+  "apunta_a": [
+   "idContratoArriendo -> Arriendo.ContratoArriendo(idContratoArriendo)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Arriendo.ContratoArriendoNotificacion": {
+  "descripcion": "Guarda notificaciones asociadas a contratos de arriendo, con el motivo, la fecha de notificación y un correo relacionado. También registra si la notificación fue enviada y, de ser así, la fecha de envío. Puede servir para controlar y consultar las notificaciones gestionadas para cada contrato.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idContratoArriendoNotificacion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de notificación; no consta como clave primaria en la estructura proporcionada."
+   },
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Contrato de arriendo al que corresponde la notificación; apunta a Arriendo.ContratoArriendo(idContratoArriendo)."
+   },
+   "idMotivoNotificacionArriendo": {
+    "tipo": "integer",
+    "descripcion": "Motivo de la notificación; apunta a Arriendo.MotivoNotificacionArriendo(idMotivoNotificacionArriendo)."
+   },
+   "fechaNotificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a la notificación; no se puede deducir si indican programación, creación o el momento del evento."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario relacionado con la notificación; apunta a Seguridad.Usuario(idUsuario). Es opcional y no se puede deducir su función exacta."
+   },
+   "correo": {
+    "tipo": "character varying",
+    "descripcion": "Dirección de correo asociada a la notificación; no se puede deducir si es el destinatario u otro contacto."
+   },
+   "enviada": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si la notificación fue enviada; no se puede deducir cómo se representan otros estados de envío."
+   },
+   "fechaEnvio": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de envío de la notificación; es opcional."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se proporciona la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se proporciona la tabla de referencia."
+   }
+  },
+  "apunta_a": [
+   "idContratoArriendo -> Arriendo.ContratoArriendo(idContratoArriendo)",
+   "idMotivoNotificacionArriendo -> Arriendo.MotivoNotificacionArriendo(idMotivoNotificacionArriendo)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ },
+ "Arriendo.MotivoNotificacionArriendo": {
+  "descripcion": "Catálogo de motivos asociados a las notificaciones de arriendo, con una descripción y un mensaje opcional para cada motivo. Sirve posiblemente para clasificar las notificaciones vinculadas a contratos de arriendo; la tabla Arriendo.ContratoArriendoNotificacion la referencia.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMotivoNotificacionArriendo": {
+    "tipo": "integer",
+    "descripcion": "Identificador del motivo; lo referencia Arriendo.ContratoArriendoNotificacion(idMotivoNotificacionArriendo), aunque la estructura no declara una clave primaria ni confirma una restricción de clave foránea."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código que identifica o clasifica el motivo; no se puede deducir el formato ni los valores posibles."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del motivo de notificación."
+   },
+   "mensaje": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje opcional asociado al motivo; no se puede deducir si es una plantilla o un texto fijo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado no está definido; posiblemente señala si el motivo está activo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Arriendo.ContratoArriendoNotificacion(idMotivoNotificacionArriendo)"
+  ]
+ },
+ "Arriendo.ObligacionArriendo": {
+  "descripcion": "Registra posiblemente una obligación de arriendo asociada a un contrato, un tercero y un período identificado por año y mes. Incluye valores de arriendo, administración, IVA, descuento, saldo y datos de documentos relacionados, por lo que sirve para gestionar y dar seguimiento a los cobros o pagos correspondientes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idObligacionArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la obligación de arriendo; la estructura no declara explícitamente una clave primaria."
+   },
+   "idContratoArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el contrato de arriendo al que corresponde la obligación; apunta a Arriendo.ContratoArriendo(idContratoArriendo)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero asociado a la obligación; apunta a Tercero.Tercero(idTercero)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año del período al que corresponde la obligación."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes del período al que corresponde la obligación; no se especifica el rango de valores usado."
+   },
+   "valorArriendo": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado por concepto de arriendo."
+   },
+   "valorAdministracion": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado por concepto de administración."
+   },
+   "valorTotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la obligación; no se especifica cómo se calcula."
+   },
+   "estado": {
+    "tipo": "integer",
+    "descripcion": "Código del estado de la obligación; no se conocen los valores ni su significado."
+   },
+   "idAnticipo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica un anticipo relacionado, si aplica; apunta a Contabilidad.Anticipo(idAnticipo)."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica una factura de tercero relacionada, si aplica; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idOtroPasivo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica otro pasivo relacionado, si aplica; apunta a Contabilidad.OtroPasivo(idOtroPasivo)."
+   },
+   "idDocumentoAnticipo": {
+    "tipo": "integer",
+    "descripcion": "Identifica el documento relacionado con un anticipo, si aplica; apunta a General.Documento(idDocumento)."
+   },
+   "numeroAnticipo": {
+    "tipo": "bigint",
+    "descripcion": "Número asociado al anticipo; no se especifica su formato ni su relación con idAnticipo."
+   },
+   "fechaTransmision": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de transmisión de la obligación, si fue transmitida."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Texto con observaciones sobre la obligación."
+   },
+   "motivoAnulado": {
+    "tipo": "character varying",
+    "descripcion": "Texto que registra el motivo de anulación, si aplica."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   },
+   "saldo": {
+    "tipo": "numeric",
+    "descripcion": "Saldo registrado para la obligación; no se especifica su signo ni cómo se calcula."
+   },
+   "fechaProgramada": {
+    "tipo": "date",
+    "descripcion": "Fecha programada asociada a la obligación, si aplica; no se especifica qué evento representa."
+   },
+   "valorDescuentoProntoPago": {
+    "tipo": "numeric",
+    "descripcion": "Descuento por pronto pago aplicado a la administración según el día de transmisión; se presenta como menor valor cobrado y 0 significa que no hay descuento."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "IVA de la cuota calculado sobre el canon, no sobre la administración; depende de cada arrendador y 0 significa que el arrendador no cobra IVA."
+   }
+  },
+  "apunta_a": [
+   "idAnticipo -> Contabilidad.Anticipo(idAnticipo)",
+   "idContratoArriendo -> Arriendo.ContratoArriendo(idContratoArriendo)",
+   "idDocumentoAnticipo -> General.Documento(idDocumento)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)",
+   "idOtroPasivo -> Contabilidad.OtroPasivo(idOtroPasivo)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Arriendo.ObligacionArriendoDetalle(idObligacionArriendo)",
+   "Arriendo.ObligacionArriendoPago(idObligacionArriendo)",
+   "Arriendo.ObligacionArriendoRetencion(idObligacionArriendo)",
+   "Cartera.FacturaTercero(idObligacionArriendo)"
+  ]
+ }
+}

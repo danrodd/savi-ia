@@ -1,0 +1,92 @@
+{
+ "Agenda.Agenda": {
+  "descripcion": "Registra elementos de agenda asociados obligatoriamente a un tercero y, opcionalmente, a un vehículo o una póliza. Guarda la fecha y la descripción del elemento, además de datos para configurar recordatorios y seguir su estado. Posiblemente se utiliza para gestionar actividades vinculadas con terceros y pólizas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idAgenda": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del elemento de agenda; la estructura no declara una clave primaria."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado al elemento de agenda; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idVehiculo": {
+    "tipo": "bigint",
+    "descripcion": "Vehículo asociado, si corresponde; apunta a Mantenimiento.Vehiculo(idVehiculo)."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del elemento de agenda."
+   },
+   "fechaHora": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora programadas para el elemento de agenda."
+   },
+   "recordatorio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el elemento tiene recordatorio: true sí, false no."
+   },
+   "cantidad": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de periodos que se anticipa el recordatorio."
+   },
+   "periodo": {
+    "tipo": "integer",
+    "descripcion": "Unidad de la anticipación: 0 horas, 1 días, 2 semanas o 3 meses."
+   },
+   "formaRecordatorio": {
+    "tipo": "integer",
+    "descripcion": "Medio del recordatorio: 0 pantalla o 1 correo electrónico."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario al que se dirige el recordatorio, si corresponde; apunta a Seguridad.Usuario(idUsuario)."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el elemento está activo (true) o anulado (false)."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de la anulación, si se registra."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica su tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica su tabla de referencia."
+   },
+   "ultimaFechaEjecucion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última ejecución registrada, si existe."
+   },
+   "estadoAgenda": {
+    "tipo": "integer",
+    "descripcion": "Estado del elemento: 0 registrada, 1 confirmada, 2 aplazada, 3 cancelada, 4 cumplida o 5 incumplida."
+   },
+   "idPoliza": {
+    "tipo": "bigint",
+    "descripcion": "Póliza que genera el recordatorio, si corresponde; apunta a Mantenimiento.Poliza(idPoliza)."
+   }
+  },
+  "apunta_a": [
+   "idPoliza -> Mantenimiento.Poliza(idPoliza)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)",
+   "idVehiculo -> Mantenimiento.Vehiculo(idVehiculo)"
+  ],
+  "la_referencian": []
+ }
+}

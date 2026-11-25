@@ -1,0 +1,764 @@
+{
+ "Cartera.CruceAnticipoCliente": {
+  "descripcion": "Registra cruces en los que un anticipo de cliente se aplica a una factura de CXC o a una factura de tercero, junto con el valor aplicado y la retención asociada. Sirve para consultar y recalcular saldos de cartera y anticipos; la referencia al detalle del recibo permite identificar una línea relacionada con la anulación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCruceAnticipoCliente": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del cruce; la estructura no declara una clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Factura de CXC a la que se aplica el anticipo, si corresponde; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idAnticipo": {
+    "tipo": "bigint",
+    "descripcion": "Anticipo utilizado en el cruce; apunta a Contabilidad.Anticipo(idAnticipo)."
+   },
+   "valorAplicado": {
+    "tipo": "numeric",
+    "descripcion": "Importe del anticipo aplicado en el cruce."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica la tabla a la que apunta."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Factura de tercero o saldo de factura involucrado en el cruce; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idDetalleReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Línea del detalle del recibo asociada para efectos de anulación; apunta a Cartera.DetalleReciboComprobante(idDetalleReciboComprobante)."
+   },
+   "valorRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Importe de retención aplicado a la factura."
+   }
+  },
+  "apunta_a": [
+   "idAnticipo -> Contabilidad.Anticipo(idAnticipo)",
+   "idDetalleReciboComprobante -> Cartera.DetalleReciboComprobante(idDetalleReciboComprobante)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Cartera.CruceAnticipoProveedor": {
+  "descripcion": "Registra cruces de anticipos de proveedor con facturas u otros orígenes relacionados con cartera y contabilidad. Permite identificar el anticipo, el valor aplicado y, cuando corresponde, la línea de origen que afecta el saldo del anticipo. Se utiliza, entre otros fines, para recalcular saldos y generar reportes de cartera.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCruceAnticipoProveedor": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del cruce; la estructura no indica si está declarado como clave primaria."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Factura de compra del módulo de Cuentas por Pagar a la que se aplica el anticipo; apunta a CuentaPagar.FacturaCompra(idFacturaCompra) y puede ser nulo."
+   },
+   "idAnticipo": {
+    "tipo": "bigint",
+    "descripcion": "Anticipo utilizado en el cruce; apunta a Contabilidad.Anticipo(idAnticipo)."
+   },
+   "valorAplicado": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario aplicado en el cruce; si se relaciona con una línea de movimiento contable, un valor positivo consume saldo y uno negativo lo aumenta."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica una tabla de referencia."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Factura de proveedor o saldo que se está cruzando, según el comentario; apunta a Cartera.FacturaTercero(idFacturaTercero) y puede ser nulo."
+   },
+   "idDetalleReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Línea del detalle del comprobante asociada al cruce, usada para efectos de anulación; apunta a Cartera.DetalleReciboComprobante(idDetalleReciboComprobante) y puede ser nula."
+   },
+   "idDetalleOtroPasivo": {
+    "tipo": "bigint",
+    "descripcion": "Línea de otro pasivo que originó el cruce; apunta a Contabilidad.DetalleOtroPasivo(idDetalleOtroPasivo) y puede ser nula cuando el origen es otro."
+   },
+   "idDetalleMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Línea contable que afectó el anticipo; apunta a Contabilidad.DetalleMovimientoContable(idDetalleMovimientoContable) y puede ser nula cuando el cruce tiene otro origen."
+   }
+  },
+  "apunta_a": [
+   "idDetalleMovimientoContable -> Contabilidad.DetalleMovimientoContable(idDetalleMovimientoContable)",
+   "idDetalleOtroPasivo -> Contabilidad.DetalleOtroPasivo(idDetalleOtroPasivo)",
+   "idAnticipo -> Contabilidad.Anticipo(idAnticipo)",
+   "idDetalleReciboComprobante -> Cartera.DetalleReciboComprobante(idDetalleReciboComprobante)",
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Cartera.CruceFacturaPago": {
+  "descripcion": "Registra relaciones entre facturas de terceros y recibos o comprobantes en Cartera. Sirve para identificar qué recibo o comprobante se cruza con cada factura, posiblemente como parte de la aplicación de pagos. La estructura no incluye un importe asociado al cruce.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCruceFacturaPago": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de cruce; la estructura no declara que sea clave primaria."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura del tercero que se cruza; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el recibo o comprobante que cruza la factura; apunta a Cartera.ReciboComprobante(idReciboComprobante)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una tabla de referencia."
+   }
+  },
+  "apunta_a": [
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)",
+   "idReciboComprobante -> Cartera.ReciboComprobante(idReciboComprobante)"
+  ],
+  "la_referencian": []
+ },
+ "Cartera.CruceNotaCredito": {
+  "descripcion": "Registra cruces o aplicaciones de notas de crédito dentro de la cartera, relacionando la factura que recibe la aplicación con la factura que representa la nota de crédito. Guarda el valor aplicado y un valor de retención asociado; la estructura no permite confirmar cómo se calculan ni en qué casos se usan estos valores.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCruceNotaCredito": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del cruce; la estructura no declara una clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Factura a la que se aplica el cruce; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idFacturaNotaCredito": {
+    "tipo": "bigint",
+    "descripcion": "Factura que posiblemente representa la nota de crédito aplicada; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "valorAplicado": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la nota de crédito aplicado en este cruce."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Factura de tercero asociada, si corresponde; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idDetalleReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Detalle de recibo o comprobante asociado, si corresponde; apunta a Cartera.DetalleReciboComprobante(idDetalleReciboComprobante)."
+   },
+   "valorRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor de retención asociado al cruce."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idDetalleReciboComprobante -> Cartera.DetalleReciboComprobante(idDetalleReciboComprobante)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idFacturaNotaCredito -> CuentaCobrar.Factura(idFactura)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Cartera.DetalleReciboComprobante": {
+  "descripcion": "Guarda el detalle de los recibos de cartera aplicados a facturas de terceros, posiblemente por cuota. Registra el valor abonado, el saldo de la factura al momento del abono y el desglose del pago por medios como efectivo, cheque, tarjeta o banco. También permite registrar intereses, ingresos adicionales y datos contables asociados.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle del recibo; la estructura no declara una clave primaria."
+   },
+   "idReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el recibo al que pertenece el detalle; apunta a Cartera.ReciboComprobante(idReciboComprobante)."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura a la que se aplica el pago; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "numeroCuota": {
+    "tipo": "integer",
+    "descripcion": "Número de la cuota de la factura a la que se aplica el pago."
+   },
+   "valorPagado": {
+    "tipo": "numeric",
+    "descripcion": "Valor total registrado como pagado en este detalle."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Identifica la forma de pago usada para cancelar la factura; apunta a General.FormaPago(idFormaPago)."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Identifica el banco asociado a la transacción, si corresponde; apunta a Tercero.Banco(idBanco)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor del pago recibido en efectivo."
+   },
+   "valorPagoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Valor del pago recibido mediante cheque."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque usado, si corresponde."
+   },
+   "fechaChequePostfechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al cheque postfechado, si corresponde."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Identifica la tarjeta de débito o crédito usada, si corresponde; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número de la tarjeta asociada al pago, si corresponde."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Valor del pago recibido mediante tarjeta."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el plan contable asociado, si corresponde; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "valorInteres": {
+    "tipo": "numeric",
+    "descripcion": "Valor de interés registrado en el detalle."
+   },
+   "ingresoAdicional": {
+    "tipo": "numeric",
+    "descripcion": "Valor cobrado al cliente adicionalmente al pago de la factura."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa a qué tabla apunta."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "saldoFactura": {
+    "tipo": "numeric",
+    "descripcion": "Saldo de la factura al momento de realizar el abono."
+   },
+   "valorPagoBanco": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado mediante banco."
+   },
+   "idConceptoContable": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto contable asociado; apunta a General.ConceptoContable(idConceptoContable)."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idConceptoContable -> General.ConceptoContable(idConceptoContable)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idReciboComprobante -> Cartera.ReciboComprobante(idReciboComprobante)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)"
+  ],
+  "la_referencian": [
+   "Cartera.CruceAnticipoCliente(idDetalleReciboComprobante)",
+   "Cartera.CruceAnticipoProveedor(idDetalleReciboComprobante)",
+   "Cartera.CruceNotaCredito(idDetalleReciboComprobante)",
+   "Cartera.ReciboComprobanteIndicadorRetencion(idDetalleReciboComprobante)"
+  ]
+ },
+ "Cartera.FacturaTercero": {
+  "descripcion": "Registra documentos y cuotas de cartera asociados a un tercero, con sus valores, pagos, saldos, fechas y vínculos con otros documentos o módulos. Sirve para consultar y gestionar cuentas por cobrar y por pagar, y para relacionarlas con pagos, contabilidad, inventario y otros procesos del ERP.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de cartera; la estructura no declara una clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento general asociado; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asociado al registro; su función exacta no se deduce de la estructura."
+   },
+   "cuota": {
+    "tipo": "integer",
+    "descripcion": "Número de cuota cuando el pago de la factura se fracciona."
+   },
+   "referenciaFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Número de factura informado por el proveedor, si aplica."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero al que pertenece la factura; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fechaFactura": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de realización de la factura."
+   },
+   "fechaVencimientoCuota": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de vencimiento del documento o, si está fraccionado, de la cuota."
+   },
+   "valorDocumento": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la factura o del documento."
+   },
+   "valorPagado": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado asociado al documento."
+   },
+   "valorSaldo": {
+    "tipo": "numeric",
+    "descripcion": "Saldo pendiente de pago del documento."
+   },
+   "tipoDocumento": {
+    "tipo": "integer",
+    "descripcion": "Tipo de documento: 2 corresponde a factura de cliente y 3 a factura de proveedor."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Factura de cliente relacionada, si aplica; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Factura de proveedor relacionada, si aplica; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idOtroPasivo": {
+    "tipo": "bigint",
+    "descripcion": "Otro pasivo relacionado, si aplica; apunta a Contabilidad.OtroPasivo(idOtroPasivo)."
+   },
+   "idPlanContableCuentaPagar": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable asociada a la CXP de otro pasivo; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica su tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica su tabla de referencia."
+   },
+   "cuotaReliquidada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si fue reliquidada la cuota inicial, identificada como cuota 0."
+   },
+   "fechaReliquida": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha en que se reliquidó la cuota inicial, si aplica."
+   },
+   "idUsuarioReliquida": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que reliquidó la cuota inicial; no se especifica su tabla de referencia."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero empleado que creó el documento, si aplica; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idOtraCuentaCobrar": {
+    "tipo": "bigint",
+    "descripcion": "Otra cuenta por cobrar relacionada, si aplica; apunta a Contabilidad.OtraCuentaCobrar(idOtraCuentaCobrar)."
+   },
+   "idOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Orden de servicio relacionada, si aplica; apunta a Mantenimiento.OrdenServicio(idOrdenServicio)."
+   },
+   "idPlanContableCuentaCobrar": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable asociada a la CXC de otras cuentas por cobrar; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto opcional cuyo uso no se especifica."
+   },
+   "texto2": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto opcional cuyo uso no se especifica."
+   },
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Movimiento de inventario relacionado con la generación de una CXP, si aplica; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "porcentajeDescuentoCuentaPagar": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento por pronto pago asignado al documento."
+   },
+   "valorDescuentoCuentaPagar": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento por pronto pago asignado al documento."
+   },
+   "remisionEfectivo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento de cartera corresponde a una remisión de proveedor pagada en efectivo."
+   },
+   "consecutivoDocumentoModificado": {
+    "tipo": "character varying",
+    "descripcion": "Consecutivo de un documento de facturación electrónica proveniente de una migración, si aplica."
+   },
+   "uuidDocumentoModificado": {
+    "tipo": "character varying",
+    "descripcion": "CUFE del documento proveniente de una migración, si aplica."
+   },
+   "fechaEmisionDocumentoModificado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de emisión del documento proveniente de una migración, si aplica."
+   },
+   "idDetalleMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Detalle del movimiento contable que generó la CXP, si aplica; apunta a Contabilidad.DetalleMovimientoContable(idDetalleMovimientoContable)."
+   },
+   "idRemision": {
+    "tipo": "bigint",
+    "descripcion": "Remisión que generó la cartera, si aplica; apunta a CuentaCobrar.Remision(idRemision)."
+   },
+   "estadoCuentaCobro": {
+    "tipo": "integer",
+    "descripcion": "Estado de la cuenta de cobro: 0 = Generada, 1 = Anulada, 2 = Enviada, 3 = Radicada y 4 = Rechazada."
+   },
+   "motivoAnuladaRechazada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de anulación o rechazo, si aplica."
+   },
+   "fechaRadicacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de radicación de la cuenta de cobro, si aplica."
+   },
+   "idObligacionArriendo": {
+    "tipo": "bigint",
+    "descripcion": "Obligación de arriendo que generó esta CXP, si aplica; apunta a Arriendo.ObligacionArriendo(idObligacionArriendo)."
+   }
+  },
+  "apunta_a": [
+   "idObligacionArriendo -> Arriendo.ObligacionArriendo(idObligacionArriendo)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDetalleMovimientoContable -> Contabilidad.DetalleMovimientoContable(idDetalleMovimientoContable)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idMovimientoInventario -> Inventario.MovimientoInventario(idMovimientoInventario)",
+   "idOrdenServicio -> Mantenimiento.OrdenServicio(idOrdenServicio)",
+   "idOtraCuentaCobrar -> Contabilidad.OtraCuentaCobrar(idOtraCuentaCobrar)",
+   "idOtroPasivo -> Contabilidad.OtroPasivo(idOtroPasivo)",
+   "idPlanContableCuentaPagar -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableCuentaCobrar -> Contabilidad.PlanContable(idPlanContable)",
+   "idRemision -> CuentaCobrar.Remision(idRemision)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Arriendo.ObligacionArriendo(idFacturaTercero)",
+   "Arriendo.ObligacionArriendoPago(idFacturaTercero)",
+   "Cartera.CruceAnticipoCliente(idFacturaTercero)",
+   "Cartera.CruceAnticipoProveedor(idFacturaTercero)",
+   "Cartera.CruceFacturaPago(idFacturaTercero)",
+   "Cartera.CruceNotaCredito(idFacturaTercero)",
+   "Cartera.DetalleReciboComprobante(idFacturaTercero)",
+   "Contabilidad.DetalleMovimientoContable(idFacturaTercero)",
+   "CuentaCobrar.CuentaCobroDetalle(idFacturaTercero)",
+   "CuentaCobrar.FacturaTerceroDevolucion(idFacturaTercero)",
+   "CuentaCobrar.Glosa(idFacturaTercero)",
+   "CuentaPagar.DetallePropuestaPago(idFacturaTercero)",
+   "CuentaPagar.DetallePropuestaPagoExcluido(idFacturaTercero)",
+   "CuentaPagar.FacturaCompraTerceroDevolucion(idFacturaTercero)"
+  ]
+ },
+ "Cartera.ReciboComprobante": {
+  "descripcion": "Guarda la cabecera de recibos o comprobantes asociados a pagos de clientes o proveedores, según el tipo de documento. Registra sus fechas, tercero, centro de costo, valores y datos de auditoría, y permite relacionar el pago con documentos de cartera y otros procesos del ERP. También almacena información de caja cuando aplica y datos sobre anulaciones.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del recibo o comprobante; la estructura proporcionada no declara una clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento asociado; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al recibo o comprobante."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora registradas para el recibo o comprobante."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero relacionado con el pago; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero empleado asociado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "detalle": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje automático con los documentos cancelados."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje opcional digitado por el usuario."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Importe subtotal del recibo o comprobante; no se especifica cómo se calcula."
+   },
+   "descuentos": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de los descuentos aplicados en los pagos."
+   },
+   "valorInteres": {
+    "tipo": "numeric",
+    "descripcion": "Importe de intereses asociado; no se especifica su cálculo ni signo."
+   },
+   "totalDocumento": {
+    "tipo": "numeric",
+    "descripcion": "Importe total del documento; no se especifica qué conceptos incluye."
+   },
+   "baseRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Base utilizada para determinar las retenciones aplicables al pago."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado o ingresado."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento calculado según el porcentaje o el valor ingresado."
+   },
+   "tipoDocumento": {
+    "tipo": "integer",
+    "descripcion": "Tipo de documento: 2 corresponde a recibos o pagos de clientes y 3 a comprobantes o pagos a proveedores."
+   },
+   "idConceptoContable": {
+    "tipo": "integer",
+    "descripcion": "Concepto contable utilizado en pagos de clientes, cuando corresponde; apunta a General.ConceptoContable(idConceptoContable)."
+   },
+   "anulada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el recibo o comprobante está anulado; al ser nullable, no se puede determinar qué significa un valor nulo."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de la anulación, si se registra."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se proporciona la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se proporciona la tabla de referencia."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "saldoCartera": {
+    "tipo": "numeric",
+    "descripcion": "Saldo de cartera del tercero al momento de realizar el pago."
+   },
+   "idTurnoCaja": {
+    "tipo": "bigint",
+    "descripcion": "Turno de caja asociado cuando se realiza el recibo; apunta a Venta.TurnoCaja(idTurnoCaja)."
+   },
+   "idCaja": {
+    "tipo": "integer",
+    "descripcion": "Caja asociada cuando no existe control de caja por turno POS; apunta a Venta.Caja(idCaja)."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC de la máquina del usuario, si se registra."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto, si se registra; su uso específico no se deduce."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina donde se generó la factura, según el comentario de la columna."
+   },
+   "valorAdicional": {
+    "tipo": "numeric",
+    "descripcion": "Suma de los valores adicionales de los detalles."
+   },
+   "fechaPago": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se realizó el pago."
+   }
+  },
+  "apunta_a": [
+   "idCaja -> Venta.Caja(idCaja)",
+   "idConceptoContable -> General.ConceptoContable(idConceptoContable)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idTurnoCaja -> Venta.TurnoCaja(idTurnoCaja)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)"
+  ],
+  "la_referencian": [
+   "Cartera.CruceFacturaPago(idReciboComprobante)",
+   "Cartera.DetalleReciboComprobante(idReciboComprobante)",
+   "Cartera.ReciboComprobanteIndicadorRetencion(idReciboComprobante)",
+   "CuentaPagar.PropuestaPagoComprobante(idReciboComprobante)",
+   "Venta.HistoricoPagoComision(idReciboComprobante)"
+  ]
+ },
+ "Cartera.ReciboComprobanteIndicadorRetencion": {
+  "descripcion": "Guarda indicadores de retención asociados a un recibo comprobante y, opcionalmente, a un detalle del recibo. Registra el porcentaje, la base y el valor de la retención, junto con datos de creación y modificación. Sirve posiblemente para consultar o contabilizar retenciones vinculadas a recibos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idReciboComprobanteIndicadorRetencion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de indicador de retención; la estructura no indica si es clave primaria."
+   },
+   "idReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el recibo comprobante asociado; apunta a Cartera.ReciboComprobante(idReciboComprobante)."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de retención aplicado; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje aplicado para calcular la retención; se desconoce su escala o formato."
+   },
+   "valorRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario de la retención registrada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "idDetalleReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el detalle del recibo asociado cuando aplica; es opcional y apunta a Cartera.DetalleReciboComprobante(idDetalleReciboComprobante)."
+   },
+   "tipoRetencion": {
+    "tipo": "integer",
+    "descripcion": "Código que clasifica el tipo de retención; sus valores no se pueden deducir de la estructura."
+   },
+   "baseRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Base monetaria sobre la que posiblemente se calcula la retención."
+   }
+  },
+  "apunta_a": [
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idReciboComprobante -> Cartera.ReciboComprobante(idReciboComprobante)",
+   "idDetalleReciboComprobante -> Cartera.DetalleReciboComprobante(idDetalleReciboComprobante)"
+  ],
+  "la_referencian": []
+ }
+}

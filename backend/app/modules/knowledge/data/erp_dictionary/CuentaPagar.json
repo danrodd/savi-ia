@@ -1,0 +1,1908 @@
+{
+ "CuentaPagar.AutorizaPagoMasivo": {
+  "descripcion": "Registra posiblemente autorizaciones relacionadas con pagos masivos en Cuentas por Pagar, asociando a un usuario que genera con un usuario aprobador y un monto máximo. Puede servir para controlar quién está autorizado a aprobar pagos y hasta qué importe, aunque la estructura no confirma las reglas del proceso.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idAutorizaPagoMasivo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la autorización; no está declarada como clave primaria en la estructura proporcionada."
+   },
+   "idUsuarioGenera": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que genera el pago masivo; posiblemente referencia un registro de usuarios, pero no se informa una clave foránea."
+   },
+   "idUsuarioAprobador": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que aprueba el pago masivo; posiblemente referencia un registro de usuarios, pero no se informa una clave foránea."
+   },
+   "montoMaximo": {
+    "tipo": "numeric",
+    "descripcion": "Monto máximo asociado a la autorización; no se especifican la moneda ni cómo se aplica el límite."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la autorización; no se puede deducir si true significa activa, aprobada u otra condición."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; posiblemente referencia un registro de usuarios, pero no se informa una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; posiblemente referencia un registro de usuarios, pero no se informa una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "CuentaPagar.DetalleFacturaCompra": {
+  "descripcion": "Guarda las líneas de una factura de compra, con los productos o servicios recibidos, sus cantidades, valores, descuentos e impuestos. Sirve para detallar los importes de cada línea y relacionarlos, cuando corresponde, con productos, almacenes, órdenes de compra y movimientos de inventario.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de la factura de compra; la estructura no indica que esté declarado como clave primaria."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Factura de compra a la que pertenece la línea; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "numeroLinea": {
+    "tipo": "integer",
+    "descripcion": "Número que identifica o establece el orden de la línea dentro de la factura."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto de la línea; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén relacionado con la línea; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado a la línea; la estructura no especifica cómo se calcula."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto o servicio facturada en la línea."
+   },
+   "valorUnitario": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario usado para calcular los importes de la línea; su relación con valorUnitarioIngresado no está especificada."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor base de la línea antes de impuestos, según el comentario de la columna; se describe como cantidad multiplicada por costo."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Importe del descuento de la línea."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA aplicable; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicable al producto, según el comentario de la columna."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe del IVA calculado para el producto según el porcentaje, según el comentario de la columna."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía gravada con IVA."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía exenta de IVA."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía excluida de IVA."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la línea, incluidos los impuestos, según el comentario de la columna."
+   },
+   "lote": {
+    "tipo": "character varying",
+    "descripcion": "Identificador del lote del producto, si aplica."
+   },
+   "fechaVencimientoLote": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento del lote, si aplica."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "obsequio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto fue comprado como obsequio."
+   },
+   "ipoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Valor calculado para el concepto denominado IpoConsumo; la estructura no explica el significado del término."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Indicador de retención asociado, si aplica; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje adicional asociado al registro; el comentario menciona una factura de venta, aunque esta tabla corresponde a facturas de compra."
+   },
+   "valorUnitarioIngresado": {
+    "tipo": "numeric",
+    "descripcion": "Valor del precio antes del descuento, según el comentario de la columna."
+   },
+   "idDetalleMovimientoInventarioRemision": {
+    "tipo": "bigint",
+    "descripcion": "Detalle de movimiento de inventario asociado a una remisión de proveedor; apunta a Inventario.DetalleMovimientoInventario(idDetalleMovimientoInventario)."
+   },
+   "valorDescuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento unitario por obsequio para el producto de la línea, según el comentario de la columna."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que crea o modifica el registro, si se informa."
+   },
+   "idDetalleOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Línea de orden de compra relacionada con la factura, si aplica; apunta a CuentaPagar.DetalleOrdenCompra(idDetalleOrdenCompra)."
+   },
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Orden de compra relacionada con la factura, si aplica; apunta a CuentaPagar.OrdenCompra(idOrdenCompra)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado al detalle, si aplica; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idIndicadorImpuestoSaludable": {
+    "tipo": "integer",
+    "descripcion": "Indicador del impuesto saludable asociado, si aplica; apunta a Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)."
+   },
+   "porcentajeImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje del impuesto saludable aplicado; los valores posibles no se indican."
+   },
+   "valorNominalImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Valor nominal asociado al impuesto saludable; la estructura no precisa cómo se determina."
+   },
+   "valorImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Importe calculado del impuesto saludable."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDetalleMovimientoInventarioRemision -> Inventario.DetalleMovimientoInventario(idDetalleMovimientoInventario)",
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idIndicadorImpuestoSaludable -> Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idOrdenCompra -> CuentaPagar.OrdenCompra(idOrdenCompra)",
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idDetalleOrdenCompra -> CuentaPagar.DetalleOrdenCompra(idDetalleOrdenCompra)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.ActaEntregaFacturaCompra(idDetalleFacturaCompra)",
+   "CuentaPagar.CostoProductoDivisionFraccionTemporal(idDetalleFacturaCompra)",
+   "CuentaPagar.DetalleFacturaCompraInventarioBovino(idDetalleFacturaCompra)",
+   "CuentaPagar.DetalleFacturaCompraLote(idDetalleFacturaCompra)",
+   "CuentaPagar.PrecioTemporal(idDetalleFacturaCompra)",
+   "CuentaPagar.TarifaProductoTemporal(idDetalleFacturaCompra)",
+   "Inventario.MovimientoInventarioLoteTemporal(idDetalleFacturaCompra)",
+   "Inventario.SaldoInventarioEspecialBovino(idDetalleFacturaCompra)",
+   "Inventario.SaldoInventarioEspecialBovino(idDetalleFacturaCompraDevolucion)",
+   "Mantenimiento.DetalleOrdenServicio(idDetalleFacturaCompra)",
+   "Mantenimiento.DetalleOrdenServicioHerramienta(idDetalleFacturaCompra)",
+   "Mantenimiento.DetalleOrdenTrabajo(idDetalleFacturaCompra)"
+  ]
+ },
+ "CuentaPagar.DetalleOrdenCompra": {
+  "descripcion": "Guarda las líneas de detalle de las órdenes de compra, con el producto, almacén, cantidades y valores asociados a cada línea. Registra descuentos, impuestos y datos de seguimiento como facturación, remisión y recepción; otras tablas de cuentas por pagar e inventario la referencian.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de la orden de compra; la estructura no declara si es clave primaria."
+   },
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Orden de compra a la que pertenece la línea; apunta a CuentaPagar.OrdenCompra(idOrdenCompra)."
+   },
+   "numeroLinea": {
+    "tipo": "integer",
+    "descripcion": "Número que identifica o posiciona la línea dentro de la orden."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto incluido en la línea; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado a la línea; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado a la línea; la estructura no indica cómo se representa ni calcula."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto solicitada en la línea."
+   },
+   "valorUnitario": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario del producto en la línea."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor base de la línea antes de impuestos, según la descripción de la columna; se indica como cantidad por costo."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario del descuento aplicado a la línea."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA asociado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicable al producto."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de IVA calculado para el producto según el porcentaje registrado."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía gravada con IVA."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía exenta de IVA."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía excluida de IVA."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la línea más impuestos, según la descripción de la columna."
+   },
+   "lote": {
+    "tipo": "character varying",
+    "descripcion": "Identificador del lote del producto, si corresponde."
+   },
+   "fechaVencimientoLote": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento del lote, si corresponde."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "obsequio": {
+    "tipo": "boolean",
+    "descripcion": "Booleano que posiblemente indica si el producto se entrega como obsequio; el significado operativo de verdadero y falso no está documentado."
+   },
+   "ipoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Campo numérico cuyo nombre no permite determinar su significado."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Indicador de retención asociado, si aplica; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje adicional asociado al detalle de la orden de compra."
+   },
+   "cantidadFacturada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de la línea que se ha facturado."
+   },
+   "cantidadRemisionada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de la línea registrada como remisionada."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado al detalle, si corresponde; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "cantidadRecepcionWMS": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad recepcionada mediante el proceso de integración con WMS."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idOrdenCompra -> CuentaPagar.OrdenCompra(idOrdenCompra)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.CalificacionProveedorDetalle(idDetalleOrdenCompra)",
+   "CuentaPagar.DetalleFacturaCompra(idDetalleOrdenCompra)",
+   "CuentaPagar.DetalleOrdenCompraLote(idDetalleOrdenCompra)",
+   "Inventario.DetalleMovimientoInventario(idDetalleOrdenCompra)"
+  ]
+ },
+ "CuentaPagar.DetallePropuestaPago": {
+  "descripcion": "Guarda cada línea de una propuesta de pago de Cuentas por Pagar, asociándola con un tercero y una factura, y registrando los importes previstos para pagar, descontar o cargar como interés. También conserva la forma de pago y, cuando corresponde, datos de cheque, banco o tarjeta, además de valores de efectivo, cheque y tarjeta. Incluye marcas de tiempo y usuarios de creación y modificación, así como importes registrados al procesar el pago.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetallePropuestaPago": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de la propuesta de pago; no se indica si es clave primaria."
+   },
+   "idPropuestaPago": {
+    "tipo": "bigint",
+    "descripcion": "Propuesta de pago a la que pertenece; apunta a CuentaPagar.PropuestaPago(idPropuestaPago)."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Posición de este detalle dentro de la propuesta de pago."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Factura de tercero asociada; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Factura de compra asociada, si aplica; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero relacionado con el pago; apunta a Tercero.Tercero(idTercero)."
+   },
+   "saldoFacturaAlCrear": {
+    "tipo": "numeric",
+    "descripcion": "Saldo de la factura registrado al crear el detalle."
+   },
+   "valorAPagar": {
+    "tipo": "numeric",
+    "descripcion": "Importe previsto para pagar en este detalle."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Importe de descuento asociado al detalle."
+   },
+   "interes": {
+    "tipo": "numeric",
+    "descripcion": "Importe de interés asociado al detalle."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago seleccionada; apunta a General.FormaPago(idFormaPago)."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado, si aplica; apunta a Tercero.Banco(idBanco)."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque asociado, si aplica."
+   },
+   "fechaChequePostfechado": {
+    "tipo": "date",
+    "descripcion": "Fecha del cheque postfechado, si aplica."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tarjeta de débito o crédito asociada, si aplica; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "valorEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Importe asignado al pago en efectivo."
+   },
+   "valorCheque": {
+    "tipo": "numeric",
+    "descripcion": "Importe asignado al pago mediante cheque."
+   },
+   "valorTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Importe asignado al pago mediante tarjeta."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica la tabla de referencia."
+   },
+   "valorPagadoAlProcesar": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado registrado al procesar el detalle; puede no estar informado."
+   },
+   "valorSaldoAlProcesar": {
+    "tipo": "numeric",
+    "descripcion": "Saldo registrado al procesar el detalle; puede no estar informado."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idPropuestaPago -> CuentaPagar.PropuestaPago(idPropuestaPago)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.CruceAnticipoPropuestaPago(idDetallePropuestaPago)",
+   "CuentaPagar.DispersionDetallePropuestaPago(idDetallePropuestaPago)",
+   "CuentaPagar.RetencionPropuestaPago(idDetallePropuestaPago)"
+  ]
+ },
+ "CuentaPagar.DetallePropuestaPagoExcluido": {
+  "descripcion": "Registra el historial de facturas que un aprobador excluye durante la aprobación parcial de una propuesta de pago. Según el comentario de la base, estas exclusiones no impiden que las facturas se incluyan en propuestas nuevas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetallePropuestaPagoExcluido": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de exclusión; la estructura no indica que sea clave primaria."
+   },
+   "idPropuestaPago": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la propuesta de pago asociada; apunta a CuentaPagar.PropuestaPago(idPropuestaPago)."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura excluida; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero relacionado con la factura; apunta a Tercero.Tercero(idTercero)."
+   },
+   "valorAPagar": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado a la factura excluida; no se puede deducir si es el importe total de la factura o el importe propuesto para pagar."
+   },
+   "motivoExclusion": {
+    "tipo": "character varying",
+    "descripcion": "Texto que registra el motivo de la exclusión."
+   },
+   "fechaExclusion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se registró la exclusión."
+   },
+   "idUsuarioExclusion": {
+    "tipo": "integer",
+    "descripcion": "Identifica al usuario que excluyó la factura; apunta a Seguridad.Usuario(idUsuario)."
+   }
+  },
+  "apunta_a": [
+   "idPropuestaPago -> CuentaPagar.PropuestaPago(idPropuestaPago)",
+   "idUsuarioExclusion -> Seguridad.Usuario(idUsuario)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.DispersionDetallePropuestaPago": {
+  "descripcion": "Registra cómo se distribuye entre uno o varios terceros destino el pago de cada detalle de una propuesta de pago. La distribución se hereda de la configuración del tercero, pero puede editarse para cada propuesta; el monto asignado se calcula a partir del valor por pagar y del porcentaje.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDispersionDetallePropuestaPago": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de distribución; la estructura proporcionada no indica si está definido como clave primaria."
+   },
+   "idDetallePropuestaPago": {
+    "tipo": "bigint",
+    "descripcion": "Detalle de la propuesta de pago al que pertenece la distribución; apunta a CuentaPagar.DetallePropuestaPago(idDetallePropuestaPago)."
+   },
+   "idTerceroDestino": {
+    "tipo": "bigint",
+    "descripcion": "Tercero que recibe el giro; apunta a Tercero.Tercero(idTercero)."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje del valor por pagar que recibe el tercero destino, expresado entre 0 y 100 con cuatro decimales."
+   },
+   "valorDistribuido": {
+    "tipo": "numeric",
+    "descripcion": "Monto efectivo asignado al tercero destino, calculado como valor por pagar multiplicado por el porcentaje y dividido entre 100."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla no especifica a qué entidad apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la tabla no especifica a qué entidad apunta."
+   },
+   "idTerceroBanco": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta bancaria específica del tercero destino para el giro; apunta a Tercero.TerceroBanco(idTerceroBanco). Si es NULL, se utiliza la primera cuenta del tercero con pagoTerceros=true."
+   }
+  },
+  "apunta_a": [
+   "idDetallePropuestaPago -> CuentaPagar.DetallePropuestaPago(idDetallePropuestaPago)",
+   "idTerceroBanco -> Tercero.TerceroBanco(idTerceroBanco)",
+   "idTerceroDestino -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.DocumentoSoporte": {
+  "descripcion": "Registra información de documentos de soporte asociados al módulo de cuentas por pagar, con posibles vínculos a documentos generales, facturas de compra, otros pasivos y movimientos contables. También almacena códigos, datos de respuesta y un indicador de validación previa, posiblemente relacionados con la validación electrónica del documento. Sirve para consultar y relacionar esos datos con los registros contables o de pago correspondientes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDocumentoSoporte": {
+    "tipo": "bigint",
+    "descripcion": "Identificador interno del registro de documento de soporte."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identifica el documento general asociado; apunta a General.Documento(idDocumento)."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura de compra relacionada, si existe; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "tipoDocumento": {
+    "tipo": "character varying",
+    "descripcion": "Código o categoría del documento de soporte; sus valores no se pueden deducir."
+   },
+   "cudsCruce": {
+    "tipo": "character varying",
+    "descripcion": "Código CUDS asociado a un cruce o relación; el significado exacto de «cruce» no se puede deducir."
+   },
+   "cuds": {
+    "tipo": "character varying",
+    "descripcion": "Código CUDS del documento de soporte; no se puede determinar su formato ni el sistema que lo asigna."
+   },
+   "idFacturaCompraCruce": {
+    "tipo": "bigint",
+    "descripcion": "Identifica una factura de compra relacionada mediante un cruce; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "validacionPrevia": {
+    "tipo": "boolean",
+    "descripcion": "Indica mediante un booleano si se registró una validación previa; no se puede deducir qué proceso representa cada valor."
+   },
+   "fechaRespuesta": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de una respuesta relacionada con el documento; no se puede determinar quién responde ni en qué proceso."
+   },
+   "qr": {
+    "tipo": "character varying",
+    "descripcion": "Dato asociado a un código QR del documento; no se puede deducir si contiene una URL, una imagen u otro formato."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "idOtroPasivo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el otro pasivo relacionado; apunta a Contabilidad.OtroPasivo(idOtroPasivo)."
+   },
+   "idMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el movimiento contable relacionado; apunta a Contabilidad.MovimientoContable(idMovimientoContable)."
+   },
+   "idOtroPasivoCruce": {
+    "tipo": "bigint",
+    "descripcion": "Identifica un otro pasivo relacionado mediante un cruce; apunta a Contabilidad.OtroPasivo(idOtroPasivo)."
+   },
+   "idMovimientoContableCruce": {
+    "tipo": "bigint",
+    "descripcion": "Identifica un movimiento contable relacionado mediante un cruce; apunta a Contabilidad.MovimientoContable(idMovimientoContable)."
+   }
+  },
+  "apunta_a": [
+   "idMovimientoContable -> Contabilidad.MovimientoContable(idMovimientoContable)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idOtroPasivo -> Contabilidad.OtroPasivo(idOtroPasivo)",
+   "idFacturaCompraCruce -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idMovimientoContableCruce -> Contabilidad.MovimientoContable(idMovimientoContable)",
+   "idOtroPasivoCruce -> Contabilidad.OtroPasivo(idOtroPasivo)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.FacturaCompra": {
+  "descripcion": "Guarda la información principal de una factura de compra, incluidos sus datos de proveedor, fechas, condiciones de pago, importes e impuestos. Sirve para gestionar la obligación con el proveedor y se relaciona con procesos de cuentas por pagar, inventario y contabilidad. También registra si el documento es temporal o está anulado, además de información de auditoría y origen.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura de compra, referenciado por otras tablas."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento asociado; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al documento de factura de compra."
+   },
+   "referenciaFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Referencia o número de factura asignado por el proveedor."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado, si aplica; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de generación del documento."
+   },
+   "fechaVencimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de vencimiento de la obligación registrada en la factura."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado a la factura, posiblemente el proveedor; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado al empleado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional; su uso depende de la configuración del ERP."
+   },
+   "texto2": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional; su uso depende de la configuración del ERP."
+   },
+   "texto3": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional; su uso depende de la configuración del ERP."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago asociada, si aplica; apunta a General.FormaPago(idFormaPago)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la factura registrado como pagado en efectivo."
+   },
+   "diasCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de crédito asociada a la factura, si aplica."
+   },
+   "numeroCuotas": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cuotas asociadas al pago de la factura."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado al pago, si aplica; apunta a Tercero.Banco(idBanco)."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número o referencia de la tarjeta usada, si aplica."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la factura registrado como pagado con tarjeta."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque usado, si aplica."
+   },
+   "fechaChequePostFechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha futura indicada para el cheque posfechado, si aplica."
+   },
+   "valorPagadoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la factura registrado como pagado con cheque."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la factura antes de impuestos."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento aplicado a la factura."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de los conceptos exentos de IVA."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de los conceptos excluidos de IVA."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de los conceptos gravados con IVA."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA correspondiente a los conceptos gravados."
+   },
+   "valorImpuestosRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de las retenciones registradas."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Total de la factura, considerando los impuestos y descuentos que correspondan."
+   },
+   "anulada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura está anulada."
+   },
+   "marcaAgua": {
+    "tipo": "boolean",
+    "descripcion": "Indica una condición de marca de agua del documento; el significado funcional no se deduce de la estructura."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tipo o registro de tarjeta asociado, si aplica; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo indicado para la anulación de la factura."
+   },
+   "idOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Orden de servicio de taller relacionada, si aplica; apunta a Mantenimiento.OrdenServicio(idOrdenServicio)."
+   },
+   "facturaTemporal": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura es temporal y puede modificarse sin afectar cuentas por pagar, inventario ni contabilidad."
+   },
+   "valorUnitarioIvaIncluido": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el valor unitario de los productos de compra incluye el IVA."
+   },
+   "descuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Valor total del descuento asociado a productos obsequiados."
+   },
+   "idResolucion": {
+    "tipo": "integer",
+    "descripcion": "Resolución con la que se generó el documento, si aplica; apunta a General.Resolucion(idResolucion)."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que creó o modificó el registro, si se informó."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC asociada a la máquina del usuario, si se registró."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto asociado a la operación, si se registró."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina donde se generó la factura."
+   },
+   "porcentajeDescuentoCuentaPagar": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento por pronto pago asignado al documento."
+   },
+   "valorDescuentoCuentaPagar": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento por pronto pago asignado al documento."
+   },
+   "idMotivoNotaAjuste": {
+    "tipo": "integer",
+    "descripcion": "Motivo de la nota de ajuste, si aplica; apunta a CuentaPagar.MotivoNotaAjuste(idMotivoNotaAjuste)."
+   },
+   "fechaExpedicionFacturaProveedor": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de expedición de la factura del proveedor."
+   },
+   "fechaVencimientoFacturaProveedor": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de vencimiento indicada en la factura del proveedor."
+   },
+   "fechaRecepcion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de recepción de la mercancía asociada."
+   },
+   "valorImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Valor total a pagar por el impuesto saludable."
+   },
+   "idIndicadorRetencionICA": {
+    "tipo": "integer",
+    "descripcion": "Indicador seleccionado para ICA o reteICA, si aplica; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "retencionManual": {
+    "tipo": "boolean",
+    "descripcion": "Indica si las retenciones distintas de ICA fueron definidas manualmente (true) o calculadas automáticamente (false)."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idIndicadorRetencionICA -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idMotivoNotaAjuste -> CuentaPagar.MotivoNotaAjuste(idMotivoNotaAjuste)",
+   "idOrdenServicio -> Mantenimiento.OrdenServicio(idOrdenServicio)",
+   "idResolucion -> General.Resolucion(idResolucion)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Auditoria.DocumentoSoporteLog(idFacturaCompra)",
+   "Cartera.CruceAnticipoProveedor(idFacturaCompra)",
+   "Cartera.FacturaTercero(idFacturaCompra)",
+   "CuentaPagar.ActaEntregaFacturaCompra(idFacturaCompra)",
+   "CuentaPagar.CalificacionProveedor(idFacturaCompra)",
+   "CuentaPagar.DetalleFacturaCompra(idFacturaCompra)",
+   "CuentaPagar.DetallePropuestaPago(idFacturaCompra)",
+   "CuentaPagar.DocumentoSoporte(idFacturaCompra)",
+   "CuentaPagar.DocumentoSoporte(idFacturaCompraCruce)",
+   "CuentaPagar.FacturaCompraDevolucion(idDevolucion)",
+   "CuentaPagar.FacturaCompraDevolucion(idFacturaCompra)",
+   "CuentaPagar.FacturaCompraImpuestoSaludable(idFacturaCompra)",
+   "CuentaPagar.FacturaCompraMovimientoInventario(idFacturaCompra)",
+   "CuentaPagar.FacturaCompraOrdenCompra(idFacturaCompra)",
+   "CuentaPagar.FacturaCompraTerceroDevolucion(idDevolucion)"
+  ]
+ },
+ "CuentaPagar.FacturaCompraDevolucion": {
+  "descripcion": "Registra la relación entre una factura de compra y una devolución dentro de Cuentas por Pagar. Puede servir para asociar documentos al consultar o comparar la cartera de proveedores; la estructura no muestra importes ni otros detalles de la devolución.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaCompraDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro que relaciona la factura de compra con la devolución; la estructura no declara que sea clave primaria."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura de compra asociada; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la devolución asociada; según la estructura, también apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idDevolucion -> CuentaPagar.FacturaCompra(idFacturaCompra)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.FacturaCompraImpuestoSaludable": {
+  "descripcion": "Guarda los valores asociados al Impuesto Saludable para una factura de compra, vinculando la factura con un indicador de ese impuesto. Incluye la base, el porcentaje, un valor nominal y el importe calculado del impuesto; las reglas exactas de cálculo no se deducen de la estructura.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaCompraImpuestoSaludable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de impuesto saludable asociado a una factura; no se declara una clave primaria en la estructura proporcionada."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura de compra a la que corresponde el registro; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idIndicadorImpuestoSaludable": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de Impuesto Saludable aplicado; apunta a Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base utilizada para calcular el Impuesto Saludable."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje indicado para el cálculo del Impuesto Saludable."
+   },
+   "valorNominal": {
+    "tipo": "numeric",
+    "descripcion": "Valor base nominal para calcular el impuesto según el volumen en mililitros del producto."
+   },
+   "valorImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Valor del Impuesto Saludable calculado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idIndicadorImpuestoSaludable -> Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.FacturaCompraMovimientoInventario": {
+  "descripcion": "Relaciona facturas de compra con movimientos de inventario. Sirve para identificar qué movimientos están asociados a una factura, aunque la estructura no permite determinar las reglas de esa asociación ni cuándo se registra.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaCompraMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro que vincula la factura de compra con el movimiento de inventario; la estructura no declara una clave primaria."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura de compra relacionada; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del movimiento de inventario relacionado; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idMovimientoInventario -> Inventario.MovimientoInventario(idMovimientoInventario)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.FacturaCompraOrdenCompra": {
+  "descripcion": "Relaciona facturas de compra con órdenes de compra y permite registrar qué orden u órdenes están vinculadas a cada factura. Puede servir para consultar esa relación en procesos de cuentas por pagar; la estructura no muestra datos de detalle ni importes asociados.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaCompraOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la relación entre una factura de compra y una orden de compra; no se informa si está definido como clave primaria."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura de compra relacionada; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la orden de compra relacionada; apunta a CuentaPagar.OrdenCompra(idOrdenCompra)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro de relación."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idOrdenCompra -> CuentaPagar.OrdenCompra(idOrdenCompra)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.FacturaCompraTerceroDevolucion": {
+  "descripcion": "Registra vínculos entre registros de FacturaTercero y FacturaCompra mediante sus identificadores. Por su nombre y las funciones que la usan, posiblemente sirve para relacionar documentos de terceros con devoluciones en procesos de cuentas por pagar y reportes de cartera de proveedores; el propósito exacto debe confirmarse.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaCompraTerceroDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de relación; la estructura no indica una clave primaria."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura de tercero relacionada; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador relacionado con la devolución; según la referencia indicada, apunta a CuentaPagar.FacturaCompra(idFacturaCompra), aunque el nombre no coincide claramente con la tabla referenciada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica la tabla a la que apunta."
+   }
+  },
+  "apunta_a": [
+   "idDevolucion -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.FacturaIndicadorRetencionCompra": {
+  "descripcion": "Registra los indicadores de retención asociados a facturas de compra, junto con el porcentaje aplicado, la base de cálculo y el valor retenido. Sirve posiblemente para conservar el detalle de las retenciones calculadas para cada factura.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaIndicadorRetencionCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de retención aplicado a una factura de compra; la estructura no indica si es clave primaria."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura de compra a la que corresponde el registro; referencia CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de retención utilizado; referencia Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje usado para calcular la retención."
+   },
+   "valorRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Importe de la retención registrado para la factura."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Importe usado como base para calcular la retención."
+   }
+  },
+  "apunta_a": [
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.FacturaIvaCompra": {
+  "descripcion": "Guarda el desglose del IVA asociado a una factura de compra, posiblemente por indicador o tarifa de IVA. Registra la base imponible, el porcentaje aplicado y el valor del impuesto para cada desglose. También incluye fechas y usuarios de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaIvaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de desglose de IVA; la estructura no declara una clave primaria."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura de compra a la que pertenece; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identificador del indicador de IVA aplicado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base para el cálculo del IVA."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA usado en el cálculo; no se pueden deducir sus valores posibles ni su formato."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA registrado para este desglose."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación; no se especifica una tabla relacionada."
+   },
+   "idUsuarioModicacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado posiblemente a una modificación; el nombre parece una variante con error ortográfico de idUsuarioModificacion."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la modificación; no se especifica una tabla relacionada."
+   }
+  },
+  "apunta_a": [
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.LoteOrdenCompra": {
+  "descripcion": "Guarda la cabecera de un lote de Órdenes de Compra generado en una misma corrida de generación masiva por plantilla (formulario 20016). Permite registrar información general del lote, como su fecha, cantidad de órdenes y total, junto con datos de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLoteOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del lote; la estructura no declara una clave primaria."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción opcional del lote."
+   },
+   "fecha": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora asociadas al lote; el momento o evento que representa no se puede deducir."
+   },
+   "cantidadOrdenes": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de Órdenes de Compra contabilizadas en el lote."
+   },
+   "totalLote": {
+    "tipo": "numeric",
+    "descripcion": "Importe total registrado para el lote; no se especifican moneda ni método de cálculo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del lote; no se puede deducir qué significan verdadero y falso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se creó el registro del lote."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada para el lote."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación; no se declara una clave foránea ni su tabla de destino."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; no se declara una clave foránea ni su tabla de destino."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CuentaPagar.LoteOrdenCompraDetalle(idLoteOrdenCompra)"
+  ]
+ },
+ "CuentaPagar.LoteOrdenCompraDetalle": {
+  "descripcion": "Relaciona una orden de compra con un lote de órdenes de compra. Sirve para identificar qué órdenes forman parte de un lote y registrar si la orden ya fue notificada por correo al proveedor mediante el envío masivo del formulario 20023.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLoteOrdenCompraDetalle": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de detalle; la estructura proporcionada no declara una clave primaria."
+   },
+   "idLoteOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el lote al que pertenece la orden; es clave foránea a CuentaPagar.LoteOrdenCompra(idLoteOrdenCompra)."
+   },
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la orden de compra incluida en el lote; es clave foránea a CuentaPagar.OrdenCompra(idOrdenCompra)."
+   },
+   "correoEnviado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la orden ya fue enviada por correo al proveedor desde el envío masivo del formulario 20023: true significa que sí."
+   },
+   "fechaEnvioCorreo": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora del envío del correo; admite valores nulos."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idLoteOrdenCompra -> CuentaPagar.LoteOrdenCompra(idLoteOrdenCompra)",
+   "idOrdenCompra -> CuentaPagar.OrdenCompra(idOrdenCompra)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.MotivoNotaAjuste": {
+  "descripcion": "Catálogo de motivos de nota de ajuste usados en procesos de cuentas por pagar. Sus registros se referencian desde facturas de compra, otros pasivos y movimientos contables, posiblemente para identificar el motivo asociado a esos registros.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMotivoNotaAjuste": {
+    "tipo": "integer",
+    "descripcion": "Identificador del motivo de nota de ajuste; la estructura no indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al motivo; no se pueden deducir sus valores ni su convención."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del motivo de nota de ajuste."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.MovimientoContable(idMotivoNotaAjuste)",
+   "Contabilidad.OtroPasivo(idMotivoNotaAjuste)",
+   "CuentaPagar.FacturaCompra(idMotivoNotaAjuste)"
+  ]
+ },
+ "CuentaPagar.OrdenCompra": {
+  "descripcion": "Guarda la información de cabecera de documentos de compra gestionados por Cuentas por Pagar, incluidos proveedor, fechas, condiciones y medios de pago, valores e impuestos. También registra datos de aprobación, anulación, remisión y sincronización con WMS, y puede asociarse a órdenes de servicio o de trabajo. La estructura muestra relaciones con detalles de compra e inventario, pero no permite determinar por sí sola el ciclo exacto que inicia cada documento.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la orden de compra; la estructura no declara una clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identifica el tipo o configuración de documento y apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al documento de compra."
+   },
+   "referenciaFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Referencia de factura indicada por el proveedor."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de generación del documento."
+   },
+   "fechaVencimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de vencimiento asociada al documento o a su obligación de pago."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero relacionado con la compra, posiblemente el proveedor; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado como empleado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional de uso no especificado."
+   },
+   "texto2": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional de uso no especificado."
+   },
+   "texto3": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional de uso no especificado."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago asociada; apunta a General.FormaPago(idFormaPago)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pago en efectivo."
+   },
+   "diasCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de crédito asociada al documento o a sus condiciones de pago."
+   },
+   "numeroCuotas": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cuotas asociadas al pago."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado al pago; apunta a Tercero.Banco(idBanco)."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número de tarjeta registrado para el pago."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pago con tarjeta."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque asociado al pago."
+   },
+   "fechaChequePostFechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha del cheque posfechado."
+   },
+   "valorPagadoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pagado mediante cheque."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la orden de compra antes de impuestos."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento aplicado, si corresponde."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de compra exento de IVA, según la clasificación registrada."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de compra excluido de IVA, según la clasificación registrada."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de compra sobre el que se genera IVA."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA de los productos gravados."
+   },
+   "valorImpuestosRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor de las retenciones registradas."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la orden, considerando los impuestos y descuentos requeridos."
+   },
+   "anulada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la orden está anulada; los demás valores posibles no aplican a este booleano."
+   },
+   "marcaAgua": {
+    "tipo": "boolean",
+    "descripcion": "Indica una condición de marca de agua del documento; su efecto funcional no se especifica."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa la tabla de referencia."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tipo o registro de tarjeta asociado; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo descrito para la anulación de la orden."
+   },
+   "idOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Orden de servicio de taller asociada, si corresponde; apunta a Mantenimiento.OrdenServicio(idOrdenServicio)."
+   },
+   "facturaTemporal": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la orden es temporal y puede modificarse sin afectar Cuentas por Pagar, Inventario ni Contabilidad."
+   },
+   "valorUnitarioIvaIncluido": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el valor unitario de compra se maneja con IVA incluido."
+   },
+   "idOrdenTrabajo": {
+    "tipo": "bigint",
+    "descripcion": "Orden de trabajo asociada, si corresponde; apunta a Mantenimiento.OrdenTrabajo(idOrdenTrabajo)."
+   },
+   "remisionada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la orden de compra está completamente remisionada."
+   },
+   "aprobada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la orden está aprobada; no se especifican otros estados."
+   },
+   "sicronizadaApiWMS": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento está sincronizado con el sistema WMS."
+   },
+   "fechaSicronizadaApiWMS": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociada a la sincronización con WMS."
+   },
+   "numeroOrdenWMS": {
+    "tipo": "character varying",
+    "descripcion": "Número de orden de compra generado por WMS."
+   },
+   "confirmacionWMS": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento está confirmado o cerrado en WMS."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idOrdenServicio -> Mantenimiento.OrdenServicio(idOrdenServicio)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idOrdenTrabajo -> Mantenimiento.OrdenTrabajo(idOrdenTrabajo)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.CalificacionProveedorDetalle(idOrdenCompa)",
+   "CuentaPagar.DetalleFacturaCompra(idOrdenCompra)",
+   "CuentaPagar.DetalleOrdenCompra(idOrdenCompra)",
+   "CuentaPagar.FacturaCompraOrdenCompra(idOrdenCompra)",
+   "CuentaPagar.LoteOrdenCompraDetalle(idOrdenCompra)",
+   "CuentaPagar.OrdenIndicadorRetencionCompra(idOrdenCompra)",
+   "CuentaPagar.OrdenIvaCompra(idOrdenCompra)",
+   "Inventario.DetalleMovimientoInventario(idOrdenCompra)",
+   "Inventario.MovimientoInventarioOrdenCompra(idOrdenCompra)"
+  ]
+ },
+ "CuentaPagar.OrdenIvaCompra": {
+  "descripcion": "Registra información del IVA asociada a órdenes de compra, posiblemente desglosada por indicador de IVA. Puede servir para conservar la base imponible, el porcentaje aplicado y el valor del impuesto de cada registro.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idOrdenIvaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de IVA de la orden; la estructura no declara una clave primaria."
+   },
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la orden de compra asociada; apunta a CuentaPagar.OrdenCompra(idOrdenCompra)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de IVA aplicado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base para el cálculo del IVA."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado a la base imponible."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA registrado para este indicador y orden."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica una tabla de referencia."
+   },
+   "idUsuarioModicacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario cuyo nombre de columna parece una variante o error tipográfico de idUsuarioModificacion; su función exacta no se puede confirmar."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica una tabla de referencia."
+   }
+  },
+  "apunta_a": [
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idOrdenCompra -> CuentaPagar.OrdenCompra(idOrdenCompra)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.PrecioTemporal": {
+  "descripcion": "Registra posibles cambios temporales del precio de venta de un producto asociados a un detalle de factura de compra, incluidos el porcentaje de incremento y el nuevo valor. Puede incluir también un precio para un producto fraccionado y el almacén de origen; según el comentario de la columna, los datos del almacén se trasladan a ProductoAlmacen/CambioPrecio cuando se aprueba la factura temporal.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPrecioTemporal": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de precio temporal; la estructura no declara si es clave primaria."
+   },
+   "idDetalleFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Detalle de factura de compra asociado; apunta a CuentaPagar.DetalleFacturaCompra(idDetalleFacturaCompra)."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto cuyo precio de venta temporal se registra; apunta a Inventario.Producto(idProducto)."
+   },
+   "porcentajeIncrementoTemporal": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de incremento asociado al precio temporal del producto; no se puede deducir su base de cálculo ni cómo se representa el signo."
+   },
+   "valorVentaTemporal": {
+    "tipo": "numeric",
+    "descripcion": "Valor de venta temporal propuesto para el producto; no se puede deducir si incluye impuestos."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro; puede ser nula."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "idProductoFraccion": {
+    "tipo": "bigint",
+    "descripcion": "Producto fraccionado cuyo precio puede cambiar; es opcional y apunta a Inventario.Producto(idProducto)."
+   },
+   "porcentajeIncrementoFraccionTemporal": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de incremento para el producto fraccionado; no se puede deducir su base de cálculo ni cómo se representa el signo."
+   },
+   "valorVentaFraccionTemporal": {
+    "tipo": "numeric",
+    "descripcion": "Nuevo valor de venta temporal para el producto fraccionado; no se puede deducir si incluye impuestos."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén de la línea de compra que originó el cambio temporal de precio; es opcional y apunta a Inventario.Almacen(idAlmacen)."
+   }
+  },
+  "apunta_a": [
+   "idDetalleFacturaCompra -> CuentaPagar.DetalleFacturaCompra(idDetalleFacturaCompra)",
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idProductoFraccion -> Inventario.Producto(idProducto)",
+   "idAlmacen -> Inventario.Almacen(idAlmacen)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaPagar.PropuestaPago": {
+  "descripcion": "Registra propuestas de pago del módulo de cuentas por pagar, posiblemente agrupando documentos para planificar su pago en una fecha determinada. Guarda los importes totales y la información de aprobación, procesamiento o anulación de cada propuesta. Puede estar relacionada con detalles de la propuesta, documentos excluidos y comprobantes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPropuestaPago": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la propuesta de pago; no se informa si está declarado como clave primaria."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado a la propuesta; se desconoce su criterio de numeración."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se creó la propuesta."
+   },
+   "fechaPago": {
+    "tipo": "date",
+    "descripcion": "Fecha prevista para el pago de la propuesta."
+   },
+   "fechaCorte": {
+    "tipo": "date",
+    "descripcion": "Fecha de corte asociada a la propuesta; se desconoce cómo se utiliza para seleccionar documentos."
+   },
+   "idDocumentoRecibo": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento asociado al recibo o comprobante de la propuesta; apunta a General.Documento(idDocumento)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identificador del centro de costo asociado a la propuesta; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "detalle": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o información adicional sobre la propuesta."
+   },
+   "totalSubtotal": {
+    "tipo": "numeric",
+    "descripcion": "Importe subtotal agregado de la propuesta."
+   },
+   "totalDescuentos": {
+    "tipo": "numeric",
+    "descripcion": "Importe total de descuentos aplicados a la propuesta."
+   },
+   "totalIntereses": {
+    "tipo": "numeric",
+    "descripcion": "Importe total de intereses incluidos en la propuesta."
+   },
+   "totalRetenciones": {
+    "tipo": "numeric",
+    "descripcion": "Importe total de retenciones asociadas a la propuesta."
+   },
+   "totalNeto": {
+    "tipo": "numeric",
+    "descripcion": "Importe neto total de la propuesta."
+   },
+   "estado": {
+    "tipo": "character varying",
+    "descripcion": "Código o nombre del estado actual de la propuesta; sus valores no se pueden deducir."
+   },
+   "idUsuarioAprobador": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que aprobó la propuesta, si aplica; la tabla no indica a qué entidad apunta."
+   },
+   "fechaAprobacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se aprobó la propuesta, si aplica."
+   },
+   "motivoRechazo": {
+    "tipo": "character varying",
+    "descripcion": "Motivo registrado para el rechazo de la propuesta, si aplica."
+   },
+   "idUsuarioProcesador": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que procesó la propuesta, si aplica; la tabla no indica a qué entidad apunta."
+   },
+   "fechaProcesamiento": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se procesó la propuesta, si aplica."
+   },
+   "motivoAnulacion": {
+    "tipo": "character varying",
+    "descripcion": "Motivo registrado para la anulación de la propuesta, si aplica."
+   },
+   "fechaAnulacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se anuló la propuesta, si aplica."
+   },
+   "idUsuarioAnulacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que anuló la propuesta, si aplica; la tabla no indica a qué entidad apunta."
+   },
+   "idTerceroEmpleadoCreador": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero empleado creador de la propuesta; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó la propuesta; la tabla no indica a qué entidad apunta."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que realizó la última modificación; la tabla no indica a qué entidad apunta."
+   },
+   "creadaPorPagoDirecto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la propuesta fue generada automáticamente por el flujo de pago directo; TRUE significa que no pasó por aprobación y se distingue visualmente en la consulta."
+   },
+   "procesadaParcial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la propuesta fue procesada parcialmente; el significado operativo exacto no se puede deducir."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDocumentoRecibo -> General.Documento(idDocumento)",
+   "idTerceroEmpleadoCreador -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.DetallePropuestaPago(idPropuestaPago)",
+   "CuentaPagar.DetallePropuestaPagoExcluido(idPropuestaPago)",
+   "CuentaPagar.PropuestaPagoComprobante(idPropuestaPago)"
+  ]
+ },
+ "CuentaPagar.PropuestaPagoComprobante": {
+  "descripcion": "Registra relaciones entre propuestas de pago, comprobantes de recibo y terceros, junto con la fecha y el usuario asociados al procesamiento. Posiblemente sirve para dejar constancia de qué comprobante se procesó en el contexto de una propuesta de pago.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPropuestaPagoComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro; la estructura no declara que sea clave primaria."
+   },
+   "idPropuestaPago": {
+    "tipo": "bigint",
+    "descripcion": "Propuesta de pago relacionada; apunta a CuentaPagar.PropuestaPago(idPropuestaPago)."
+   },
+   "idReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Comprobante de recibo relacionado; apunta a Cartera.ReciboComprobante(idReciboComprobante)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado al registro; apunta a Tercero.Tercero(idTercero)."
+   },
+   "fechaProcesamiento": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora registradas para el procesamiento del comprobante."
+   },
+   "idUsuarioProcesador": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que procesó el registro; la estructura no indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idReciboComprobante -> Cartera.ReciboComprobante(idReciboComprobante)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idPropuestaPago -> CuentaPagar.PropuestaPago(idPropuestaPago)"
+  ],
+  "la_referencian": []
+ }
+}
