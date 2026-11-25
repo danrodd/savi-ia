@@ -296,6 +296,18 @@ export interface ClientMetrics {
   finish_reasons: Record<string, number>
 }
 
+/** Tabla del ERP pedida por consulta libre: lo que le falta al catálogo de datos. */
+export interface CatalogGapTable {
+  table: string
+  queries: number
+  clients: number
+}
+
+export interface CatalogGaps {
+  period: { start: string; end: string }
+  tables: CatalogGapTable[]
+}
+
 export interface Overview {
   clients: { active: number; suspended: number }
   instances: { online: number; offline: number; suspended: number; revoked: number }

@@ -83,7 +83,14 @@ Saber qué preguntas el catálogo de datos no cubre, para sumarlas cada mes (fas
   - Pruebas:
     - instalación, `cloud_link`: 267, incluida una que comprueba que el evento lleva las tablas y nada de la consulta;
     - Cloud: contrato, privacidad e ingesta, dentro de la suite completa de 384.
-- [ ] **V5 Vista en Cloud.** Ranking de tablas consultadas por SQL libre entre todos los clientes, por periodo.
+- [x] **V5 Vista en Cloud.** Ranking de tablas consultadas por SQL libre entre todos los clientes, por periodo.
+  - Hecho (route: inline):
+    - `MetricsQueries.free_query_tables` cuenta consultas y clientes distintos por tabla, ordenados primero por clientes;
+    - la ruta `GET /console/api/catalog-gaps` usa el permiso `overview.read`;
+    - el Resumen de la consola tiene la tarjeta "Lo que le falta al catálogo", con el top 10.
+  - Pruebas:
+    - Cloud backend: el ranking entre dos clientes y que ignore los eventos sin `tables`. Suite de 384, más la nueva.
+    - Consola: `overview-lists.spec.ts`. Suite de 239; `vue-tsc` y Biome, limpios.
 - [ ] **V6 Rutina mensual (C4.2).** Guía de soporte: exportar, revisar el ranking y llevar las más frecuentes al catálogo (repetir la fase 2).
 
 ## Criterios de aceptación

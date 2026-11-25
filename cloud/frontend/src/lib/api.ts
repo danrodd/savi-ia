@@ -9,6 +9,7 @@ import type {
   AlertSummary,
   AuditEntry,
   BulkAlertResult,
+  CatalogGaps,
   Client,
   ClientCounts,
   ClientDatabase,
@@ -71,6 +72,7 @@ export const authApi = {
 export const consoleApi = {
   me: () => http.get<TokenResponse['user']>(`${API}/me`),
   overview: (period: Period = {}) => http.get<Overview>(`${API}/overview`, { ...period }),
+  catalogGaps: (period: Period = {}) => http.get<CatalogGaps>(`${API}/catalog-gaps`, { ...period }),
   definitions: () => http.get<MetricDefinition[]>(`${API}/metric-definitions`),
 
   clients: (query: {

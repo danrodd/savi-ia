@@ -428,6 +428,39 @@ async def overview(
     )
 
 
+class TableUsageOut(BaseModel):
+    table: str
+    queries: int
+    clients: int
+
+
+class CatalogGapsOut(BaseModel):
+    period: PeriodOut
+    tables: list[TableUsageOut]
+
+
+@router.get("/catalog-gaps", response_model=CatalogGapsOut)
+async def catalog_gaps(
+    request: Request,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    _: Principal = Depends(RequirePermission(Permission.OVERVIEW_READ)),
+) -> CatalogGapsOut:
+    """Tablas del ERP más pedidas por consulta libre entre todos los clientes.
+
+    Lo que el catálogo de datos no cubre: las que se piden en más clientes son las
+    primeras candidatas a una entidad nueva. Solo nombres `Esquema.Tabla`: las
+    preguntas no salen de las instalaciones.
+    """
+    period = _period(request, start, end)
+    async with transaction(request) as session:
+        tables = await MetricsQueries(session).free_query_tables(period)
+    return CatalogGapsOut(
+        period=PeriodOut(start=period.start, end=period.end),
+        tables=[TableUsageOut(table=t.table, queries=t.queries, clients=t.clients) for t in tables],
+    )
+
+
 async def _require_client(session: AsyncSession, client_id: UUID) -> None:
     if await session.get(ClientModel, client_id) is None:
         raise ClientNotFound("No existe el cliente.")

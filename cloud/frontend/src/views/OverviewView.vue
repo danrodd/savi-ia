@@ -16,6 +16,8 @@ import { useAuthStore } from '@/stores/authStore'
 const auth = useAuthStore()
 const router = useRouter()
 const { data, loading, error, reload } = useAsync(() => consoleApi.overview())
+// Tablas del ERP que los clientes piden por consulta libre: candidatas al catálogo.
+const gaps = useAsync(() => consoleApi.catalogGaps())
 
 const OTHERS = 'otros'
 const SERIES_COLORS = ['--chart-s1', '--chart-s2', '--chart-s3']
@@ -73,6 +75,11 @@ const PROVIDER_COLUMNS: TableColumn[] = [
   { key: 'turns', label: 'Turnos', align: 'right' },
   { key: 'cost_usd', label: 'Costo', align: 'right' },
 ]
+const GAP_COLUMNS: TableColumn[] = [
+  { key: 'table', label: 'Tabla del ERP', mono: true, card: 'title' },
+  { key: 'clients', label: 'Clientes', align: 'right' },
+  { key: 'queries', label: 'Consultas', align: 'right' },
+]
 const VERSION_COLUMNS: TableColumn[] = [
   { key: 'version', label: 'Versión', mono: true },
   { key: 'instances', label: 'Instancias', align: 'right' },
@@ -85,6 +92,7 @@ const versions = computed(() =>
   (data.value?.versions ?? []).map((v) => ({ ...v, key: v.version ?? 'sin-informar' })),
 )
 const alerts = computed(() => data.value?.open_alerts ?? { info: 0, warning: 0, critical: 0 })
+const gapTables = computed(() => (gaps.data.value?.tables ?? []).slice(0, 10))
 </script>
 
 <template>
@@ -214,6 +222,23 @@ const alerts = computed(() => data.value?.open_alerts ?? { info: 0, warning: 0, 
             </DataTable>
           </Card>
         </div>
+
+        <Card
+          title="Lo que le falta al catálogo"
+          description="Tablas del ERP que los clientes consultaron con SQL libre porque el catálogo de datos no las cubre. Las que piden más clientes van primero."
+          padding="none"
+          data-test="catalog-gaps"
+        >
+          <DataTable
+            :columns="GAP_COLUMNS"
+            :rows="gapTables"
+            row-key="table"
+            empty-text="Ninguna consulta libre trajo tablas en el período."
+          >
+            <template #cell-clients="{ row }"><span class="num">{{ formatInt(row.clients) }}</span></template>
+            <template #cell-queries="{ row }"><span class="num">{{ formatInt(row.queries) }}</span></template>
+          </DataTable>
+        </Card>
       </template>
     </div>
   </div>

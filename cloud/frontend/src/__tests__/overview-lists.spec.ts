@@ -6,6 +6,7 @@ import type { Alert, Client, Instance, Overview, Usage } from '@/lib/types'
 
 const api = vi.hoisted(() => ({
   overview: vi.fn(),
+  catalogGaps: vi.fn(),
   alerts: vi.fn(),
   alertRules: vi.fn(),
   definitions: vi.fn(),
@@ -116,6 +117,7 @@ beforeEach(() => {
   resetRuleTitlesForTests()
   document.body.innerHTML = ''
   api.overview.mockResolvedValue(OVERVIEW)
+  api.catalogGaps.mockResolvedValue({ period: OVERVIEW.period, tables: [] })
   api.alertRules.mockResolvedValue([{ code: 'instance_offline', title: 'Instancia sin conexión' }])
   api.definitions.mockResolvedValue([])
 })
@@ -146,6 +148,24 @@ describe('resumen', () => {
     const wrapper = await mountView(OverviewView, ['overview.read'])
     expect(api.alerts).not.toHaveBeenCalled()
     expect(wrapper.find('[data-test="attention"]').exists()).toBe(false)
+  })
+
+  it('muestra las tablas del ERP que le faltan al catálogo, las de más clientes primero', async () => {
+    api.alerts.mockResolvedValue([])
+    api.catalogGaps.mockResolvedValue({
+      period: OVERVIEW.period,
+      tables: [
+        { table: 'Nomina.LiquidacionNomina', queries: 7, clients: 3 },
+        { table: 'Contabilidad.PlanContable', queries: 12, clients: 1 },
+      ],
+    })
+    const wrapper = await mountView(OverviewView, ['overview.read', 'alerts.read'])
+
+    const text = wrapper.get('[data-test="catalog-gaps"]').text()
+    expect(text).toContain('Lo que le falta al catálogo')
+    expect(text.indexOf('Nomina.LiquidacionNomina')).toBeLessThan(
+      text.indexOf('Contabilidad.PlanContable'),
+    )
   })
 
   it('muestra la variación solo cuando hay con qué comparar', async () => {

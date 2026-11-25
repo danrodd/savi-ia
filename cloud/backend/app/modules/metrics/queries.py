@@ -155,6 +155,15 @@ class ToolUsage:
 
 
 @dataclass(frozen=True)
+class TableUsage:
+    """Una tabla del ERP pedida por SQL libre: cuántas consultas y en cuántos clientes."""
+
+    table: str
+    queries: int
+    clients: int
+
+
+@dataclass(frozen=True)
 class UserUsage:
     user_ref: str
     turns: int
@@ -530,6 +539,36 @@ class MetricsQueries:
             ToolUsage(name=name, tipo=tipo, uses=count, errors=errors[(name, tipo)])
             for (name, tipo), count in uses.most_common()
         ]
+
+    async def free_query_tables(
+        self, period: Period, client_id: UUID | None = None, limit: int = 50
+    ) -> list[TableUsage]:
+        """Tablas del ERP más pedidas por consulta libre: lo que le falta al catálogo.
+
+        Viene de `free_query/1.tables` (solo `Esquema.Tabla`). Los eventos de instancias
+        que todavía no lo mandan no cuentan.
+        """
+        f = EvFreeQueryModel
+        stmt = select(f.client_id, f.tables).where(
+            f.occurred_at >= period.start,
+            f.occurred_at < period.end,
+            f.tables.is_not(None),
+        )
+        if client_id is not None:
+            stmt = stmt.where(f.client_id == client_id)
+        queries: Counter[str] = Counter()
+        clients: dict[str, set[UUID]] = {}
+        result = await self._s.stream(stmt)
+        async for owner, tables in result:
+            for table in tables or []:
+                name = str(table)
+                queries[name] += 1
+                clients.setdefault(name, set()).add(owner)
+        # Primero las que piden más clientes: son las que más vale sumar al catálogo.
+        ranked = sorted(queries.items(), key=lambda kv: (-len(clients[kv[0]]), -kv[1], kv[0]))
+        return [
+            TableUsage(table=name, queries=n, clients=len(clients[name])) for name, n in ranked
+        ][:limit]
 
     async def users(self, client_id: UUID, period: Period, limit: int = 100) -> list[UserUsage]:
         t = EvTurnModel

@@ -523,3 +523,39 @@ async def test_metrics_require_read_permission_only(fx: Fixture) -> None:
         assert res.status_code == 200
     anonymous = await fx.console.http.get(f"{API}/clients/{data.client_id}/metrics")
     assert anonymous.status_code == 401
+
+
+# ------------------------------------------------------------------ vacíos del catálogo
+
+
+async def test_catalog_gaps_rank_erp_tables_by_clients_then_queries(fx: Fixture) -> None:
+    """Tablas del ERP pedidas por SQL libre (2026-11-25): las que piden más clientes
+    primero. Los eventos sin `tables` (instancias viejas) no cuentan."""
+    data = await seed(fx)
+    c, o = UUID(data.client_id), UUID(data.other_client_id)
+    rows = [
+        (c, "g1", ["Contabilidad.PlanContable", "Tercero.Tercero"]),
+        (c, "g2", ["Contabilidad.PlanContable"]),
+        (c, "g3", ["Nomina.LiquidacionNomina"]),
+        (o, "g4", ["Nomina.LiquidacionNomina"]),
+    ]
+    async with fx.console.maker() as s, s.begin():
+        for client, source, tables in rows:
+            s.add(
+                EvFreeQueryModel(
+                    instance_id=INSTANCE,
+                    source_id=source,
+                    client_id=client,
+                    occurred_at=utc("2025-12-31T15:00:00Z"),
+                    result="ok",
+                    tables=tables,
+                )
+            )
+
+    body = await get(fx, "/catalog-gaps?start=2025-12-01T00:00:00Z&end=2026-01-02T00:00:00Z")
+
+    assert body["tables"] == [
+        {"table": "Nomina.LiquidacionNomina", "queries": 2, "clients": 2},
+        {"table": "Contabilidad.PlanContable", "queries": 2, "clients": 1},
+        {"table": "Tercero.Tercero", "queries": 1, "clients": 1},
+    ]
