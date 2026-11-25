@@ -10,6 +10,11 @@ Dos entidades con granos distintos, como `ventas`, para no inflar sumas:
 
 Lo que se le DEBE a cada proveedor no está acá: es cartera (lado
 'proveedores'). Compras responde qué se compró, cuándo y a quién.
+
+Las devoluciones en compra (documento de tipo 13) se guardan en la misma
+tabla, con total POSITIVO. Hasta el 2026-11-25 se sumaban como compras
+(imporllantas: 116,6 M de más). Ahora quedan afuera y tienen su propia
+entidad, `devoluciones_compra`.
 """
 
 from __future__ import annotations
@@ -23,9 +28,16 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
+from app.modules.data_query.infrastructure.catalog._iva import (
+    iva_fields,
+    iva_join,
+    iva_metrics,
+)
 from app.modules.data_query.infrastructure.catalog._names import (
     product_search_text,
     tercero_display_name,
+    tercero_full_name,
+    tercero_search_text,
 )
 from app.modules.data_query.infrastructure.catalog._tercero_fields import (
     contact_dimensions,
@@ -34,6 +46,15 @@ from app.modules.data_query.infrastructure.catalog._tercero_fields import (
 )
 
 _PROVEEDOR_NAME = tercero_display_name()
+_PROVEEDOR_SEARCH = tercero_search_text()
+
+# Documentos de devolución en compra (13). Sin tipo (base de demo) cuentan
+# como factura.
+PURCHASE_RETURN_TYPES = "(13)"
+NOT_A_PURCHASE_RETURN = (
+    'fc."idDocumento" NOT IN (SELECT doc."idDocumento" FROM "General"."Documento" doc '
+    f'WHERE doc."tipo" IN {PURCHASE_RETURN_TYPES})'
+)
 
 _DATE = (FilterOp.BETWEEN, FilterOp.GTE, FilterOp.LTE, FilterOp.EQ)
 
@@ -47,20 +68,25 @@ _TERCERO_JOIN = JoinDef(
 COMPRAS = SemanticEntity(
     name="compras",
     base_table='"CuentaPagar"."FacturaCompra" fc',
-    base_filters=('fc."anulada" = false',),
+    base_filters=('fc."anulada" = false', NOT_A_PURCHASE_RETURN),
     required_modules=("CUENTAPAGAR",),
     description=(
-        "Facturas de compra a proveedores (cabecera). Úsala para 'cuánto le "
-        "compramos al proveedor X', 'cuánto compramos en marzo' y 'principales "
-        "proveedores'. Para lo que se le DEBE a un proveedor usa 'cartera'. "
-        "Para detalle por PRODUCTO usa 'compras_detalle'."
+        "Facturas de compra a proveedores (cabecera), sin las devoluciones. Úsala "
+        "para 'cuánto le compramos al proveedor X', 'cuánto compramos en marzo' y "
+        "'principales proveedores'. Las devoluciones en compra están en "
+        "'devoluciones_compra': compras netas = compras − devoluciones. El "
+        "desglose del IVA por tarifa (base_19, iva_19, base_5, iva_5, base_excluida, "
+        "base_exenta, otros_impuestos) se pide por nombre en 'campos', o como "
+        "métrica con sufijo _total. Para lo que se le DEBE a un proveedor usa "
+        "'cartera'. Para detalle por PRODUCTO usa 'compras_detalle'."
     ),
-    joins={"tercero": _TERCERO_JOIN},
+    joins={"tercero": _TERCERO_JOIN, "iva": iva_join('fc."idFacturaCompra"')},
     metrics={
         "monto_total": MetricDef("monto_total", 'SUM(fc."total")', "Total comprado"),
         "num_facturas": MetricDef("num_facturas", "COUNT(*)", "Cantidad de facturas de compra"),
         "subtotal_total": MetricDef("subtotal_total", 'SUM(fc."subtotal")', "Subtotal"),
         "iva_total": MetricDef("iva_total", 'SUM(fc."valorIva")', "IVA de las compras"),
+        **iva_metrics(),
     },
     dimensions={
         **contact_dimensions(requires=("tercero",)),
@@ -80,13 +106,23 @@ COMPRAS = SemanticEntity(
         ),
         "fecha": FieldDef("fecha", 'fc."fecha"', "Fecha"),
         "vencimiento": FieldDef("vencimiento", 'fc."fechaVencimiento"', "Vencimiento"),
+        "subtotal": FieldDef("subtotal", 'fc."subtotal"', "Subtotal"),
+        "iva": FieldDef("iva", 'fc."valorIva"', "IVA"),
         "total": FieldDef("total", 'fc."total"', "Total"),
         "proveedor": FieldDef("proveedor", _PROVEEDOR_NAME, "Proveedor", requires=("tercero",)),
+        "proveedor_nombre_completo": FieldDef(
+            "proveedor_nombre_completo",
+            tercero_full_name(),
+            "Proveedor (nombre completo)",
+            requires=("tercero",),
+            default=False,
+        ),
+        **iva_fields(),
     },
     filters={
         "fecha": FilterDef("fecha", 'fc."fecha"', _DATE, value_type="date"),
         "proveedor": FilterDef(
-            "proveedor", _PROVEEDOR_NAME, (FilterOp.CONTAINS,), requires=("tercero",)
+            "proveedor", _PROVEEDOR_SEARCH, (FilterOp.CONTAINS,), requires=("tercero",)
         ),
         "proveedor_id": FilterDef(
             "proveedor_id", 'fc."idTercero"', (FilterOp.EQ, FilterOp.IN), value_type="number"
@@ -108,10 +144,10 @@ COMPRAS_DETALLE = SemanticEntity(
         'JOIN "CuentaPagar"."DetalleFacturaCompra" df '
         'ON df."idFacturaCompra" = fc."idFacturaCompra"'
     ),
-    base_filters=('fc."anulada" = false',),
+    base_filters=('fc."anulada" = false', NOT_A_PURCHASE_RETURN),
     required_modules=("CUENTAPAGAR",),
     description=(
-        "Líneas de compra (por producto). Úsala para 'cuántas unidades de X "
+        "Líneas de compra (por producto), sin las devoluciones. Úsala para 'cuántas unidades de X "
         "compramos', 'qué productos le compramos al proveedor Y' y costo "
         "unitario de compra. Para totales de factura usa 'compras'."
     ),
@@ -156,7 +192,7 @@ COMPRAS_DETALLE = SemanticEntity(
             "producto_id", 'df."idProducto"', (FilterOp.EQ, FilterOp.IN), value_type="number"
         ),
         "proveedor": FilterDef(
-            "proveedor", _PROVEEDOR_NAME, (FilterOp.CONTAINS,), requires=("tercero",)
+            "proveedor", _PROVEEDOR_SEARCH, (FilterOp.CONTAINS,), requires=("tercero",)
         ),
         "proveedor_id": FilterDef(
             "proveedor_id", 'fc."idTercero"', (FilterOp.EQ,), value_type="number"

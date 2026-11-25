@@ -12,6 +12,11 @@ de joins (que inflaría las sumas):
 
 Nombre del cliente: ver `_names.tercero_display_name` — el ERP guarda los
 campos vacíos como '' y hay que saltarlos todos.
+
+Las devoluciones en venta (documento de tipo 14: DV, DVE) se guardan en la
+misma tabla, con total POSITIVO. Hasta el 2026-11-25 se sumaban como ventas
+(imporllantas: 294 M de más; frami: 1.297 M). Ahora quedan afuera y tienen su
+propia entidad, `devoluciones_venta`.
 """
 
 from __future__ import annotations
@@ -28,6 +33,8 @@ from app.modules.data_query.domain.semantic_query import FilterOp
 from app.modules.data_query.infrastructure.catalog._names import (
     product_search_text,
     tercero_display_name,
+    tercero_full_name,
+    tercero_search_text,
 )
 from app.modules.data_query.infrastructure.catalog._tercero_fields import (
     contact_dimensions,
@@ -46,17 +53,28 @@ _VENDEDOR_JOIN = JoinDef(
 
 _DATE = (FilterOp.BETWEEN, FilterOp.GTE, FilterOp.LTE, FilterOp.EQ)
 
+# Documentos de devolución en venta (14). Sin tipo (base de demo) cuentan
+# como factura.
+SALES_RETURN_TYPES = "(14)"
+NOT_A_SALES_RETURN = (
+    'f."idDocumento" NOT IN (SELECT doc."idDocumento" FROM "General"."Documento" doc '
+    f'WHERE doc."tipo" IN {SALES_RETURN_TYPES})'
+)
+_CLIENTE_SEARCH = tercero_search_text()
+_VENDEDOR_SEARCH = tercero_search_text("v")
+
 
 # ── Entidad: ventas (grano factura) ─────────────────────────────────────
 VENTAS = SemanticEntity(
     name="ventas",
     base_table='"CuentaCobrar"."Factura" f',
-    base_filters=('f."anulada" = false',),
+    base_filters=('f."anulada" = false', NOT_A_SALES_RETURN),
     description=(
-        "Facturas de venta (cabecera). Úsala para totales facturados, "
+        "Facturas de venta (cabecera), sin las devoluciones. Úsala para totales facturados, "
         "número de facturas, ticket promedio, IVA y descuentos, agrupados "
         "por periodo, por cliente o por vendedor. Para detalle por PRODUCTO "
-        "usa 'ventas_detalle'."
+        "usa 'ventas_detalle'. Las devoluciones en venta están en "
+        "'devoluciones_venta': ventas netas = ventas − devoluciones."
     ),
     joins={
         "tercero": JoinDef(
@@ -95,6 +113,13 @@ VENTAS = SemanticEntity(
         "iva": FieldDef("iva", 'f."valorImpuestoIva"', "IVA"),
         "descuento": FieldDef("descuento", 'f."descuento"', "Descuento"),
         "cliente": FieldDef("cliente", _CLIENTE_NAME, "Cliente", requires=("tercero",)),
+        "cliente_nombre_completo": FieldDef(
+            "cliente_nombre_completo",
+            tercero_full_name(),
+            "Cliente (nombre completo)",
+            requires=("tercero",),
+            default=False,
+        ),
         "vendedor": FieldDef("vendedor", _VENDEDOR_NAME, "Vendedor", requires=("vendedor",)),
     },
     filters={
@@ -108,10 +133,12 @@ VENTAS = SemanticEntity(
         # Por nombre, para "cuánto nos compró X" en una sola consulta. Sin
         # él el modelo tenía que buscar el id en `terceros` y encadenar; si
         # ese primer paso fallaba, contestaba que el cliente no existía.
-        "cliente": FilterDef("cliente", _CLIENTE_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
+        "cliente": FilterDef(
+            "cliente", _CLIENTE_SEARCH, (FilterOp.CONTAINS,), requires=("tercero",)
+        ),
         # "Cuánto vendió Mateo" por el nombre del vendedor.
         "vendedor": FilterDef(
-            "vendedor", _VENDEDOR_NAME, (FilterOp.CONTAINS,), requires=("vendedor",)
+            "vendedor", _VENDEDOR_SEARCH, (FilterOp.CONTAINS,), requires=("vendedor",)
         ),
         "numero": FilterDef("numero", 'f."numero"', (FilterOp.EQ,), value_type="number"),
     },
@@ -123,7 +150,7 @@ VENTAS = SemanticEntity(
 VENTAS_DETALLE = SemanticEntity(
     name="ventas_detalle",
     base_table='"CuentaCobrar"."Factura" f',
-    base_filters=('f."anulada" = false',),
+    base_filters=('f."anulada" = false', NOT_A_SALES_RETURN),
     description=(
         "Líneas de venta (por producto). Úsala para unidades vendidas, "
         "ingresos y costo por producto, por sucursal o por vendedor. Para "
@@ -194,10 +221,12 @@ VENTAS_DETALLE = SemanticEntity(
             requires=("detalle", "producto"),
         ),
         "cliente_id": FilterDef("cliente_id", 'f."idTercero"', (FilterOp.EQ,), value_type="number"),
-        "cliente": FilterDef("cliente", _CLIENTE_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
+        "cliente": FilterDef(
+            "cliente", _CLIENTE_SEARCH, (FilterOp.CONTAINS,), requires=("tercero",)
+        ),
         # "Cuánto vendió Mateo" por el nombre del vendedor.
         "vendedor": FilterDef(
-            "vendedor", _VENDEDOR_NAME, (FilterOp.CONTAINS,), requires=("vendedor",)
+            "vendedor", _VENDEDOR_SEARCH, (FilterOp.CONTAINS,), requires=("vendedor",)
         ),
     },
 )

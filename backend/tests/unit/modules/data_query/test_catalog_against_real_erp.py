@@ -45,7 +45,16 @@ _PASSWORD = "1234"
 # funcionar contra los tres: cuando corría solo contra farmacias_similares
 # se escaparon dos bugs que solo existían en los otros (nombres vacíos de
 # personas naturales y un `tipoDocumento` sin mapear).
-_DATABASES = ("farmacias_similares", "frami", "sur_andina")
+_DATABASES = ("farmacias_similares", "frami", "sur_andina", "imporllantas")
+
+# Las devoluciones (documento de tipo 14 en venta, 13 en compra) viven en la
+# misma tabla que las facturas, con total positivo: no son ventas ni compras.
+_NOT_A_SALES_RETURN = (
+    'f."idDocumento" NOT IN (SELECT "idDocumento" FROM "General"."Documento" WHERE tipo = 14)'
+)
+_NOT_A_PURCHASE_RETURN = (
+    'fc."idDocumento" NOT IN (SELECT "idDocumento" FROM "General"."Documento" WHERE tipo = 13)'
+)
 
 
 @pytest.fixture(params=_DATABASES)
@@ -319,8 +328,9 @@ async def test_a_year_range_includes_its_last_day(erp_engine: AsyncEngine) -> No
     async with erp_engine.connect() as conn:
         esperado = await conn.scalar(
             text(
-                'SELECT COALESCE(SUM(total), 0) FROM "CuentaCobrar"."Factura" '
-                "WHERE anulada = false AND fecha >= '2025-01-01' AND fecha < '2026-01-01'"
+                'SELECT COALESCE(SUM(total), 0) FROM "CuentaCobrar"."Factura" f '
+                "WHERE anulada = false AND fecha >= '2025-01-01' AND fecha < '2026-01-01' "
+                f"AND {_NOT_A_SALES_RETURN}"
             )
         )
 
@@ -436,6 +446,7 @@ async def test_ventas_by_seller_adds_up_to_the_billed_total(erp_engine: AsyncEng
                 'SELECT f."idTerceroEmpleado" AS id, SUM(f.total) AS monto '
                 'FROM "CuentaCobrar"."Factura" f WHERE f.anulada = false '
                 "AND f.fecha >= '2025-01-01' AND f.fecha < '2026-01-01' "
+                f"AND {_NOT_A_SALES_RETURN} "
                 'GROUP BY f."idTerceroEmpleado"'
             )
         )
@@ -455,6 +466,7 @@ async def test_ventas_by_client_name_matches_the_chained_lookup(
         "farmacias_similares": "FARMA4NF",
         "frami": "MUEBLES PAOLA",
         "sur_andina": "EQUIRENT",
+        "imporllantas": "BATERITODO",
     }[erp_name]
     por_nombre = await _run(
         erp_engine,
@@ -470,8 +482,9 @@ async def test_ventas_by_client_name_matches_the_chained_lookup(
             text(
                 'SELECT SUM(f.total) FROM "CuentaCobrar"."Factura" f '
                 'JOIN "Tercero"."Tercero" t ON t."idTercero" = f."idTercero" '
-                "WHERE f.anulada = false AND "
-                '(t."nombreComercial" ILIKE :m OR t."razonSocial" ILIKE :m)'
+                f"WHERE f.anulada = false AND {_NOT_A_SALES_RETURN} AND "
+                '(t."nombreComercial" ILIKE :m OR t."razonSocial" ILIKE :m '
+                'OR t."nombreCompleto" ILIKE :m)'
             ),
             {"m": f"%{marcador}%"},
         )
@@ -513,7 +526,7 @@ async def test_product_search_by_words_matches_how_users_ask(
                 'SELECT SUM(d.cantidad) FROM "CuentaCobrar"."Factura" f '
                 'JOIN "CuentaCobrar"."DetalleFactura" d ON d."idFactura" = f."idFactura" '
                 'JOIN "Inventario"."Producto" p ON p."idProducto" = d."idProducto" '
-                "WHERE f.anulada = false AND p.descripcion ILIKE :p"
+                f"WHERE f.anulada = false AND {_NOT_A_SALES_RETURN} AND p.descripcion ILIKE :p"
             ),
             {"p": patron},
         )
@@ -579,7 +592,9 @@ async def test_inventario_leaves_services_out(erp_engine: AsyncEngine) -> None:
 
 
 @pytest.mark.asyncio
-async def test_compras_total_matches_the_non_voided_invoices(erp_engine: AsyncEngine) -> None:
+async def test_compras_total_matches_the_non_voided_invoices_without_returns(
+    erp_engine: AsyncEngine,
+) -> None:
     rows = await _run(
         erp_engine,
         SemanticQuery(
@@ -594,9 +609,10 @@ async def test_compras_total_matches_the_non_voided_invoices(erp_engine: AsyncEn
             await conn.execute(
                 text(
                     """
-                    SELECT SUM(total) FROM "CuentaPagar"."FacturaCompra"
+                    SELECT SUM(total) FROM "CuentaPagar"."FacturaCompra" fc
                     WHERE NOT anulada AND fecha >= '2025-01-01' AND fecha < '2026-01-01'
-                    """
+                    AND """
+                    + _NOT_A_PURCHASE_RETURN
                 )
             )
         ).scalar_one()
@@ -624,7 +640,8 @@ async def test_compras_by_product_does_not_inflate_the_lines(erp_engine: AsyncEn
                     JOIN "CuentaPagar"."FacturaCompra" fc
                       ON fc."idFacturaCompra" = df."idFacturaCompra"
                     WHERE NOT fc.anulada AND fc.fecha >= '2025-01-01' AND fc.fecha < '2026-01-01'
-                    """
+                    AND """
+                    + _NOT_A_PURCHASE_RETURN
                 )
             )
         ).scalar_one()
@@ -652,3 +669,226 @@ async def test_cartera_scoped_to_receivables_only_returns_the_client_side(
     lados = {row["lado"] for row in rows}
     assert lados <= {"Por cobrar a clientes", "Notas crédito a clientes"}
     assert "Por pagar a proveedores" not in lados
+
+
+# ── Devoluciones, anticipos, IVA por tarifa y nombres completos ─────────
+#
+# Reporte de soporte del 2026-11-24: anticipos que el modelo no encontraba,
+# informes de compras sin el IVA por tarifa y terceros que no aparecían por su
+# nombre completo. De paso apareció que ventas y compras sumaban las
+# devoluciones como si fueran ventas o compras.
+
+_PERIODO_2025 = QueryFilter("fecha", FilterOp.BETWEEN, ["2025-01-01", "2025-12-31"])
+
+
+async def _total(engine: AsyncEngine, entidad: str) -> float:
+    rows = await _run(
+        engine,
+        SemanticQuery(
+            entidad=entidad,
+            modo=QueryMode.AGGREGATE,
+            metricas=["monto_total"],
+            filtros=[_PERIODO_2025],
+        ),
+    )
+    return float(rows[0]["monto_total"] or 0)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("entidad", "devoluciones", "tabla"),
+    [
+        ("ventas", "devoluciones_venta", '"CuentaCobrar"."Factura"'),
+        ("compras", "devoluciones_compra", '"CuentaPagar"."FacturaCompra"'),
+    ],
+)
+async def test_returns_are_split_from_sales_and_purchases(
+    erp_engine: AsyncEngine, entidad: str, devoluciones: str, tabla: str
+) -> None:
+    """Ventas + devoluciones = todo lo no anulado de la tabla: nada se pierde ni
+    se cuenta dos veces. Antes la devolución se sumaba como venta o compra."""
+    async with erp_engine.connect() as conn:
+        todo = await conn.scalar(
+            text(
+                f"SELECT COALESCE(SUM(total), 0) FROM {tabla} "
+                "WHERE NOT anulada AND fecha >= '2025-01-01' AND fecha < '2026-01-01'"
+            )
+        )
+
+    netas = await _total(erp_engine, entidad)
+    devuelto = await _total(erp_engine, devoluciones)
+
+    assert netas + devuelto == pytest.approx(float(todo))
+
+
+@pytest.mark.asyncio
+async def test_sales_returns_point_to_the_invoice_they_return(erp_engine: AsyncEngine) -> None:
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="devoluciones_venta",
+            modo=QueryMode.DETAIL,
+            campos=["numero", "factura_relacionada", "total"],
+            limite=20,
+        ),
+    )
+    if not rows:
+        pytest.skip("este ERP no tiene devoluciones en venta")
+    assert any(r["factura_relacionada"] for r in rows)
+
+
+@pytest.mark.asyncio
+async def test_anticipos_pending_balance_matches_the_table(erp_engine: AsyncEngine) -> None:
+    por_tipo = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="anticipos",
+            modo=QueryMode.AGGREGATE,
+            metricas=["saldo_pendiente", "num_anticipos"],
+            dimensiones=["tipo"],
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        esperado = await conn.scalar(
+            text(
+                'SELECT COALESCE(SUM("saldoAnticipo"), 0) FROM "Contabilidad"."Anticipo" '
+                "WHERE NOT anulado"
+            )
+        )
+
+    assert sum(float(r["saldo_pendiente"] or 0) for r in por_tipo) == pytest.approx(float(esperado))
+    # Ningún anticipo cae en un tipo desconocido.
+    assert "Otro" not in {r["tipo"] for r in por_tipo}
+
+
+@pytest.mark.asyncio
+async def test_anticipos_are_found_by_the_identification_number(erp_engine: AsyncEngine) -> None:
+    """ "¿El tercero de cédula X tiene anticipos pendientes?" en una consulta."""
+    async with erp_engine.connect() as conn:
+        caso = (
+            await conn.execute(
+                text(
+                    'SELECT TRIM(t."numeroIdentificacion") AS cedula, COUNT(*) AS n, '
+                    'SUM(a."saldoAnticipo") AS saldo '
+                    'FROM "Contabilidad"."Anticipo" a '
+                    'JOIN "Tercero"."Tercero" t ON t."idTercero" = a."idTercero" '
+                    'WHERE NOT a.anulado AND a."saldoAnticipo" > 0 '
+                    "GROUP BY 1 ORDER BY 2 DESC LIMIT 1"
+                )
+            )
+        ).first()
+    if caso is None:
+        pytest.skip("este ERP no tiene anticipos pendientes")
+
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="anticipos",
+            modo=QueryMode.DETAIL,
+            campos=["tipo", "numero", "fecha", "tercero", "saldo"],
+            filtros=[
+                QueryFilter("identificacion", FilterOp.EQ, caso.cedula),
+                QueryFilter("pendiente", FilterOp.EQ, True),
+            ],
+            limite=50,
+        ),
+    )
+
+    assert len(rows) == min(int(caso.n), 50)
+    if int(caso.n) <= 50:
+        assert sum(float(r["saldo"]) for r in rows) == pytest.approx(float(caso.saldo))
+    assert all(r["tercero"] for r in rows)
+
+
+@pytest.mark.asyncio
+async def test_purchase_vat_breakdown_adds_up_to_the_invoice(erp_engine: AsyncEngine) -> None:
+    """Bases por tarifa = subtotal de las líneas; IVA por tarifa = IVA de la cabecera."""
+    partes = ["base_19", "base_5", "base_excluida", "base_exenta", "base_otras"]
+    ivas = ["iva_19", "iva_5", "iva_otras"]
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.AGGREGATE,
+            metricas=[f"{p}_total" for p in partes + ivas] + ["iva_total"],
+            filtros=[_PERIODO_2025],
+        ),
+    )
+    async with erp_engine.connect() as conn:
+        subtotal = await conn.scalar(
+            text(
+                'SELECT COALESCE(SUM(df.subtotal), 0) FROM "CuentaPagar"."DetalleFacturaCompra" df '
+                'JOIN "CuentaPagar"."FacturaCompra" fc '
+                'ON fc."idFacturaCompra" = df."idFacturaCompra" '
+                "WHERE NOT fc.anulada AND fc.fecha >= '2025-01-01' AND fc.fecha < '2026-01-01' "
+                f"AND {_NOT_A_PURCHASE_RETURN}"
+            )
+        )
+
+    row = rows[0]
+    assert sum(float(row[f"{p}_total"] or 0) for p in partes) == pytest.approx(float(subtotal))
+    assert sum(float(row[f"{p}_total"] or 0) for p in ivas) == pytest.approx(
+        float(row["iva_total"] or 0), abs=1
+    )
+
+
+@pytest.mark.asyncio
+async def test_purchase_vat_breakdown_is_one_row_per_invoice(erp_engine: AsyncEngine) -> None:
+    """El desglose no multiplica las facturas: mismo conteo con y sin él."""
+    sin = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.AGGREGATE,
+            metricas=["num_facturas", "monto_total"],
+            filtros=[_PERIODO_2025],
+        ),
+    )
+    con = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.AGGREGATE,
+            metricas=["num_facturas", "monto_total", "base_19_total"],
+            filtros=[_PERIODO_2025],
+        ),
+    )
+
+    assert con[0]["num_facturas"] == sin[0]["num_facturas"]
+    assert float(con[0]["monto_total"] or 0) == pytest.approx(float(sin[0]["monto_total"] or 0))
+
+
+_PERSONA_CON_SEGUNDO_NOMBRE = """
+SELECT t."idTercero" AS id,
+       TRIM(t."primerNombre") || ' ' || TRIM(t."segundoNombre") || ' '
+           || TRIM(t."primerApellido") AS busqueda
+FROM "Tercero"."Tercero" t
+WHERE TRIM(t."segundoNombre") <> '' AND TRIM(t."primerApellido") <> ''
+  AND TRIM(t."primerNombre") <> ''
+ORDER BY t."idTercero"
+LIMIT 1
+"""
+
+
+@pytest.mark.asyncio
+async def test_a_tercero_is_found_by_every_part_of_its_full_name(erp_engine: AsyncEngine) -> None:
+    """ "José Manuel Rodríguez" encuentra a quien tiene ese segundo nombre,
+    aunque su nombre corto sea "JOSE RODRIGUEZ"."""
+    async with erp_engine.connect() as conn:
+        caso = (await conn.execute(text(_PERSONA_CON_SEGUNDO_NOMBRE))).first()
+    if caso is None:
+        pytest.skip("sin personas con segundo nombre")
+
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="terceros",
+            modo=QueryMode.DETAIL,
+            campos=["id", "nombre", "nombre_completo"],
+            filtros=[QueryFilter("nombre", FilterOp.CONTAINS, caso.busqueda)],
+            limite=30,
+        ),
+    )
+
+    assert caso.id in {r["id"] for r in rows}
+    assert all(r["nombre_completo"] for r in rows)

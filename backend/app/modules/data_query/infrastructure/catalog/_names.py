@@ -24,6 +24,32 @@ def tercero_display_name(alias: str = "t") -> str:
     )
 
 
+def tercero_full_name(alias: str = "t") -> str:
+    """Nombre del tercero como lo muestra el ERP en sus documentos.
+
+    `nombreCompleto` es la razón social o, para una persona, apellidos y
+    nombres completos ("DIAZ TORRES DELIA MARI"). Medido el 2026-11-25: nunca
+    está vacío en imporllantas ni en frami. Mostrar solo el nombre comercial
+    ("DELIA DIAZ") hacía creer al usuario que se hablaba de otra persona.
+    """
+    return f"COALESCE(NULLIF(TRIM({alias}.\"nombreCompleto\"), ''), {tercero_display_name(alias)})"
+
+
+def tercero_search_text(alias: str = "t") -> str:
+    """Texto donde se busca un tercero por nombre: comercial, completo y razón social.
+
+    `contiene` exige que cada palabra aparezca. Buscando solo en el nombre
+    corto (comercial, o primer nombre y primer apellido), "José Manuel
+    Rodríguez" no encontraba a quien tiene ese segundo nombre, y "Delia Díaz
+    Torres" no encontraba a quien figura como "DELIA DIAZ".
+    """
+    return (
+        f'CONCAT_WS(\' \', {alias}."nombreComercial", {alias}."nombreCompleto", '
+        f'{alias}."razonSocial", {alias}."primerNombre", {alias}."segundoNombre", '
+        f'{alias}."primerApellido", {alias}."segundoApellido")'
+    )
+
+
 def product_search_text(alias: str = "p") -> str:
     """Texto donde se busca un producto: la descripción y el código.
 

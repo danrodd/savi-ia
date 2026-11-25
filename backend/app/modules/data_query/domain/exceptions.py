@@ -4,6 +4,7 @@ Todas heredan de SemanticQueryError. El use case las captura y devuelve un
 mensaje accionable al LLM (que SAVI traduce a lenguaje de usuario), nunca
 un stack trace ni detalle técnico de la BD.
 """
+
 from __future__ import annotations
 
 
@@ -14,8 +15,7 @@ class SemanticQueryError(Exception):
 class UnknownEntityError(SemanticQueryError):
     def __init__(self, entidad: str, disponibles: list[str]) -> None:
         super().__init__(
-            f"No conozco la entidad '{entidad}'. "
-            f"Disponibles: {', '.join(disponibles)}."
+            f"No conozco la entidad '{entidad}'. Disponibles: {', '.join(disponibles)}."
         )
 
 

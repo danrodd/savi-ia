@@ -56,7 +56,10 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
-from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
+from app.modules.data_query.infrastructure.catalog._names import (
+    tercero_display_name,
+    tercero_search_text,
+)
 from app.modules.data_query.infrastructure.catalog._tercero_fields import (
     contact_dimensions,
     contact_fields,
@@ -134,7 +137,8 @@ CARTERA = SemanticEntity(
     description=(
         "Saldos pendientes de cobro y de pago. Úsala para 'cartera "
         "vencida', 'cuánto nos deben los clientes', 'cuánto le debemos a "
-        "proveedores' y antigüedad de la deuda.\n"
+        "proveedores' y antigüedad de la deuda. Los anticipos NO están aquí "
+        "(usa 'anticipos'): sin cartera, un tercero puede tener anticipos.\n"
         "REGLA OBLIGATORIA: esta entidad mezcla DOS deudas opuestas — lo "
         "que los clientes deben a la empresa y lo que la empresa debe a "
         "sus proveedores. Un total sin separar suma las dos y NO significa "
@@ -231,7 +235,9 @@ CARTERA = SemanticEntity(
         "tercero_id": FilterDef(
             "tercero_id", 'ft."idTercero"', (FilterOp.EQ, FilterOp.IN), value_type="number"
         ),
-        "tercero": FilterDef("tercero", _TERCERO_NAME, (FilterOp.CONTAINS,), requires=("tercero",)),
+        "tercero": FilterDef(
+            "tercero", tercero_search_text(), (FilterOp.CONTAINS,), requires=("tercero",)
+        ),
         # `vencida=true` es el filtro que se quiere el 90% de las veces, y
         # ahorra que el modelo tenga que calcular la fecha de hoy.
         "vencida": FilterDef("vencida", f"({_VENCIDA})", (FilterOp.EQ,), value_type="bool"),

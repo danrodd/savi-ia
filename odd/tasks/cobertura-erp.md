@@ -57,6 +57,12 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
 
 ### Fase 2: lo que los clientes ya están pidiendo
 
+- [ ] **C2.0 Devoluciones fuera de ventas y compras (hallazgo del 2026-11-25).**
+  - El ERP guarda las devoluciones en la misma tabla que las facturas, con total positivo: tipo de documento 14 en venta y 13 en compra.
+  - El catálogo solo excluía las anuladas, así que las sumaba como ventas o compras. En imporllantas eran 294 M de más en ventas y 116,6 M en compras; en frami, 1.297 M en ventas.
+  - Ahora `ventas` y `compras` las excluyen, y tienen su propia entidad.
+  - **Pendiente:** confirmar con el equipo del ERP qué cifra muestran sus informes de ventas (brutas o netas).
+
 - [ ] **C2.1 Anticipos** de clientes y de proveedores.
   - Valor, cruzado, saldo pendiente y si está anulado.
   - Filtros por tercero (cédula o nombre) y por fecha.
@@ -114,4 +120,14 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
 
 ## Progreso
 
-Plan armado el 2026-11-24. Falta el OK para empezar la fase 1.
+- **2026-11-24:** se armó el plan.
+- **2026-11-25:** el usuario autorizó las fases 1 y 2 y empezó la implementación en `staging`.
+- **Decisiones de diseño:**
+  - **De quién es cada anticipo** lo dice `General.Documento.tipo`, no el código del documento, porque los códigos cambian por cliente: 17 y 18 son anticipos de cliente y a proveedor; 46 y 47, sus devoluciones.
+  - **IVA por tarifa en compras:**
+    - la base es el `subtotal` de la línea, porque `valorGravadoIva` trae la base más el IVA;
+    - exento y excluido se separan por `Inventario.IndicadorIva`;
+    - se calcula con un `LATERAL` que da una fila por factura, para no inflar los totales.
+  - **Nombre del tercero:**
+    - la búsqueda usa el nombre comercial, `nombreCompleto` y cada parte del nombre;
+    - se muestra `nombreCompleto`, que es el que figura en los documentos del ERP.
