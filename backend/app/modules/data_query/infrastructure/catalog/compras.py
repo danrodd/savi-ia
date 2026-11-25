@@ -39,6 +39,11 @@ from app.modules.data_query.infrastructure.catalog._names import (
     tercero_full_name,
     tercero_search_text,
 )
+from app.modules.data_query.infrastructure.catalog._retenciones import (
+    retenciones_fields,
+    retenciones_join,
+    retenciones_metrics,
+)
 from app.modules.data_query.infrastructure.catalog._tercero_fields import (
     contact_dimensions,
     contact_fields,
@@ -76,17 +81,29 @@ COMPRAS = SemanticEntity(
         "'principales proveedores'. Las devoluciones en compra están en "
         "'devoluciones_compra': compras netas = compras − devoluciones. El "
         "desglose del IVA por tarifa (base_19, iva_19, base_5, iva_5, base_excluida, "
-        "base_exenta, otros_impuestos) se pide por nombre en 'campos', o como "
-        "métrica con sufijo _total. Para lo que se le DEBE a un proveedor usa "
-        "'cartera'. Para detalle por PRODUCTO usa 'compras_detalle'."
+        "base_exenta, otros_impuestos) y las retenciones por tipo (retencion_fuente, "
+        "retencion_iva, retencion_ica, retencion_otras; 'retenciones' es el total) se "
+        "piden por nombre en 'campos', o como métrica con sufijo _total. Para lo "
+        "que se le DEBE a un proveedor usa 'cartera'. Para detalle por PRODUCTO usa "
+        "'compras_detalle'."
     ),
-    joins={"tercero": _TERCERO_JOIN, "iva": iva_join('fc."idFacturaCompra"')},
+    joins={
+        "tercero": _TERCERO_JOIN,
+        "iva": iva_join('fc."idFacturaCompra"'),
+        "ret": retenciones_join('fc."idFacturaCompra"'),
+    },
     metrics={
         "monto_total": MetricDef("monto_total", 'SUM(fc."total")', "Total comprado"),
         "num_facturas": MetricDef("num_facturas", "COUNT(*)", "Cantidad de facturas de compra"),
         "subtotal_total": MetricDef("subtotal_total", 'SUM(fc."subtotal")', "Subtotal"),
         "iva_total": MetricDef("iva_total", 'SUM(fc."valorIva")', "IVA de las compras"),
         **iva_metrics(),
+        "retenciones_total": MetricDef(
+            "retenciones_total",
+            'SUM(COALESCE(fc."valorImpuestosRetencion", 0))',
+            "Retenciones de las compras",
+        ),
+        **retenciones_metrics(),
     },
     dimensions={
         **contact_dimensions(requires=("tercero",)),
@@ -118,6 +135,13 @@ COMPRAS = SemanticEntity(
             default=False,
         ),
         **iva_fields(),
+        "retenciones": FieldDef(
+            "retenciones",
+            'COALESCE(fc."valorImpuestosRetencion", 0)',
+            "Retenciones",
+            default=False,
+        ),
+        **retenciones_fields(),
     },
     filters={
         "fecha": FilterDef("fecha", 'fc."fecha"', _DATE, value_type="date"),

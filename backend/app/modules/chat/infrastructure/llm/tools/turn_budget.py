@@ -23,6 +23,15 @@ QUERY_LIMIT_MESSAGE = (
     "consultas: responde con los datos que ya tienes y dile al usuario qué parte "
     "no alcanzaste a revisar, para que la pida en otro mensaje."
 )
+LOOKUP_LIMIT_MESSAGE = (
+    "Ya consultaste la estructura de la base {limit} veces en este turno. No "
+    "explores más tablas: usa las columnas que ya encontraste o responde con lo "
+    "que tienes y dile al usuario qué no pudiste ubicar."
+)
+# Consultas al esquema (`information_schema`) por turno. Van aparte: en la
+# prueba del 2026-11-25 nueve de las doce consultas fueron para buscar tablas y
+# no quedó cupo para los datos.
+MAX_SCHEMA_LOOKUPS = 8
 DENIED_AGAIN_MESSAGE = (
     "Ya recibiste dos rechazos por permiso en este turno. No hagas más consultas: "
     "responde con lo que tienes y repite al usuario la frase de permiso que te dio "
@@ -37,16 +46,31 @@ CUT_NOTICE = (
 
 
 class TurnBudget:
-    def __init__(self, *, max_queries: int, max_chars: int) -> None:
+    def __init__(
+        self, *, max_queries: int, max_chars: int, max_lookups: int = MAX_SCHEMA_LOOKUPS
+    ) -> None:
         self._max_queries = max_queries
         self._max_chars = max_chars
+        self._max_lookups = max_lookups
         self.queries = 0
+        self.lookups = 0
         self.denials = 0
 
-    def take_query(self) -> ToolResult | None:
-        """Cuenta una consulta al ERP; si ya no quedan, el resultado a devolver."""
+    def take_query(self, *, lookup: bool = False) -> ToolResult | None:
+        """Cuenta una consulta al ERP; si ya no quedan, el resultado a devolver.
+
+        `lookup`: la consulta solo lee la estructura de la base. Gasta su propio
+        cupo, no el de las consultas de datos.
+        """
         if self.denials >= MAX_PERMISSION_DENIALS:
             return ToolResult(text=DENIED_AGAIN_MESSAGE, is_error=True)
+        if lookup:
+            if self.lookups >= self._max_lookups:
+                return ToolResult(
+                    text=LOOKUP_LIMIT_MESSAGE.format(limit=self._max_lookups), is_error=True
+                )
+            self.lookups += 1
+            return None
         if self.queries >= self._max_queries:
             return ToolResult(
                 text=QUERY_LIMIT_MESSAGE.format(limit=self._max_queries), is_error=True

@@ -90,7 +90,29 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
   - Pruebas: `test_system_prompt_coverage.py` y `test_schema_lookup_not_recorded.py`.
   - Comprobado en la app: "el plan de cuentas completo para Excel" da las 2.891 cuentas en una sola tarjeta, con la naturaleza como "Débito"/"Crédito" y el Excel de 72 KB. Antes: se negaba; después, tres tarjetas con `true`/`false`.
 - [ ] **C3.2 Tope de consultas por turno.** Revisar las 12 consultas para informes largos, con medición: cuántos turnos llegan al tope y por qué.
-- [ ] **C3.3 Informe que se amplía.** Al pedir otra columna, se conserva la estructura que ya tenía.
+  - Hecho en C3.3: las consultas de esquema (`information_schema`) tienen su propio cupo de 8 y no gastan las 12 de datos.
+  - Pendiente: la medición con los datos de uso de Cloud. Hoy no hay acceso a ellos.
+- [x] **C3.3 Informe que se amplía.** Al pedir otra columna, se conserva la estructura que ya tenía.
+  - Reproducido el 2026-11-25: listado de compras de agosto de 2026, luego "agrégale la fecha de vencimiento" y luego "agrégale la retención en la fuente".
+    - El vencimiento, que está en el catálogo, sale bien: mismas columnas, orden y 39 filas.
+    - La retención, que no estaba en el catálogo, falla:
+      - 13 consultas, 9 de ellas para buscar tablas; llega al tope;
+      - solo actualiza 10 de 39 compras;
+      - rehace el informe con SQL libre usando `valorGravadoIva` como base, y la base al 19 % del Excel sale igual al total, distinta a la del chat.
+  - Cambios (route: inline; tres cambios acotados y ya entendidos):
+    - retenciones en `compras` (`_retenciones.py`), por tipo: ReteFuente, ReteIVA, ReteICA y otras.
+      - El tipo sale del código DIAN del indicador (`codigoImpuestoHKA` 06/05/07).
+      - Sin código se mira la descripción, solo en esos casos: "RETEFUENTE … ZOMAC" de frami y "RETEICA CALI".
+      - `retenciones` = `valorImpuestosRetencion`, que coincide con la suma de las líneas en las cuatro bases;
+    - el prompt: "Ampliar un informe" repite la misma consulta con la columna nueva y, si rehace con SQL libre, compara las columnas que ya estaban. En SQL libre, la base es `subtotal` y no `valorGravadoIva`;
+    - cupo aparte para las consultas de esquema (`TurnBudget(max_lookups=8)`).
+  - Pruebas contra las cuatro bases:
+    - las retenciones suman la cabecera;
+    - una fila por factura;
+    - el listado admite la columna;
+    - la ReteFuente sin código se clasifica;
+    - prompt y presupuesto.
+  - Comprobado en la app: una sola consulta, las mismas columnas y las 39 compras, con la base correcta también en la tabla para exportar. Tras corregir la clasificación sin código, la 2781 tiene su ReteFuente de $161.020; lo cubre la prueba y no se repitió en la app.
 
 ### Fase 4: aprender de lo que preguntan
 

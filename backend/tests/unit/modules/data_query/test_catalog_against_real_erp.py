@@ -858,6 +858,99 @@ async def test_purchase_vat_breakdown_is_one_row_per_invoice(erp_engine: AsyncEn
     assert float(con[0]["monto_total"] or 0) == pytest.approx(float(sin[0]["monto_total"] or 0))
 
 
+@pytest.mark.asyncio
+async def test_purchase_withholdings_by_type_add_up_to_the_invoice(
+    erp_engine: AsyncEngine,
+) -> None:
+    """ReteFuente + ReteIVA + ReteICA + otras = las retenciones de la cabecera, y
+    el desglose no multiplica las facturas."""
+    partes = ["retencion_fuente", "retencion_iva", "retencion_ica", "retencion_otras"]
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.AGGREGATE,
+            metricas=[f"{p}_total" for p in partes] + ["retenciones_total", "num_facturas"],
+            filtros=[_PERIODO_2025],
+        ),
+    )
+    sin = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.AGGREGATE,
+            metricas=["num_facturas"],
+            filtros=[_PERIODO_2025],
+        ),
+    )
+
+    row = rows[0]
+    assert sum(float(row[f"{p}_total"] or 0) for p in partes) == pytest.approx(
+        float(row["retenciones_total"] or 0), abs=1
+    )
+    assert row["num_facturas"] == sin[0]["num_facturas"]
+
+
+_RETEFUENTE_SIN_CODIGO = """
+SELECT fc."numero" AS numero, SUM(r."valorRetencion") AS valor
+FROM "CuentaPagar"."FacturaIndicadorRetencionCompra" r
+JOIN "Inventario"."IndicadorRetencion" ri ON ri."idIndicadorRetencion" = r."idIndicadorRetencion"
+JOIN "CuentaPagar"."FacturaCompra" fc ON fc."idFacturaCompra" = r."idFacturaCompra"
+WHERE COALESCE(ri."codigoImpuestoHKA", '') = '' AND ri."descripcion" ILIKE '%FUENTE%'
+  AND NOT fc."anulada"
+GROUP BY fc."numero"
+ORDER BY 2 DESC
+LIMIT 1
+"""
+
+
+@pytest.mark.asyncio
+async def test_a_withholding_without_dian_code_is_still_classified(
+    erp_engine: AsyncEngine,
+) -> None:
+    """La factura 2781 de frami salía con retención en la fuente $0: su indicador
+    ("RETEFUENTE COMPRAS 1,25% ZOMAC") no tiene código DIAN."""
+    async with erp_engine.connect() as conn:
+        caso = (await conn.execute(text(_RETEFUENTE_SIN_CODIGO))).first()
+    if caso is None:
+        pytest.skip("sin ReteFuente sin código DIAN")
+
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.DETAIL,
+            campos=["numero", "retencion_fuente", "retencion_otras"],
+            filtros=[QueryFilter("numero", FilterOp.EQ, caso.numero)],
+            limite=5,
+        ),
+    )
+
+    assert rows
+    assert float(rows[0]["retencion_fuente"]) >= float(caso.valor)
+
+
+@pytest.mark.asyncio
+async def test_a_purchase_listing_can_add_the_withholding_column(erp_engine: AsyncEngine) -> None:
+    """ "Agrégale la retención en la fuente": el mismo listado con una columna más,
+    sin salir del catálogo."""
+    rows = await _run(
+        erp_engine,
+        SemanticQuery(
+            entidad="compras",
+            modo=QueryMode.DETAIL,
+            campos=["numero", "proveedor", "base_19", "iva_19", "total", "retencion_fuente"],
+            filtros=[_PERIODO_2025],
+            limite=50,
+        ),
+    )
+    if not rows:
+        pytest.skip("sin compras en 2025")
+    assert all(r["retencion_fuente"] is not None for r in rows)
+    # La base al 19 % nunca es el total: ese fue el error del SQL libre.
+    assert any(float(r["base_19"]) < float(r["total"]) for r in rows if float(r["base_19"]))
+
+
 _PERSONA_CON_SEGUNDO_NOMBRE = """
 SELECT t."idTercero" AS id,
        TRIM(t."primerNombre") || ' ' || TRIM(t."segundoNombre") || ' '

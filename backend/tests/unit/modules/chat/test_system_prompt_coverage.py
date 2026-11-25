@@ -64,6 +64,16 @@ def test_a_full_listing_is_delivered_not_refused() -> None:
     assert "consulta sin achicar el límite" in PROMPT
 
 
+def test_extending_a_report_keeps_its_columns() -> None:
+    # Fase 3 (C3.3), prueba del 2026-11-25: "agrégale la retención en la fuente"
+    # rehízo el informe con SQL libre y la base al 19 % salió igual al total en
+    # el Excel, distinta a la que ya tenía la tabla.
+    assert "**Ampliar un informe**" in PROMPT
+    assert "repite la MISMA consulta" in PROMPT
+    assert "`valorGravadoIva` trae base + IVA" in PROMPT
+    assert "retenciones por\n  tipo" in COVERAGE
+
+
 def test_free_sql_translates_booleans_and_codes_for_the_excel() -> None:
     # El plan de cuentas salió con la naturaleza como "true".
     assert "traducido con `CASE`" in PROMPT
