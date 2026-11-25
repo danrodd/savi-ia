@@ -51,11 +51,30 @@ Que SAVI sepa qué es cada tabla y columna del ERP en lugar de adivinarlo. Es la
     - Resultado: 510 tablas, 255 con datos en alguna base; 25 con `COMMENT`; 1.189 relaciones de funciones con tablas.
     - Salida en `savi-datos/diccionario-erp/inventory.json` (1,6 MB, fuera del repo).
   - Pruebas: `tests/unit/scripts/test_erp_dictionary_inventory.py` (2). Route: inline.
-- [ ] **D2 Borrador con IA.**
+- [x] **D2 Borrador con IA.**
   - `draft.py`: lotes por módulo, solo estructura, reanudable y con el costo informado.
   - Se corre sobre las tablas con datos en al menos una base.
-- [ ] **D3 Paquete de validación.** Excel por módulo y su guía, en `savi-datos` (fuera del repo).
-- [ ] **D4 Integración en SAVI.** Datos en `knowledge/data/erp_dictionary`, el tipo `tablas_erp`, la regla en el prompt y pruebas.
+  - Hecho (commit dd2… en `staging`).
+    - Corrida del 2026-11-25 con `gpt-6-luna`: 255 tablas, 0 fallidas, 225 mil tokens de entrada y 204 mil de salida, US$ 0,12.
+    - Salida en `savi-datos/diccionario-erp/draft.json`.
+    - Calidad, revisada con `ActivoFijo.Activo`: descripción útil, columnas con sus relaciones, los estados tomados del `COMMENT` del ERP y 5 dudas concretas.
+
+- [x] **D3 Paquete de validación.** Excel por módulo y su guía, en `savi-datos` (fuera del repo).
+  - Hecho:
+    - `build.py pack` genera 18 Excel en `savi-datos/diccionario-erp/validacion/`, con validación Sí/No y las dudas en la fila de cada tabla. Son 255 tablas, 4.261 columnas y 1.214 dudas.
+    - Guía en PDF para el equipo del ERP: `savi-datos/diccionario-erp/Guia-validacion-diccionario-ERP.pdf` (2 páginas).
+    - `build.py dictionary --reviewed` carga sus correcciones; una tabla queda `validado` solo si se revisaron la tabla y todas sus columnas.
+
+- [x] **D4 Integración en SAVI.** Datos en `knowledge/data/erp_dictionary`, el tipo `tablas_erp`, la regla en el prompt y pruebas.
+  - Hecho (180480d el código, ea924c9 los datos, 255 tablas en 18 JSON de hasta 144 KB):
+    - `consultar_conocimiento` con el tipo `tablas_erp`, solo para administradores;
+    - la búsqueda por tema compara sin tildes y lleva los plurales al singular;
+    - la regla del prompt manda al diccionario antes que a `information_schema`.
+  - Pruebas: `test_erp_dictionary.py` (8) y `tests/unit/scripts` (7). Las suites de knowledge, chat y company_knowledge dan 535.
+  - Probado en vivo por la API, con frami:
+    - plan de cuentas: 0 consultas a `information_schema` (antes, 2), con la ficha de `Contabilidad.PlanContable`;
+    - empleados con contrato activo: 3 llamadas en total; responde 10 empleados y un salario promedio de $4.900.724, que coincide con la base. El `estado` 0 = Activo sale del `COMMENT` del ERP.
+  - Límite conocido: sin datos, la IA no pudo deducir qué significa `naturaleza` verdadera o falsa, y ahora el modelo la exporta como "Valor verdadero" en vez de Débito. Queda como duda para el equipo del ERP (C5.3).
 
 ## Criterios de aceptación
 
@@ -63,6 +82,12 @@ Que SAVI sepa qué es cada tabla y columna del ERP en lugar de adivinarlo. Es la
 - El borrador tiene descripción de tabla y de columnas para cada tabla con datos, y ninguna llamada incluye filas ni valores.
 - Con la pregunta del plan de cuentas o la de las retenciones, el modelo consulta el diccionario y no explora `information_schema`, o lo hace menos.
 - Las pruebas, Ruff y Pyright pasan.
+
+## Próximo paso
+
+- Enviar al equipo del ERP los 18 Excel y la guía (C5.3, humano).
+- Con lo que devuelvan, correr `build.py dictionary --reviewed` y hacer el commit de los JSON.
+- Segunda ronda: las 255 tablas que no tienen datos en ninguna base local.
 
 ## Modo de trabajo
 

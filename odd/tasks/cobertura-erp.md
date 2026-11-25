@@ -126,13 +126,19 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
 
 ### Fase 5: diccionario del ERP
 
-- [ ] **C5.1 Script** que recorre las bases de los clientes disponibles y arma un inventario por módulo y tabla:
+- [x] **C5.1 Script** que recorre las bases de los clientes disponibles y arma un inventario por módulo y tabla:
   - columnas y relaciones;
   - cuántos clientes la usan y con cuántos registros;
   - qué funciones la tocan.
-- [ ] **C5.2 Borrador de descripciones** generado desde los nombres, las relaciones, una muestra de datos y las funciones.
+- [x] **C5.2 Borrador de descripciones** generado desde los nombres, las relaciones, una muestra de datos y las funciones.
 - [ ] **C5.3 Validación** con el equipo del ERP, módulo por módulo: corrigen el borrador, no escriben desde cero.
-- [ ] **C5.4 Integración.** La consulta libre usa el diccionario en lugar de adivinar.
+- [x] **C5.4 Integración.** La consulta libre usa el diccionario en lugar de adivinar.
+  - Hecho el 2026-11-25 en `odd/tasks/diccionario-erp.md`:
+    - inventario de 510 tablas;
+    - borrador de IA, solo con la estructura, de las 255 tablas con datos;
+    - 18 Excel y una guía en PDF para el equipo del ERP;
+    - `consultar_conocimiento` tipo `tablas_erp`.
+  - Falta C5.3, la validación humana.
 
 ### Fase 6: reglas de negocio con el equipo del ERP
 
