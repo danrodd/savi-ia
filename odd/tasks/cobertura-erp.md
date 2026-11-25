@@ -46,34 +46,34 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
 
 ### Fase 1: honestidad sobre la cobertura (inmediata)
 
-- [ ] **C1.1 Mapa de cobertura en el prompt.**
+- [x] **C1.1 Mapa de cobertura en el prompt.**
   - Indicar qué entidades se pueden consultar y cuáles no.
   - Indicar qué significa "no encontré": en qué fuentes buscó.
-- [ ] **C1.2 Regla.**
+- [x] **C1.2 Regla.**
   - No concluir que algo no existe cuando no está en el catálogo.
   - Avisar qué no se puede consultar.
   - No pedir capturas de lo que SAVI puede buscar.
-- [ ] **C1.3 Pruebas.** Preguntas fuera del catálogo, por ejemplo anticipos (hasta que existan), nómina o activos fijos. La respuesta debe nombrar lo revisado y lo que no.
+- [x] **C1.3 Pruebas.** Preguntas fuera del catálogo, por ejemplo anticipos (hasta que existan), nómina o activos fijos. La respuesta debe nombrar lo revisado y lo que no.
 
 ### Fase 2: lo que los clientes ya están pidiendo
 
-- [ ] **C2.0 Devoluciones fuera de ventas y compras (hallazgo del 2026-11-25).**
+- [x] **C2.0 Devoluciones fuera de ventas y compras (hallazgo del 2026-11-25).**
   - El ERP guarda las devoluciones en la misma tabla que las facturas, con total positivo: tipo de documento 14 en venta y 13 en compra.
   - El catálogo solo excluía las anuladas, así que las sumaba como ventas o compras. En imporllantas eran 294 M de más en ventas y 116,6 M en compras; en frami, 1.297 M en ventas.
   - Ahora `ventas` y `compras` las excluyen, y tienen su propia entidad.
   - **Pendiente:** confirmar con el equipo del ERP qué cifra muestran sus informes de ventas (brutas o netas).
 
-- [ ] **C2.1 Anticipos** de clientes y de proveedores.
+- [x] **C2.1 Anticipos** de clientes y de proveedores.
   - Valor, cruzado, saldo pendiente y si está anulado.
   - Filtros por tercero (cédula o nombre) y por fecha.
   - Tablas: `Contabilidad.Anticipo` y `Cartera.CruceAnticipoCliente` y `CruceAnticipoProveedor`. También `Contabilidad.DevolucionAnticipo`.
-- [ ] **C2.2 Notas de devolución** de venta y de compra, con la factura relacionada, el tercero y el desglose de IVA. Tablas: `CuentaCobrar.FacturaDevolucion` y `CuentaPagar.FacturaCompraDevolucion`, más sus variantes `Tercero*`.
-- [ ] **C2.3 IVA por tarifa en compras** (19 %, 5 %, excluido y exento), igual que en ventas.
-- [ ] **C2.4 Búsqueda de terceros.**
+- [x] **C2.2 Notas de devolución** de venta y de compra, con la factura relacionada, el tercero y el desglose de IVA. Tablas: `CuentaCobrar.FacturaDevolucion` y `CuentaPagar.FacturaCompraDevolucion`, más sus variantes `Tercero*`.
+- [x] **C2.3 IVA por tarifa en compras** (19 %, 5 %, excluido y exento), igual que en ventas.
+- [x] **C2.4 Búsqueda de terceros.**
   - Por palabras, sin importar tildes ni el orden.
   - Que incluya segundos nombres y apellidos.
   - Mostrar el nombre completo como en el ERP.
-- [ ] **C2.5 "Todo sobre un tercero".** Cuando se pregunta por un tercero, SAVI revisa ventas, compras, cartera y anticipos, y dice qué revisó.
+- [x] **C2.5 "Todo sobre un tercero".** Cuando se pregunta por un tercero, SAVI revisa ventas, compras, cartera y anticipos, y dice qué revisó.
 
 ### Fase 3: informes completos
 
@@ -131,3 +131,22 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
   - **Nombre del tercero:**
     - la búsqueda usa el nombre comercial, `nombreCompleto` y cada parte del nombre;
     - se muestra `nombreCompleto`, que es el que figura en los documentos del ERP.
+
+- **Commits:** `staging` f8c089f (catálogo) y a41f931 (prompt). Se integraron en `develop` con 8ee837f.
+  - f8c089f también lleva cambios de formato de `ruff format` en tres archivos de `data_query`, sin cambio de comportamiento.
+- **Pruebas:**
+  - Backend completo: 1626 pasan y 14 se saltan.
+  - `data_query`: 318 pruebas contra farmacias_similares, frami, sur_andina e imporllantas. Las nuevas cubren devoluciones, anticipos, IVA por tarifa y nombre completo.
+  - Prueba de cobertura del prompt y registro de usted, en verde.
+- **Prueba en vivo con frami** (SAVIQA@FRAMI, 2026-11-25):
+  - **Anticipos por cédula (7692407):** una consulta; responde $510.000 pendientes en el ACC 1331 y no pide captura.
+  - **"¿Qué tiene pendiente Wilson Ochoa Ríos?":** lo encuentra por el nombre completo. Revisa cartera, anticipos, ventas, compras y devoluciones, y dice qué revisó.
+  - **Compras de octubre de 2025 con el IVA por tarifa:** una consulta, 47 compras con el desglose y el listado completo para descargar.
+  - **Nómina (fuera del catálogo):** la explora con la consulta libre y responde "no puedo confirmar", no "no existe".
+- **No se pudo reproducir el caso exacto del reporte:** la copia local de imporllantas no es la misma base del cliente que reportó (los AC 129 y 175 son de otros terceros).
+
+## Próximo paso
+
+- Publicar una versión candidata desde `staging` con estos cambios. Necesita OK.
+- Confirmar con el equipo del ERP si sus informes de ventas muestran las cifras brutas o netas.
+- Fase 3: informes completos.
