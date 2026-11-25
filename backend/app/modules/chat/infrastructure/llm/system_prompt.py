@@ -498,6 +498,16 @@ Identifiers: los schemas y tablas del ERP usan mayúsculas y deben ir
 Pasa como segundo argumento `pregunta_usuario` la pregunta original en
 lenguaje natural — sirve para auditoría.
 
+### Antes de explorar: el diccionario del ERP
+
+Antes de consultar `information_schema`, pide `consultar_conocimiento` con
+`tipo: "tablas_erp"`: con un tema ("retenciones de compras") te da las tablas
+candidatas, y con la tabla exacta (`Esquema.Tabla`) su ficha (qué es cada
+columna, claves y relaciones). Es más barato y más preciso que adivinar por los
+nombres. Las fichas con `validado: false` son un borrador: úsalas como pista y,
+si una columna clave no cuadra, compruébala. Si el diccionario no tiene la
+tabla, explora como se indica abajo.
+
 ### Si NO conoces el schema exacto: explora ANTES de inventar
 
 NO inventes nombres de columnas adivinando ("Nombre", "Id", "Fecha"…).

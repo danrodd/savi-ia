@@ -1,0 +1,635 @@
+{
+ "Mantenimiento.Cilindraje": {
+  "descripcion": "Posiblemente es un catálogo de cilindrajes para clasificar los vehículos registrados en el módulo de Mantenimiento. La tabla es referenciada por Mantenimiento.Vehiculo mediante idCilindraje, por lo que probablemente permite asociar cada vehículo con un cilindraje.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCilindraje": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de cilindraje; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al cilindraje; su formato y significado específico no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del cilindraje; no se especifica si expresa una medida, una categoría u otro dato."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; no se puede deducir qué valor representa cada estado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Mantenimiento.Vehiculo(idCilindraje)"
+  ]
+ },
+ "Mantenimiento.Clase": {
+  "descripcion": "Catálogo de clases usadas para clasificar vehículos en el módulo de Mantenimiento, ya que Mantenimiento.Vehiculo referencia esta tabla mediante idClase. Cada registro contiene un código y una descripción, además de un estado y datos de auditoría.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idClase": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la clase; Mantenimiento.Vehiculo(idClase) lo usa como referencia."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la clase; su formato y significado no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la clase."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado concreto (por ejemplo, activo o inactivo) debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Mantenimiento.Vehiculo(idClase)"
+  ]
+ },
+ "Mantenimiento.DetalleOrdenServicio": {
+  "descripcion": "Guarda las líneas de productos asociadas a una orden de servicio de Mantenimiento, con cantidades, precios, impuestos y descuentos. También registra datos relacionados con autorización, inventario, almacén, atención y vínculos con detalles de facturas de compra o de venta. Sirve para consultar y gestionar los productos incluidos en cada orden de servicio y sus valores.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de la orden de servicio; la estructura no declara una clave primaria."
+   },
+   "idOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la orden de servicio a la que pertenece esta línea; apunta a Mantenimiento.OrdenServicio(idOrdenServicio)."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Número de posición de la línea dentro de la orden de servicio."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado a la línea, posiblemente para gestionar el inventario; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto incluido en la línea de la orden de servicio; apunta a Inventario.Producto(idProducto)."
+   },
+   "idTerceroAtendio": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado a la atención de esta línea; apunta a Tercero.Tercero(idTercero)."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de ítems del producto en la orden de servicio."
+   },
+   "valor": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario del producto."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado al producto."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor calculado del IVA para la línea."
+   },
+   "valorTotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la línea antes del IVA, calculado como cantidad por valor unitario según el comentario de la columna."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la línea incluidos los impuestos."
+   },
+   "autorizado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la línea está autorizada; el significado exacto de la autorización no se deduce de la estructura."
+   },
+   "idDetalleFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Vínculo opcional con un detalle de factura de compra; apunta a CuentaPagar.DetalleFacturaCompra(idDetalleFacturaCompra). El comentario indica que se llena si el producto de la orden de servicio se creó mediante la facturación."
+   },
+   "descontoInventario": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se descontó el saldo de inventario."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario de la última modificación; no se especifica la tabla a la que apunta."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idDetalleFactura": {
+    "tipo": "bigint",
+    "descripcion": "Vínculo opcional con el detalle de factura relacionado; apunta a CuentaCobrar.DetalleFactura(idDetalleFactura)."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado al producto en esta línea."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario del descuento aplicado al producto en esta línea."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Observación opcional sobre la línea."
+   }
+  },
+  "apunta_a": [
+   "idDetalleFactura -> CuentaCobrar.DetalleFactura(idDetalleFactura)",
+   "idOrdenServicio -> Mantenimiento.OrdenServicio(idOrdenServicio)",
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idTerceroAtendio -> Tercero.Tercero(idTercero)",
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idDetalleFacturaCompra -> CuentaPagar.DetalleFacturaCompra(idDetalleFacturaCompra)"
+  ],
+  "la_referencian": []
+ },
+ "Mantenimiento.EstadoRombo": {
+  "descripcion": "Registra la utilización y el estado de un rombo asociado a una orden de servicio, junto con sus fechas y observaciones. Puede servir para consultar si el rombo está siendo usado por la orden y quién creó o modificó el registro.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEstadoRombo": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de estado del rombo; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "idOrdenServicio": {
+    "tipo": "integer",
+    "descripcion": "Identificador asociado a una orden de servicio; la referencia declarada apunta a Mantenimiento.EstadoRombo(idOrdenServicio), por lo que debe confirmarse si esa relación es intencional."
+   },
+   "rombo": {
+    "tipo": "integer",
+    "descripcion": "Código o identificador del rombo; no se puede deducir qué valores admite."
+   },
+   "fechaUtilizacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de utilización del rombo."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Observación opcional sobre la utilización o el estado del rombo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el rombo está siendo usado por la orden de servicio; el valor booleano representa usado o no usado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idOrdenServicio -> Mantenimiento.EstadoRombo(idOrdenServicio)"
+  ],
+  "la_referencian": [
+   "Mantenimiento.EstadoRombo(idOrdenServicio)"
+  ]
+ },
+ "Mantenimiento.OrdenServicio": {
+  "descripcion": "Registra órdenes de servicio de mantenimiento asociadas a un vehículo y a terceros, con información de ingreso, entrega, trabajo realizado y valores. Permite identificar el tipo y estado de la orden, registrar su aprobación y cierre, y relacionarla con documentos de facturación. También contempla órdenes vinculadas a garantías y si se aplicó una rutina.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la orden de servicio; otras órdenes pueden referenciarla como orden de garantía."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento general asociado a la orden; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado a la orden de servicio."
+   },
+   "tipoOrden": {
+    "tipo": "integer",
+    "descripcion": "Tipo de orden: 0 = normal, 1 = garantía de aseguradora, 2 = garantía de servicio."
+   },
+   "fechaIngreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que ingresó el vehículo o se registró su ingreso."
+   },
+   "fechaEstimadaEntrega": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora estimadas para la entrega del vehículo."
+   },
+   "fechaAprobacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de aprobación de la orden, si corresponde."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado a la orden, posiblemente el cliente; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Empleado que realizó el registro; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEntrega": {
+    "tipo": "bigint",
+    "descripcion": "Tercero relacionado con la entrega; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroAseguradora": {
+    "tipo": "bigint",
+    "descripcion": "Aseguradora asociada a la orden, si corresponde; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idOrdenServicioGarantia": {
+    "tipo": "bigint",
+    "descripcion": "Orden de servicio vinculada como referencia para una garantía de servicio; apunta a Mantenimiento.OrdenServicio(idOrdenServicio)."
+   },
+   "idVehiculo": {
+    "tipo": "bigint",
+    "descripcion": "Vehículo al que corresponde la orden; apunta a Mantenimiento.Vehiculo(idVehiculo)."
+   },
+   "kilometraje": {
+    "tipo": "numeric",
+    "descripcion": "Kilometraje registrado para el vehículo en la orden."
+   },
+   "rombo": {
+    "tipo": "integer",
+    "descripcion": "Código o valor relacionado con el campo denominado «rombo»; su significado no se deduce de la estructura."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Observación interna de la orden."
+   },
+   "observacionCliente": {
+    "tipo": "character varying",
+    "descripcion": "Observación relacionada con el cliente."
+   },
+   "operacionEfectuada": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la operación realizada en el servicio."
+   },
+   "fechaCierre": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de cierre de la orden, si se ha cerrado."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Subtotal de la orden antes de impuestos."
+   },
+   "valorImpuestoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA de la orden."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Total de la orden con IVA."
+   },
+   "aplicoRutina": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se aplicó alguna rutina a la orden."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Documento con el que se factura la orden, si corresponde; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "estado": {
+    "tipo": "integer",
+    "descripcion": "Estado de la orden: 0 = por aprobar, 1 = aprobada, 2 = cerrada, 3 = facturada, 4 = anulada."
+   },
+   "idusuarioCrecion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario cuyo propósito exacto no se puede determinar; el nombre podría referirse al usuario que creó la orden."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario relacionado con la modificación de la orden."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento, si lo hubiera."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idOrdenServicioGarantia -> Mantenimiento.OrdenServicio(idOrdenServicio)",
+   "idTerceroAseguradora -> Tercero.Tercero(idTercero)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idTerceroEntrega -> Tercero.Tercero(idTercero)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idVehiculo -> Mantenimiento.Vehiculo(idVehiculo)"
+  ],
+  "la_referencian": [
+   "Cartera.FacturaTercero(idOrdenServicio)",
+   "CuentaPagar.FacturaCompra(idOrdenServicio)",
+   "CuentaPagar.OrdenCompra(idOrdenServicio)",
+   "Inventario.InventarioComprometido(idOrdenServicio)",
+   "Inventario.MovimientoInventario(idOrdenServicio)",
+   "Mantenimiento.DetalleOrdenServicio(idOrdenServicio)",
+   "Mantenimiento.OrdenServicio(idOrdenServicioGarantia)",
+   "Mantenimiento.OrdenServicioHerramienta(idOrdenServicioHerramientaGarantia)"
+  ]
+ },
+ "Mantenimiento.Tipo": {
+  "descripcion": "Guarda tipos usados en el módulo de Mantenimiento y sirve para clasificar vehículos mediante la referencia Mantenimiento.Vehiculo(idTipo). Por los campos disponibles, también permite mantener un código, una descripción y datos de estado y auditoría para cada tipo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipo": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del tipo; la estructura no lo declara como clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al tipo; no se pueden deducir sus reglas ni formato."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del tipo para identificarlo funcionalmente."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del tipo; posiblemente señala si está activo, pero debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Mantenimiento.Vehiculo(idTipo)"
+  ]
+ },
+ "Mantenimiento.TipoHerramienta": {
+  "descripcion": "Posiblemente es un catálogo de tipos de herramientas utilizado por el módulo de Mantenimiento para clasificar herramientas. La tabla Mantenimiento.Herramienta la referencia mediante idTipoHerramienta.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipoHerramienta": {
+    "tipo": "integer",
+    "descripcion": "Identificador del tipo de herramienta; la estructura no indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al tipo de herramienta; no se puede deducir su formato ni significado."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del tipo de herramienta."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado exacto no se puede deducir; posiblemente distingue tipos activos e inactivos."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Mantenimiento.Herramienta(idTipoHerramienta)"
+  ]
+ },
+ "Mantenimiento.Vehiculo": {
+  "descripcion": "Guarda los datos de identificación, características y compra de vehículos registrados en el módulo de Mantenimiento. Sirve para asociar vehículos con procesos como órdenes de servicio, pólizas, siniestros, agenda y otros registros que los referencian. También puede relacionar un vehículo con su propietario y, si corresponde, con un tráiler.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idVehiculo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del vehículo; la estructura no declara una clave primaria."
+   },
+   "placa": {
+    "tipo": "character varying",
+    "descripcion": "Placa o matrícula del vehículo."
+   },
+   "inventario": {
+    "tipo": "character varying",
+    "descripcion": "Código de inventario asociado al vehículo."
+   },
+   "nombre": {
+    "tipo": "character varying",
+    "descripcion": "Nombre con el que se identifica el vehículo."
+   },
+   "idMarca": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la marca; apunta a Inventario.Marca(idMarca)."
+   },
+   "linea": {
+    "tipo": "character varying",
+    "descripcion": "Línea o serie comercial del vehículo, si se registra."
+   },
+   "referencia": {
+    "tipo": "character varying",
+    "descripcion": "Referencia del vehículo, si se registra."
+   },
+   "idClase": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la clase; apunta a Mantenimiento.Clase(idClase)."
+   },
+   "idColor": {
+    "tipo": "integer",
+    "descripcion": "Identificador del color; apunta a Inventario.Color(idColor)."
+   },
+   "idTipo": {
+    "tipo": "integer",
+    "descripcion": "Identificador del tipo de vehículo; apunta a Mantenimiento.Tipo(idTipo)."
+   },
+   "modelo": {
+    "tipo": "integer",
+    "descripcion": "Año o modelo del vehículo, posiblemente expresado como año."
+   },
+   "numeroPuertas": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de puertas del vehículo."
+   },
+   "motor": {
+    "tipo": "character varying",
+    "descripcion": "Número o identificación del motor, si se registra."
+   },
+   "tipoMotor": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de motor: 0 = gasolina, 1 = diésel, 2 = otro."
+   },
+   "chasis": {
+    "tipo": "character varying",
+    "descripcion": "Número o identificación del chasis."
+   },
+   "servicio": {
+    "tipo": "integer",
+    "descripcion": "Código del servicio: 0 = particular, 1 = público, 2 = oficial."
+   },
+   "idCilindraje": {
+    "tipo": "integer",
+    "descripcion": "Identificador del cilindraje; apunta a Mantenimiento.Cilindraje(idCilindraje)."
+   },
+   "numeroCilindros": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cilindros del motor."
+   },
+   "disposicion": {
+    "tipo": "character varying",
+    "descripcion": "Disposición del motor u otra configuración del vehículo; el significado exacto no está indicado."
+   },
+   "capacidad": {
+    "tipo": "integer",
+    "descripcion": "Capacidad numérica del vehículo; la estructura no especifica qué mide ni su unidad."
+   },
+   "cajaCambios": {
+    "tipo": "integer",
+    "descripcion": "Código de la caja de cambios: 0 = mecánica, 1 = automática."
+   },
+   "numeroCambios": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cambios de la caja."
+   },
+   "fechaCompra": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de compra del vehículo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro o del vehículo; el significado de verdadero y falso no está especificado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero propietario del vehículo; apunta a Tercero.Tercero(idTercero)."
+   },
+   "placaExtranjera": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si la placa es extranjera; no se especifica el significado de cada valor."
+   },
+   "idTrailer": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tráiler asociado, si corresponde; apunta a Mantenimiento.Trailer(idTrailer)."
+   }
+  },
+  "apunta_a": [
+   "idCilindraje -> Mantenimiento.Cilindraje(idCilindraje)",
+   "idClase -> Mantenimiento.Clase(idClase)",
+   "idColor -> Inventario.Color(idColor)",
+   "idMarca -> Inventario.Marca(idMarca)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTipo -> Mantenimiento.Tipo(idTipo)",
+   "idTrailer -> Mantenimiento.Trailer(idTrailer)"
+  ],
+  "la_referencian": [
+   "Agenda.Agenda(idVehiculo)",
+   "CuentaCobrar.DetalleFactura(idVehiculo)",
+   "Inventario.Producto(idVehiculo)",
+   "Mantenimiento.OrdenServicio(idVehiculo)",
+   "Mantenimiento.OrdenTrabajo(idVehiculo)",
+   "Mantenimiento.PolizaVehiculo(idVehiculo)",
+   "Mantenimiento.Siniestro(idVehiculo)"
+  ]
+ }
+}

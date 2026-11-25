@@ -1,0 +1,2193 @@
+{
+ "CuentaCobrar.DetalleFactura": {
+  "descripcion": "Guarda las líneas de productos o servicios incluidas en una factura de venta, junto con cantidades, precios, descuentos, impuestos y datos asociados al inventario. Sirve para consultar y procesar el detalle comercial y tributario de la factura, y posiblemente relacionarlo con remisiones, convenios, tarifas o vehículos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de factura; la estructura no indica si es clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Factura a la que pertenece la línea; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "numeroLinea": {
+    "tipo": "integer",
+    "descripcion": "Número de orden de la línea dentro de la factura."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto facturado; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado a la línea; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado al producto en esta línea."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad principal del producto facturada."
+   },
+   "idUnidadMedida": {
+    "tipo": "integer",
+    "descripcion": "Unidad de medida principal del producto; apunta a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "cantidadSecundaria": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad expresada en la unidad de medida secundaria."
+   },
+   "idUnidadMedidaSecundaria": {
+    "tipo": "integer",
+    "descripcion": "Unidad de medida secundaria; apunta a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "costo": {
+    "tipo": "numeric",
+    "descripcion": "Costo del producto en el momento de la venta."
+   },
+   "valorUnitario": {
+    "tipo": "numeric",
+    "descripcion": "Precio unitario registrado para el producto en la línea."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Subtotal de la línea, indicado como cantidad multiplicada por valor unitario."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario del descuento aplicado al producto en la línea."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA aplicado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado a la línea."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de IVA calculado para la línea."
+   },
+   "totalGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la línea relacionado con el IVA; el comentario indica que incluye la línea más el IVA."
+   },
+   "lote": {
+    "tipo": "character varying",
+    "descripcion": "Identificación del lote del producto, si corresponde."
+   },
+   "fechaVencimientoLote": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento del lote, si corresponde."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla relacionada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla relacionada."
+   },
+   "obsequio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto de la línea corresponde a un obsequio."
+   },
+   "ipoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Valor calculado para el concepto identificado como IpoConsumo; posiblemente corresponde a un impuesto al consumo."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje o nota adicional asociada a la línea de factura."
+   },
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Tarifa aplicada en la venta; apunta a General.Tarifa(idTarifa)."
+   },
+   "idConvenio": {
+    "tipo": "integer",
+    "descripcion": "Convenio aplicable al producto; apunta a Venta.Convenio(idConvenio)."
+   },
+   "porcentajeConvenio": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al convenio aplicado."
+   },
+   "valorDescuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento por obsequio para el producto en la línea."
+   },
+   "idDetalleRemision": {
+    "tipo": "bigint",
+    "descripcion": "Línea de remisión relacionada, si la factura depende de una remisión; apunta a CuentaCobrar.DetalleRemision(idDetalleRemision)."
+   },
+   "idVehiculo": {
+    "tipo": "bigint",
+    "descripcion": "Vehículo relacionado con lo facturado, si corresponde; apunta a Mantenimiento.Vehiculo(idVehiculo)."
+   },
+   "descripcionGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del grupo asociado a la línea, si corresponde."
+   },
+   "cantidadSubGrupo": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada al subgrupo del producto; su uso específico no se deduce."
+   },
+   "idTerceroMandatorio": {
+    "tipo": "bigint",
+    "descripcion": "Tercero mandatorio asociado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que creó o modificó el registro."
+   },
+   "porcentajeIvaDiaSinIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA que no se cobró durante los días sin IVA."
+   },
+   "totalIvaDiaSinIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del ítem para los días sin IVA; el comentario indica que incluye el IVA."
+   },
+   "idLinea": {
+    "tipo": "integer",
+    "descripcion": "Línea asociada a la facturación del producto; apunta a General.Linea(idLinea)."
+   },
+   "tarifaEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si aplica una tarifa especial; el significado de sus valores no se especifica."
+   },
+   "idIndicadorImpuestoSaludable": {
+    "tipo": "integer",
+    "descripcion": "Indicador del impuesto saludable; apunta a Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)."
+   },
+   "porcentajeImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje aplicado para el impuesto saludable."
+   },
+   "valorNominalImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Valor nominal asociado al impuesto saludable."
+   },
+   "valorImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Valor calculado del impuesto saludable para la línea."
+   },
+   "idProductoDivisionFraccion": {
+    "tipo": "integer",
+    "descripcion": "Producto fracción seleccionado en la venta; apunta a Inventario.ProductoDivisionFraccion(idProductoDivisionFraccion)."
+   },
+   "valorEquivalente": {
+    "tipo": "numeric",
+    "descripcion": "Valor equivalente asociado a la línea; su concepto de negocio no se deduce."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto guardada en la línea, si corresponde."
+   },
+   "remesa": {
+    "tipo": "character varying",
+    "descripcion": "Identificador o referencia de remesa, si corresponde."
+   },
+   "autorizacion": {
+    "tipo": "character varying",
+    "descripcion": "Referencia de autorización asociada a la línea, si corresponde."
+   },
+   "cantidadTransportada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto transportada."
+   },
+   "idUnidadMedidaTransportada": {
+    "tipo": "integer",
+    "descripcion": "Unidad de medida de la cantidad transportada; apunta a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "descuentoEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indicador relacionado con un descuento especial; la estructura no especifica qué regla activa."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idConvenio -> Venta.Convenio(idConvenio)",
+   "idDetalleRemision -> CuentaCobrar.DetalleRemision(idDetalleRemision)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idIndicadorImpuestoSaludable -> Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)",
+   "idLinea -> General.Linea(idLinea)",
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idProductoDivisionFraccion -> Inventario.ProductoDivisionFraccion(idProductoDivisionFraccion)",
+   "idTarifa -> General.Tarifa(idTarifa)",
+   "idTerceroMandatorio -> Tercero.Tercero(idTercero)",
+   "idVehiculo -> Mantenimiento.Vehiculo(idVehiculo)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idUnidadMedida -> Inventario.UnidadMedida(idUnidadMedida)",
+   "idUnidadMedidaSecundaria -> Inventario.UnidadMedida(idUnidadMedida)",
+   "idUnidadMedidaTransportada -> Inventario.UnidadMedida(idUnidadMedida)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.DetalleFacturaInventarioBovino(idDetalleFactura)",
+   "CuentaCobrar.DetalleFacturaLote(idDetalleFactura)",
+   "CuentaCobrar.DetalleFacturaPrecioRegalia(idDetalleFactura)",
+   "Inventario.SaldoInventarioEspecialBovino(idDetalleFactura)",
+   "Inventario.SaldoInventarioEspecialBovino(idDetalleFacturaDevolucion)",
+   "Mantenimiento.DetalleOrdenServicio(idDetalleFactura)",
+   "Mantenimiento.DetalleOrdenServicioHerramienta(idDetalleFactura)",
+   "Mantenimiento.DetalleOrdenTrabajo(idDetalleFactura)",
+   "Venta.DetallePedidoRestauranteDetalleFactura(idDetalleFactura)"
+  ]
+ },
+ "CuentaCobrar.DetalleFacturaPrecioRegalia": {
+  "descripcion": "Guarda valores de regalía asociados a detalles de factura de cuentas por cobrar; posiblemente representa un importe o valor calculado para cada detalle. Sirve para registrar y auditar esos valores, junto con las fechas y los usuarios de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleFacturaPrecioRegalia": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de valor de regalía; la estructura no declara una clave primaria."
+   },
+   "idDetalleFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el detalle de factura al que se asocia el registro; apunta a CuentaCobrar.DetalleFactura(idDetalleFactura)."
+   },
+   "valorRegalia": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico de la regalía asociada al detalle; no se puede deducir su unidad, moneda ni convención de signo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idDetalleFactura -> CuentaCobrar.DetalleFactura(idDetalleFactura)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.DetalleRemision": {
+  "descripcion": "Guarda las líneas de productos de una remisión de venta, con sus cantidades, unidades de medida, precios, descuentos e impuestos. También registra datos de facturación, lotes, convenios y tarifas que pueden aplicarse a cada línea. Sirve para consultar y gestionar el detalle comercial de la remisión y su relación con inventario y facturación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleRemision": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la línea de detalle de la remisión; también se usa como referencia en el detalle de facturas y de lotes."
+   },
+   "idRemision": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la remisión a la que pertenece la línea; apunta a CuentaCobrar.Remision(idRemision)."
+   },
+   "numeroLinea": {
+    "tipo": "integer",
+    "descripcion": "Indica el número de orden de la línea dentro de la remisión."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el producto de la línea; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identifica el almacén relacionado con la línea; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Registra el porcentaje de descuento aplicado al producto en esta línea."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Registra la cantidad principal del producto en la línea."
+   },
+   "idUnidadMedida": {
+    "tipo": "integer",
+    "descripcion": "Identifica la unidad de medida principal; apunta a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "cantidadSecundaria": {
+    "tipo": "numeric",
+    "descripcion": "Registra la cantidad expresada en la unidad de medida secundaria."
+   },
+   "idUnidadMedidaSecundaria": {
+    "tipo": "integer",
+    "descripcion": "Identifica la unidad de medida secundaria; apunta a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "cantidadFacturada": {
+    "tipo": "numeric",
+    "descripcion": "Registra la cantidad del producto que se ha facturado."
+   },
+   "facturado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto de esta línea está facturado."
+   },
+   "costo": {
+    "tipo": "numeric",
+    "descripcion": "Registra el costo del producto al momento de la venta."
+   },
+   "valorUnitario": {
+    "tipo": "numeric",
+    "descripcion": "Registra el valor unitario del producto en la línea."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Registra el subtotal de la línea, calculado como cantidad por valor unitario, según el comentario de la columna."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Registra el valor del descuento aplicado al producto en la línea."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de IVA aplicable; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Registra el porcentaje de IVA aplicado a la línea."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Registra el valor calculado del IVA de la línea."
+   },
+   "totalGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Registra el valor total de la línea más el IVA, según el comentario de la columna."
+   },
+   "lote": {
+    "tipo": "character varying",
+    "descripcion": "Registra el identificador o número de lote del producto, si corresponde."
+   },
+   "fechaVencimientoLote": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Registra la fecha y hora de vencimiento del lote, si corresponde."
+   },
+   "obsequio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto de la línea corresponde a un obsequio."
+   },
+   "ipoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Registra un valor numérico asociado a un concepto llamado «ipoConsumo»; su significado exacto no se deduce de la estructura."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Guarda un mensaje adicional asociado a la línea de venta."
+   },
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Identifica la tarifa aplicada a la venta; apunta a General.Tarifa(idTarifa)."
+   },
+   "idConvenio": {
+    "tipo": "integer",
+    "descripcion": "Identifica el convenio aplicable al producto; apunta a Venta.Convenio(idConvenio)."
+   },
+   "porcentajeConvenio": {
+    "tipo": "numeric",
+    "descripcion": "Registra el porcentaje asociado al convenio."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Registra la fecha y hora de creación de la línea."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Registra la fecha y hora de la última modificación de la línea."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identifica al usuario que creó la línea; la tabla de usuarios correspondiente no se especifica."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identifica al usuario que modificó la línea; la tabla de usuarios correspondiente no se especifica."
+   },
+   "valorDescuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Registra un valor de descuento asociado al obsequio."
+   },
+   "descripcionGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Guarda la descripción de un grupo relacionado con la línea, si corresponde."
+   },
+   "cantidadSubGrupo": {
+    "tipo": "numeric",
+    "descripcion": "Registra una cantidad asociada a un subgrupo; su uso exacto no se deduce de la estructura."
+   },
+   "tarifaEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se aplicó una tarifa especial."
+   },
+   "valorVentaBase": {
+    "tipo": "numeric",
+    "descripcion": "Registra el valor base usado para calcular la venta."
+   },
+   "valorVentaBaseObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Registra el valor base usado para calcular el obsequio."
+   },
+   "idProductoDivisionFraccion": {
+    "tipo": "integer",
+    "descripcion": "Identifica el producto fraccionado seleccionado en la remisión; apunta a Inventario.ProductoDivisionFraccion(idProductoDivisionFraccion)."
+   },
+   "valorEquivalente": {
+    "tipo": "numeric",
+    "descripcion": "Registra un valor equivalente asociado a la línea; qué representa exactamente no se deduce de la estructura."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Guarda una descripción del producto para la línea, si corresponde."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idConvenio -> Venta.Convenio(idConvenio)",
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idProductoDivisionFraccion -> Inventario.ProductoDivisionFraccion(idProductoDivisionFraccion)",
+   "idRemision -> CuentaCobrar.Remision(idRemision)",
+   "idTarifa -> General.Tarifa(idTarifa)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idUnidadMedida -> Inventario.UnidadMedida(idUnidadMedida)",
+   "idUnidadMedidaSecundaria -> Inventario.UnidadMedida(idUnidadMedida)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.DetalleFactura(idDetalleRemision)",
+   "CuentaCobrar.DetalleRemisionLote(idDetalleRemision)"
+  ]
+ },
+ "CuentaCobrar.Factura": {
+  "descripcion": "Guarda la información de cabecera de facturas de cuentas por cobrar, incluidos el cliente, las fechas, los valores de venta, impuestos, pagos y datos de facturación. Sirve para registrar y gestionar facturas, sus saldos y procesos asociados, como cobros, devoluciones, envío y facturación electrónica. Algunos campos permiten atender procesos específicos, como cuotas educativas, salud, regalías o pagos con tarjeta.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento asociado a la factura; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado a la factura."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de generación del documento."
+   },
+   "fechaVencimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha límite de pago de la factura."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado a la factura, posiblemente el cliente; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero relacionado con el empleado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional de la factura; su uso específico no está indicado."
+   },
+   "texto2": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional de la factura; su uso específico no está indicado."
+   },
+   "texto3": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional de la factura; su uso específico no está indicado."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago asociada; apunta a General.FormaPago(idFormaPago)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor del pago registrado en efectivo."
+   },
+   "diasCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de crédito usada para calcular el vencimiento."
+   },
+   "numeroCuotas": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cuotas en que se divide el pago; aplica, según el comentario, a instituciones educativas."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número de tarjeta asociado al pago; no se indica si se almacena completo o enmascarado."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Valor del pago registrado con tarjeta."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque asociado al pago."
+   },
+   "fechaChequePostFechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha del cheque posfechado."
+   },
+   "valorPagadoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado con cheque."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la factura antes de impuestos."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento aplicado a la factura."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Base de venta exenta de IVA."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Base de venta excluida de IVA."
+   },
+   "valorImpuestosRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de las retenciones registradas."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Base gravable para el IVA."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Total de la factura después de sumar y descontar los conceptos aplicables."
+   },
+   "anulada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura está anulada."
+   },
+   "marcaAgua": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la reimpresión debe llevar una marca de agua con el mensaje «COPIA»."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla relacionada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla relacionada."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado al pago; apunta a Tercero.Banco(idBanco)."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tipo o configuración de tarjeta asociada; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del motivo de anulación."
+   },
+   "idResolucion": {
+    "tipo": "integer",
+    "descripcion": "Resolución con la que se generó la factura; apunta a General.Resolucion(idResolucion)."
+   },
+   "idPedido": {
+    "tipo": "bigint",
+    "descripcion": "Pedido asociado a la factura; apunta a Venta.Pedido(idPedido)."
+   },
+   "valorCuotaInicial": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la cuota inicial cuando la factura se paga en cuotas."
+   },
+   "valorImpuestoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del impuesto IVA."
+   },
+   "cambioEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor del cambio entregado en una operación de efectivo en el punto de venta."
+   },
+   "idTurnoCaja": {
+    "tipo": "bigint",
+    "descripcion": "Turno y caja asociados a la operación; apunta a Venta.TurnoCaja(idTurnoCaja)."
+   },
+   "idCaja": {
+    "tipo": "integer",
+    "descripcion": "Caja asociada cuando no se usa control de caja por turno POS; apunta a Venta.Caja(idCaja)."
+   },
+   "valorRecibidoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor en efectivo entregado por el cliente."
+   },
+   "totalIpoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Valor total del impuesto al consumo indicado como «Ipoconsumos» en el comentario."
+   },
+   "idTerceroDireccion": {
+    "tipo": "integer",
+    "descripcion": "Dirección alterna usada al facturar; apunta a Tercero.TerceroDireccion(idTerceroDireccion)."
+   },
+   "idConvenio": {
+    "tipo": "integer",
+    "descripcion": "Convenio asociado a la factura; apunta a Venta.Convenio(idConvenio)."
+   },
+   "valorAnticipo": {
+    "tipo": "numeric",
+    "descripcion": "Valor del anticipo asociado a la factura."
+   },
+   "valorCarteraAnticipo": {
+    "tipo": "numeric",
+    "descripcion": "Valor aplicado al cruce de la factura con un anticipo."
+   },
+   "valorImpuestoEspecial": {
+    "tipo": "numeric",
+    "descripcion": "Valor de impuestos especiales, como bolsa y otros."
+   },
+   "idMotivoNotaCredito": {
+    "tipo": "integer",
+    "descripcion": "Motivo asociado a una nota crédito; apunta a CuentaCobrar.MotivoNotaCredito(idMotivoNotaCredito)."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Identificador de la máquina donde se generó la factura."
+   },
+   "descuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento aplicado a obsequios."
+   },
+   "facturaSinIvaExencion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura está exenta de IVA por decreto."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que crea o modifica el registro."
+   },
+   "anticipoFacturaCreditoPaga": {
+    "tipo": "boolean",
+    "descripcion": "Indica si una devolución a una factura de crédito con saldo cero debe evitar afectar el saldo de cartera."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC de la máquina del usuario, posiblemente registrada al crear o modificar la factura."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre de cliente remoto asociado; su uso específico no está indicado."
+   },
+   "idMonedaLocal": {
+    "tipo": "integer",
+    "descripcion": "Moneda funcional en la que se almacenaron los valores; apunta a Contabilidad.Moneda(idMoneda)."
+   },
+   "idMonedaExtranjera": {
+    "tipo": "integer",
+    "descripcion": "Moneda en que se negoció o digitó la factura; apunta a Contabilidad.Moneda(idMoneda). Si es NULL, el comentario indica que la factura está en moneda local."
+   },
+   "valorTrmDiario": {
+    "tipo": "numeric",
+    "descripcion": "TRM aplicada para convertir la divisa a moneda local."
+   },
+   "alistamiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura debe mostrarse en el proceso de alistamiento."
+   },
+   "valorPagoBanco": {
+    "tipo": "numeric",
+    "descripcion": "Valor del pago registrado como banco; el alcance exacto del medio de pago no está indicado."
+   },
+   "envioTransportador": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura debe pasar por el proceso de envío al cliente mediante transportador."
+   },
+   "tipoEnvio": {
+    "tipo": "integer",
+    "descripcion": "Tipo de envío: 0 = sin envío, 1 = local, 2 = nacional."
+   },
+   "idTerceroTransportador": {
+    "tipo": "bigint",
+    "descripcion": "Tercero transportador asociado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idZona": {
+    "tipo": "integer",
+    "descripcion": "Zona del cliente; apunta a General.Zona(idZona)."
+   },
+   "valorTarifaEnvio": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la tarifa de envío."
+   },
+   "numeroOrdenCompra": {
+    "tipo": "character varying",
+    "descripcion": "Número de la orden de compra asociada."
+   },
+   "noReferenciado": {
+    "tipo": "boolean",
+    "descripcion": "Indica que el documento no debe referenciarse."
+   },
+   "codigoPlanBeneficio": {
+    "tipo": "character varying",
+    "descripcion": "Código del plan de beneficio recibido desde la interfaz con Athenea."
+   },
+   "idMetodoPago": {
+    "tipo": "integer",
+    "descripcion": "Método de pago asociado; apunta a General.MetodoPago(idMetodoPago)."
+   },
+   "valorImpuestoSaludable": {
+    "tipo": "numeric",
+    "descripcion": "Valor del impuesto saludable."
+   },
+   "idMotivoNotaDebito": {
+    "tipo": "integer",
+    "descripcion": "Motivo asociado a una nota débito; apunta a CuentaCobrar.MotivoNotaDebito(idMotivoNotaDebito)."
+   },
+   "tipoCartera": {
+    "tipo": "integer",
+    "descripcion": "Tipo de cartera: 0 = por defecto, 1 = subsidiada, 2 = contributiva."
+   },
+   "fechaIngreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de ingreso asociada a la factura; el evento específico no está indicado."
+   },
+   "fechaEgreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de egreso asociada a la factura; el evento específico no está indicado."
+   },
+   "valorBaseImpuestoManual": {
+    "tipo": "numeric",
+    "descripcion": "Base manual para calcular retenciones en devoluciones."
+   },
+   "valorDescuentoTotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento asignado al documento completo."
+   },
+   "sincronizadoWsEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro está sincronizado con un servicio web especial; el servicio no está identificado."
+   },
+   "cuotaModeradoraSS": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la cuota moderadora, aplicable al sector salud."
+   },
+   "numeroDocumentoRecepcion": {
+    "tipo": "character varying",
+    "descripcion": "Número del documento de recepción usado en el campo ReceiptDocumentReference del XML."
+   },
+   "fechaRecepcion": {
+    "tipo": "date",
+    "descripcion": "Fecha del documento de recepción usada en el campo ReceiptDocumentReference del XML."
+   },
+   "idIndicadorRetencionICA": {
+    "tipo": "integer",
+    "descripcion": "Indicador seleccionado para ICA o reteICA; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "idFacturaRegalia": {
+    "tipo": "bigint",
+    "descripcion": "Factura de regalía relacionada; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "facturaRegalias": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura se generó mediante el proceso de regalías."
+   },
+   "idTransaccionTef": {
+    "tipo": "bigint",
+    "descripcion": "Transacción aprobada que respaldó el cobro con tarjeta; apunta a CuentaCobrar.TransaccionTef(idTransaccionTef)."
+   },
+   "numeroAprobacionTef": {
+    "tipo": "character varying",
+    "descripcion": "Número de aprobación devuelto por CredibanCo para imprimir en el comprobante."
+   },
+   "referenciaBoucherTef": {
+    "tipo": "character varying",
+    "descripcion": "Referencia o número de comprobante devuelto por CredibanCo."
+   },
+   "franquiciaTef": {
+    "tipo": "character varying",
+    "descripcion": "Franquicia de tarjeta detectada por el datáfono, como VISA, MASTERCARD, AMEX o DINERS."
+   },
+   "ultimos4PANTef": {
+    "tipo": "character varying",
+    "descripcion": "Últimos cuatro dígitos del número de tarjeta, destinados a imprimirse enmascarados."
+   }
+  },
+  "apunta_a": [
+   "idTransaccionTef -> CuentaCobrar.TransaccionTef(idTransaccionTef)",
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idConvenio -> Venta.Convenio(idConvenio)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFacturaRegalia -> CuentaCobrar.Factura(idFactura)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idIndicadorRetencionICA -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idMonedaLocal -> Contabilidad.Moneda(idMoneda)",
+   "idMonedaExtranjera -> Contabilidad.Moneda(idMoneda)",
+   "idMotivoNotaDebito -> CuentaCobrar.MotivoNotaDebito(idMotivoNotaDebito)",
+   "idPedido -> Venta.Pedido(idPedido)",
+   "idResolucion -> General.Resolucion(idResolucion)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroDireccion -> Tercero.TerceroDireccion(idTerceroDireccion)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idTerceroTransportador -> Tercero.Tercero(idTercero)",
+   "idTurnoCaja -> Venta.TurnoCaja(idTurnoCaja)",
+   "idZona -> General.Zona(idZona)",
+   "idMetodoPago -> General.MetodoPago(idMetodoPago)",
+   "idCaja -> Venta.Caja(idCaja)",
+   "idMotivoNotaCredito -> CuentaCobrar.MotivoNotaCredito(idMotivoNotaCredito)"
+  ],
+  "la_referencian": [
+   "Cartera.CruceAnticipoCliente(idFactura)",
+   "Cartera.CruceNotaCredito(idFactura)",
+   "Cartera.CruceNotaCredito(idFacturaNotaCredito)",
+   "Cartera.FacturaTercero(idFactura)",
+   "CuentaCobrar.Alistamiento(idFactura)",
+   "CuentaCobrar.Alistamiento(idFacturaAnula)",
+   "CuentaCobrar.ComandaAutoventa(idFactura)",
+   "CuentaCobrar.CotizacionAutoventa(idFactura)",
+   "CuentaCobrar.DatoAdicionalSectorSalud(idFactura)",
+   "CuentaCobrar.DetalleFactura(idFactura)",
+   "CuentaCobrar.Factura(idFacturaRegalia)",
+   "CuentaCobrar.FacturaAmortizacionCredito(idFactura)",
+   "CuentaCobrar.FacturaDevolucion(idDevolucion)",
+   "CuentaCobrar.FacturaDevolucion(idFactura)",
+   "CuentaCobrar.FacturaElectronica(idFactura)"
+  ]
+ },
+ "CuentaCobrar.FacturaDevolucion": {
+  "descripcion": "Registra una relación entre dos registros de factura en el módulo de cuentas por cobrar: uno identificado por idFactura y otro por idDevolucion. Posiblemente sirve para asociar una factura con una factura que representa una devolución, pero la estructura no permite confirmar esa interpretación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro que relaciona la factura y la devolución; no se informa si es clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura asociada; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de devolución asociado; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idDevolucion -> CuentaCobrar.Factura(idFactura)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.FacturaElectronica": {
+  "descripcion": "Registra información de facturación electrónica asociada a una factura y a un documento del ERP. Incluye códigos de identificación, referencias a posibles facturas relacionadas y datos de fechas, validación y QR.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaElectronica": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de facturación electrónica; no se informó si es clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento asociado; referencia a General.Documento(idDocumento)."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura asociada; referencia a CuentaCobrar.Factura(idFactura)."
+   },
+   "tipoDocumento": {
+    "tipo": "character varying",
+    "descripcion": "Código que clasifica el tipo de documento electrónico; sus valores no se pueden deducir."
+   },
+   "cufeCruce": {
+    "tipo": "character varying",
+    "descripcion": "Código relacionado con el cruce de otra factura; posiblemente sea el CUFE de esa factura."
+   },
+   "cufe": {
+    "tipo": "character varying",
+    "descripcion": "Código de identificación de la factura electrónica, posiblemente el CUFE (Código Único de Factura Electrónica)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica una tabla de referencia."
+   },
+   "idFacturaCruce": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de una factura relacionada por cruce; referencia a CuentaCobrar.Factura(idFactura)."
+   },
+   "validacionPrevia": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de validación previa; no se puede deducir si true significa que se intentó o que se aprobó."
+   },
+   "fechaRespuesta": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a una respuesta del proceso electrónico; no se identifica quién la emite ni qué evento representa."
+   },
+   "qr": {
+    "tipo": "character varying",
+    "descripcion": "Contenido relacionado con un código QR, posiblemente sus datos o una URL."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idFacturaCruce -> CuentaCobrar.Factura(idFactura)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.FacturaIndicadorRetencion": {
+  "descripcion": "Registra indicadores de retención asociados a una factura de cuentas por cobrar, junto con el porcentaje y los valores utilizados para el cálculo. Sirve posiblemente para conservar el detalle de las retenciones aplicables a la factura y apoyar su contabilización y consulta.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaIndicadorRetencion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de retención; la estructura no declara una clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura asociada; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del indicador de retención aplicado; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje usado para la retención; no se puede deducir su escala ni cómo se aplica."
+   },
+   "valorRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario de la retención registrada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base guardada para el cálculo del impuesto, según el comentario de la columna."
+   }
+  },
+  "apunta_a": [
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.FacturaIva": {
+  "descripcion": "Guarda el detalle del IVA asociado a una factura de cuentas por cobrar, con la base imponible, el porcentaje aplicado y el valor calculado para cada indicador de IVA. Sirve posiblemente para conservar el desglose tributario de la factura y utilizarlo en procesos de contabilización.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaIva": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de IVA; la estructura proporcionada no declara una clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura de cuentas por cobrar a la que pertenece este detalle; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de IVA aplicado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base utilizada para calcular el IVA."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado a la base."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA calculado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.FacturaRemision": {
+  "descripcion": "Registra asociaciones entre facturas y remisiones de CuentaCobrar. Sirve para vincular ambos documentos; funciones de Inventario también consultan esta relación para operaciones de saldo y movimientos, aunque la estructura no indica el detalle de ese uso.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaRemision": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de asociación; la estructura no declara que sea clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura asociada; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idRemision": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la remisión asociada; apunta a CuentaCobrar.Remision(idRemision)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idRemision -> CuentaCobrar.Remision(idRemision)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.FacturaTerceroDevolucion": {
+  "descripcion": "Relaciona una factura de tercero con otra factura registrada en CuentaCobrar.Factura, identificada aquí como devolución. Posiblemente permite asociar devoluciones con facturas de clientes para su tratamiento o consulta en procesos de cartera y reportes contables. La estructura no incluye importes ni estados.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFacturaTerceroDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la relación entre la factura de tercero y la factura asociada como devolución; no se informa si es clave primaria."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura de tercero relacionada; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "idDevolucion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura asociada como devolución; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro de relación."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica la tabla a la que apunta."
+   }
+  },
+  "apunta_a": [
+   "idDevolucion -> CuentaCobrar.Factura(idFactura)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.MotivoNotaCredito": {
+  "descripcion": "Catálogo de motivos asociados a notas de crédito en el módulo de Cuentas por Cobrar. La tabla Factura la referencia mediante idMotivoNotaCredito, por lo que posiblemente permite registrar o clasificar el motivo relacionado con una factura.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMotivoNotaCredito": {
+    "tipo": "integer",
+    "descripcion": "Identificador del motivo de nota de crédito; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del motivo; no se puede deducir qué formato o valores utiliza."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto que describe el motivo de la nota de crédito."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CuentaCobrar.Factura(idMotivoNotaCredito)"
+  ]
+ },
+ "CuentaCobrar.MotivoNotaDebito": {
+  "descripcion": "Es un catálogo de motivos asociados a notas de débito en el módulo de Cuentas por Cobrar. La tabla es referenciada desde CuentaCobrar.Factura mediante idMotivoNotaDebito, posiblemente para registrar el motivo aplicable a una factura. No se identifica una clave primaria en la estructura proporcionada.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMotivoNotaDebito": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del motivo; la estructura no indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del motivo; su formato y significado no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto que describe el motivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CuentaCobrar.Factura(idMotivoNotaDebito)"
+  ]
+ },
+ "CuentaCobrar.Remision": {
+  "descripcion": "Guarda remisiones de Cuenta por Cobrar, con sus datos de identificación, fechas, terceros asociados e importes de venta. También registra información de pagos, impuestos, anulaciones, facturación y procesos de entrega o alistamiento. Se relaciona con detalles de remisión y movimientos de inventario.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRemision": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la remisión."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento asociado; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado a la remisión."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado, si aplica; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de generación del documento."
+   },
+   "fechaVencimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de vencimiento de la remisión, si aplica."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado a la remisión; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado como empleado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto auxiliar de uso no especificado."
+   },
+   "texto2": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto auxiliar de uso no especificado."
+   },
+   "texto3": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto auxiliar de uso no especificado."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago asociada; apunta a General.FormaPago(idFormaPago)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pagado en efectivo."
+   },
+   "diasCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de crédito para calcular el vencimiento."
+   },
+   "numeroCuotas": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cuotas en que se divide el pago de la remisión; aplica para instituciones educativas."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número de tarjeta relacionado con el pago, si aplica."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado con tarjeta."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque relacionado con el pago, si aplica."
+   },
+   "fechaChequePostFechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha del cheque posfechado, si aplica."
+   },
+   "valorPagadoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado mediante cheque."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la remisión antes de impuestos."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento aplicado."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Base de venta exenta de IVA."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Base de venta excluida de IVA."
+   },
+   "valorImpuestosRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor de las retenciones."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Base gravable para el IVA."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Total de la remisión, considerando los impuestos y descuentos requeridos."
+   },
+   "anulada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la remisión está anulada."
+   },
+   "marcaAgua": {
+    "tipo": "boolean",
+    "descripcion": "Indica si una reimpresión debe llevar la marca de agua «COPIA»."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado al pago, si aplica; apunta a Tercero.Banco(idBanco)."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tipo de tarjeta asociado al pago, si aplica; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de la anulación, si la remisión fue anulada."
+   },
+   "idResolucion": {
+    "tipo": "integer",
+    "descripcion": "Resolución con la que se generó la remisión, si aplica; apunta a General.Resolucion(idResolucion)."
+   },
+   "idPedido": {
+    "tipo": "bigint",
+    "descripcion": "Pedido asociado a la remisión, si aplica; apunta a Venta.Pedido(idPedido)."
+   },
+   "valorCuotaInicial": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la cuota inicial cuando el pago se realiza en cuotas."
+   },
+   "valorImpuestoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA."
+   },
+   "cambioEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor del cambio entregado en efectivo en el POS."
+   },
+   "idTurnoCaja": {
+    "tipo": "bigint",
+    "descripcion": "Turno de caja asociado a la operación, si aplica; apunta a Venta.TurnoCaja(idTurnoCaja)."
+   },
+   "idCaja": {
+    "tipo": "integer",
+    "descripcion": "Caja asociada a la remisión cuando no existe control de caja por turno POS; apunta a Venta.Caja(idCaja)."
+   },
+   "valorRecibidoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor en efectivo entregado por el cliente."
+   },
+   "totalIpoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Valor total registrado para el impuesto al consumo."
+   },
+   "idTerceroDireccion": {
+    "tipo": "integer",
+    "descripcion": "Dirección alterna asociada a la remisión, si aplica; apunta a Tercero.TerceroDireccion(idTerceroDireccion)."
+   },
+   "idConvenio": {
+    "tipo": "integer",
+    "descripcion": "Convenio asociado, si aplica; apunta a Venta.Convenio(idConvenio)."
+   },
+   "valorAnticipo": {
+    "tipo": "numeric",
+    "descripcion": "Valor de anticipo asociado a la remisión."
+   },
+   "valorCarteraAnticipo": {
+    "tipo": "numeric",
+    "descripcion": "Valor aplicado cuando el cruce se realiza con un anticipo."
+   },
+   "valorImpuestoEspecial": {
+    "tipo": "numeric",
+    "descripcion": "Valor de impuesto especial registrado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro."
+   },
+   "facturada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la remisión fue totalmente facturada."
+   },
+   "descuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento relacionado con obsequios."
+   },
+   "alistamiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la remisión debe mostrarse en el proceso de alistamiento."
+   },
+   "idFacturaFraccionamiento": {
+    "tipo": "bigint",
+    "descripcion": "Factura cuyo documento se fraccionó al crear la remisión, si aplica; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "envioTransportador": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la remisión debe pasar por el proceso de envío al cliente mediante transportador."
+   },
+   "tipoEnvio": {
+    "tipo": "integer",
+    "descripcion": "Tipo de envío: 0 = sin envío, 1 = local, 2 = nacional."
+   },
+   "idTerceroTransportador": {
+    "tipo": "bigint",
+    "descripcion": "Tercero transportador asociado al envío, si aplica; apunta a Tercero.Tercero(idTercero)."
+   },
+   "valorPagoBanco": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pago mediante banco."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idConvenio -> Venta.Convenio(idConvenio)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idPedido -> Venta.Pedido(idPedido)",
+   "idResolucion -> General.Resolucion(idResolucion)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroDireccion -> Tercero.TerceroDireccion(idTerceroDireccion)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idTerceroTransportador -> Tercero.Tercero(idTercero)",
+   "idTurnoCaja -> Venta.TurnoCaja(idTurnoCaja)",
+   "idCaja -> Venta.Caja(idCaja)",
+   "idFacturaFraccionamiento -> CuentaCobrar.Factura(idFactura)"
+  ],
+  "la_referencian": [
+   "Cartera.FacturaTercero(idRemision)",
+   "CuentaCobrar.Alistamiento(idRemision)",
+   "CuentaCobrar.Alistamiento(idRemisionAnula)",
+   "CuentaCobrar.DetalleRemision(idRemision)",
+   "CuentaCobrar.FacturaRemision(idRemision)",
+   "CuentaCobrar.RemisionIndicadorRetencion(idRemision)",
+   "CuentaCobrar.RemisionIva(idRemision)",
+   "Inventario.MovimientoInventario(idRemision)"
+  ]
+ },
+ "CuentaCobrar.RemisionIva": {
+  "descripcion": "Registra importes de IVA asociados a una remisión de cuentas por cobrar, incluidos la base para el cálculo, el porcentaje y el valor del impuesto. Se vincula con la remisión y con un indicador de IVA, por lo que posiblemente permite desglosar el impuesto según ese indicador.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRemisionIva": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de IVA de la remisión; la estructura no declara una clave primaria."
+   },
+   "idRemision": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la remisión a la que corresponde; apunta a CuentaCobrar.Remision(idRemision)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identificador del indicador de IVA aplicado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base monetaria usada para calcular el IVA."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado; no se especifica su formato ni los valores permitidos."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA calculado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una tabla referenciada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una tabla referenciada."
+   }
+  },
+  "apunta_a": [
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idRemision -> CuentaCobrar.Remision(idRemision)"
+  ],
+  "la_referencian": []
+ },
+ "CuentaCobrar.RptOrdenCargue": {
+  "descripcion": "La tabla almacena datos que utiliza la función `CuentaCobrar.fnReporteOrdenCargue` para generar el reporte de orden de cargue. Por sus columnas, posiblemente reúne códigos, descripciones y valores numéricos empleados para presentar o calcular información del reporte, incluidas unidades de empaque y cantidades sueltas. La estructura no permite determinar si contiene datos de configuración, resultados temporales o registros operativos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asociado al dato o concepto de la fila; su significado específico no se deduce de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del dato o concepto asociado a la fila."
+   },
+   "valor1": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico cuyo significado no se puede deducir de la estructura."
+   },
+   "valor2": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico cuyo significado no se puede deducir de la estructura."
+   },
+   "valor3": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico cuyo significado no se puede deducir de la estructura."
+   },
+   "grupo": {
+    "tipo": "integer",
+    "descripcion": "Número que posiblemente identifica un grupo o categoría; no se puede deducir qué agrupa."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario; no se declara una clave foránea que permita identificar la tabla de referencia."
+   },
+   "descripcionFormaPago": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la forma de pago asociada; no se puede determinar cómo se relaciona con la orden."
+   },
+   "valor4": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de unidades de empaque del producto."
+   },
+   "valor5": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de unidades sueltas cuando la cantidad calculada en forma de empaque tiene decimales."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "CuentaCobrar.TmpComplexFactura": {
+  "descripcion": "Guarda renglones de productos o servicios asociados posiblemente a la preparación o cálculo de una factura compleja en el módulo de cuentas por cobrar. Reúne cantidades, precios, descuentos, impuestos, datos de inventario y referencias opcionales a pedidos, servicios o vehículos. El nombre `Tmp` sugiere que puede ser una tabla de trabajo, pero su ciclo de vida no se puede confirmar con la estructura.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTmpComplexFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de esta tabla; no se informa una clave primaria."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente asociado a un tercero empleado que participa en el registro; no se informa la entidad de destino."
+   },
+   "idCaja": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente de la caja relacionada con el renglón; no se informa la entidad de destino."
+   },
+   "idTurnoCaja": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del turno de caja relacionado; no se informa la entidad de destino."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta de formulario que posiblemente permite agrupar o identificar registros de una operación."
+   },
+   "item": {
+    "tipo": "integer",
+    "descripcion": "Número o posición del renglón dentro de la operación."
+   },
+   "codigoProducto": {
+    "tipo": "character varying",
+    "descripcion": "Código del producto o servicio consignado en el renglón."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto o servicio consignado en el renglón."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto o servicio."
+   },
+   "valorUnitario": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario aplicado al producto o servicio."
+   },
+   "valorTotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor total asociado al renglón."
+   },
+   "solicitaBascula": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto requiere báscula; los valores posibles son verdadero o falso."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del producto; no se informa la entidad de destino."
+   },
+   "idGrupo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del grupo al que pertenece el producto; no se informa la entidad de destino."
+   },
+   "idUnidadMedida": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente de la unidad de medida principal; no se informa la entidad de destino."
+   },
+   "idUnidadMedidaSecundaria": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente de una unidad de medida secundaria; no se informa la entidad de destino."
+   },
+   "solicitaLote": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto requiere registrar un lote; los valores posibles son verdadero o falso."
+   },
+   "solicitaInventarioEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se requiere un tratamiento de inventario especial; los valores posibles son verdadero o falso."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente de un indicador de IVA; no se informa la entidad de destino."
+   },
+   "tipoPorcentajeIva": {
+    "tipo": "integer",
+    "descripcion": "Código posiblemente relacionado con la forma de aplicar el porcentaje de IVA; sus valores no se pueden deducir."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente de un indicador de retención; no se informa la entidad de destino."
+   },
+   "idLinea": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente de una línea o categoría del producto; no se informa la entidad de destino."
+   },
+   "tipoProducto": {
+    "tipo": "integer",
+    "descripcion": "Código de clasificación del producto; sus valores no se pueden deducir."
+   },
+   "costo": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado al renglón o al producto, según la lógica del sistema."
+   },
+   "costoPromedio": {
+    "tipo": "numeric",
+    "descripcion": "Costo promedio asociado al producto o al renglón."
+   },
+   "subTotal": {
+    "tipo": "numeric",
+    "descripcion": "Subtotal calculado para el renglón, antes de algunos cargos o descuentos según la lógica del sistema."
+   },
+   "valorVentaBase": {
+    "tipo": "numeric",
+    "descripcion": "Valor de venta utilizado como base de cálculo; el concepto exacto de la base no se puede deducir."
+   },
+   "valorVentaBaseObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Valor de venta base asociado posiblemente a un producto entregado como obsequio."
+   },
+   "valorImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Importe de impuesto calculado para el renglón."
+   },
+   "valorImpoConsumoProducto": {
+    "tipo": "numeric",
+    "descripcion": "Importe de impuesto al consumo asociado al producto."
+   },
+   "impoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Importe o base relacionada con el impuesto al consumo; la distinción respecto de `valorImpoConsumoProducto` no se puede deducir."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado al renglón."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado al renglón."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Importe de descuento aplicado al renglón."
+   },
+   "valorDescuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Importe de descuento asociado posiblemente a un obsequio."
+   },
+   "indicador": {
+    "tipo": "integer",
+    "descripcion": "Indicador numérico cuyo significado y valores no se pueden deducir."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente del almacén relacionado con el movimiento; no se informa la entidad de destino."
+   },
+   "cantidadDescontar": {
+    "tipo": "integer",
+    "descripcion": "Cantidad que se debe descontar, posiblemente del inventario."
+   },
+   "descontarInventarioPadre": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se debe descontar el inventario del producto padre; los valores posibles son verdadero o falso."
+   },
+   "idProductoPadre": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del producto padre; no se informa la entidad de destino."
+   },
+   "cambioPrecioManual": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el precio fue modificado manualmente; los valores posibles son verdadero o falso."
+   },
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente de la tarifa aplicada; no se informa la entidad de destino."
+   },
+   "precioAplicaTarifa": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el precio aplica según una tarifa; los valores posibles son verdadero o falso."
+   },
+   "idConvenio": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente del convenio aplicado; no se informa la entidad de destino."
+   },
+   "precioAplicaConvenio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el precio aplica según un convenio; los valores posibles son verdadero o falso."
+   },
+   "porcentajeConvenio": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al convenio."
+   },
+   "obsequio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el renglón corresponde a un obsequio; los valores posibles son verdadero o falso."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Texto libre con observaciones sobre el renglón."
+   },
+   "crearRegistro": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se debe crear otro registro o ejecutar una acción de creación; el efecto exacto no se puede deducir."
+   },
+   "autenticadoCantidadNegativa": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se autorizó una cantidad negativa; los valores posibles son verdadero o falso."
+   },
+   "idDetallePedidoRestaurante": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del detalle de un pedido de restaurante; no se informa la entidad de destino."
+   },
+   "informacionVehiculo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el renglón requiere o incluye información de vehículo; los valores posibles son verdadero o falso."
+   },
+   "idOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente de una orden de servicio; no se informa la entidad de destino."
+   },
+   "idDetalleOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del detalle de una orden de servicio; no se informa la entidad de destino."
+   },
+   "idOrdenServicioHerramienta": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente de una orden de servicio relacionada con herramientas; no se informa la entidad de destino."
+   },
+   "idDetalleOrdenServicioHerramienta": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del detalle de una orden de servicio relacionada con herramientas; no se informa la entidad de destino."
+   },
+   "idVehiculo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del vehículo asociado; no se informa la entidad de destino."
+   },
+   "tarifaEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se utiliza una tarifa especial; los valores posibles son verdadero o falso."
+   },
+   "valorTarifaEspecial": {
+    "tipo": "numeric",
+    "descripcion": "Valor asociado a la tarifa especial."
+   },
+   "consecutivoRecuperacion": {
+    "tipo": "integer",
+    "descripcion": "Número consecutivo posiblemente usado para recuperar o reconstruir registros."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "idOrdenTrabajo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente de una orden de trabajo; no se informa la entidad de destino."
+   },
+   "idDetalleOrdenTrabajo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador posiblemente del detalle de una orden de trabajo; no se informa la entidad de destino."
+   },
+   "descuentoEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se aplica un descuento especial; los valores posibles son verdadero o falso."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "CuentaCobrar.TmpReporteVentaMensual": {
+  "descripcion": "Tabla posiblemente temporal o auxiliar utilizada por `CuentaCobrar.fnReporteVentaMensual` para reunir datos de ventas por factura y producto destinados a un reporte mensual. Incluye cantidades e importes de venta, devoluciones, costos y utilidad, además de datos descriptivos del producto, su grupo, el cliente y el vendedor. La estructura no declara claves foráneas ni una clave primaria.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTmpReporteVentaMensual": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la fila en la tabla temporal; la estructura no declara que sea clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura asociada a los datos; no se declara una clave foránea."
+   },
+   "numeroFactura": {
+    "tipo": "character varying",
+    "descripcion": "Número visible de la factura."
+   },
+   "codigoProducto": {
+    "tipo": "character varying",
+    "descripcion": "Código del producto incluido en el reporte."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto incluido en el reporte."
+   },
+   "cantidadTempo": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de producto vendida o registrada para el reporte; el sufijo `Tempo` no está definido."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Importe total asociado a la fila; no se especifica si es bruto, neto o incluye ajustes."
+   },
+   "valorUnitarioTempo": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario de venta del producto; el sufijo `Tempo` no está definido."
+   },
+   "costoTempo": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado a la cantidad registrada; el sufijo `Tempo` no está definido."
+   },
+   "cantidadDevolucionTempo": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad devuelta asociada al producto; el sufijo `Tempo` no está definido."
+   },
+   "valoUnitarioDevolucionTempo": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario aplicado a la devolución; el nombre podría tener una errata, y el sufijo `Tempo` no está definido."
+   },
+   "costoDevolucionTempo": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado a la cantidad devuelta; el sufijo `Tempo` no está definido."
+   },
+   "utilidadTempo": {
+    "tipo": "numeric",
+    "descripcion": "Utilidad calculada o registrada para la fila; el sufijo `Tempo` no está definido."
+   },
+   "porcentajeUtilidadTempo": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de utilidad asociado a la fila; no se conoce la fórmula ni la escala utilizada."
+   },
+   "codigoGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Código del grupo de productos."
+   },
+   "descripcionGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del grupo de productos."
+   },
+   "codigoSubGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Código del subgrupo de productos."
+   },
+   "descripcionSubGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del subgrupo de productos."
+   },
+   "nombreCliente": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente asociado a la factura."
+   },
+   "nombreVendedor": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del vendedor asociado a la venta."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado a la fila; no se declara una clave foránea ni se especifica su función."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "CuentaCobrar.tmpAnalisisCliente": {
+  "descripcion": "Guarda datos agregados para el análisis de clientes en cuentas por cobrar, como facturación de contado y crédito, devoluciones, última compra y saldos de cartera por antigüedad. Posiblemente la función CuentaCobrar.fnAnalisisCliente la utiliza para preparar resultados de análisis; la estructura no permite confirmar cuándo se llena ni cuánto tiempo se conservan los registros.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTmpAnalisisCliente": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de análisis; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero asociado al análisis; posiblemente apunta a un cliente del módulo Tercero, pero no se informa una clave foránea."
+   },
+   "cantidadFacturaContado": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de facturas de contado consideradas en el análisis."
+   },
+   "valorFacturasContado": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de las facturas de contado consideradas."
+   },
+   "valorPromedioFacturaContado": {
+    "tipo": "numeric",
+    "descripcion": "Valor promedio de las facturas de contado consideradas."
+   },
+   "cantidadFacturaCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de facturas de crédito consideradas en el análisis."
+   },
+   "valorFacturasCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de las facturas de crédito consideradas."
+   },
+   "valorPromedioFacturaCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor promedio de las facturas de crédito consideradas."
+   },
+   "cantidadDevolucion": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de devoluciones consideradas en el análisis."
+   },
+   "valorDevolucion": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de las devoluciones consideradas."
+   },
+   "fechaUltimaCompraCliente": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última compra del cliente; puede quedar sin valor."
+   },
+   "formaPagoMasUsada": {
+    "tipo": "character varying",
+    "descripcion": "Código o descripción de la forma de pago más utilizada; el contenido no se puede deducir de la estructura."
+   },
+   "cupoCarteraCliente": {
+    "tipo": "numeric",
+    "descripcion": "Cupo de cartera asignado al cliente."
+   },
+   "valorCarteraSinVencer": {
+    "tipo": "numeric",
+    "descripcion": "Valor de cartera que aún no ha vencido."
+   },
+   "valorCartera30": {
+    "tipo": "numeric",
+    "descripcion": "Valor de cartera asociado al tramo identificado como 30; posiblemente representa días de vencimiento."
+   },
+   "valorCartera60": {
+    "tipo": "numeric",
+    "descripcion": "Valor de cartera asociado al tramo identificado como 60; posiblemente representa días de vencimiento."
+   },
+   "valorCartera90": {
+    "tipo": "numeric",
+    "descripcion": "Valor de cartera asociado al tramo identificado como 90; posiblemente representa días de vencimiento."
+   },
+   "valorCartera120": {
+    "tipo": "numeric",
+    "descripcion": "Valor de cartera asociado al tramo identificado como 120; posiblemente representa días de vencimiento."
+   },
+   "valorCarteraMas120": {
+    "tipo": "numeric",
+    "descripcion": "Valor de cartera asociado al tramo identificado como más de 120; posiblemente representa días de vencimiento."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "CuentaCobrar.tmpComprobanteInformeDiario": {
+  "descripcion": "Tabla de apoyo posiblemente utilizada para preparar los datos del informe de movimiento diario de Cuenta por Cobrar, que genera la función CuentaCobrar.fnReporteMovimientoDiario. Reúne información de documentos, clientes, ingresos, impuestos, retenciones y descuentos, organizada por tipo de grupo y sección. No se puede deducir si sus filas son temporales por sesión, cómo se calculan sus importes ni si la tabla conserva datos entre ejecuciones.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "indexTipoGrupo": {
+    "tipo": "integer",
+    "descripcion": "Índice numérico asociado al tipo de grupo; su criterio de asignación no se puede deducir."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número del documento o comprobante relacionado."
+   },
+   "tipoDocumento": {
+    "tipo": "character varying",
+    "descripcion": "Tipo de documento relacionado; los códigos o valores posibles no se pueden deducir."
+   },
+   "cliente": {
+    "tipo": "character varying",
+    "descripcion": "Identificación o nombre del cliente; cuál de los dos representa no se puede deducir."
+   },
+   "valorDocumento": {
+    "tipo": "numeric",
+    "descripcion": "Importe total asociado al documento."
+   },
+   "valorGravado": {
+    "tipo": "numeric",
+    "descripcion": "Importe gravado con impuestos, sin que se pueda deducir si corresponde a una tarifa específica o a un total."
+   },
+   "valorExcluido": {
+    "tipo": "numeric",
+    "descripcion": "Importe excluido de impuestos."
+   },
+   "valorExcento": {
+    "tipo": "numeric",
+    "descripcion": "Importe exento de impuestos; la estructura no aclara la definición usada por el ERP."
+   },
+   "valorIva5": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA asociado a la tarifa del 5 %."
+   },
+   "valorIva8": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA asociado a la tarifa del 8 %."
+   },
+   "valorIva16": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA asociado a la tarifa del 16 %."
+   },
+   "valorIva19": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA asociado a la tarifa del 19 %."
+   },
+   "valorRetefuente": {
+    "tipo": "numeric",
+    "descripcion": "Importe de retención en la fuente."
+   },
+   "valorReteIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de retención de IVA."
+   },
+   "valorReteICA": {
+    "tipo": "numeric",
+    "descripcion": "Importe de retención del impuesto de industria y comercio (ICA)."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Importe de descuento asociado al documento."
+   },
+   "tipoGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Código o nombre del grupo al que pertenece el registro; sus valores no se pueden deducir."
+   },
+   "totalIngreso1": {
+    "tipo": "numeric",
+    "descripcion": "Importe de un total de ingreso identificado como 1; su alcance no se puede deducir."
+   },
+   "totalIngreso2": {
+    "tipo": "numeric",
+    "descripcion": "Importe de un total de ingreso identificado como 2; su alcance no se puede deducir."
+   },
+   "totalIngreso3": {
+    "tipo": "numeric",
+    "descripcion": "Importe de un total de ingreso identificado como 3; su alcance no se puede deducir."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado al registro; no se indica la tabla a la que apunta."
+   },
+   "seccion": {
+    "tipo": "character",
+    "descripcion": "Sección del informe: 1 = Impuesto, 2 = Abono Cliente, 3 = Abono Cliente + Consig."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Identificador o nombre de la máquina asociada al registro; su formato y uso no se pueden deducir."
+   },
+   "anulado": {
+    "tipo": "boolean",
+    "descripcion": "Indica posiblemente si el registro o documento está anulado; no se especifica cómo se representan los valores nulos."
+   },
+   "valorBolsa": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado posiblemente a un cobro o impuesto de bolsa; el concepto exacto debe confirmarse."
+   },
+   "valorGravado5": {
+    "tipo": "numeric",
+    "descripcion": "Importe gravado asociado a la tarifa de IVA del 5 %."
+   },
+   "valorGravado19": {
+    "tipo": "numeric",
+    "descripcion": "Importe gravado asociado a la tarifa de IVA del 19 %."
+   },
+   "valorGravado8": {
+    "tipo": "numeric",
+    "descripcion": "Importe gravado asociado a la tarifa de IVA del 8 %."
+   },
+   "valorIpoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Importe posiblemente correspondiente al impuesto al consumo; la estructura no precisa su definición."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ }
+}

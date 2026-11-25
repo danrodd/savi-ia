@@ -1,0 +1,817 @@
+{
+ "Empresa.CentroCosto": {
+  "descripcion": "Guarda centros de costo asociados a una empresa, con datos de identificación y contacto. Sirve para clasificar operaciones en procesos contables, de cartera, activos fijos y otros módulos que referencian el centro de costo. También puede asociar un tercero como cliente fijo para ciertos documentos de venta, según la configuración indicada.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del centro de costo; otras tablas lo usan para referenciarlo."
+   },
+   "idEmpresa": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la empresa a la que pertenece el centro de costo; referencia Empresa.Empresa(idEmpresa)."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al centro de costo."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del centro de costo."
+   },
+   "direccion": {
+    "tipo": "character varying",
+    "descripcion": "Dirección asociada al centro de costo."
+   },
+   "telefono": {
+    "tipo": "character varying",
+    "descripcion": "Teléfono de contacto asociado al centro de costo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del centro de costo; posiblemente distingue entre activo e inactivo, pero debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica aquí a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica aquí a qué tabla apunta."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero cliente al que factura este centro de costo; referencia Tercero.Tercero(idTercero). Si es NULL, no hay cliente fijo y el tercero se captura manualmente. Se consume en Factura Venta y Devolución Factura Cliente solo cuando está activa la opción «asignarTerceroCentroCosto» del documento."
+   }
+  },
+  "apunta_a": [
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idEmpresa -> Empresa.Empresa(idEmpresa)"
+  ],
+  "la_referencian": [
+   "ActivoFijo.Activo(idCentroCosto)",
+   "ActivoFijo.DepreciacionRegActivoDetalle(idCentroCosto)",
+   "Arriendo.ContratoArriendoArrendador(idCentroCosto)",
+   "Arriendo.ContratoArriendoCentroCosto(idCentroCosto)",
+   "Arriendo.ObligacionArriendoPago(idCentroCosto)",
+   "Cartera.FacturaTercero(idCentroCosto)",
+   "Cartera.ReciboComprobante(idCentroCosto)",
+   "CarteraFinanciera.CreditoAsociado(idCentroCosto)",
+   "Contabilidad.Anticipo(idCentroCosto)",
+   "Contabilidad.DetalleMovimientoContable(idCentroCosto)",
+   "Contabilidad.DetalleOtraCuentaCobrar(idCentroCosto)",
+   "Contabilidad.DetalleOtroPasivo(idCentroCosto)",
+   "Contabilidad.SaldoContable(idCentroCosto)",
+   "Contabilidad.SaldoContableTercero(idCentroCosto)",
+   "ControlPrestamo.SolicitudPrestamo(idCentroCosto)"
+  ]
+ },
+ "Empresa.CentroCostoIndicadorRetencion": {
+  "descripcion": "Registra asociaciones entre centros de costo e indicadores de retención. Sirve posiblemente para indicar qué indicadores de retención están vinculados a cada centro de costo; la estructura no permite confirmar cómo se usan en los procesos del negocio.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCentroCostoIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la asociación; la estructura no declara que sea clave primaria."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado; clave foránea a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Indicador de retención asociado; clave foránea a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)"
+  ],
+  "la_referencian": []
+ },
+ "Empresa.Empresa": {
+  "descripcion": "Guarda los datos de identificación y contacto de una empresa, junto con parámetros que configuran el comportamiento de distintos módulos del ERP. Incluye preferencias de inventario, ventas, contabilidad, nómina y módulos especializados, además de datos de integración y credenciales de servicios externos. También almacena opciones de interfaz y auditoría.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEmpresa": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la empresa; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "nit": {
+    "tipo": "character varying",
+    "descripcion": "NIT de la empresa."
+   },
+   "digitoVerificacion": {
+    "tipo": "character varying",
+    "descripcion": "Dígito de verificación del NIT."
+   },
+   "razonSocial": {
+    "tipo": "character varying",
+    "descripcion": "Razón social de la empresa."
+   },
+   "idMunicipio": {
+    "tipo": "bigint",
+    "descripcion": "Municipio asociado a la empresa; apunta a General.Municipio(idMunicipio)."
+   },
+   "direccion": {
+    "tipo": "character varying",
+    "descripcion": "Dirección de la empresa."
+   },
+   "telefono": {
+    "tipo": "character varying",
+    "descripcion": "Teléfono de contacto de la empresa."
+   },
+   "celular": {
+    "tipo": "character varying",
+    "descripcion": "Número celular de contacto de la empresa."
+   },
+   "email": {
+    "tipo": "character varying",
+    "descripcion": "Correo electrónico de la empresa."
+   },
+   "representanteLegal": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del representante legal."
+   },
+   "cargo": {
+    "tipo": "character varying",
+    "descripcion": "Cargo asociado al representante legal."
+   },
+   "tipoContribuyente": {
+    "tipo": "integer",
+    "descripcion": "Clasificación: 0 = persona jurídica, 1 = persona natural y 2 = gran contribuyente."
+   },
+   "idActividadEconomica": {
+    "tipo": "integer",
+    "descripcion": "Actividad económica asociada; apunta a Contabilidad.ActividadEconomica(idActividadEconomica)."
+   },
+   "valorPunto": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario asignado a los puntos acumulables en las ventas."
+   },
+   "numeroDecimalInventario": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de decimales usada en operaciones, según el comentario, aunque el nombre alude a inventario."
+   },
+   "parametroProducto": {
+    "tipo": "integer",
+    "descripcion": "Parámetro que configura la construcción del código del producto; los valores posibles no están especificados."
+   },
+   "tipoCosto": {
+    "tipo": "integer",
+    "descripcion": "Método de costo: 0 = costo promedio y 1 = último costo."
+   },
+   "rentabilidadProducto": {
+    "tipo": "integer",
+    "descripcion": "Método para calcular la rentabilidad al crear productos: 0 = multiplicado y 1 = dividido."
+   },
+   "valorRedondeo": {
+    "tipo": "integer",
+    "descripcion": "Valor de redondeo configurable; se indican 50, 100, 500 o 1000."
+   },
+   "manejaNif": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la empresa maneja normas internacionales de información financiera."
+   },
+   "fechaInicioNif": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de inicio asociada al manejo de NIF."
+   },
+   "redondearTotales": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se redondean los totales de las operaciones a la unidad más cercana."
+   },
+   "gravadoIvaIncluido": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el precio del producto incluye IVA; afecta solo a las ventas."
+   },
+   "logo": {
+    "tipo": "bytea",
+    "descripcion": "Imagen del logo de la empresa almacenada en la base de datos."
+   },
+   "presentacionWeb": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario posiblemente asociado a una presentación web de la empresa; su uso no está especificado."
+   },
+   "cantidadRombo": {
+    "tipo": "integer",
+    "descripcion": "Parámetro del módulo automotriz; el propósito específico no está indicado."
+   },
+   "mascaraPlaca": {
+    "tipo": "character varying",
+    "descripcion": "Máscara de validación o formato para placas de vehículos."
+   },
+   "descontarInventario": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se permite descontar inventario al generar una orden de servicio."
+   },
+   "rutaTemporalPlantillas": {
+    "tipo": "character varying",
+    "descripcion": "Ruta local configurada para las plantillas del sistema."
+   },
+   "soloFacturarOrdenServicio": {
+    "tipo": "boolean",
+    "descripcion": "Si está activo, solo se podrá facturar mediante una orden de servicio."
+   },
+   "cantidadImagenVehiculo": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de imágenes permitida o configurada para el vehículo."
+   },
+   "cantidadImagenOrdenServicio": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de imágenes permitida o configurada para la orden de servicio."
+   },
+   "tamanioImagen": {
+    "tipo": "integer",
+    "descripcion": "Tamaño configurado para las imágenes que se cargan a la base de datos."
+   },
+   "puertoBascula": {
+    "tipo": "character varying",
+    "descripcion": "Puerto COM o USB utilizado para comunicarse con la báscula."
+   },
+   "bitSegundo": {
+    "tipo": "integer",
+    "descripcion": "Parámetro de comunicación de la báscula; posiblemente corresponde a la velocidad en bits por segundo."
+   },
+   "bitDatos": {
+    "tipo": "integer",
+    "descripcion": "Parámetro de comunicación de la báscula relacionado con los bits de datos."
+   },
+   "paridad": {
+    "tipo": "character varying",
+    "descripcion": "Parámetro de paridad de la comunicación con la báscula; los valores no están especificados."
+   },
+   "bitParada": {
+    "tipo": "numeric",
+    "descripcion": "Parámetro de bits de parada de la comunicación con la báscula."
+   },
+   "manejaConceptoContable": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se capturan conceptos contables en los pagos para determinar su contabilización."
+   },
+   "manejaCarteraCuota": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se solicitan cuotas al facturar con forma de pago a crédito."
+   },
+   "nivelSeguridadClaveUsuario": {
+    "tipo": "integer",
+    "descripcion": "Nivel de seguridad requerido para las claves de usuario; los niveles posibles no están especificados."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara aquí su tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara aquí su tabla de referencia."
+   },
+   "mesVencimientoPunto": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de meses usada para calcular el vencimiento de los puntos acumulados."
+   },
+   "controlCarteraServicio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el sistema valida saldos de cartera por servicios."
+   },
+   "rutaDescarga": {
+    "tipo": "character varying",
+    "descripcion": "Ruta configurada para las descargas de archivos Excel."
+   },
+   "decimalCostoPrecio": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de decimales permitida al capturar el costo o precio de un producto."
+   },
+   "iconoGrande": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se muestran iconos grandes en los formularios."
+   },
+   "tamanioFuente": {
+    "tipo": "numeric",
+    "descripcion": "Tamaño de fuente configurado para las rejillas de los formularios."
+   },
+   "controlCajaPos": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se utiliza control de cajas en el punto de venta (POS)."
+   },
+   "manejaIpoConsumo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la empresa liquida el impuesto al consumo."
+   },
+   "redondearIvaFacturacion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se redondea el IVA al generar facturas de venta."
+   },
+   "urlServicio": {
+    "tipo": "character varying",
+    "descripcion": "URL de un servicio externo; el servicio concreto no está identificado."
+   },
+   "tokenEmpresa": {
+    "tipo": "character varying",
+    "descripcion": "Token de empresa para una integración no identificada."
+   },
+   "tokenPassword": {
+    "tipo": "character varying",
+    "descripcion": "Contraseña o token asociado a una integración no identificada."
+   },
+   "codigoBarrasEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se interpreta un formato especial de código de barras durante la facturación."
+   },
+   "inicioCodigoBarrasEspecial": {
+    "tipo": "character varying",
+    "descripcion": "Prefijo o posición inicial que identifica el código de barras especial."
+   },
+   "inicioCodigoProducto": {
+    "tipo": "character varying",
+    "descripcion": "Configuración de inicio y longitud del segmento del código de producto en el código de barras."
+   },
+   "inicioPesoEntero": {
+    "tipo": "character varying",
+    "descripcion": "Configuración de inicio y longitud del segmento del peso entero en el código de barras."
+   },
+   "inicioPesoDecimal": {
+    "tipo": "character varying",
+    "descripcion": "Configuración de inicio y longitud del segmento del peso decimal en el código de barras."
+   },
+   "correoControl": {
+    "tipo": "character varying",
+    "descripcion": "Correo usado para el control de envíos de correo electrónico."
+   },
+   "claveCorreoControl": {
+    "tipo": "character varying",
+    "descripcion": "Clave del correo usado para el control de envíos."
+   },
+   "urlAdjuntos": {
+    "tipo": "character varying",
+    "descripcion": "URL de adjuntos del servicio HKA."
+   },
+   "tipoOperacionFE": {
+    "tipo": "character varying",
+    "descripcion": "Tipo de operación de facturación electrónica: 09 = servicios AIU, 10 = estándar y 11 = mandatos."
+   },
+   "valorEnvio": {
+    "tipo": "character varying",
+    "descripcion": "Valor que se envía a ciertos tipos de báscula para solicitar la lectura del peso."
+   },
+   "enviaNotificacionIngresoMail": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se envía por correo una notificación de ingreso."
+   },
+   "generarRegistroIngreso": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se registra el ingreso al sistema en el servidor de A&E."
+   },
+   "servidorCorreo": {
+    "tipo": "character varying",
+    "descripcion": "Servidor SMTP configurado para el envío de correo."
+   },
+   "puertoServidorCorreo": {
+    "tipo": "character varying",
+    "descripcion": "Puerto del servidor de correo."
+   },
+   "duplicarReferenciaProducto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se permite duplicar la referencia en el maestro de productos."
+   },
+   "manejaClienteExento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la empresa realiza operaciones con clientes exentos de IVA."
+   },
+   "facturacionVehiculo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se activan opciones especiales para facturar vehículos."
+   },
+   "generarCompuestoFactura": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al facturar se ejecuta la conversión de productos compuestos."
+   },
+   "opcionRestaurante": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se activan las opciones de restaurante en ventas y POSTouch."
+   },
+   "omitirPasoCocina": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se omite el paso por cocina y se genera la precuenta directamente desde el pedido."
+   },
+   "nombreContador": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del contador asociado a la empresa."
+   },
+   "numeroTarjetaProfesional": {
+    "tipo": "character varying",
+    "descripcion": "Número de tarjeta profesional del contador."
+   },
+   "subgrupoCodigoProducto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el subgrupo se incluye al construir el código de un producto nuevo."
+   },
+   "busquedaProductoAgregar": {
+    "tipo": "boolean",
+    "descripcion": "Opción relacionada con la búsqueda de productos al agregarlos; su comportamiento no está especificado."
+   },
+   "urlApi": {
+    "tipo": "character varying",
+    "descripcion": "URL de una API de integración no identificada."
+   },
+   "usuarioApi": {
+    "tipo": "character varying",
+    "descripcion": "Usuario de acceso a una API de integración no identificada."
+   },
+   "tokenApi": {
+    "tipo": "character varying",
+    "descripcion": "Token de acceso a una API de integración no identificada."
+   },
+   "idMoneda": {
+    "tipo": "integer",
+    "descripcion": "Moneda predeterminada de la empresa; apunta a Contabilidad.Moneda(idMoneda)."
+   },
+   "urlServicioNomina": {
+    "tipo": "character varying",
+    "descripcion": "URL del servicio de nómina electrónica."
+   },
+   "tokenEmpresaNomina": {
+    "tipo": "character varying",
+    "descripcion": "Token de empresa para el servicio de nómina electrónica."
+   },
+   "tokenPasswordNomina": {
+    "tipo": "character varying",
+    "descripcion": "Contraseña o token de acceso para el servicio de nómina electrónica."
+   },
+   "idSoftware": {
+    "tipo": "character varying",
+    "descripcion": "Identificador de software definido por la DIAN para sincronizar la nómina."
+   },
+   "pagoDia31": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se paga el día 31 en liquidaciones como vacaciones y otros conceptos."
+   },
+   "emailEmpresaFE": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se envía una copia de la factura electrónica al correo de la empresa para verificar el envío."
+   },
+   "modificarFacturaVenta": {
+    "tipo": "boolean",
+    "descripcion": "Indica si está disponible el proceso de modificación de facturas de venta."
+   },
+   "validarExistenciaSubarticulo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se valida la existencia del subartículo para productos compuestos."
+   },
+   "redondeoPila": {
+    "tipo": "boolean",
+    "descripcion": "Indica si los valores de liquidación se calculan aplicando los redondeos para la PILA."
+   },
+   "cantidadMaximaAlistamiento": {
+    "tipo": "integer",
+    "descripcion": "Cantidad máxima de alistamiento configurada para generar un mensaje de alistamiento."
+   },
+   "bloqueoCantidadMaximaAlistamiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se aplica un bloqueo relacionado con la cantidad máxima de alistamiento."
+   },
+   "urlSincronizar": {
+    "tipo": "character varying",
+    "descripcion": "URL del servicio de sincronización de SEO."
+   },
+   "usuarioSincronizar": {
+    "tipo": "character varying",
+    "descripcion": "Usuario de acceso al servicio de sincronización de SEO."
+   },
+   "passwordSincronizar": {
+    "tipo": "character varying",
+    "descripcion": "Contraseña o token de acceso al servicio de sincronización de SEO."
+   },
+   "impoConsumoCompraVenta": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el cálculo del impuesto al consumo se aplica en compras y ventas; el valor aplicado se define en el producto."
+   },
+   "urlMapaRuta": {
+    "tipo": "character varying",
+    "descripcion": "URL posiblemente asociada a un servicio de mapas o rutas; su uso específico no está indicado."
+   },
+   "endpointApiFacturacionElectronica": {
+    "tipo": "character varying",
+    "descripcion": "Endpoint de la API de facturación electrónica."
+   },
+   "apiTokenFacturacionElectronica": {
+    "tipo": "character varying",
+    "descripcion": "Token de acceso a la API de facturación electrónica."
+   },
+   "activarModuloPoliza": {
+    "tipo": "boolean",
+    "descripcion": "Indica si está activado el módulo de pólizas."
+   },
+   "activarModuloGlosa": {
+    "tipo": "boolean",
+    "descripcion": "Indica si está activado el módulo de glosas."
+   },
+   "modificarIncrementoProducto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al crear o modificar productos se recalculan automáticamente el precio de venta o el porcentaje de incremento."
+   },
+   "endpointApiPortalFE": {
+    "tipo": "character varying",
+    "descripcion": "Endpoint de la API del portal de facturación electrónica."
+   },
+   "activarAnticipoFacturacion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si está activada una opción de anticipos en facturación; el alcance exacto no está especificado."
+   },
+   "solicitaFechaPago": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se solicita la fecha de pago al registrar pagos."
+   },
+   "urlApiEspecial": {
+    "tipo": "character varying",
+    "descripcion": "URL de una API para una integración especial con Farmacias Similares."
+   },
+   "nominaElectronicaAPI": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la nómina electrónica se envía mediante una API."
+   },
+   "autorizarOrdenCompra": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se habilita o requiere autorización para órdenes de compra; el alcance exacto no está especificado."
+   },
+   "correoNotificacion": {
+    "tipo": "character varying",
+    "descripcion": "Correo configurado para recibir notificaciones."
+   },
+   "asuntoCorreoElectronico": {
+    "tipo": "character varying",
+    "descripcion": "Asunto utilizado como título del correo electrónico."
+   },
+   "cuerpoCorreoElectronico": {
+    "tipo": "character varying",
+    "descripcion": "Plantilla base o contenido del correo electrónico."
+   },
+   "responderCorreoElectronico": {
+    "tipo": "character varying",
+    "descripcion": "Dirección o información de respuesta del correo electrónico."
+   },
+   "usarSerialHerramienta": {
+    "tipo": "boolean",
+    "descripcion": "Opción para usar el serial de herramienta; su efecto no está especificado."
+   },
+   "autorizarConciliacionBancaria": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se habilita o requiere autorización para la conciliación bancaria; el alcance exacto no está especificado."
+   },
+   "urlApiIntegracionWMS": {
+    "tipo": "character varying",
+    "descripcion": "URL de la API de integración con WMS de Similares."
+   },
+   "usuarioApiIntegracionWMS": {
+    "tipo": "character varying",
+    "descripcion": "Usuario de acceso a la API de integración con WMS."
+   },
+   "passwordApiIntegracionWMS": {
+    "tipo": "character varying",
+    "descripcion": "Contraseña de acceso a la API de integración con WMS."
+   },
+   "sitioRecepcionWMS": {
+    "tipo": "character varying",
+    "descripcion": "Sitio de WMS donde se descarga la orden de compra."
+   },
+   "urlTokenTef": {
+    "tipo": "character varying",
+    "descripcion": "URL del endpoint OAuth de Keycloak para generar el token TEF."
+   },
+   "urlServicioTef": {
+    "tipo": "character varying",
+    "descripcion": "URL base del servicio TEF para compras, anulaciones y consultas."
+   },
+   "usuarioTef": {
+    "tipo": "character varying",
+    "descripcion": "Usuario asignado para autenticarse en TEF."
+   },
+   "passwordTef": {
+    "tipo": "character varying",
+    "descripcion": "Contraseña de acceso a TEF."
+   },
+   "clientIdTef": {
+    "tipo": "character varying",
+    "descripcion": "Identificador OAuth client_id asignado para TEF."
+   },
+   "clientSecretTef": {
+    "tipo": "character varying",
+    "descripcion": "Secreto OAuth client_secret de TEF."
+   },
+   "grantTypeTef": {
+    "tipo": "character varying",
+    "descripcion": "Tipo de concesión OAuth para TEF; el comentario indica que típicamente es password."
+   },
+   "codigoUnicoTef": {
+    "tipo": "character varying",
+    "descripcion": "Código único del establecimiento para TEF."
+   },
+   "autorizarPagoMasivo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se habilita el flujo de pago masivo a proveedores y sus opciones de consulta y autorización."
+   },
+   "tamanioImagenGeneral": {
+    "tipo": "integer",
+    "descripcion": "Tamaño máximo, en KB, de imágenes adjuntas en módulos distintos de Mantenimiento (Taller)."
+   },
+   "tamanioPdfGeneral": {
+    "tipo": "integer",
+    "descripcion": "Tamaño máximo, en KB, de archivos PDF adjuntos en módulos distintos de Mantenimiento (Taller)."
+   },
+   "mascaraPlacaTrailer": {
+    "tipo": "character varying",
+    "descripcion": "Expresión regular de validación para placas de tráiler o remolque, independiente de la máscara de vehículos."
+   },
+   "anexarSoportePago": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se habilita en el menú principal la opción para anexar soportes de pago en PDF."
+   },
+   "cargueMasivoFacturaCompra": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se habilita el cargue masivo de facturas de compra DIAN en el menú principal."
+   },
+   "nitRepresentanteLegal": {
+    "tipo": "character varying",
+    "descripcion": "NIT o documento del representante legal, usado como inicio de sesión DIAN para obtener el token."
+   },
+   "correoDian": {
+    "tipo": "character varying",
+    "descripcion": "Correo con buzón IMAP donde llegan las facturas electrónicas o el token de la DIAN."
+   },
+   "claveDian": {
+    "tipo": "character varying",
+    "descripcion": "Contraseña de aplicación del correo DIAN, almacenada cifrada en AES-256 y codificada en Base64."
+   },
+   "reteIcaPorMunicipio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si ReteICA se calcula por municipio y actividad económica del producto; si es falso, se usa el modelo convencional basado en la actividad económica del tercero."
+   },
+   "actualizarPrecioVentaCompra": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al comprar se calcula automáticamente un nuevo precio de venta en el diálogo correspondiente."
+   },
+   "activarModuloArriendo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si está activado el módulo de arriendo."
+   },
+   "servidorImapDian": {
+    "tipo": "character varying",
+    "descripcion": "Servidor IMAP del correo DIAN."
+   },
+   "puertoImapDian": {
+    "tipo": "character varying",
+    "descripcion": "Puerto del servidor IMAP del correo DIAN."
+   },
+   "tipoAutenticacionCorreo": {
+    "tipo": "smallint",
+    "descripcion": "Código del tipo de autenticación del correo; los valores posibles no están especificados."
+   },
+   "sesionMicrosoftCorreo": {
+    "tipo": "text",
+    "descripcion": "Datos de sesión de Microsoft asociados al correo; el formato y uso no están especificados."
+   },
+   "tipoAutenticacionCorreoDian": {
+    "tipo": "smallint",
+    "descripcion": "Código del tipo de autenticación del correo DIAN; los valores posibles no están especificados."
+   },
+   "sesionMicrosoftCorreoDian": {
+    "tipo": "text",
+    "descripcion": "Datos de sesión de Microsoft asociados al correo DIAN; el formato y uso no están especificados."
+   },
+   "nombreComercial": {
+    "tipo": "character varying",
+    "descripcion": "Nombre comercial de la empresa."
+   },
+   "maximoUsuariosConcurrentes": {
+    "tipo": "integer",
+    "descripcion": "Cantidad máxima configurada de usuarios concurrentes."
+   },
+   "segundosVigenciaSesion": {
+    "tipo": "integer",
+    "descripcion": "Duración configurada de la sesión, expresada en segundos."
+   },
+   "wompiLlavePublica": {
+    "tipo": "text",
+    "descripcion": "Llave pública de la integración con Wompi."
+   },
+   "wompiLlavePrivada": {
+    "tipo": "text",
+    "descripcion": "Llave privada de la integración con Wompi."
+   },
+   "wompiSecretoEventos": {
+    "tipo": "text",
+    "descripcion": "Secreto de eventos de la integración con Wompi."
+   },
+   "wompiSecretoIntegridad": {
+    "tipo": "text",
+    "descripcion": "Secreto de integridad de la integración con Wompi."
+   },
+   "funcionesAdicionales": {
+    "tipo": "boolean",
+    "descripcion": "Indicador para funciones adicionales; cuáles habilita no está especificado."
+   }
+  },
+  "apunta_a": [
+   "idActividadEconomica -> Contabilidad.ActividadEconomica(idActividadEconomica)",
+   "idMoneda -> Contabilidad.Moneda(idMoneda)",
+   "idMunicipio -> General.Municipio(idMunicipio)"
+  ],
+  "la_referencian": [
+   "Empresa.CentroCosto(idEmpresa)",
+   "Empresa.PublicidadInicio(idEmpresa)"
+  ]
+ },
+ "Empresa.PublicidadInicio": {
+  "descripcion": "Guarda posiblemente piezas publicitarias destinadas a mostrarse en la página de inicio de una empresa, con su imagen, textos y orden de presentación. Sirve posiblemente para administrar qué anuncios se muestran y cuáles están activos para cada empresa.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPublicidadInicio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la pieza publicitaria; la estructura no indica si está definido como clave primaria."
+   },
+   "idEmpresa": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la empresa a la que pertenece la publicidad; referencia a Empresa.Empresa(idEmpresa)."
+   },
+   "orden": {
+    "tipo": "integer",
+    "descripcion": "Número utilizado posiblemente para determinar el orden de presentación."
+   },
+   "titulo": {
+    "tipo": "character varying",
+    "descripcion": "Título opcional de la pieza publicitaria."
+   },
+   "subtitulo": {
+    "tipo": "character varying",
+    "descripcion": "Subtítulo opcional de la pieza publicitaria."
+   },
+   "imagen": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario de la imagen publicitaria."
+   },
+   "nombreArchivo": {
+    "tipo": "character varying",
+    "descripcion": "Nombre opcional del archivo de imagen."
+   },
+   "activo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la pieza está activa (true) o inactiva (false); no se especifica cómo afecta su publicación."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla corresponde."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla corresponde."
+   }
+  },
+  "apunta_a": [
+   "idEmpresa -> Empresa.Empresa(idEmpresa)"
+  ],
+  "la_referencian": []
+ }
+}

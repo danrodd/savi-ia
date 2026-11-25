@@ -1,0 +1,369 @@
+{
+ "ActivoFijo.Activo": {
+  "descripcion": "Guarda el registro de cada activo fijo que la organización controla, con datos de identificación, proveedor, grupo, estado y fechas. También contiene valores de adquisición y actuales, además de información para gestionar su depreciación. Permite registrar datos complementarios, como información de vehículos, escrituras, factura y centro de costo. La tabla es referenciada por registros de depreciación, pólizas y ubicaciones del activo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idActivo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del activo utilizado en las referencias a esta tabla; no se informa si tiene una restricción de clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código interno del activo."
+   },
+   "codigoBarra": {
+    "tipo": "character varying",
+    "descripcion": "Código de barras del activo, si se utiliza."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del activo."
+   },
+   "idGrupo": {
+    "tipo": "integer",
+    "descripcion": "Grupo al que pertenece el activo; referencia Inventario.Grupo(idGrupo)."
+   },
+   "idTerceroProveedor": {
+    "tipo": "bigint",
+    "descripcion": "Tercero registrado como proveedor del activo; referencia Tercero.Tercero(idTercero)."
+   },
+   "referencia": {
+    "tipo": "character varying",
+    "descripcion": "Referencia del activo, posiblemente un modelo o número de referencia."
+   },
+   "idMarca": {
+    "tipo": "integer",
+    "descripcion": "Marca del activo, si está registrada; referencia Inventario.Marca(idMarca)."
+   },
+   "estado": {
+    "tipo": "integer",
+    "descripcion": "Estado físico del activo: 0 = Buen Estado, 1 = Regular, 2 = Mal Estado, 3 = En Reparación y 4 = Dado de Baja."
+   },
+   "fechaIngreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de creación o ingreso del activo, según el comentario de la columna."
+   },
+   "fechaBaja": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha en que se dio de baja el activo."
+   },
+   "valorAdquisicion": {
+    "tipo": "numeric",
+    "descripcion": "Valor de adquisición del activo."
+   },
+   "valorActual": {
+    "tipo": "numeric",
+    "descripcion": "Valor actual registrado para el activo; no se especifica cómo se calcula."
+   },
+   "mesDepreciar": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de meses prevista para depreciar el activo."
+   },
+   "porcentajeActivo": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al activo; su significado específico no está indicado."
+   },
+   "depreciacionAcumulada": {
+    "tipo": "numeric",
+    "descripcion": "Importe de depreciación acumulada registrado para el activo."
+   },
+   "mesDepreciado": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de meses de depreciación ya registrados."
+   },
+   "informacionVehiculo": {
+    "tipo": "character varying",
+    "descripcion": "Información complementaria del activo cuando corresponde a un vehículo."
+   },
+   "informacionEscrituras": {
+    "tipo": "character varying",
+    "descripcion": "Información relacionada con escrituras del activo, si aplica."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa la tabla a la que apunta."
+   },
+   "origenActivo": {
+    "tipo": "integer",
+    "descripcion": "Origen del activo: 0 = Nuevo y 1 = Existente."
+   },
+   "idClaseDepreciacionActivo": {
+    "tipo": "integer",
+    "descripcion": "Clase de depreciación asignada, si corresponde; referencia ActivoFijo.ClaseDepreciacionActivo(idClaseDepreciacionActivo)."
+   },
+   "numFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Número de factura del proveedor, si está informado."
+   },
+   "informacionGeneral": {
+    "tipo": "character varying",
+    "descripcion": "Información complementaria general del activo."
+   },
+   "metodoDepreciacion": {
+    "tipo": "integer",
+    "descripcion": "Código del método de depreciación aplicado; sus valores no están documentados."
+   },
+   "varianteAplicacion": {
+    "tipo": "integer",
+    "descripcion": "Código de variante de aplicación; su significado y valores no están documentados."
+   },
+   "valorResidual": {
+    "tipo": "numeric",
+    "descripcion": "Valor residual registrado para el activo."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado, si corresponde; referencia Empresa.CentroCosto(idCentroCosto)."
+   }
+  },
+  "apunta_a": [
+   "idGrupo -> Inventario.Grupo(idGrupo)",
+   "idMarca -> Inventario.Marca(idMarca)",
+   "idTerceroProveedor -> Tercero.Tercero(idTercero)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idClaseDepreciacionActivo -> ActivoFijo.ClaseDepreciacionActivo(idClaseDepreciacionActivo)"
+  ],
+  "la_referencian": [
+   "ActivoFijo.DepreciacionRegActivo(idActivo)",
+   "ActivoFijo.DepreciacionRegActivoDetalle(idActivo)",
+   "ActivoFijo.PolizaActivo(idActivo)",
+   "ActivoFijo.UbicacionActivo(idActivo)",
+   "Mantenimiento.PolizaActivo(idActivo)"
+  ]
+ },
+ "ActivoFijo.ClaseDepreciacionActivo": {
+  "descripcion": "Guarda un catálogo de clases de activos con datos de depreciación, como una tasa y una vida útil. Sirve posiblemente para clasificar activos y asociarles parámetros usados en registros de depreciación y documentos contables.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idClaseDepreciacionActivo": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la clase de depreciación; la estructura no indica si es clave primaria."
+   },
+   "codigoClaseActivo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la clase de activo; no se conocen sus reglas ni valores posibles."
+   },
+   "conceptoClaseActivo": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la clase de activo."
+   },
+   "tasaPorcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado a la depreciación; no se conoce su convención ni cómo se aplica."
+   },
+   "vidaUtilAnios": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de años de vida útil registrada para la clase."
+   },
+   "vidaUtilMeses": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de meses de vida útil registrada para la clase."
+   },
+   "estadoActivo": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; posiblemente señala si la clase está habilitada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "ActivoFijo.Activo(idClaseDepreciacionActivo)",
+   "ActivoFijo.DepreciacionRegActivo(idClaseDepreciacionActivo)",
+   "ActivoFijo.DepreciacionRegActivoDetalle(idClaseDepreciacionActivo)",
+   "Contabilidad.DocumentoCuentaContable(idClaseDepreciacionActivo)"
+  ]
+ },
+ "ActivoFijo.DependenciaActivo": {
+  "descripcion": "La tabla almacena un catálogo de dependencias relacionadas con los activos fijos. La tabla ActivoFijo.UbicacionActivo la referencia mediante idDependenciaActivo, por lo que posiblemente permite asociar una dependencia con una ubicación de activo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDependenciaActivo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico de la dependencia; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la dependencia; no se puede deducir su formato ni si debe ser único."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la dependencia."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la dependencia; no se puede deducir qué valor representa activa o inactiva."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla corresponde."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla corresponde."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "ActivoFijo.UbicacionActivo(idDependenciaActivo)"
+  ]
+ },
+ "ActivoFijo.PolizaActivo": {
+  "descripcion": "Registra pólizas asociadas a activos fijos, con su número, fechas de compra y vencimiento y valor. Sirve para consultar y mantener la información de las pólizas vinculadas a cada activo y, posiblemente, al tercero relacionado con su compra.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPolizaActivo": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la póliza dentro de esta tabla; la estructura no confirma si es clave primaria."
+   },
+   "idActivo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el activo fijo asociado a la póliza; apunta a ActivoFijo.Activo(idActivo)."
+   },
+   "idTerceroAseguradora": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero a quien se compró la póliza, según el comentario de la columna; apunta a Tercero.Tercero(idTercero) y puede quedar vacío."
+   },
+   "numeroPoliza": {
+    "tipo": "character varying",
+    "descripcion": "Número o referencia de la póliza."
+   },
+   "fechaCompraPoliza": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de compra de la póliza."
+   },
+   "fechaVencimientoPoliza": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento de la póliza."
+   },
+   "valorPoliza": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario registrado para la póliza; la estructura no especifica moneda ni concepto exacto del valor."
+   },
+   "descripcionAdicional": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional con información adicional sobre la póliza."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la estructura no indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; la estructura no indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idActivo -> ActivoFijo.Activo(idActivo)",
+   "idTerceroAseguradora -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "ActivoFijo.UbicacionActivo": {
+  "descripcion": "Registra información sobre la ubicación o asignación de un activo, vinculándolo con una dependencia y, opcionalmente, con un empleado. Incluye fechas y comentarios de entrega y devolución, por lo que posiblemente permite conservar el historial de movimientos del activo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUbicacionActivo": {
+    "tipo": "integer",
+    "descripcion": "Identificador de este registro de ubicación del activo; la estructura no indica si es clave primaria."
+   },
+   "idActivo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el activo relacionado; referencia ActivoFijo.Activo(idActivo)."
+   },
+   "idDependenciaActivo": {
+    "tipo": "integer",
+    "descripcion": "Identifica la dependencia asociada al activo; referencia ActivoFijo.DependenciaActivo(idDependenciaActivo)."
+   },
+   "idEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al empleado relacionado, si corresponde; referencia Nomina.Empleado(idEmpleado)."
+   },
+   "fechaEntrega": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de entrega del activo, si se registra."
+   },
+   "comentarioEntrega": {
+    "tipo": "character varying",
+    "descripcion": "Comentario relacionado con la entrega del activo."
+   },
+   "fechaDevolucion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de devolución del activo, si se registra."
+   },
+   "comentarioDevolucion": {
+    "tipo": "character varying",
+    "descripcion": "Comentario relacionado con la devolución del activo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla referencia."
+   }
+  },
+  "apunta_a": [
+   "idActivo -> ActivoFijo.Activo(idActivo)",
+   "idDependenciaActivo -> ActivoFijo.DependenciaActivo(idDependenciaActivo)",
+   "idEmpleado -> Nomina.Empleado(idEmpleado)"
+  ],
+  "la_referencian": []
+ }
+}

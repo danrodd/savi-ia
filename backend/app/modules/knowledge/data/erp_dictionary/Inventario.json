@@ -1,0 +1,2778 @@
+{
+ "Inventario.Almacen": {
+  "descripcion": "Guarda el catálogo de almacenes utilizados por el ERP para asociar operaciones de inventario, ventas y compras con una ubicación. Incluye datos de identificación, estado, clasificación y marcas para señalar almacenes principales o de entrega. También permite asociar un centro de costo para traslados y un tercero para la integración con WMS.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del almacén; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al almacén."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del almacén."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del almacén; no se puede deducir si true significa activo o inactivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró el almacén."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del almacén."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   },
+   "almacenPrincipal": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el almacén está marcado como principal."
+   },
+   "almacenEntrega": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el almacén está marcado para entrega."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado a los traslados; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasificación del almacén: 0 = Ninguno, 1 = Franquicia, 2 = Genérico, 3 = Laboratorios, 4 = Locales Propios."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado para la integración con WMS; apunta a Tercero.Tercero(idTercero)."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.ComandaAutoventa(idAlmacen)",
+   "CuentaCobrar.CotizacionAutoventa(idAlmacen)",
+   "CuentaCobrar.DetalleFactura(idAlmacen)",
+   "CuentaCobrar.DetalleRemision(idAlmacen)",
+   "CuentaPagar.DetalleFacturaCompra(idAlmacen)",
+   "CuentaPagar.DetalleOrdenCompra(idAlmacen)",
+   "CuentaPagar.PrecioTemporal(idAlmacen)",
+   "General.Documento(idAlmacen)",
+   "General.Documento(idAlmacenEntrega)",
+   "Inventario.CambioPrecio(idAlmacen)",
+   "Inventario.ConteoTomaFisica(idAlmacen)",
+   "Inventario.DetalleConteoTomaFisica(idAlmacen)",
+   "Inventario.DetalleMovimientoInventario(idAlmacen)",
+   "Inventario.DetalleMovimientoInventario(idAlmacenTraslado)",
+   "Inventario.HistoricoCostoProductoAlmacen(idAlmacen)"
+  ]
+ },
+ "Inventario.CambioPrecio": {
+  "descripcion": "Registra cambios de precio asociados a productos, incluyendo el precio y el porcentaje anteriores y nuevos. Sirve para consultar el historial de cambios y, cuando se informa, relacionarlos con la factura de compra, el movimiento de inventario o el almacén correspondiente.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCambioPrecio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de cambio de precio; la estructura no indica si es único o clave primaria."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto cuyo precio cambió; apunta a Inventario.Producto(idProducto)."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Factura de compra que modificó el precio, si corresponde; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Movimiento de inventario que modificó el precio, si corresponde; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "precioAnterior": {
+    "tipo": "numeric",
+    "descripcion": "Precio registrado antes del cambio."
+   },
+   "precioNuevo": {
+    "tipo": "numeric",
+    "descripcion": "Precio registrado después del cambio."
+   },
+   "porcentajeAnterior": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al producto antes del cambio; no se puede deducir su base de cálculo."
+   },
+   "porcentajeNuevo": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al producto después del cambio; no se puede deducir su base de cálculo."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al cambio de precio."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta asociada al formulario, posiblemente para identificar su origen o contexto."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén al que se aplicó el cambio desde la compra; apunta a Inventario.Almacen(idAlmacen). Es nulo en registros históricos anteriores a la migración 2026-07-09, que corresponden a cambios globales."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idMovimientoInventario -> Inventario.MovimientoInventario(idMovimientoInventario)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.Color": {
+  "descripcion": "Guarda un catálogo de colores que puede usarse para clasificar herramientas y vehículos de mantenimiento. Sirve posiblemente para asignar un color mediante su identificador al registrar o consultar esos elementos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idColor": {
+    "tipo": "integer",
+    "descripcion": "Identificador del color; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al color."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del color."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano posiblemente usado para señalar si el color está habilitado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una relación con otra tabla."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una relación con otra tabla."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Mantenimiento.Herramienta(idColor)",
+   "Mantenimiento.Vehiculo(idColor)"
+  ]
+ },
+ "Inventario.DetalleMovimientoInventario": {
+  "descripcion": "Guarda las líneas de los movimientos de inventario, con el producto, almacén, cantidad, valores e impuestos asociados a cada una. Permite registrar entradas, salidas y traslados, y relacionar ciertos movimientos con órdenes de compra, centros de costo y otros datos de control.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle del movimiento de inventario."
+   },
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del movimiento al que pertenece; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "numeroLinea": {
+    "tipo": "integer",
+    "descripcion": "Número de línea del documento."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto involucrado en la transacción; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado a la transacción; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "idAlmacenTraslado": {
+    "tipo": "integer",
+    "descripcion": "Almacén de destino cuando se trata de un traslado; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de productos de la línea."
+   },
+   "valorMovimiento": {
+    "tipo": "numeric",
+    "descripcion": "Costo de la transacción por ítem."
+   },
+   "valorCosto": {
+    "tipo": "numeric",
+    "descripcion": "Costo del producto registrado para la transacción."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado al producto."
+   },
+   "impuesto": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA de la línea."
+   },
+   "valorTotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la línea sin IVA."
+   },
+   "valorTotalImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la línea incluido el IVA."
+   },
+   "traslado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el movimiento corresponde a un documento de traslado."
+   },
+   "entradaSalida": {
+    "tipo": "boolean",
+    "descripcion": "Indica el tipo de movimiento: true significa entrada y false significa salida."
+   },
+   "idMotivoMovimiento": {
+    "tipo": "integer",
+    "descripcion": "Motivo del movimiento; apunta a Inventario.MotivoMovimiento(idMotivoMovimiento)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro."
+   },
+   "facturado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto está facturado en el contexto de una remisión de proveedor."
+   },
+   "cantidadFacturada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de productos facturados como remisión de proveedor."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje adicional asociado al movimiento de inventario."
+   },
+   "cantidadEntregada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de producto entregada para control de entrega."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que crea o modifica el registro."
+   },
+   "idDetalleOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Línea de orden de compra usada para el movimiento; apunta a CuentaPagar.DetalleOrdenCompra(idDetalleOrdenCompra)."
+   },
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Orden de compra asociada al movimiento; apunta a CuentaPagar.OrdenCompra(idOrdenCompra)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado a la línea; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idLinea": {
+    "tipo": "integer",
+    "descripcion": "Identificador de línea; apunta a General.Linea(idLinea)."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idAlmacenTraslado -> Inventario.Almacen(idAlmacen)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDetalleOrdenCompra -> CuentaPagar.DetalleOrdenCompra(idDetalleOrdenCompra)",
+   "idLinea -> General.Linea(idLinea)",
+   "idMotivoMovimiento -> Inventario.MotivoMovimiento(idMotivoMovimiento)",
+   "idMovimientoInventario -> Inventario.MovimientoInventario(idMovimientoInventario)",
+   "idOrdenCompra -> CuentaPagar.OrdenCompra(idOrdenCompra)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.DetalleFacturaCompra(idDetalleMovimientoInventarioRemision)",
+   "Inventario.MovimientoInventarioEspecialBovino(idDetalleMovimientoInventario)",
+   "Inventario.MovimientoInventarioLote(idDetalleMovimientoInventario)",
+   "Inventario.ProductoAjustado(idDetalleMovimientoInventario)",
+   "Inventario.SaldoInventarioEspecialBovino(idDetalleMovimientoInventario)"
+  ]
+ },
+ "Inventario.FormaEmpaque": {
+  "descripcion": "Es un catálogo de formas de empaque o presentación que pueden asociarse a productos; la tabla Inventario.Producto la referencia mediante idFormaEmpaque. También guarda la cantidad de unidades que contiene cada presentación, dato que puede usarse en procesos de despacho y análisis de venta.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFormaEmpaque": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la forma de empaque; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código que identifica la forma de empaque."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la forma de empaque, posiblemente con detalles de la presentación."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la forma de empaque; no se puede deducir qué representan true y false."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a la creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación; la estructura no declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la modificación; la estructura no declara a qué tabla apunta."
+   },
+   "cantidadUnidades": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de unidades contenidas en la forma de empaque, por ejemplo, 200 unidades en una caja; su valor predeterminado es 0 y el usuario puede ajustarlo desde el formulario 11001."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Inventario.Producto(idFormaEmpaque)"
+  ]
+ },
+ "Inventario.Grupo": {
+  "descripcion": "Guarda grupos usados para clasificar productos y, posiblemente, activos fijos; otros registros del sistema, como productos y subgrupos, los referencian. También reúne parámetros asociados al grupo, como porcentajes, exención de IVA, búsqueda en el punto de venta e impresión de comandas. Puede incluir un código de familia para sincronizar órdenes de compra con un sistema WMS externo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idGrupo": {
+    "tipo": "integer",
+    "descripcion": "Identificador del grupo."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al grupo."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del grupo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica el estado del grupo; posiblemente distingue entre activo e inactivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasifica el grupo: 0 corresponde a Producto y 1 a Activo Fijo."
+   },
+   "foto": {
+    "tipo": "bytea",
+    "descripcion": "Imagen asociada al grupo, almacenada como datos binarios; puede estar vacía."
+   },
+   "uvtExencionIva": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de UVT usada para determinar el valor máximo de venta cuando aplica el día sin IVA."
+   },
+   "busquedaEspecialPos": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el grupo tiene habilitada alguna modalidad de búsqueda especial en el punto de venta; su efecto exacto no está especificado."
+   },
+   "impresoraRemota": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o identificador de la impresora a la que se envían productos del grupo, especialmente en restaurantes."
+   },
+   "ipImpresora": {
+    "tipo": "character varying",
+    "descripcion": "Dirección IP de la impresora usada para imprimir comandas."
+   },
+   "puertoImpresora": {
+    "tipo": "character varying",
+    "descripcion": "Puerto de la impresora usado para imprimir comandas."
+   },
+   "porcentajeIncremento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de incremento configurado para el grupo; su base y aplicación no se especifican."
+   },
+   "margenMinimo": {
+    "tipo": "numeric",
+    "descripcion": "Margen mínimo configurado para el grupo; su cálculo no se especifica."
+   },
+   "modoAplicacionPorcentaje": {
+    "tipo": "integer",
+    "descripcion": "Define cómo aplicar el porcentaje: NULL significa sin definir, 0 aplica a todos los productos y 1 actualiza solo los que tienen un porcentaje inferior, excluyendo los que ya tienen un porcentaje de utilidad mayor."
+   },
+   "codigoFamiliaWMS": {
+    "tipo": "character varying",
+    "descripcion": "Código de familia del grupo en el WMS externo, requerido para sincronizar órdenes de compra con su API."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "ActivoFijo.Activo(idGrupo)",
+   "CuentaCobrar.DescuentoFactura(idGrupo)",
+   "Inventario.Producto(idGrupo)",
+   "Inventario.Subgrupo(idGrupo)",
+   "Tercero.GrupoTercero(idGrupo)",
+   "Venta.DetalleConvenio(idGrupo)",
+   "Venta.DetalleExencionIva(idGrupo)"
+  ]
+ },
+ "Inventario.HistoricoCostoProductoAlmacen": {
+  "descripcion": "Registra información histórica de costos asociada a un producto y, posiblemente, a un almacén y período determinados. Incluye el costo promedio anterior y el nuevo, junto con cantidades y datos del movimiento de inventario relacionado, si existe. Puede servir para actualizar o recalcular saldos de inventario, según las funciones que la utilizan.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idHistoricoCostoProductoAlmacen": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro histórico; la estructura no declara que sea clave primaria."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto al que corresponde el registro; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén al que corresponde el registro; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año asociado al registro o período del costo; la estructura no precisa cuál."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes asociado al registro o período del costo; la estructura no precisa cuál."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al registro; el evento que representa no se deduce de la estructura."
+   },
+   "costoPromedioAnterior": {
+    "tipo": "numeric",
+    "descripcion": "Costo promedio registrado antes de la actualización o cálculo."
+   },
+   "nuevoCostoPromedio": {
+    "tipo": "numeric",
+    "descripcion": "Costo promedio resultante de la actualización o cálculo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla no declara a qué tabla apunta."
+   },
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Movimiento de inventario relacionado, si corresponde; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada al registro; su relación con la cantidad del movimiento no se deduce."
+   },
+   "cantidadMovimiento": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada al movimiento de inventario; no se deduce cómo se distingue de cantidad."
+   },
+   "costoMovimiento": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado al movimiento de inventario; la estructura no especifica su unidad ni método de cálculo."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idMovimientoInventario -> Inventario.MovimientoInventario(idMovimientoInventario)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.IndicadorImpuestoSaludable": {
+  "descripcion": "Catálogo de indicadores del impuesto saludable, posiblemente para asociar la configuración del impuesto a productos y documentos de venta, compra y contabilidad. Define un código, una descripción, un tipo de cálculo y los valores necesarios para aplicar el impuesto. La tabla es referenciada por líneas y detalles de documentos, pero no se informa una clave primaria ni claves foráneas salientes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idIndicadorImpuestoSaludable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico del indicador; la estructura no confirma si es clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del indicador para identificarlo en el ERP."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción funcional del indicador."
+   },
+   "porcentajeValor": {
+    "tipo": "numeric",
+    "descripcion": "Valor asociado al impuesto; según el tipo puede ser porcentual o nominal, aunque no se especifican su escala ni sus unidades."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Modo de cálculo del impuesto: 0 = Porcentual y 1 = Nominal."
+   },
+   "codigoTipoImpuestoHKA": {
+    "tipo": "character varying",
+    "descripcion": "Código de tipo de impuesto relacionado con HKA; su correspondencia exacta no se puede deducir."
+   },
+   "idIndicadorImpuestoSaludableApiSincronizacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador relacionado con la sincronización por API; no se indica a qué entidad apunta."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; posiblemente señala si está activo, pero no se especifica."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se informa la tabla de referencia."
+   },
+   "valorBaseNominal": {
+    "tipo": "numeric",
+    "descripcion": "Base en mililitros usada para calcular el impuesto nominal."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.DocumentoCuentaContable(idIndicadorImpuestoSaludable)",
+   "CuentaCobrar.DetalleFactura(idIndicadorImpuestoSaludable)",
+   "CuentaCobrar.FacturaImpuestoSaludable(idIndicadorImpuestoSaludable)",
+   "CuentaPagar.DetalleFacturaCompra(idIndicadorImpuestoSaludable)",
+   "CuentaPagar.FacturaCompraImpuestoSaludable(idIndicadorImpuestoSaludable)",
+   "General.Linea(idIndicadorImpuestoSaludable)"
+  ]
+ },
+ "Inventario.IndicadorIva": {
+  "descripcion": "Guarda indicadores de IVA utilizados para clasificar impuestos y asociarlos a conceptos, documentos y detalles de ventas, compras y contabilidad. Permite registrar un código, una descripción, un porcentaje y un tipo de tratamiento del IVA; también conserva datos de auditoría y posibles datos de integración. La estructura no declara una clave primaria ni relaciones de clave foránea.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identificador del indicador de IVA; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del indicador de IVA."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del indicador de IVA."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al indicador; la estructura no permite determinar su escala ni cómo se aplica."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Estado booleano del indicador; posiblemente señala si está activo, pero debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla no declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la tabla no declara a qué tabla apunta."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasificación del IVA: 0 = Gravado, 1 = Excento y 2 = Excluido."
+   },
+   "codigoTipoImpuestoHKA": {
+    "tipo": "character varying",
+    "descripcion": "Código de tipo de impuesto para una posible integración con HKA; su correspondencia no está especificada."
+   },
+   "idIndicadorIvaApiSincronizacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador relacionado posiblemente con la sincronización del indicador mediante una API; no se declara una relación de clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Arriendo.ContratoArriendo(idIndicadorIva)",
+   "Arriendo.ContratoArriendoArrendador(idIndicadorIva)",
+   "Arriendo.ContratoArriendoConceptoRecurrente(idIndicadorIva)",
+   "Contabilidad.DetalleOtraCuentaCobrar(idIndicadorIva)",
+   "Contabilidad.DetalleOtroPasivo(idIndicadorIva)",
+   "Contabilidad.DocumentoCuentaContable(idIndicadorIva)",
+   "CuentaCobrar.DetalleFactura(idIndicadorIva)",
+   "CuentaCobrar.DetalleRemision(idIndicadorIva)",
+   "CuentaCobrar.FacturaIva(idIndicadorIva)",
+   "CuentaCobrar.RemisionIva(idIndicadorIva)",
+   "CuentaPagar.DetalleFacturaCompra(idIndicadorIva)",
+   "CuentaPagar.DetalleOrdenCompra(idIndicadorIva)",
+   "CuentaPagar.FacturaIvaCompra(idIndicadorIva)",
+   "CuentaPagar.OrdenIvaCompra(idIndicadorIva)",
+   "General.DetalleConceptoContable(idIndicadorIva)"
+  ]
+ },
+ "Inventario.IndicadorRetencion": {
+  "descripcion": "Guarda indicadores de retención que pueden aplicarse en operaciones del ERP, como facturas, compras y documentos contables. Permite configurar valores y cuentas contables asociados, además de distinguir si el indicador es nacional o municipal y a qué tipo de tercero aplica.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del indicador de retención; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código con el que se identifica el indicador; su formato y significado no se especifican."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del indicador de retención."
+   },
+   "valorPorcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al indicador; no se especifica cómo se aplica."
+   },
+   "valorBase": {
+    "tipo": "numeric",
+    "descripcion": "Valor base asociado al indicador; no se especifica cómo se utiliza en el cálculo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Booleano que posiblemente indica si el indicador está activo; confirmar qué representa cada valor."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica la tabla a la que apunta."
+   },
+   "declarante": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la retención aplica a un tercero declarante."
+   },
+   "otraRetencion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la retención aplica a un tercero marcado como sujeto a otras retenciones."
+   },
+   "codigoImpuestoHKA": {
+    "tipo": "character varying",
+    "descripcion": "Código de impuesto usado para homologar el indicador con HKA, sistema de facturación electrónica."
+   },
+   "subCodigoImpuestoHKA": {
+    "tipo": "character varying",
+    "descripcion": "Subcódigo de impuesto para HKA; el comentario indica que aplica cuando es retención en la fuente."
+   },
+   "idIndicadorRetencionApiSincronizacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador relacionado con la sincronización por API; no se especifica su destino ni su función exacta."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable asociada al indicador; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableCompra": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable asociada al indicador para compras; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "nacionalMunicipal": {
+    "tipo": "boolean",
+    "descripcion": "Clasifica el indicador: true = nacional y false = municipal."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado, si corresponde; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idMunicipio": {
+    "tipo": "bigint",
+    "descripcion": "Municipio al que aplica el indicador cuando es municipal; apunta a General.Municipio(idMunicipio) y debe ser NULL para indicadores nacionales."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idMunicipio -> General.Municipio(idMunicipio)",
+   "idPlanContableCompra -> Contabilidad.PlanContable(idPlanContable)"
+  ],
+  "la_referencian": [
+   "Arriendo.ContratoArriendoConceptoRetencion(idIndicadorRetencion)",
+   "Arriendo.ContratoArriendoTerceroRetencion(idIndicadorRetencion)",
+   "Arriendo.ObligacionArriendoRetencion(idIndicadorRetencion)",
+   "Cartera.ReciboComprobanteIndicadorRetencion(idIndicadorRetencion)",
+   "Contabilidad.ActividadEconomica(idIndicadorAutoretencionIca)",
+   "Contabilidad.ActividadEconomica(idIndicadorRetencionCree)",
+   "Contabilidad.ActividadEconomica(idIndicadorRetencionIca)",
+   "Contabilidad.DetalleOtroPasivo(idIndicadorRetencion)",
+   "Contabilidad.DetalleOtroPasivo(idIndicadorRetencionIca)",
+   "Contabilidad.DetalleOtroPasivo(idIndicadorRetencionIva)",
+   "Contabilidad.DocumentoCuentaContable(idIndicadorRetencion)",
+   "CuentaCobrar.Factura(idIndicadorRetencionICA)",
+   "CuentaCobrar.FacturaIndicadorRetencion(idIndicadorRetencion)",
+   "CuentaCobrar.RemisionIndicadorRetencion(idIndicadorRetencion)",
+   "CuentaPagar.DetalleFacturaCompra(idIndicadorRetencion)"
+  ]
+ },
+ "Inventario.IndicadorRetencionActividadEconomica": {
+  "descripcion": "Relaciona indicadores de retención municipal ReteICA con las actividades económicas a las que aplican. Permite asociar varias actividades a un indicador; según el comentario, esta relación se usa para cruzar la actividad económica del producto al facturar.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idIndicadorRetencionActividadEconomica": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de relación; la estructura no indica si es clave primaria ni cómo se genera."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del indicador de retención municipal ReteICA asociado; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "idActividadEconomica": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la actividad económica asociada; apunta a Contabilidad.ActividadEconomica(idActividadEconomica)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idActividadEconomica -> Contabilidad.ActividadEconomica(idActividadEconomica)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.LogRecalculoInventario": {
+  "descripcion": "La tabla registra información de almacenes y productos asociada posiblemente a procesos de recálculo de inventario. Incluye una cantidad actual y la fecha de creación del registro; además, la usa la función de consulta de stock de productos. La estructura no permite determinar si cada fila representa un resultado, un evento o una instantánea del recálculo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLogRecalculoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico del registro; la estructura no declara una clave primaria ni permite confirmar que sea único."
+   },
+   "codigoAlmacen": {
+    "tipo": "character varying",
+    "descripcion": "Código del almacén asociado al registro; no se declara una clave foránea."
+   },
+   "descripcionAlmacen": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del almacén asociado al registro."
+   },
+   "codigoProducto": {
+    "tipo": "character varying",
+    "descripcion": "Código del producto asociado al registro; no se declara una clave foránea."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto asociado al registro."
+   },
+   "cantidadActual": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad actual asociada al producto y almacén en el contexto del registro; no se especifican unidad ni criterio de cálculo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro, con zona horaria."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.Marca": {
+  "descripcion": "Guarda un catálogo de marcas que pueden asociarse a productos, vehículos, activos y otros registros del ERP, según las tablas que la referencian. Sirve para identificar y clasificar esas marcas; el campo tipo distingue entre General, Vehículo y Especial.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMarca": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la marca; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la marca."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la marca."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasificación de la marca: 0 = General, 1 = Vehículo y 2 = Especial."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la marca; posiblemente señala si está activa, pero no se especifica qué significa cada valor."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario registrado como creador; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario registrado como responsable de la última modificación; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "ActivoFijo.Activo(idMarca)",
+   "CuentaCobrar.DescuentoFactura(idMarca)",
+   "Inventario.Producto(idMarca)",
+   "Inventario.ProductoMarca(idMarca)",
+   "Mantenimiento.AlertaControlGarantia(idMarca)",
+   "Mantenimiento.Herramienta(idMarca)",
+   "Mantenimiento.Trailer(idMarca)",
+   "Mantenimiento.Vehiculo(idMarca)",
+   "Venta.DetalleConvenio(idMarca)",
+   "Venta.DetalleExencionIva(idMarca)"
+  ]
+ },
+ "Inventario.MotivoMovimiento": {
+  "descripcion": "Guarda los motivos utilizados para clasificar movimientos de inventario. Sirve para indicar si un movimiento corresponde a una entrada, una salida o un traslado, y para identificarlo mediante un código y una descripción. La tabla es referenciada por documentos generales y por detalles de movimientos de inventario.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMotivoMovimiento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del motivo de movimiento; no se informa una clave primaria declarada."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al motivo; su formato y significado específico no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del motivo de movimiento."
+   },
+   "entradaSalida": {
+    "tipo": "integer",
+    "descripcion": "Clasifica el movimiento: 0 = Entrada, 1 = Salida, 2 = Traslado."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del motivo; posiblemente señala si está activo, pero debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "General.Documento(idMotivoMovimiento)",
+   "Inventario.DetalleMovimientoInventario(idMotivoMovimiento)"
+  ]
+ },
+ "Inventario.MovimientoInventario": {
+  "descripcion": "Registra movimientos de inventario vinculados con documentos y, cuando corresponde, con facturas, remisiones, órdenes de servicio o traslados. Sirve como encabezado del movimiento: identifica su fecha, terceros, centro de costo y datos de control o auditoría; los detalles del inventario se relacionan mediante otras tablas. También permite registrar información asociada a remisiones de proveedor y a la conversión de productos compuestos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del movimiento de inventario; otras tablas lo usan para relacionar detalles y procesos asociados."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento general asociado al movimiento; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al movimiento; no se puede deducir de la estructura cómo se genera o a qué numeración pertenece."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado al movimiento; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero que posiblemente corresponde al empleado relacionado con el movimiento; apunta a Tercero.Tercero(idTercero)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora del movimiento de inventario."
+   },
+   "detalle": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o detalle textual del movimiento."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado al movimiento; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idFacturaCompra": {
+    "tipo": "bigint",
+    "descripcion": "Factura de compra que generó el movimiento, cuando aplica; apunta a CuentaPagar.FacturaCompra(idFacturaCompra)."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Factura de venta que generó el movimiento, cuando aplica; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idOrdenServicio": {
+    "tipo": "bigint",
+    "descripcion": "Orden de servicio que generó el movimiento, cuando aplica; apunta a Mantenimiento.OrdenServicio(idOrdenServicio)."
+   },
+   "idMovimientoInventarioTraslado": {
+    "tipo": "bigint",
+    "descripcion": "Movimiento de inventario relacionado con un traslado, cuando aplica; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de anulación: según el comentario, false significa que el movimiento no está anulado; posiblemente true indica que sí lo está."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo textual de la anulación, cuando se registra."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica la tabla a la que apunta."
+   },
+   "idRemision": {
+    "tipo": "integer",
+    "descripcion": "Remisión asociada al movimiento, cuando aplica; apunta a CuentaCobrar.Remision(idRemision)."
+   },
+   "facturado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si una remisión de proveedor está facturada; el comentario no precisa qué valor representa cada resultado."
+   },
+   "controlEntrega": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento se generó para controlar la entrega de mercancía; no se especifica qué valor representa cada resultado."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que crea o modifica el registro, si se informa."
+   },
+   "idProductoCompuesto": {
+    "tipo": "bigint",
+    "descripcion": "Producto generado durante una conversión de productos compuestos, cuando aplica; apunta a Inventario.Producto(idProducto)."
+   },
+   "cantidadCompuesto": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de productos compuestos generados."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dato de MAC asociado al usuario o a su equipo; no se precisa su formato ni uso."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto asociado al registro; no se precisa cuándo se captura."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina donde se generó la factura, según el comentario; no se especifica si aplica a otros documentos."
+   },
+   "idOrdenServiciosHerramienta": {
+    "tipo": "bigint",
+    "descripcion": "Orden de servicio de herramienta que generó el movimiento, cuando aplica; apunta a Mantenimiento.OrdenServicioHerramienta(idOrdenServicioHerramienta)."
+   },
+   "porcentajeDescuentoCuentaPagar": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje del descuento otorgado por el proveedor cuando el movimiento corresponde a una remisión."
+   },
+   "valorDescuentoCuentaPagar": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento otorgado por el proveedor cuando el movimiento corresponde a una remisión."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago de la cuenta por pagar asociada, cuando aplica; apunta a General.FormaPago(idFormaPago)."
+   },
+   "referenciaFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Referencia de la factura del proveedor, si se registra."
+   },
+   "sincronizadoWsEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de sincronización con un servicio web especial; no se especifica qué valores o proceso representa."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idFacturaCompra -> CuentaPagar.FacturaCompra(idFacturaCompra)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idMovimientoInventarioTraslado -> Inventario.MovimientoInventario(idMovimientoInventario)",
+   "idOrdenServicio -> Mantenimiento.OrdenServicio(idOrdenServicio)",
+   "idOrdenServiciosHerramienta -> Mantenimiento.OrdenServicioHerramienta(idOrdenServicioHerramienta)",
+   "idProductoCompuesto -> Inventario.Producto(idProducto)",
+   "idRemision -> CuentaCobrar.Remision(idRemision)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Cartera.FacturaTercero(idMovimientoInventario)",
+   "CuentaPagar.FacturaCompraMovimientoInventario(idMovimientoInventario)",
+   "Inventario.CambioPrecio(idMovimientoInventario)",
+   "Inventario.DetalleMovimientoInventario(idMovimientoInventario)",
+   "Inventario.HistoricoCostoProductoAlmacen(idMovimientoInventario)",
+   "Inventario.MovimientoInventario(idMovimientoInventarioTraslado)",
+   "Inventario.MovimientoInventarioCompuesto(idMovimientoInventario)",
+   "Inventario.MovimientoInventarioOrdenCompra(idMovimientoInventario)",
+   "Inventario.TareaWMSProcesada(idMovimientoInventario)"
+  ]
+ },
+ "Inventario.MovimientoInventarioOrdenCompra": {
+  "descripcion": "Registra la asociación entre un movimiento de inventario y una orden de compra. Sirve para relacionar ambos documentos y facilitar la consulta de qué orden está vinculada a cada movimiento.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMovimientoInventarioOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de asociación; la estructura no declara una clave primaria."
+   },
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del movimiento de inventario relacionado; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "idOrdenCompra": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la orden de compra relacionada; apunta a CuentaPagar.OrdenCompra(idOrdenCompra)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro de asociación."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idMovimientoInventario -> Inventario.MovimientoInventario(idMovimientoInventario)",
+   "idOrdenCompra -> CuentaPagar.OrdenCompra(idOrdenCompra)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.Producto": {
+  "descripcion": "Guarda el catálogo de productos, servicios y otros artículos que utiliza el ERP en operaciones como compras, ventas e inventario. Contiene datos de identificación, clasificación, precios, unidades, impuestos y opciones de manejo en facturación; también incluye campos para productos regulados, medicamentos y casos especiales. Sirve como referencia para documentos y procesos que registran movimientos o transacciones asociados a un producto.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto; otras tablas lo usan para referirse a este registro."
+   },
+   "codigoBarras": {
+    "tipo": "character varying",
+    "descripcion": "Código de barras asociado al producto, si tiene uno."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código interno obligatorio para identificar el producto."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto o servicio."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasifica el registro: 0 producto, 1 servicio, 2 otro, 3 transformación, 4 materia prima, 5 insumos agrícolas, 6 semillas, 7 otros; los valores 2 y 7 aparecen como categorías distintas, aunque ambos dicen «Otro(s)»."
+   },
+   "nombreComercial": {
+    "tipo": "character varying",
+    "descripcion": "Nombre comercial del producto, si aplica."
+   },
+   "referencia": {
+    "tipo": "character varying",
+    "descripcion": "Referencia asignada al producto, si aplica."
+   },
+   "registroInvima": {
+    "tipo": "character varying",
+    "descripcion": "Número o código de registro INVIMA, si aplica."
+   },
+   "idMarca": {
+    "tipo": "integer",
+    "descripcion": "Marca asociada; apunta a Inventario.Marca(idMarca)."
+   },
+   "codigoCum": {
+    "tipo": "character varying",
+    "descripcion": "Código CUM; el comentario indica que es obligatorio para medicamentos de uso humano o animal."
+   },
+   "idUbicacion": {
+    "tipo": "integer",
+    "descripcion": "Ubicación asociada; apunta a Inventario.Ubicacion(idUbicacion)."
+   },
+   "idFormaEmpaque": {
+    "tipo": "integer",
+    "descripcion": "Forma de empaque asociada; apunta a Inventario.FormaEmpaque(idFormaEmpaque)."
+   },
+   "idGrupo": {
+    "tipo": "integer",
+    "descripcion": "Grupo obligatorio del producto; apunta a Inventario.Grupo(idGrupo)."
+   },
+   "idSubgrupo": {
+    "tipo": "integer",
+    "descripcion": "Subgrupo del producto, si aplica; apunta a Inventario.Subgrupo(idSubgrupo)."
+   },
+   "idLinea": {
+    "tipo": "integer",
+    "descripcion": "Línea obligatoria del producto; apunta a General.Linea(idLinea)."
+   },
+   "idUnidadMedida": {
+    "tipo": "integer",
+    "descripcion": "Unidad de medida principal, si está asignada; apunta a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "peso": {
+    "tipo": "numeric",
+    "descripcion": "Peso del producto; la unidad no se deduce de la estructura."
+   },
+   "unidadesProducto": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de unidades asociada al producto; su uso exacto no se deduce de la estructura."
+   },
+   "idProductoUnidad": {
+    "tipo": "bigint",
+    "descripcion": "Referencia a otro registro de Inventario.Producto(idProducto), posiblemente relacionado con una unidad o presentación del producto."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Indicador de retención obligatorio; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "idIndicadorRetencion2": {
+    "tipo": "integer",
+    "descripcion": "Segundo indicador de retención, si aplica; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "valorCosto": {
+    "tipo": "numeric",
+    "descripcion": "Valor de costo registrado para el producto; la estructura no especifica su base o tratamiento."
+   },
+   "porcentajeIncremento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de incremento asociado al producto; su finalidad exacta no se deduce."
+   },
+   "valorVenta": {
+    "tipo": "numeric",
+    "descripcion": "Valor de venta registrado para el producto."
+   },
+   "valorIpoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Valor asociado al impuesto al consumo; el nombre no permite determinar su cálculo o unidad."
+   },
+   "ventaDecimal": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se factura con cantidades decimales: verdadero permite decimales y falso no."
+   },
+   "capturarValorBascula": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cantidad se captura mediante báscula; si es falso, se ingresa por barras o manualmente."
+   },
+   "solicitaLotes": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se solicitan lotes en ventas, compras y traslados."
+   },
+   "inventarioEspecialBovino": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se requiere inventario especial para compras y ventas de bovinos."
+   },
+   "descuentoVentasPost": {
+    "tipo": "integer",
+    "descripcion": "Modo de descuento posventa: 0 diario, 1 condicional, 2 no aplica, 3 diario fijo."
+   },
+   "indicador": {
+    "tipo": "integer",
+    "descripcion": "Clasificación del producto: 0 normal, 1 compuesto, 2 subartículo."
+   },
+   "fraccionar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto se puede fraccionar en la venta."
+   },
+   "foto": {
+    "tipo": "bytea",
+    "descripcion": "Imagen del producto almacenada como datos binarios, si existe."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Estado habilitado o deshabilitado, posiblemente; el significado de verdadero y falso debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se proporciona la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se proporciona la tabla de referencia."
+   },
+   "fechaVencimientoInvima": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de vencimiento del registro INVIMA, si aplica."
+   },
+   "inventarioEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto utiliza inventario especial."
+   },
+   "idUnidadMedidaSecundaria": {
+    "tipo": "integer",
+    "descripcion": "Unidad de medida secundaria, si aplica; apunta a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "idTerceroProveedor": {
+    "tipo": "bigint",
+    "descripcion": "Tercero proveedor asociado, si aplica; apunta a Tercero.Tercero(idTercero)."
+   },
+   "facturaMultipleUnidad": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la facturación del producto se basa en varias unidades de medida."
+   },
+   "margenMinimo": {
+    "tipo": "numeric",
+    "descripcion": "Valor mínimo de utilidad establecido para el producto."
+   },
+   "idLineaExencion": {
+    "tipo": "integer",
+    "descripcion": "Línea utilizada en ventas a terceros exentos de IVA; apunta a General.Linea(idLinea)."
+   },
+   "informacionVehiculo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al facturar se solicita información del vehículo."
+   },
+   "idVehiculo": {
+    "tipo": "bigint",
+    "descripcion": "Vehículo relacionado con el producto, si aplica; apunta a Mantenimiento.Vehiculo(idVehiculo)."
+   },
+   "exencionIVA": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto está exento de IVA."
+   },
+   "registroICA": {
+    "tipo": "character varying",
+    "descripcion": "Registro ICA del producto, si aplica."
+   },
+   "generarCapturaMandato": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al facturar se solicita el tercero mandatorio."
+   },
+   "propina": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto se usa en el cálculo de la propina."
+   },
+   "porcentajePropina": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de propina que se debe calcular."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC de una máquina o usuario; el uso exacto no se deduce."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto; el contexto de uso no se deduce."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina donde se generó la factura, según el comentario; su presencia en esta tabla requiere confirmar cuándo se llena."
+   },
+   "idTipoMedicamento": {
+    "tipo": "integer",
+    "descripcion": "Tipo de medicamento, si aplica; apunta a Inventario.TipoMedicamento(idTipoMedicamento)."
+   },
+   "idCategoriaRiesgo": {
+    "tipo": "integer",
+    "descripcion": "Categoría de riesgo del medicamento, si aplica; apunta a Inventario.CategoriaRiesgo(idCategoriaRiesgo)."
+   },
+   "vidaUtil": {
+    "tipo": "character varying",
+    "descripcion": "Vida útil del medicamento, si aplica; formato y unidad no especificados."
+   },
+   "principioActivo": {
+    "tipo": "character varying",
+    "descripcion": "Principio activo del medicamento, si aplica."
+   },
+   "idFormaFarmaceutica": {
+    "tipo": "integer",
+    "descripcion": "Forma farmacéutica del medicamento, si aplica; apunta a Inventario.FormaFarmaceutica(idFormaFarmaceutica)."
+   },
+   "posicionArancelaria": {
+    "tipo": "character varying",
+    "descripcion": "Posición arancelaria del producto, si aplica."
+   },
+   "numeroParte": {
+    "tipo": "character varying",
+    "descripcion": "Número de parte, previsto según el comentario para repuestos."
+   },
+   "productoEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si en el POS el producto requiere características especiales de precio y cambio automático de nombre."
+   },
+   "idLineaImpoConsumo": {
+    "tipo": "integer",
+    "descripcion": "Línea usada en ventas a terceros con impuesto al consumo; apunta a General.Linea(idLinea)."
+   },
+   "promocion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto está en promoción."
+   },
+   "cortesia": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto es una cortesía en el módulo de restaurante."
+   },
+   "presentacionMinima": {
+    "tipo": "numeric",
+    "descripcion": "Presentación mínima del producto; unidad y uso en cálculos no especificados."
+   },
+   "cantidadEnvaseUnidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad envasada en la presentación del producto."
+   },
+   "clasificacionRegistroInvima": {
+    "tipo": "character varying",
+    "descripcion": "Clasificación del registro INVIMA, si aplica."
+   },
+   "estadoRegistroInvima": {
+    "tipo": "integer",
+    "descripcion": "Estado del registro INVIMA: 0 sin definir, 1 vigente, 2 vencido, 3 en trámite de renovación."
+   },
+   "vigenciaMesRegistroInvima": {
+    "tipo": "integer",
+    "descripcion": "Vigencia en meses del registro INVIMA."
+   },
+   "premio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto tiene condición de premio; el uso funcional exacto no se deduce."
+   },
+   "mensajeDescuento": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje de descuento asociado al producto, si aplica."
+   },
+   "fueraCatalogo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el producto está fuera del catálogo."
+   },
+   "fechaFueraCatalogo": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha asociada a la salida del producto del catálogo, si aplica."
+   },
+   "fechaIngreso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha de ingreso asociada al producto; el evento exacto no se especifica."
+   },
+   "ventaLibre": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de venta libre; las condiciones que representa deben confirmarse."
+   },
+   "ventaNoLibre": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de venta no libre; las condiciones que representa deben confirmarse."
+   },
+   "presentacion": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo de la presentación del producto, si aplica."
+   },
+   "concentracion": {
+    "tipo": "character varying",
+    "descripcion": "Concentración del producto, si aplica."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional 1; significado funcional no especificado."
+   },
+   "texto2": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional 2; significado funcional no especificado."
+   },
+   "texto3": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional 3; significado funcional no especificado."
+   },
+   "texto4": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional 4; significado funcional no especificado."
+   },
+   "texto5": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional 5; significado funcional no especificado."
+   },
+   "texto6": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional 6; significado funcional no especificado."
+   },
+   "texto7": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional 7; significado funcional no especificado."
+   },
+   "porcentajeFranquicia": {
+    "tipo": "character varying",
+    "descripcion": "Porcentaje relacionado con franquicia; se almacena como texto y su uso no se deduce."
+   },
+   "idActividadEconomica": {
+    "tipo": "integer",
+    "descripcion": "Actividad económica asociada; apunta a Contabilidad.ActividadEconomica(idActividadEconomica). Según el comentario, junto con el municipio de la dirección del cliente determina el indicador de ReteICA; NULL significa sin actividad."
+   },
+   "descripcionContenido": {
+    "tipo": "text",
+    "descripcion": "Descripción del contenido del producto, si aplica."
+   },
+   "idColeccion": {
+    "tipo": "integer",
+    "descripcion": "Colección asociada, si aplica; apunta a Inventario.Coleccion(idColeccion)."
+   }
+  },
+  "apunta_a": [
+   "idCategoriaRiesgo -> Inventario.CategoriaRiesgo(idCategoriaRiesgo)",
+   "idFormaEmpaque -> Inventario.FormaEmpaque(idFormaEmpaque)",
+   "idFormaFarmaceutica -> Inventario.FormaFarmaceutica(idFormaFarmaceutica)",
+   "idGrupo -> Inventario.Grupo(idGrupo)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idIndicadorRetencion2 -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idLinea -> General.Linea(idLinea)",
+   "idLineaExencion -> General.Linea(idLinea)",
+   "idLineaImpoConsumo -> General.Linea(idLinea)",
+   "idMarca -> Inventario.Marca(idMarca)",
+   "idProductoUnidad -> Inventario.Producto(idProducto)",
+   "idSubgrupo -> Inventario.Subgrupo(idSubgrupo)",
+   "idTerceroProveedor -> Tercero.Tercero(idTercero)",
+   "idTipoMedicamento -> Inventario.TipoMedicamento(idTipoMedicamento)",
+   "idUbicacion -> Inventario.Ubicacion(idUbicacion)",
+   "idUnidadMedida -> Inventario.UnidadMedida(idUnidadMedida)",
+   "idVehiculo -> Mantenimiento.Vehiculo(idVehiculo)",
+   "idActividadEconomica -> Contabilidad.ActividadEconomica(idActividadEconomica)",
+   "idUnidadMedidaSecundaria -> Inventario.UnidadMedida(idUnidadMedida)",
+   "idColeccion -> Inventario.Coleccion(idColeccion)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.DetalleFactura(idProducto)",
+   "CuentaCobrar.DetalleRemision(idProducto)",
+   "CuentaPagar.CostoProductoDivisionFraccionTemporal(idProducto)",
+   "CuentaPagar.DetalleFacturaCompra(idProducto)",
+   "CuentaPagar.DetalleOrdenCompra(idProducto)",
+   "CuentaPagar.ImportacionDianDetalle(idProducto)",
+   "CuentaPagar.PrecioTemporal(idProducto)",
+   "CuentaPagar.PrecioTemporal(idProductoFraccion)",
+   "CuentaPagar.TarifaProductoTemporal(idProducto)",
+   "Cultivo.LaborInsumoLote(idProducto)",
+   "General.Documento(idProductoInteresCorriente)",
+   "General.Documento(idProductoInteresMora)",
+   "Inventario.CambioPrecio(idProducto)",
+   "Inventario.DetalleConteoTomaFisica(idProducto)",
+   "Inventario.DetalleMovimientoInventario(idProducto)"
+  ]
+ },
+ "Inventario.ProductoAjustado": {
+  "descripcion": "Registra ajustes de cantidad de productos asociados a un almacén, incluyendo cantidades antes y después del ajuste. Puede vincularse con un detalle de movimiento de inventario y es utilizada por la función Inventario.fnReclasificarProducto. Sirve para conservar información del ajuste y de su creación o modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idProductoAjustado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de producto ajustado."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto al que corresponde el ajuste; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado al ajuste; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al ajuste; no se puede deducir si representa su fecha efectiva u otro momento."
+   },
+   "idDetalleMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Detalle de movimiento de inventario asociado, si corresponde; apunta a Inventario.DetalleMovimientoInventario(idDetalleMovimientoInventario)."
+   },
+   "cantidadAjustada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad registrada como ajustada; no se puede deducir si representa una diferencia ni qué signo utiliza."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "cantidadActual": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad actual del producto, según el comentario de la columna."
+   },
+   "nuevaCantidad": {
+    "tipo": "numeric",
+    "descripcion": "Nueva cantidad con la que continuará el producto en el inventario, según el comentario de la columna."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idDetalleMovimientoInventario -> Inventario.DetalleMovimientoInventario(idDetalleMovimientoInventario)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.ProductoAlmacen": {
+  "descripcion": "Relaciona un producto con un almacén y permite guardar valores propios de venta e incremento para esa combinación. Si valorVenta es NULL, se aplica el comportamiento histórico descrito para el precio de venta; si porcentajeIncremento es NULL, se usa el porcentaje global del producto.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idProductoAlmacen": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro que relaciona un producto con un almacén; la estructura no confirma si es clave primaria."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto relacionado; referencia Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén relacionado; referencia Inventario.Almacen(idAlmacen)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   },
+   "valorVenta": {
+    "tipo": "numeric",
+    "descripcion": "Precio de venta propio del producto en este almacén; si es NULL, el almacén principal usa Producto.valorVenta y uno secundario calcula el precio con el costo promedio, el incremento y el IVA."
+   },
+   "porcentajeIncremento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de incremento propio del producto en este almacén; si es NULL, se usa Producto.porcentajeIncremento."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.ProductoCodigoBarra": {
+  "descripcion": "Guarda códigos de barras adicionales asociados a productos del inventario. Sirve posiblemente para identificar un mismo producto mediante más de un código en operaciones como la consulta o el registro de artículos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idProductoCodigoBarra": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de código de barras; la estructura no confirma que sea clave primaria."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto al que pertenece el código de barras; apunta a Inventario.Producto(idProducto)."
+   },
+   "codigoBarrasAdcional": {
+    "tipo": "character varying",
+    "descripcion": "Código de barras adicional asociado al producto."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.ProductoMarca": {
+  "descripcion": "Relaciona productos con marcas mediante los identificadores de producto y de marca. Posiblemente permite registrar qué marca corresponde a cada producto, pero la estructura no permite determinar si un producto puede asociarse con varias marcas ni si la tabla tiene restricciones de unicidad.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idProductoMarca": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la relación entre un producto y una marca; no se informa si es clave primaria."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto relacionado; referencia a Inventario.Producto(idProducto)."
+   },
+   "idMarca": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la marca relacionada; referencia a Inventario.Marca(idMarca)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idMarca -> Inventario.Marca(idMarca)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.Respaldo0138PorcentajeIncremento": {
+  "descripcion": "La tabla almacena registros de respaldo asociados a productos, con un porcentaje de incremento y una fecha de respaldo. Por el nombre, posiblemente conserva valores de porcentaje de incremento de productos para una versión o proceso identificado como «0138»; la estructura no confirma su uso exacto.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto al que corresponde el registro; no se declara una clave foránea, por lo que la tabla de destino no puede confirmarse."
+   },
+   "porcentajeIncremento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de incremento asociado al producto; no se puede deducir qué valor representa ni cómo se aplica."
+   },
+   "fechaRespaldo": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora, con zona horaria, en que se registró el respaldo."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.RptAnalisisVentaPedido": {
+  "descripcion": "Tabla del módulo de Inventario que reúne datos de análisis de ventas y existencias por producto y almacén, posiblemente como resultado de un reporte generado por `Inventario.fnAnalisisVentaPedido`. Incluye información del producto, valores de venta y costo, hasta doce pares de periodo y valor mensual, y métricas de ventas, devoluciones, promedio, inventario actual y necesidad. La estructura no permite determinar las unidades ni las fórmulas de esas métricas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRptAnalisisVentaPedido": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de análisis; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto analizado; no se informa una clave foránea."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén al que corresponde el análisis; no se informa una clave foránea."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asociado al producto, posiblemente su código de catálogo."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto incluida en el análisis."
+   },
+   "nombreComercial": {
+    "tipo": "character varying",
+    "descripcion": "Nombre comercial asociado al producto."
+   },
+   "valorVenta": {
+    "tipo": "numeric",
+    "descripcion": "Valor de venta asociado al producto; no se especifica si es precio, importe acumulado u otra medida."
+   },
+   "valorCosto": {
+    "tipo": "numeric",
+    "descripcion": "Valor de costo asociado al producto; no se especifica su cálculo ni alcance."
+   },
+   "referencia": {
+    "tipo": "character varying",
+    "descripcion": "Referencia asociada al producto, cuyo tipo no se puede determinar."
+   },
+   "periodo1": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del primer periodo del análisis; su formato no se especifica."
+   },
+   "mes1": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al primer periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo2": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del segundo periodo del análisis; su formato no se especifica."
+   },
+   "mes2": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al segundo periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo3": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del tercer periodo del análisis; su formato no se especifica."
+   },
+   "mes3": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al tercer periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo4": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del cuarto periodo del análisis; su formato no se especifica."
+   },
+   "mes4": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al cuarto periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo5": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del quinto periodo del análisis; su formato no se especifica."
+   },
+   "mes5": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al quinto periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo6": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del sexto periodo del análisis; su formato no se especifica."
+   },
+   "mes6": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al sexto periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo7": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del séptimo periodo del análisis; su formato no se especifica."
+   },
+   "mes7": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al séptimo periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo8": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del octavo periodo del análisis; su formato no se especifica."
+   },
+   "mes8": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al octavo periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo9": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del noveno periodo del análisis; su formato no se especifica."
+   },
+   "mes9": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al noveno periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo10": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del décimo periodo del análisis; su formato no se especifica."
+   },
+   "mes10": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al décimo periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo11": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del undécimo periodo del análisis; su formato no se especifica."
+   },
+   "mes11": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al undécimo periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "periodo12": {
+    "tipo": "integer",
+    "descripcion": "Código o valor del duodécimo periodo del análisis; su formato no se especifica."
+   },
+   "mes12": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al duodécimo periodo; no se especifica si representa importe, cantidad u otra medida."
+   },
+   "totalVenta": {
+    "tipo": "numeric",
+    "descripcion": "Total de venta asociado al análisis; no se especifica qué periodos o unidad incluye."
+   },
+   "devolucion": {
+    "tipo": "numeric",
+    "descripcion": "Valor relacionado con devoluciones; no se especifica si es importe o cantidad ni cómo se representa su signo."
+   },
+   "promedio": {
+    "tipo": "numeric",
+    "descripcion": "Promedio calculado para el análisis; no se especifica la medida ni los periodos considerados."
+   },
+   "inventarioActual": {
+    "tipo": "numeric",
+    "descripcion": "Valor del inventario actual asociado al producto y almacén; no se especifica si representa unidades o importe."
+   },
+   "necesidad": {
+    "tipo": "numeric",
+    "descripcion": "Valor de necesidad estimada para el producto; posiblemente se use para apoyar decisiones de reposición, pero su fórmula no se conoce."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado al registro; no se informa una clave foránea ni el papel del usuario."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.RptAnalisisVentaPedidoV2": {
+  "descripcion": "Tabla de análisis de ventas e inventario por producto y almacén, usada para apoyar la planificación de compras y despachos a proveedores. Incluye ventas de distintos períodos, existencias, datos de costo y precio, y cálculos de proyección y cantidades sugeridas para pedir. La utiliza la función Inventario.fnAnalisisVentaPedidoV2.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRptAnalisisVentaPedidoV2": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la fila del análisis; la estructura no declara una clave primaria."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto analizado; no se declara una relación de clave foránea."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén considerado; no se declara una relación de clave foránea."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del producto, posiblemente el código usado en el ERP."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto."
+   },
+   "centroCostos": {
+    "tipo": "character varying",
+    "descripcion": "Centro de costos asociado al registro; no se especifica cómo se asigna."
+   },
+   "nit": {
+    "tipo": "character varying",
+    "descripcion": "NIT asociado al proveedor o al producto; la estructura no permite confirmar a quién corresponde."
+   },
+   "proveedor": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del proveedor asociado."
+   },
+   "vta7dias": {
+    "tipo": "numeric",
+    "descripcion": "Valor o cantidad de ventas de un período de 7 días; no se especifica la unidad ni cómo se define el período."
+   },
+   "vtas14dias": {
+    "tipo": "numeric",
+    "descripcion": "Valor o cantidad de ventas de un período de 14 días; no se especifica la unidad ni cómo se define el período."
+   },
+   "ventaMesActual": {
+    "tipo": "numeric",
+    "descripcion": "Valor o cantidad de ventas del mes actual; no se especifica la unidad."
+   },
+   "existencias": {
+    "tipo": "numeric",
+    "descripcion": "Existencias disponibles del producto en el almacén."
+   },
+   "costo": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado al producto; no se especifica si es unitario ni el método de cálculo."
+   },
+   "valorInventario": {
+    "tipo": "numeric",
+    "descripcion": "Valor del inventario del producto; no se especifica la fórmula usada."
+   },
+   "iva": {
+    "tipo": "numeric",
+    "descripcion": "Valor relacionado con el IVA; no se especifica si representa una tasa o un importe."
+   },
+   "pvp": {
+    "tipo": "numeric",
+    "descripcion": "Precio de venta al público; no se especifica si es unitario ni si incluye IVA."
+   },
+   "margen": {
+    "tipo": "numeric",
+    "descripcion": "Margen asociado al producto; no se especifica si es un porcentaje o un valor."
+   },
+   "promedio3Meses": {
+    "tipo": "numeric",
+    "descripcion": "Promedio de ventas de tres meses; no se especifica la unidad ni la fórmula."
+   },
+   "proyeccionMes": {
+    "tipo": "numeric",
+    "descripcion": "Proyección de ventas o demanda para un mes; no se especifica el período ni la fórmula."
+   },
+   "proyeccion4": {
+    "tipo": "numeric",
+    "descripcion": "Valor de una proyección identificada como 4; no se puede deducir su período ni su fórmula."
+   },
+   "proyeccion2": {
+    "tipo": "numeric",
+    "descripcion": "Valor de una proyección identificada como 2; no se puede deducir su período ni su fórmula."
+   },
+   "proyeccion1": {
+    "tipo": "numeric",
+    "descripcion": "Valor de una proyección identificada como 1; no se puede deducir su período ni su fórmula."
+   },
+   "maximoPotencial": {
+    "tipo": "numeric",
+    "descripcion": "Valor máximo potencial calculado para el producto; no se especifica qué representa ni cómo se calcula."
+   },
+   "potencialDia": {
+    "tipo": "numeric",
+    "descripcion": "Valor potencial por día; no se especifica qué representa ni cómo se calcula."
+   },
+   "stockRequerido": {
+    "tipo": "numeric",
+    "descripcion": "Stock requerido calculado para el producto; no se especifica la fórmula."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado al registro; no se declara una relación de clave foránea ni su función exacta."
+   },
+   "pedidoBase": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad faltante a comprar: máximo entre stockRequerido menos existencias y cero; según el comentario, si no hay existencias y la diferencia es cero, se aplica un mínimo de 2."
+   },
+   "unidadEmpaque": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de unidades por empaque, tomada de Inventario.FormaEmpaque.cantidadUnidades a través de Producto.idFormaEmpaque, según el comentario."
+   },
+   "empaquesADespachar": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de empaques a despachar al proveedor: techo de pedidoBase dividido por unidadEmpaque; es 0 si unidadEmpaque es 0, según el comentario."
+   },
+   "ventaAcumuladaMes": {
+    "tipo": "numeric",
+    "descripcion": "Ventas acumuladas del mes; no se especifica la unidad ni la diferencia respecto de ventaMesActual."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.RptArqueoVendedor": {
+  "descripcion": "Tabla posiblemente auxiliar o de resultados para el reporte de arqueo de caja por vendedor, utilizada por la función Inventario.fnReporteArqueoCajaVendedor. Guarda líneas con datos descriptivos, valores numéricos y campos de registro; la estructura no permite determinar si almacena resultados temporales o persistentes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "tipoRegistro": {
+    "tipo": "integer",
+    "descripcion": "Código que posiblemente clasifica el tipo de línea del reporte; sus valores no se pueden deducir."
+   },
+   "linea": {
+    "tipo": "integer",
+    "descripcion": "Número o posición de la línea dentro del reporte."
+   },
+   "detalle1": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo asociado al primer conjunto de datos de la línea."
+   },
+   "valor1": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al primer conjunto de datos; su significado y signo no se pueden deducir."
+   },
+   "registro1": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico asociado al primer conjunto de datos; no se declara una clave foránea."
+   },
+   "detalle2": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo asociado al segundo conjunto de datos de la línea."
+   },
+   "valor2": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al segundo conjunto de datos; su significado y signo no se pueden deducir."
+   },
+   "registro2": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico asociado al segundo conjunto de datos; no se declara una clave foránea."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado al registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.RptArqueoVendedorResumen": {
+  "descripcion": "Tabla asociada al reporte de arqueo de caja por vendedor, posiblemente usada para reunir datos de documentos y terceros que se presentan en un resumen. La función Inventario.fnReporteArqueoCajaVendedorResumen la utiliza. La estructura no permite determinar si almacena resultados permanentes o datos temporales del reporte.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRptArqueoVendedorResumen": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico del registro; no se declara una clave primaria."
+   },
+   "documento": {
+    "tipo": "character varying",
+    "descripcion": "Referencia o número del documento relacionado con el registro; el formato exacto no se puede deducir."
+   },
+   "tercero": {
+    "tipo": "character varying",
+    "descripcion": "Dato identificador o descriptivo del tercero relacionado; no se especifica si corresponde a un código, nombre u otro valor."
+   },
+   "valorDocumento": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado al documento; no se puede deducir si representa un total, saldo u otro importe."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Código numérico que clasifica el registro; sus valores y significado no se pueden deducir."
+   },
+   "anulada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro corresponde a algo anulado; no se puede confirmar qué elemento se anula ni cómo se trata en el reporte."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado al registro; no se declara una clave foránea que indique a qué tabla apunta."
+   },
+   "categoria": {
+    "tipo": "character varying",
+    "descripcion": "Dato de categoría que, según el comentario de la columna, determina si el registro se debe agrupar en el reporte."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.RptRotulo": {
+  "descripcion": "Guarda datos de productos asociados posiblemente a la generación de rótulos o a sus reportes, como códigos, nombres, referencia, código de barras y valores de venta y costo. Las funciones Inventario.fnReporteRotulo e Inventario.fnReporteRotuloCantidad la utilizan. La estructura no permite determinar si contiene datos temporales de un reporte o registros persistentes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRptRotulo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro; no está declarada como clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del producto, posiblemente el código interno del inventario."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto que se muestra en el rótulo o reporte."
+   },
+   "nombreComercial": {
+    "tipo": "character varying",
+    "descripcion": "Nombre comercial del producto que se muestra en el rótulo o reporte."
+   },
+   "valorVenta": {
+    "tipo": "numeric",
+    "descripcion": "Valor de venta asociado al producto; no se puede determinar si es unitario ni su moneda."
+   },
+   "valorCosto": {
+    "tipo": "numeric",
+    "descripcion": "Valor de costo asociado al producto; no se puede determinar si es unitario ni su moneda."
+   },
+   "referencia": {
+    "tipo": "character varying",
+    "descripcion": "Referencia asociada al producto; su significado exacto no se puede deducir."
+   },
+   "codigoBarras": {
+    "tipo": "character varying",
+    "descripcion": "Código de barras asociado al producto."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado al registro; no se declara una clave foránea que indique a qué tabla apunta."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Observación de la línea para la factura de compra."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.SaldoInventario": {
+  "descripcion": "Guarda saldos de inventario por almacén, producto, año y mes, incluidas cantidades, costo promedio y límites mínimo y máximo. Posiblemente sirve para consultar y recalcular existencias y cantidades comprometidas; la estructura también contempla el mes 0 como saldo actual.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idSaldoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de saldo; la estructura no declara una clave primaria."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén al que corresponde el saldo; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto al que corresponde el saldo; apunta a Inventario.Producto(idProducto)."
+   },
+   "cantidadInicial": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad con la que inicia el período: si mes es 1, indica la cantidad inicial del año; si mes es mayor que 1, la cantidad con que terminó el mes anterior."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el movimiento o saldo."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde el registro; 0 indica saldo actual y un valor mayor o igual a 1 indica el mes del movimiento."
+   },
+   "cantidadEntrada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de entradas registradas en el mes."
+   },
+   "cantidadSalida": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad de salidas registradas en el mes."
+   },
+   "cantidadComprometida": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad comprometida del producto; no se especifica cómo se calcula ni qué compromisos incluye."
+   },
+   "cantidadActual": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad actual del producto en el mes; no se especifica cómo se calcula."
+   },
+   "costoPromedio": {
+    "tipo": "numeric",
+    "descripcion": "Costo promedio del producto; no se especifica la unidad ni el método de cálculo."
+   },
+   "cantidadMinima": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad mínima definida para el producto en el inventario."
+   },
+   "cantidadMaxima": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad máxima definida para el producto en el inventario."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idProducto -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.Subgrupo": {
+  "descripcion": "Guarda subgrupos del inventario asociados a un grupo. Sirve posiblemente para clasificar productos; la tabla también es referenciada por procesos de descuentos y exenciones de IVA. Incluye datos de identificación, estado, auditoría, una cantidad y una foto opcional.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idSubgrupo": {
+    "tipo": "integer",
+    "descripcion": "Identificador del subgrupo; la estructura no declara una clave primaria."
+   },
+   "idGrupo": {
+    "tipo": "integer",
+    "descripcion": "Identificador del grupo al que pertenece; referencia a Inventario.Grupo(idGrupo)."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al subgrupo; no se puede deducir su formato ni su significado funcional."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del subgrupo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del subgrupo; posiblemente distingue entre activo e inactivo, pero no se puede confirmar qué valor corresponde a cada estado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una referencia a otra tabla."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una referencia a otra tabla."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada al subgrupo; no se puede deducir qué representa ni en qué unidad se expresa."
+   },
+   "foto": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario de una foto opcional asociada al subgrupo."
+   }
+  },
+  "apunta_a": [
+   "idGrupo -> Inventario.Grupo(idGrupo)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.DescuentoFactura(idSubGrupo)",
+   "Inventario.Producto(idSubgrupo)",
+   "Venta.DetalleConvenio(idSubGrupo)",
+   "Venta.DetalleExencionIva(idSubGrupo)"
+  ]
+ },
+ "Inventario.TareaWMSProcesada": {
+  "descripcion": "Registra tareas del WMS que ya fueron procesadas por la integración de surtidos, para que se omitan al importarlas nuevamente. El tipo de proceso indica si la tarea se facturó o se trasladó, y la tabla puede vincularla con la factura o el movimiento de inventario generado.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTareaWMSProcesada": {
+    "tipo": "bigint",
+    "descripcion": "Identificador interno del registro de tarea procesada; la estructura proporcionada no indica si es clave primaria."
+   },
+   "taskOrderId": {
+    "tipo": "bigint",
+    "descripcion": "Consecutivo de la tarea en el WMS (Task_Order_Id del endpoint /api/Tarea/Lista)."
+   },
+   "tipoProceso": {
+    "tipo": "integer",
+    "descripcion": "Indica el proceso aplicado a la tarea: 1 = facturada y 2 = trasladada."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura posiblemente generada al procesar la tarea; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "idMovimientoInventario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del movimiento de inventario posiblemente generado al procesar la tarea; apunta a Inventario.MovimientoInventario(idMovimientoInventario)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se proporciona la tabla de destino."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se proporciona la tabla de destino."
+   }
+  },
+  "apunta_a": [
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idMovimientoInventario -> Inventario.MovimientoInventario(idMovimientoInventario)"
+  ],
+  "la_referencian": []
+ },
+ "Inventario.TarifaProducto": {
+  "descripcion": "Registra la relación entre una tarifa y un producto, junto con un valor y un porcentaje asociados. Sirve posiblemente para definir condiciones de tarifa específicas por producto. También conserva fechas e identificadores de usuario para registrar la creación y modificación del registro.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTarifaProducto": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro que relaciona una tarifa con un producto; no se declara una clave primaria."
+   },
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la tarifa asociada; apunta a General.Tarifa(idTarifa)."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del producto asociado; apunta a Inventario.Producto(idProducto)."
+   },
+   "valor": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico asociado a la tarifa y al producto; su significado exacto no se puede deducir."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado a la tarifa y al producto; no se puede deducir qué concepto representa."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idTarifa -> General.Tarifa(idTarifa)"
+  ],
+  "la_referencian": [
+   "CuentaPagar.TarifaProductoTemporal(idTarifaProducto)"
+  ]
+ },
+ "Inventario.TipoMedicamento": {
+  "descripcion": "Guarda un catálogo de tipos de medicamento para clasificar productos del inventario. La tabla es referenciada por Inventario.Producto mediante idTipoMedicamento, posiblemente para asignar un tipo a cada producto.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipoMedicamento": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del tipo de medicamento; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al tipo de medicamento; su formato y significado específico no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del tipo de medicamento."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del tipo; posiblemente señala si está activo, pero no se conocen los valores funcionales."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Inventario.Producto(idTipoMedicamento)"
+  ]
+ },
+ "Inventario.TmpReporteUtilidadVenta": {
+  "descripcion": "Tabla asociada a la función de reporte de utilidad de ventas, posiblemente usada para preparar o almacenar temporalmente datos del reporte por factura y producto. Incluye cantidades, valores unitarios, costos, devoluciones y cálculos de utilidad, además de datos de grupo y subgrupo del producto. No se puede determinar si conserva resultados históricos o se usa solo durante la generación del reporte.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTmpReporteUtilidadVenta": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la fila del reporte; la estructura no declara una clave primaria."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la factura relacionada; no se proporciona información que permita confirmar a qué tabla apunta."
+   },
+   "numeroFactura": {
+    "tipo": "character varying",
+    "descripcion": "Número de factura mostrado o asociado al registro."
+   },
+   "codigoProducto": {
+    "tipo": "character varying",
+    "descripcion": "Código del producto relacionado con la línea de venta."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto relacionada con la línea de venta."
+   },
+   "cantidadTempo": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada a la venta en este registro; no se puede confirmar si es cantidad facturada o neta de devoluciones."
+   },
+   "valorUnitarioTempo": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario asociado a la venta; no se especifica moneda ni criterio de cálculo."
+   },
+   "costoTempo": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado a la venta; no se especifica cómo se calcula."
+   },
+   "cantidadDevolucionTempo": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada a devoluciones del producto."
+   },
+   "valoUnitarioDevolucionTempo": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario asociado a las devoluciones; el nombre de la columna contiene «valo» en lugar de «valor»."
+   },
+   "costoDevolucionTempo": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado a las devoluciones; no se especifica cómo se calcula."
+   },
+   "utilidadTempo": {
+    "tipo": "numeric",
+    "descripcion": "Importe de utilidad calculado para el registro; no se puede deducir cómo se tratan las devoluciones ni los signos."
+   },
+   "porcentajeUtilidadTempo": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de utilidad calculado para el registro; no se puede deducir cuál es su base de cálculo."
+   },
+   "codigoGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Código del grupo asociado al producto; no se conocen los códigos ni su catálogo."
+   },
+   "descripcionGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del grupo asociado al producto."
+   },
+   "codigoSubGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Código del subgrupo asociado al producto; no se conocen los códigos ni su catálogo."
+   },
+   "descripcionSubGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del subgrupo asociado al producto."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario relacionado con el registro; no se proporciona información que permita confirmar a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario.Ubicacion": {
+  "descripcion": "Registra ubicaciones asociadas a un almacén para organizar productos y herramientas dentro del inventario. Incluye un tipo de ubicación y un orden de alistamiento que puede ayudar a determinar la secuencia de preparación de productos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUbicacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la ubicación."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén al que pertenece; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la ubicación."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la ubicación."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado concreto no se puede deducir; posiblemente señala si la ubicación está activa."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasifica la ubicación: 0 = Producto, 1 = Herramienta, 99 = Todos."
+   },
+   "ordenAlistamiento": {
+    "tipo": "integer",
+    "descripcion": "Orden para alistar productos en esta ubicación."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)"
+  ],
+  "la_referencian": [
+   "Inventario.Producto(idUbicacion)",
+   "Inventario.ProductoUbicacion(idUbicacion)",
+   "Mantenimiento.OrdenServicioHerramienta(idUbicacion)"
+  ]
+ },
+ "Inventario.UnidadMedida": {
+  "descripcion": "Catálogo de unidades de medida usadas en inventario y en documentos de venta y cuentas por cobrar. Permite asignar unidades a productos y registros de detalle, y posiblemente apoyar conversiones entre unidades mediante su equivalencia en kilos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUnidadMedida": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la unidad de medida; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código con el que se identifica la unidad de medida; sus valores no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la unidad de medida."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la unidad; posiblemente señala si está activa."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una relación con una tabla de usuarios."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una relación con una tabla de usuarios."
+   },
+   "equivalenciaKilos": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico relacionado con la equivalencia de la unidad en kilos; su sentido y unidad exactos no se pueden deducir."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CuentaCobrar.DetalleFactura(idUnidadMedida)",
+   "CuentaCobrar.DetalleFactura(idUnidadMedidaSecundaria)",
+   "CuentaCobrar.DetalleFactura(idUnidadMedidaTransportada)",
+   "CuentaCobrar.DetalleRemision(idUnidadMedida)",
+   "CuentaCobrar.DetalleRemision(idUnidadMedidaSecundaria)",
+   "Cultivo.LaborInsumoLote(idUnidadMedida)",
+   "Cultivo.Lote(idUnidadMedida)",
+   "Inventario.EquivalenciaUnidadMedida(idUnidadMedida)",
+   "Inventario.EquivalenciaUnidadMedida(idUnidadMedidaEquivalente)",
+   "Inventario.Producto(idUnidadMedida)",
+   "Inventario.Producto(idUnidadMedidaSecundaria)",
+   "Venta.Caja(idUnidadMedidaConversion)",
+   "Venta.Caja(idUnidadMedidaGenerada)",
+   "Venta.DetalleCotizacion(idUnidadMedida)",
+   "Venta.DetalleCotizacion(idUnidadMedidaSecundaria)"
+  ]
+ },
+ "Inventario._bak0124CambioAlmacen": {
+  "descripcion": "Por el nombre, parece ser una tabla de respaldo de cambios de almacén, que conserva el almacén anterior y el posterior asociados a un registro. Podría servir para recuperar o revisar cambios respaldados; la estructura no permite confirmar cuándo ni cómo se generan estos registros.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "tabla": {
+    "tipo": "text",
+    "descripcion": "Posiblemente identifica la tabla de origen del registro respaldado."
+   },
+   "id": {
+    "tipo": "bigint",
+    "descripcion": "Posiblemente identifica el registro de origen cuyo almacén cambió."
+   },
+   "idAlmacenAntes": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén asociado al registro antes del cambio; no se declara una clave foránea."
+   },
+   "idAlmacenDespues": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén asociado al registro después del cambio; no se declara una clave foránea."
+   },
+   "fechaRespaldo": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se guardó el respaldo del cambio."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Inventario._bak0125CambioAlmacen": {
+  "descripcion": "Parece ser una tabla de respaldo relacionada con cambios de almacén. Guarda el nombre de una tabla y un identificador de registro, junto con los almacenes anterior y posterior y la fecha del respaldo; posiblemente sirve para consultar o recuperar el estado previo al cambio.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "tabla": {
+    "tipo": "text",
+    "descripcion": "Nombre de la tabla a la que corresponde el registro respaldado; su formato y valores no se pueden deducir."
+   },
+   "id": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro respaldado en la tabla indicada; no se declara como clave foránea."
+   },
+   "idAlmacenAntes": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén anterior al cambio; posiblemente corresponde a un registro de almacén, pero no se declara una clave foránea."
+   },
+   "idAlmacenDespues": {
+    "tipo": "integer",
+    "descripcion": "Identificador del almacén posterior al cambio; posiblemente corresponde a un registro de almacén, pero no se declara una clave foránea."
+   },
+   "fechaRespaldo": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró el respaldo."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ }
+}

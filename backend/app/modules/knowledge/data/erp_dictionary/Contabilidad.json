@@ -1,0 +1,3307 @@
+{
+ "Contabilidad.ActividadEconomica": {
+  "descripcion": "Guarda actividades económicas identificadas por un código y una descripción, posiblemente para clasificar empresas, terceros y productos. También permite asociar indicadores de retención de ICA, CREE y autorretención de ICA, que pueden ser utilizados en procesos contables y tributarios. La tabla es referenciada por entidades de Empresa, Inventario y Tercero.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idActividadEconomica": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la actividad económica; no se indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la actividad económica; no se especifica el sistema de clasificación ni el formato."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la actividad económica."
+   },
+   "idIndicadorRetencionIca": {
+    "tipo": "integer",
+    "descripcion": "Referencia opcional a Inventario.IndicadorRetencion(idIndicadorRetencion), posiblemente para asociar el indicador de retención de ICA."
+   },
+   "idIndicadorRetencionCree": {
+    "tipo": "integer",
+    "descripcion": "Referencia opcional a Inventario.IndicadorRetencion(idIndicadorRetencion), posiblemente para asociar el indicador de retención de CREE."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Booleano que posiblemente indica si la actividad económica está habilitada o vigente."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se informa a qué tabla apunta."
+   },
+   "idIndicadorAutoretencionIca": {
+    "tipo": "integer",
+    "descripcion": "Referencia opcional a Inventario.IndicadorRetencion(idIndicadorRetencion), posiblemente para asociar el indicador de autorretención de ICA."
+   }
+  },
+  "apunta_a": [
+   "idIndicadorAutoretencionIca -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idIndicadorRetencionCree -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idIndicadorRetencionIca -> Inventario.IndicadorRetencion(idIndicadorRetencion)"
+  ],
+  "la_referencian": [
+   "Empresa.Empresa(idActividadEconomica)",
+   "Inventario.IndicadorRetencionActividadEconomica(idActividadEconomica)",
+   "Inventario.Producto(idActividadEconomica)",
+   "Tercero.Tercero(idActividadEconomica)"
+  ]
+ },
+ "Contabilidad.Anticipo": {
+  "descripcion": "Registra anticipos asociados a terceros en el módulo de Contabilidad, junto con su documento, fecha, centro de costo y forma de pago. Incluye el valor anticipado, los valores cruzados y el saldo, por lo que sirve para dar seguimiento a su aplicación o devolución. También conserva datos de auditoría y el desglose del pago por distintos medios.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idAnticipo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del anticipo; la estructura proporcionada no declara una clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento asociado al anticipo; referencia a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al anticipo."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al anticipo."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo relacionado con el anticipo; referencia a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado al anticipo; referencia a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero relacionado con el empleado asociado; referencia a Tercero.Tercero(idTercero)."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago del anticipo; referencia a General.FormaPago(idFormaPago)."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado al anticipo, si corresponde; referencia a Tercero.Banco(idBanco)."
+   },
+   "detalle": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o detalle del anticipo."
+   },
+   "valorAnticipo": {
+    "tipo": "numeric",
+    "descripcion": "Valor total registrado como anticipo."
+   },
+   "valorCruce": {
+    "tipo": "numeric",
+    "descripcion": "Valor del anticipo aplicado o cruzado."
+   },
+   "saldoAnticipo": {
+    "tipo": "numeric",
+    "descripcion": "Saldo pendiente del anticipo."
+   },
+   "anulado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el anticipo está anulado; posiblemente true significa que sí está anulado."
+   },
+   "motivoAnulado": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de la anulación, si se registra."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación."
+   },
+   "idBancoCheque": {
+    "tipo": "integer",
+    "descripcion": "Banco del cheque cuando el anticipo se realiza con cheque; referencia a Tercero.Banco(idBanco)."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque, si se usa este medio de pago."
+   },
+   "fechaChequePostFechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha asociada al cheque posfechado, si aplica."
+   },
+   "valorPagadoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado mediante cheque."
+   },
+   "valorPagadoBanco": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado mediante consignación o transferencia bancaria."
+   },
+   "valorPagadoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado en efectivo."
+   },
+   "valorPagadoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Valor pagado con tarjeta débito o crédito."
+   },
+   "valorRetencionManual": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la retención ingresada manualmente."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tarjeta débito o crédito asociada, si corresponde; referencia a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "idCaja": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la caja asociada, si corresponde; la estructura no indica a qué tabla apunta."
+   },
+   "idTurnoCaja": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del turno de caja asociado, si corresponde; la estructura no indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idBancoCheque -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Arriendo.ObligacionArriendo(idAnticipo)",
+   "Arriendo.ObligacionArriendoPago(idAnticipo)",
+   "Cartera.CruceAnticipoCliente(idAnticipo)",
+   "Cartera.CruceAnticipoProveedor(idAnticipo)",
+   "Contabilidad.DevolucionAnticipo(idAnticipo)",
+   "Contabilidad.DevolucionAnticipo(idAnticipoCruce)",
+   "CuentaPagar.CruceAnticipoPropuestaPago(idAnticipo)"
+  ]
+ },
+ "Contabilidad.AperturaFechaFormulario": {
+  "descripcion": "Guarda una configuración de fechas asociada a un usuario y a un formulario de Seguridad. Posiblemente sirve para delimitar qué fechas puede utilizar ese usuario al ingresar movimientos en el formulario; la estructura no permite confirmar las reglas exactas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idAperturaFechaFormulario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro; la estructura no declara que sea clave primaria."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario al que se asocia la configuración; apunta a Seguridad.Usuario(idUsuario)."
+   },
+   "idFormulario": {
+    "tipo": "integer",
+    "descripcion": "Formulario al que se asocia la configuración; apunta a Seguridad.Formulario(idFormulario)."
+   },
+   "fechaInicial": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora inicial del intervalo configurado; el propósito exacto del intervalo no se deduce."
+   },
+   "fechaFinal": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora final del intervalo configurado; el propósito exacto del intervalo no se deduce."
+   },
+   "fechaInicialPermiso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora inicial del intervalo de permiso; su relación exacta con fechaInicial no se deduce."
+   },
+   "fechaFinalPermiso": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora final del intervalo de permiso; su relación exacta con fechaFinal no se deduce."
+   },
+   "signo": {
+    "tipo": "character varying",
+    "descripcion": "Código que indica si los días se suman o se descuentan de la fecha actual; no se conocen sus valores válidos."
+   },
+   "dias": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días que se sumará o descontará de la fecha actual para ingresar fechas en el movimiento."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; no se conoce qué representan los valores verdadero y falso en el ERP."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [
+   "idFormulario -> Seguridad.Formulario(idFormulario)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.CierreCuentaMes": {
+  "descripcion": "Posiblemente registra cierres mensuales asociados a un plan contable. Su existencia se utiliza en funciones que validan cuentas cerradas por periodo y reclasifican terceros, por lo que podría servir para controlar qué periodos están cerrados.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCierreCuentaMes": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de cierre mensual; no se informa si es clave primaria o si debe ser único."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el plan contable asociado al cierre; referencia Contabilidad.PlanContable(idPlanContable)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año del periodo al que corresponde el cierre."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes del periodo al que corresponde el cierre; no se especifica el rango o formato de sus valores."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.CierreMes": {
+  "descripcion": "Registra información asociada a un cierre mensual del módulo de Contabilidad, identificándolo por año y mes. La estructura no permite confirmar si cada fila indica que el periodo ya está cerrado o si sirve para otro control del proceso.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCierreMes": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del registro; la estructura no declara una clave primaria."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el cierre mensual."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde el cierre; no se puede deducir el rango de valores permitido."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.Concepto": {
+  "descripcion": "Guarda un catálogo de conceptos contables identificados por un código y una descripción. Los registros son referenciados por Contabilidad.PlanContable y Contabilidad.ParametroMedioExogeno, y también son utilizados por funciones relacionadas con medios exógenos; posiblemente sirven para asociar cuentas y parámetros con esos conceptos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del concepto; la estructura proporcionada no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del concepto; su formato y significado específico no se deducen de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del concepto para su identificación funcional."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del concepto; posiblemente señala si está activo, pero el significado de cada valor debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.ParametroMedioExogeno(idConcepto)",
+   "Contabilidad.PlanContable(idConcepto)"
+  ]
+ },
+ "Contabilidad.ConceptoTransaccion": {
+  "descripcion": "La tabla registra conceptos asociados a transacciones contables, vinculando cada transacción con un concepto contable y guardando un código, una descripción y un estado. Sus registros pueden ser referenciados por detalles de otras cuentas por cobrar y de otros pasivos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idConceptoTransaccion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro; la estructura no declara una clave primaria."
+   },
+   "idTransaccion": {
+    "tipo": "integer",
+    "descripcion": "Identifica la transacción asociada; apunta a Contabilidad.Transaccion(idTransaccion)."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del concepto dentro de esta tabla; su formato o significado específico no se puede deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del concepto asociado a la transacción."
+   },
+   "idConceptoContable": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto contable asociado; apunta a General.ConceptoContable(idConceptoContable)."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; no se puede deducir qué significan true y false."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idConceptoContable -> General.ConceptoContable(idConceptoContable)",
+   "idTransaccion -> Contabilidad.Transaccion(idTransaccion)"
+  ],
+  "la_referencian": [
+   "Contabilidad.DetalleOtraCuentaCobrar(idConceptoTransaccion)",
+   "Contabilidad.DetalleOtroPasivo(idConceptoTransaccion)"
+  ]
+ },
+ "Contabilidad.ConciliacionBancariaExtracto": {
+  "descripcion": "Guarda posiblemente la cabecera de un extracto bancario asociado a una cuenta y a un período mensual. Sirve como referencia para la conciliación bancaria y puede registrar los saldos de apertura y cierre informados por el banco; los detalles relacionados se almacenan en otra tabla.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idConciliacionBancariaExtracto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro del extracto; la estructura no confirma si es clave primaria."
+   },
+   "idCuentaBancaria": {
+    "tipo": "integer",
+    "descripcion": "Identifica la cuenta bancaria a la que corresponde el extracto; apunta a General.CuentaBancaria(idCuentaBancaria)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año del período al que corresponde el extracto."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes del período al que corresponde el extracto; no se conocen las reglas del valor esperado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se conoce la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se conoce la tabla a la que apunta."
+   },
+   "saldoInicial": {
+    "tipo": "numeric",
+    "descripcion": "Saldo con el que abre el extracto del mes según el banco; es opcional y, si es NULL, no se aplica ninguna validación."
+   },
+   "saldoFinal": {
+    "tipo": "numeric",
+    "descripcion": "Saldo con el que cierra el extracto del mes según el banco y punto de partida de la conciliación; es opcional y, si es NULL, no se aplica ninguna validación."
+   }
+  },
+  "apunta_a": [
+   "idCuentaBancaria -> General.CuentaBancaria(idCuentaBancaria)"
+  ],
+  "la_referencian": [
+   "Contabilidad.ConciliacionBancariaExtractoDetalle(idConciliacionBancariaExtracto)"
+  ]
+ },
+ "Contabilidad.ConciliacionBancariaExtractoDetalle": {
+  "descripcion": "Guarda los movimientos individuales de un extracto bancario asociados a una conciliación bancaria. Sirve posiblemente para comparar esos movimientos con los movimientos contables y registrar si fueron conciliados o si generaron un documento contable.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idConciliacionBancariaExtractoDetalle": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle del extracto bancario."
+   },
+   "idConciliacionBancariaExtracto": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del extracto bancario al que pertenece; apunta a Contabilidad.ConciliacionBancariaExtracto(idConciliacionBancariaExtracto)."
+   },
+   "fecha": {
+    "tipo": "date",
+    "descripcion": "Fecha del movimiento informado en el extracto."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del movimiento según el extracto bancario."
+   },
+   "sucursal": {
+    "tipo": "character varying",
+    "descripcion": "Sucursal asociada al movimiento, si se informa."
+   },
+   "documento": {
+    "tipo": "character varying",
+    "descripcion": "Número o referencia del documento asociado al movimiento, si se informa."
+   },
+   "valorTransaccion": {
+    "tipo": "numeric",
+    "descripcion": "Importe del movimiento bancario; no se puede deducir si los débitos o créditos se representan con signo positivo o negativo."
+   },
+   "llaveConciliacion": {
+    "tipo": "character varying",
+    "descripcion": "Clave posiblemente usada para identificar o emparejar el movimiento durante la conciliación."
+   },
+   "conciliadoTemporal": {
+    "tipo": "boolean",
+    "descripcion": "Indica posiblemente si el movimiento quedó marcado como conciliado de forma temporal o preliminar; confirmar el significado exacto."
+   },
+   "conciliado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el movimiento está conciliado, aunque no se puede deducir qué condiciones determinan ese estado."
+   },
+   "generoDocumentoContable": {
+    "tipo": "boolean",
+    "descripcion": "Indica posiblemente si a partir del movimiento se generó un documento contable."
+   },
+   "idMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del movimiento contable asociado, si existe; apunta a Contabilidad.MovimientoContable(idMovimientoContable)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla de referencia."
+   },
+   "mensaje": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje asociado al registro, posiblemente relacionado con el resultado de un proceso o una validación."
+   }
+  },
+  "apunta_a": [
+   "idConciliacionBancariaExtracto -> Contabilidad.ConciliacionBancariaExtracto(idConciliacionBancariaExtracto)",
+   "idMovimientoContable -> Contabilidad.MovimientoContable(idMovimientoContable)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.DetalleMovimientoContable": {
+  "descripcion": "Guarda las líneas de los movimientos contables, asociando cada una con una cuenta del plan contable y registrando sus valores de débito y crédito. También permite vincular la línea con un tercero, un centro de costo y, cuando corresponde, una factura de cartera. Sus datos pueden apoyar procesos como conciliación, cierre contable y reportes financieros y de información exógena.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la línea del movimiento; la estructura no declara que sea clave primaria."
+   },
+   "idMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el movimiento contable al que pertenece la línea; apunta a Contabilidad.MovimientoContable(idMovimientoContable)."
+   },
+   "numeroLinea": {
+    "tipo": "integer",
+    "descripcion": "Número que identifica o permite ordenar la línea dentro del movimiento."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la cuenta contable asociada a la línea; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el tercero asociado a la línea, si aplica; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identifica el centro de costo asignado a la línea; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "detalleLinea": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o detalle textual de la línea."
+   },
+   "debito": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado en el débito de la línea."
+   },
+   "credito": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado en el crédito de la línea."
+   },
+   "cierre": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano posiblemente relacionado con un proceso o asiento de cierre; su significado exacto debe confirmarse."
+   },
+   "serieActivoFijo": {
+    "tipo": "character varying",
+    "descripcion": "Serie asociada a un activo fijo, si corresponde."
+   },
+   "idPlanContableNiif": {
+    "tipo": "bigint",
+    "descripcion": "Identifica una cuenta del plan contable usada posiblemente para información NIIF; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa la tabla de referencia."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Valor sobre el que se calculó el impuesto, según el comentario de la columna."
+   },
+   "porcentajeImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de impuesto utilizado para el cálculo, según el comentario de la columna."
+   },
+   "conceptoExogena": {
+    "tipo": "character varying",
+    "descripcion": "Concepto aplicable para clasificar la línea en un reporte de información exógena."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que creó o modificó el registro, según el comentario de la columna."
+   },
+   "idFacturaTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura de cartera que afecta la línea; apunta a Cartera.FacturaTercero(idFacturaTercero)."
+   },
+   "descripcionFacturaTercero": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la factura de cartera asociada, si corresponde."
+   },
+   "conciliadoTemporal": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de conciliación temporal; su alcance exacto debe confirmarse."
+   },
+   "conciliado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de conciliación; su alcance exacto debe confirmarse."
+   },
+   "llaveConciliacion": {
+    "tipo": "character varying",
+    "descripcion": "Valor textual posiblemente utilizado para relacionar o identificar elementos de conciliación."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idFacturaTercero -> Cartera.FacturaTercero(idFacturaTercero)",
+   "idMovimientoContable -> Contabilidad.MovimientoContable(idMovimientoContable)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableNiif -> Contabilidad.PlanContable(idPlanContable)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Cartera.CruceAnticipoProveedor(idDetalleMovimientoContable)",
+   "Cartera.FacturaTercero(idDetalleMovimientoContable)",
+   "Contabilidad.MovimientoContableFacturaProveedor(idDetalleMovimientoContable)"
+  ]
+ },
+ "Contabilidad.DetalleOtraCuentaCobrar": {
+  "descripcion": "Guarda las líneas de detalle asociadas a un registro de OtraCuentaCobrar, con conceptos, tercero, centro de costo, indicador de IVA y valor de la transacción. También registra información de pagos en efectivo, cheque o tarjeta y, posiblemente, condiciones para generar una cuenta por cobrar. Sirve para detallar los importes y la forma de pago de cada concepto del documento.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleOtraCuentaCobrar": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la línea de detalle; la estructura proporcionada no declara una clave primaria."
+   },
+   "idOtraCuentaCobrar": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la cuenta por cobrar a la que pertenece la línea; apunta a Contabilidad.OtraCuentaCobrar(idOtraCuentaCobrar)."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Número de posición de la línea dentro del documento."
+   },
+   "idConceptoTransaccion": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto de la transacción; apunta a Contabilidad.ConceptoTransaccion(idConceptoTransaccion)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identifica el centro de costo asociado; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero asociado a la línea; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de IVA aplicable; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "valorTransaccion": {
+    "tipo": "numeric",
+    "descripcion": "Importe de la línea de transacción; no se puede deducir si el signo indica débito, crédito u otro criterio."
+   },
+   "referenciaFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Número de factura de proveedor relacionado con la CXP, según el comentario de la columna."
+   },
+   "detalleLinea": {
+    "tipo": "character varying",
+    "descripcion": "Texto con información adicional sobre la línea."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Identifica la forma de pago del concepto; apunta a General.FormaPago(idFormaPago)."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Identifica el banco usado para el pago del concepto; apunta a Tercero.Banco(idBanco)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado en efectivo."
+   },
+   "valorPagoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado con cheque."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque, si corresponde."
+   },
+   "fechaChequePostfechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al cheque postfechado, si corresponde."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Identifica el tipo de tarjeta de débito o crédito; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número de tarjeta relacionado con el pago, si corresponde."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado con tarjeta."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa la tabla a la que apunta."
+   },
+   "generaCuentaCobrar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro genera una cuenta por cobrar; el comentario no especifica los valores operativos más allá de verdadero o falso."
+   },
+   "cantidadDias": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días asociada a la línea; no se puede deducir a qué plazo o cálculo corresponde."
+   },
+   "valorCuotaInicial": {
+    "tipo": "numeric",
+    "descripcion": "Importe de la cuota inicial asociado a la línea."
+   },
+   "cantidadCuotas": {
+    "tipo": "integer",
+    "descripcion": "Número de cuotas asociado a la línea."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idConceptoTransaccion -> Contabilidad.ConceptoTransaccion(idConceptoTransaccion)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idOtraCuentaCobrar -> Contabilidad.OtraCuentaCobrar(idOtraCuentaCobrar)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.DetalleOtroPasivo": {
+  "descripcion": "Guarda las líneas de detalle de un registro de otro pasivo, asociando cada concepto con un tercero, un centro de costo y los indicadores tributarios aplicables. También registra importes de la transacción, impuestos y retenciones, formas de pago y, cuando corresponde, datos de factura electrónica y anticipos cruzados.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleOtroPasivo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la línea de detalle; la estructura no declara si es clave primaria."
+   },
+   "idOtroPasivo": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el registro de otro pasivo al que pertenece la línea; apunta a Contabilidad.OtroPasivo(idOtroPasivo)."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Número de orden de la línea dentro del registro de otro pasivo."
+   },
+   "idConceptoTransaccion": {
+    "tipo": "integer",
+    "descripcion": "Identifica el concepto contable de la transacción; apunta a Contabilidad.ConceptoTransaccion(idConceptoTransaccion)."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Identifica el centro de costo asociado a la línea; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el tercero asociado a la línea; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de IVA aplicado; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "valorTransaccion": {
+    "tipo": "numeric",
+    "descripcion": "Importe de la transacción para esta línea; no se puede deducir si incluye impuestos ni qué signo representa débitos o créditos."
+   },
+   "referenciaFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Número de la factura del proveedor asociada a la cuenta por pagar, si aplica."
+   },
+   "detalleLinea": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo o detalle de la línea."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Identifica la forma de pago usada para cancelar el concepto; apunta a General.FormaPago(idFormaPago)."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Identifica el banco usado para realizar el pago; apunta a Tercero.Banco(idBanco)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado en efectivo para esta línea."
+   },
+   "valorPagoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado con cheque para esta línea."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque usado, si aplica."
+   },
+   "fechaChequePostfechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora del cheque posfechado, si aplica."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Identifica la tarjeta de débito o crédito asociada al pago; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número de la tarjeta asociada al pago, si aplica."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado con tarjeta para esta línea."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "generaCuentaPagar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la línea debe generar una cuenta por pagar; el significado de cada valor booleano no está ampliado más allá de esa regla."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identifica el tipo de retención en la fuente que se desea aplicar; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "idIndicadorRetencionIca": {
+    "tipo": "integer",
+    "descripcion": "Identifica el tipo de retención de ICA que se desea aplicar; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA generado en la transacción."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA generado en la transacción."
+   },
+   "porcentajeRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de retención en la fuente generado en la transacción."
+   },
+   "valorRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Importe de retención en la fuente generado en la transacción."
+   },
+   "porcentajeRetencionIca": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de retención de ICA generado en la transacción."
+   },
+   "valorRetencionIca": {
+    "tipo": "numeric",
+    "descripcion": "Importe de retención de ICA generado en la transacción."
+   },
+   "idIndicadorRetencionIva": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de retención de IVA; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "porcentajeRetencionIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de retención de IVA generado en la transacción."
+   },
+   "valorRetencionIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de retención de IVA generado en la transacción."
+   },
+   "cufe": {
+    "tipo": "character varying",
+    "descripcion": "CUFE del documento electrónico del proveedor; según el comentario, se carga en el proceso masivo DIAN y es nulo en causaciones manuales."
+   },
+   "valorAnticipo": {
+    "tipo": "numeric",
+    "descripcion": "Importe del anticipo cruzado en la línea; 0 indica que la línea no cruza anticipo, y el detalle del cruce se registra en Cartera.CruceAnticipoProveedor(idDetalleOtroPasivo)."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idConceptoTransaccion -> Contabilidad.ConceptoTransaccion(idConceptoTransaccion)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idIndicadorRetencionIca -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idIndicadorRetencionIva -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idOtroPasivo -> Contabilidad.OtroPasivo(idOtroPasivo)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Cartera.CruceAnticipoProveedor(idDetalleOtroPasivo)"
+  ]
+ },
+ "Contabilidad.DevolucionAnticipo": {
+  "descripcion": "Registra una relación de devolución entre dos anticipos de Contabilidad, ambos referenciados en la tabla Contabilidad.Anticipo. Posiblemente sirve para vincular el anticipo objeto de la devolución con el anticipo utilizado para cruzarla; la estructura no permite determinar el sentido exacto de cada referencia.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDevolucionAnticipo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de devolución; no está declarado como clave primaria en la estructura proporcionada."
+   },
+   "idAnticipo": {
+    "tipo": "bigint",
+    "descripcion": "Referencia a Contabilidad.Anticipo(idAnticipo); identifica uno de los anticipos involucrados en la devolución."
+   },
+   "idAnticipoCruce": {
+    "tipo": "bigint",
+    "descripcion": "Referencia a Contabilidad.Anticipo(idAnticipo); identifica el otro anticipo involucrado en el cruce."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idAnticipo -> Contabilidad.Anticipo(idAnticipo)",
+   "idAnticipoCruce -> Contabilidad.Anticipo(idAnticipo)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.DocumentoCuentaContable": {
+  "descripcion": "Guarda reglas de configuración contable asociadas a documentos: relaciona un documento y una posición con una cuenta del plan contable y otros criterios que pueden intervenir en la generación o distribución del asiento. Sus campos opcionales permiten asociar indicadores de impuestos, retenciones, bancos y conceptos de otros módulos. La tabla es utilizada por funciones de contabilización de documentos y recibos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDocumentoCuentaContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de esta configuración contable; la estructura no declara si es clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento al que se aplica la configuración; apunta a General.Documento(idDocumento)."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Posición asociada a la regla dentro de la configuración del documento; el criterio exacto de orden o selección no se deduce."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta del plan contable asociada a la regla; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "naturaleza": {
+    "tipo": "character varying",
+    "descripcion": "Naturaleza contable de la cuenta en la regla; los valores posibles no se deducen."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Indicador de retención asociado, si corresponde; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA asociado, si corresponde; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "formaPago": {
+    "tipo": "integer",
+    "descripcion": "Criterio de forma de pago para determinar la cuenta: 0 significa contado y 1 crédito."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado a la regla, si corresponde; apunta a Tercero.Banco(idBanco)."
+   },
+   "porcentajeRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje que se aplica sobre otros valores calculados en la interfaz; la base de cálculo no se especifica."
+   },
+   "indicadorCuenta": {
+    "tipo": "integer",
+    "descripcion": "Código usado para determinar la distribución de valores en el asiento contable; sus valores posibles no se deducen."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; posiblemente señala si la regla está habilitada, pero su significado exacto debe confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla no especifica a qué entidad apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; la tabla no especifica a qué entidad apunta."
+   },
+   "idFondoCredito": {
+    "tipo": "integer",
+    "descripcion": "Fondo de crédito asociado, si corresponde; determina el tipo de fondo y apunta a CarteraFinanciera.FondoCredito(idFondoCredito)."
+   },
+   "idConceptoNomina": {
+    "tipo": "integer",
+    "descripcion": "Concepto de nómina asociado, si corresponde; apunta a Nomina.Concepto(idConcepto)."
+   },
+   "idParametroLiquidacion": {
+    "tipo": "integer",
+    "descripcion": "Parámetro de liquidación asociado, si corresponde; determina un parámetro de apropiación y apunta a Nomina.ParametroLiquidacion(idParametroLiquidacion)."
+   },
+   "agrupar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se deben agrupar las apariciones repetidas de la cuenta al generar el asiento."
+   },
+   "idIndicadorImpuestoSaludable": {
+    "tipo": "integer",
+    "descripcion": "Indicador de impuesto saludable asociado, si corresponde; apunta a Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)."
+   },
+   "idClaseDepreciacionActivo": {
+    "tipo": "integer",
+    "descripcion": "Clase de depreciación de activo asociada, si corresponde; apunta a ActivoFijo.ClaseDepreciacionActivo(idClaseDepreciacionActivo)."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idConceptoNomina -> Nomina.Concepto(idConcepto)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFondoCredito -> CarteraFinanciera.FondoCredito(idFondoCredito)",
+   "idIndicadorImpuestoSaludable -> Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idParametroLiquidacion -> Nomina.ParametroLiquidacion(idParametroLiquidacion)",
+   "idClaseDepreciacionActivo -> ActivoFijo.ClaseDepreciacionActivo(idClaseDepreciacionActivo)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.Ipc": {
+  "descripcion": "Guarda valores anuales del IPC expresados como porcentaje de variación. Se utiliza en el módulo de arriendos para calcular incrementos de ley.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idIpc": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro; la estructura no declara una clave primaria."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el valor anual del IPC."
+   },
+   "valor": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de variación del IPC para el año indicado."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; no se puede deducir qué valor representa activo o inactivo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.Moneda": {
+  "descripcion": "Catálogo de monedas utilizadas en procesos contables, de facturación, empresa y ventas. Permite asociar una moneda a registros y, junto con Contabilidad.TrmDiario, posiblemente apoyar conversiones entre monedas. La tabla es referenciada por otras tablas, pero la estructura proporcionada no declara una clave primaria ni claves foráneas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMoneda": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la moneda; no se especifica si es único o clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la moneda; no se puede deducir qué estándar o convención utiliza."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la moneda."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano posiblemente usado para señalar si la moneda está habilitada; no se conoce el significado exacto de cada valor."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró la moneda."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.TrmDiario(idMoneda)",
+   "Contabilidad.TrmDiario(idMonedaConversion)",
+   "CuentaCobrar.Factura(idMonedaExtranjera)",
+   "CuentaCobrar.Factura(idMonedaLocal)",
+   "Empresa.Empresa(idMoneda)",
+   "Venta.CierreTurnoCajaEfectivo(idMoneda)",
+   "Venta.DenominacionMoneda(idMoneda)"
+  ]
+ },
+ "Contabilidad.MovimientoContable": {
+  "descripcion": "Guarda encabezados de movimientos contables, vinculados a un tipo de documento y con datos de identificación, fecha, descripción y control de anulación. También registra información relacionada con NIIF, auditoría y, posiblemente, ajustes de documentos soporte. Los detalles contables asociados se almacenan en Contabilidad.DetalleMovimientoContable.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del movimiento contable."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Tipo o clase de documento; apunta a General.Documento(idDocumento)."
+   },
+   "prefijo": {
+    "tipo": "character varying",
+    "descripcion": "Prefijo para diferenciar documentos de terceros con la misma numeración."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número del documento contable."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha del documento."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque asociado, si corresponde."
+   },
+   "manejaNiif": {
+    "tipo": "boolean",
+    "descripcion": "Indica posiblemente si el documento maneja información bajo NIIF; confirmar el alcance del valor verdadero."
+   },
+   "notaNiif": {
+    "tipo": "character varying",
+    "descripcion": "Comentario o revelación relacionada con normas NIIF."
+   },
+   "detalleCabecera": {
+    "tipo": "character varying",
+    "descripcion": "Descripción general del encabezado del movimiento contable."
+   },
+   "cierre": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento corresponde a un cierre anual de saldos."
+   },
+   "anulado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento está anulado."
+   },
+   "motivoAnulacion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del motivo de anulación, si aplica."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica aquí la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica aquí la tabla a la que apunta."
+   },
+   "idPlanContableRevelacion": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta primaria asociada a la revelación NIIF; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta del formulario que creó o modificó el registro."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC de la máquina del usuario, si se registra."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto, si se registra; su significado funcional exacto no está indicado."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina donde se generó la factura, según el comentario de la columna."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Empleado que creó el documento; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idMovimientoContableAjusta": {
+    "tipo": "bigint",
+    "descripcion": "Movimiento contable que se ajusta para el envío de un documento soporte a la DIAN; apunta a Contabilidad.MovimientoContable(idMovimientoContable)."
+   },
+   "idMotivoNotaAjuste": {
+    "tipo": "integer",
+    "descripcion": "Motivo de ajuste del documento soporte; apunta a CuentaPagar.MotivoNotaAjuste(idMotivoNotaAjuste)."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)",
+   "idMovimientoContableAjusta -> Contabilidad.MovimientoContable(idMovimientoContable)",
+   "idPlanContableRevelacion -> Contabilidad.PlanContable(idPlanContable)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idMotivoNotaAjuste -> CuentaPagar.MotivoNotaAjuste(idMotivoNotaAjuste)"
+  ],
+  "la_referencian": [
+   "Auditoria.DocumentoSoporteLog(idMovimientoContable)",
+   "CarteraFinanciera.CuotaCreditoAsociado(idMovimientoContable)",
+   "Contabilidad.ConciliacionBancariaExtractoDetalle(idMovimientoContable)",
+   "Contabilidad.DetalleMovimientoContable(idMovimientoContable)",
+   "Contabilidad.MovimientoContable(idMovimientoContableAjusta)",
+   "CuentaPagar.DocumentoSoporte(idMovimientoContable)",
+   "CuentaPagar.DocumentoSoporte(idMovimientoContableCruce)"
+  ]
+ },
+ "Contabilidad.MovimientoContableFacturaProveedor": {
+  "descripcion": "Registra referencias de factura de proveedor asociadas a un detalle de movimiento contable. Puede servir para conservar datos de identificación de la factura vinculados a ese detalle; la estructura no permite determinar si la relación es única o si admite varias facturas por detalle.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMovimientoContableFacturaProveedor": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de asociación con la factura de proveedor; no se indica si es clave primaria o cómo se genera."
+   },
+   "idDetalleMovimientoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de movimiento contable al que se asocia el registro; apunta a Contabilidad.DetalleMovimientoContable(idDetalleMovimientoContable)."
+   },
+   "referenciaFacturaProveedor": {
+    "tipo": "character varying",
+    "descripcion": "Referencia de la factura de proveedor, posiblemente su número o identificador asignado por el proveedor."
+   },
+   "cufe": {
+    "tipo": "character varying",
+    "descripcion": "Código CUFE asociado a la factura; posiblemente corresponde al Código Único de Factura Electrónica."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica la tabla a la que apunta."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta asociada al formulario; su uso concreto no se puede deducir de la estructura."
+   }
+  },
+  "apunta_a": [
+   "idDetalleMovimientoContable -> Contabilidad.DetalleMovimientoContable(idDetalleMovimientoContable)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.Nivel": {
+  "descripcion": "Guarda posiblemente la configuración de los niveles de una estructura contable, indicando la posición de cada nivel y la cantidad de caracteres que lo componen. Esta información se usa en funciones de saldos y reportes contables, por lo que posiblemente sirve para interpretar la estructura de las cuentas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idNivel": {
+    "tipo": "integer",
+    "descripcion": "Identificador del nivel; la estructura no indica si es una clave primaria ni qué valores puede tomar."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Posición asignada al nivel dentro de la estructura contable; no se especifica cómo se numeran los niveles."
+   },
+   "longitudNivel": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de caracteres que posee el nivel."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.OtraCuentaCobrar": {
+  "descripcion": "Registra cabeceras de operaciones de otras cuentas por cobrar en Contabilidad, asociadas a una transacción, un documento y un tercero. Puede tener detalles relacionados en Contabilidad.DetalleOtraCuentaCobrar y también es referenciada desde Cartera.FacturaTercero. Permite registrar datos de la operación, indicar si los valores incluyen IVA y controlar su anulación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idOtraCuentaCobrar": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la operación de otra cuenta por cobrar; la estructura no declara una clave primaria."
+   },
+   "idTransaccion": {
+    "tipo": "integer",
+    "descripcion": "Identifica la transacción contable asociada; apunta a Contabilidad.Transaccion(idTransaccion)."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identifica el documento asociado; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado a la operación o documento; su significado y alcance requieren confirmación."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a la operación."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero relacionado con la operación; apunta a Tercero.Tercero(idTercero)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto adicional; su uso funcional no se puede deducir de la estructura."
+   },
+   "valorIvaIncluido": {
+    "tipo": "boolean",
+    "descripcion": "Indica si los valores de las transacciones incluyen IVA."
+   },
+   "anulado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la operación está anulada: true significa anulada y false, no anulada."
+   },
+   "motivoAnulacion": {
+    "tipo": "character varying",
+    "descripcion": "Describe el motivo de anulación de la operación, si corresponde."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTransaccion -> Contabilidad.Transaccion(idTransaccion)"
+  ],
+  "la_referencian": [
+   "Cartera.FacturaTercero(idOtraCuentaCobrar)",
+   "Contabilidad.DetalleOtraCuentaCobrar(idOtraCuentaCobrar)"
+  ]
+ },
+ "Contabilidad.OtroPasivo": {
+  "descripcion": "Registra posiblemente la cabecera de documentos de otros pasivos en Contabilidad y los vincula con una transacción, un documento y un tercero. Incluye datos de fecha, numeración, IVA, retenciones y anulación, además de referencias opcionales a caja, turno y resolución. Puede servir para consultar o gestionar esos documentos y relacionarlos con sus detalles y con documentos que los anulan.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idOtroPasivo": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de otro pasivo; la estructura no declara una clave primaria."
+   },
+   "idTransaccion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la transacción contable asociada; apunta a Contabilidad.Transaccion(idTransaccion)."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento asociado; apunta a General.Documento(idDocumento)."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al documento o registro; no se especifica cómo se genera ni su alcance."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas al documento o registro."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero relacionado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto opcional cuyo uso específico no se puede deducir."
+   },
+   "valorIvaIncluido": {
+    "tipo": "boolean",
+    "descripcion": "Indica si los valores de las transacciones incluyen IVA."
+   },
+   "anulado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro está anulado: true significa anulado y false significa no anulado."
+   },
+   "motivoAnulacion": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de la anulación, si corresponde."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   },
+   "calcularBaseTotal": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la base de retenciones se calcula sobre el total del documento o sobre el valor de cada línea."
+   },
+   "idResolucion": {
+    "tipo": "integer",
+    "descripcion": "Resolución con la que se generó el documento, si corresponde; apunta a General.Resolucion(idResolucion)."
+   },
+   "idOtroPasivoAnula": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del documento de otro pasivo al que este registro anula; apunta a Contabilidad.OtroPasivo(idOtroPasivo)."
+   },
+   "idMotivoNotaAjuste": {
+    "tipo": "integer",
+    "descripcion": "Motivo de la nota de ajuste, si corresponde; apunta a CuentaPagar.MotivoNotaAjuste(idMotivoNotaAjuste)."
+   },
+   "idCaja": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de una caja asociada, si corresponde; no se indica la tabla de destino."
+   },
+   "idTurnoCaja": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de un turno de caja asociado, si corresponde; no se indica la tabla de destino."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)",
+   "idMotivoNotaAjuste -> CuentaPagar.MotivoNotaAjuste(idMotivoNotaAjuste)",
+   "idOtroPasivoAnula -> Contabilidad.OtroPasivo(idOtroPasivo)",
+   "idResolucion -> General.Resolucion(idResolucion)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTransaccion -> Contabilidad.Transaccion(idTransaccion)"
+  ],
+  "la_referencian": [
+   "Arriendo.ObligacionArriendo(idOtroPasivo)",
+   "Auditoria.DocumentoSoporteLog(idOtroPasivo)",
+   "Cartera.FacturaTercero(idOtroPasivo)",
+   "Contabilidad.DetalleOtroPasivo(idOtroPasivo)",
+   "Contabilidad.OtroPasivo(idOtroPasivoAnula)",
+   "CuentaPagar.DocumentoSoporte(idOtroPasivo)",
+   "CuentaPagar.DocumentoSoporte(idOtroPasivoCruce)"
+  ]
+ },
+ "Contabilidad.ParametroMedioExogeno": {
+  "descripcion": "Guarda parámetros que asocian conceptos contables con etiquetas y posiciones de formularios de información exógena. Sirve posiblemente para organizar los conceptos que utilizan los procesos de generación de formatos de medios exógenos; la tabla también es referenciada por Contabilidad.RetencionMedioExogeno.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idParametroMedioExogeno": {
+    "tipo": "integer",
+    "descripcion": "Identificador del parámetro; la estructura no declara una clave primaria ni confirma que sea único."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta (TAG) del formulario en el que se separa el concepto de información exógena."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Posición asociada al concepto dentro del formulario o de su organización; no se especifica cómo se interpreta."
+   },
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Concepto de medios exógenos asociado; clave foránea a Contabilidad.Concepto(idConcepto)."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del parámetro."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idConcepto -> Contabilidad.Concepto(idConcepto)"
+  ],
+  "la_referencian": [
+   "Contabilidad.RetencionMedioExogeno(idParametroMedioExogeno)"
+  ]
+ },
+ "Contabilidad.PlanContable": {
+  "descripcion": "Guarda las cuentas del plan contable y sus parámetros de uso en procesos contables y relacionados. Sirve para identificar y clasificar cuentas, configurar su tratamiento tributario y determinar si participan en operaciones como cuentas por cobrar, cuentas por pagar o manejo de terceros.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la cuenta del plan contable."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la cuenta contable."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la cuenta."
+   },
+   "naturaleza": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de naturaleza de la cuenta; el significado de cada valor booleano no se puede deducir."
+   },
+   "manejaTercero": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuenta requiere asociar un tercero; falta confirmar qué valor representa que sí lo requiere."
+   },
+   "manejaMovimiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuenta permite o requiere movimientos; el criterio exacto y el significado de cada valor deben confirmarse."
+   },
+   "tipoCuenta": {
+    "tipo": "integer",
+    "descripcion": "Clasificación de la cuenta: 0 Presupuesto, 1 Activo, 2 Pasivo, 3 Patrimonio, 4 Ingresos, 5 Gastos, 6 Costos de Ventas, 7 Costos de Producción o de Operación, 8 Cuentas de Orden Deudoras y 9 Cuentas de Orden Acreedoras."
+   },
+   "idConcepto": {
+    "tipo": "integer",
+    "descripcion": "Referencia a Contabilidad.Concepto(idConcepto), posiblemente para asociar un concepto contable."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica el estado de la cuenta; posiblemente señala si está activa, pero debe confirmarse qué valor representa cada estado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   },
+   "tipoRetencion": {
+    "tipo": "integer",
+    "descripcion": "Clasifica el tratamiento de impuesto o retención: 0 Retención en la fuente compras, 1 ReteICA, 2 ReteIVA, 3 Autoretención, 4 IVA compras, 5 Retención en la fuente ventas, 6 ReteICA ventas, 7 ReteIVA ventas y 8 «IVA centas» según el comentario."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base a partir de la cual se calcula el impuesto."
+   },
+   "porcentajeImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje aplicado al impuesto."
+   },
+   "pagoImpuesto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuenta se usa para el pago de impuestos; falta confirmar qué valor representa que sí."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dato de MAC asociado a la máquina o usuario; su contenido y uso exactos no se especifican."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto asociado; su uso exacto no se especifica."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o identificación de la máquina donde se generó la factura, según el comentario."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Referencia a Tercero.Banco(idBanco), para asociar la cuenta a un banco."
+   },
+   "generarCuentaPagar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se debe generar una cuenta por pagar; falta confirmar qué valor representa que sí."
+   },
+   "agrupar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se agrupan las apariciones de la cuenta en un asiento contable; falta confirmar qué valor representa que sí."
+   },
+   "codigoTipoImpuestoHKA": {
+    "tipo": "character varying",
+    "descripcion": "Código HKA asociado al tipo de impuesto para transmitir un documento soporte."
+   },
+   "generarCuentaCobrar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se debe generar una cuenta por cobrar; el comentario de la base dice CXP, por lo que hay una discrepancia que debe confirmarse."
+   },
+   "sincronizaDocumentoSoporte": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se debe sincronizar el registro con la DIAN como documento soporte; falta confirmar qué valor representa que sí."
+   },
+   "seleccionarCuentaPagar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se puede seleccionar un documento de cuentas por pagar del módulo de cartera al realizar el asiento contable."
+   },
+   "afectaAnticipo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuenta puede ser afectada por anticipos del módulo de arriendos; el comentario señala que su uso en documentos se define en una fase posterior."
+   }
+  },
+  "apunta_a": [
+   "idConcepto -> Contabilidad.Concepto(idConcepto)",
+   "idBanco -> Tercero.Banco(idBanco)"
+  ],
+  "la_referencian": [
+   "Cartera.DetalleReciboComprobante(idPlanContable)",
+   "Cartera.FacturaTercero(idPlanContableCuentaCobrar)",
+   "Cartera.FacturaTercero(idPlanContableCuentaPagar)",
+   "CarteraFinanciera.CuotaCreditoAsociado(idPlanContableCuentaCobrarCausacion)",
+   "Contabilidad.CierreCuentaMes(idPlanContable)",
+   "Contabilidad.DetalleMovimientoContable(idPlanContable)",
+   "Contabilidad.DetalleMovimientoContable(idPlanContableNiif)",
+   "Contabilidad.DocumentoCuentaContable(idPlanContable)",
+   "Contabilidad.MovimientoContable(idPlanContableRevelacion)",
+   "Contabilidad.PlanContableMedioExogeno(idPlanContable)",
+   "Contabilidad.Regimen(idPlanContableFacturar)",
+   "Contabilidad.Regimen(idPlanContableRadicar)",
+   "Contabilidad.RetencionMedioExogeno(idPlanContable)",
+   "Contabilidad.SaldoContable(idPlanContable)",
+   "Contabilidad.SaldoContableTercero(idPlanContable)"
+  ]
+ },
+ "Contabilidad.PlanContableMedioExogeno": {
+  "descripcion": "Relaciona cuentas del plan contable con registros de retención para medios exógenos. Posiblemente sirve para clasificar o recuperar información de las cuentas en los reportes de medios exógenos y en procesos de reclasificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPlanContableMedioExogeno": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la relación; la estructura no confirma si es único o clave primaria."
+   },
+   "idRetencionMedioExogeno": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de retención asociado; apunta a Contabilidad.RetencionMedioExogeno(idRetencionMedioExogeno)."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la cuenta del plan contable asociada; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idRetencionMedioExogeno -> Contabilidad.RetencionMedioExogeno(idRetencionMedioExogeno)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.ResponsabilidadTributaria": {
+  "descripcion": "Guarda un catálogo de responsabilidades tributarias, con códigos y descripciones asociados a la DIAN y a la facturación electrónica. Sirve posiblemente para registrar y consultar las responsabilidades tributarias relacionadas con terceros, según su referencia desde Contabilidad.ResponsabilidadTributariaTercero.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idResponsabilidadTributaria": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la responsabilidad tributaria; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código definido por la DIAN."
+   },
+   "codigoFE": {
+    "tipo": "character varying",
+    "descripcion": "Código utilizado para facturación electrónica; no se especifica su sistema de valores."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la responsabilidad tributaria."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; posiblemente señala si está activo, pero no se confirma qué significa cada valor."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   },
+   "codigoDian": {
+    "tipo": "character varying",
+    "descripcion": "Código relacionado con la DIAN, opcional; no se especifica cómo se diferencia de codigo."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.ResponsabilidadTributariaTercero(idResponsabilidadTributaria)"
+  ]
+ },
+ "Contabilidad.ResponsabilidadTributariaTercero": {
+  "descripcion": "Relaciona terceros con responsabilidades tributarias registradas en el módulo de Contabilidad. Permite asociar a cada tercero una o más responsabilidades tributarias para su gestión contable o fiscal. Incluye fechas e identificadores de usuario para registrar información de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idResponsabilidadTributariaTercero": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro que relaciona un tercero con una responsabilidad tributaria; la estructura no indica si es clave primaria."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero relacionado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idResponsabilidadTributaria": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la responsabilidad tributaria asignada; apunta a Contabilidad.ResponsabilidadTributaria(idResponsabilidadTributaria)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la estructura no indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la estructura no indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idResponsabilidadTributaria -> Contabilidad.ResponsabilidadTributaria(idResponsabilidadTributaria)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.RetencionMedioExogeno": {
+  "descripcion": "Guarda registros de retención asociados a parámetros del medio de información exógena y, opcionalmente, a una cuenta del plan contable. Posiblemente se utiliza para configurar o clasificar bases de retención en los reportes exógenos; también la consulta otra tabla de relación con cuentas contables.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRetencionMedioExogeno": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de retención; lo referencia Contabilidad.PlanContableMedioExogeno."
+   },
+   "idParametroMedioExogeno": {
+    "tipo": "integer",
+    "descripcion": "Identificador del parámetro del medio exógeno al que pertenece; apunta a Contabilidad.ParametroMedioExogeno."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Posición u orden del registro dentro de su configuración; no se puede deducir cómo se aplica ese orden."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable asociada, si corresponde; apunta a Contabilidad.PlanContable y admite valores nulos."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Valor o base relacionada con el impuesto para este registro; no se puede deducir su unidad, signo ni cálculo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla de usuarios relacionada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla de usuarios relacionada."
+   }
+  },
+  "apunta_a": [
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idParametroMedioExogeno -> Contabilidad.ParametroMedioExogeno(idParametroMedioExogeno)"
+  ],
+  "la_referencian": [
+   "Contabilidad.PlanContableMedioExogeno(idRetencionMedioExogeno)"
+  ]
+ },
+ "Contabilidad.RptExogena1001": {
+  "descripcion": "La tabla guarda registros posiblemente destinados a generar información exógena del formato 1001, asociada a terceros y a conceptos contables. Incluye datos de identificación y ubicación del tercero, además de una base de impuesto y 34 importes vinculados a cuentas o conceptos del reporte. La estructura no permite determinar el significado exacto de cada importe ni las reglas con que se generan los registros.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRptExogena1001": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de información exógena; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "concepto": {
+    "tipo": "character varying",
+    "descripcion": "Código o descripción del concepto reportado; los valores posibles no se pueden deducir."
+   },
+   "tipo": {
+    "tipo": "character varying",
+    "descripcion": "Código que clasifica el tipo de registro o de tercero; sus valores no se pueden deducir."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero asociado; posiblemente referencia un registro de Tercero, aunque no se declara una clave foránea."
+   },
+   "numeroIdentificacion": {
+    "tipo": "character varying",
+    "descripcion": "Número de identificación del tercero."
+   },
+   "digitoVerificacion": {
+    "tipo": "character varying",
+    "descripcion": "Dígito de verificación asociado a la identificación del tercero; su formato depende del tipo de identificación."
+   },
+   "primerNombre": {
+    "tipo": "character varying",
+    "descripcion": "Primer nombre del tercero, si corresponde a una persona natural."
+   },
+   "segundoNombre": {
+    "tipo": "character varying",
+    "descripcion": "Segundo nombre del tercero, si corresponde a una persona natural."
+   },
+   "primerApellido": {
+    "tipo": "character varying",
+    "descripcion": "Primer apellido del tercero, si corresponde a una persona natural."
+   },
+   "segundoApellido": {
+    "tipo": "character varying",
+    "descripcion": "Segundo apellido del tercero, si corresponde a una persona natural."
+   },
+   "razonSocial": {
+    "tipo": "character varying",
+    "descripcion": "Razón social del tercero, si corresponde a una persona jurídica u organización."
+   },
+   "direccion": {
+    "tipo": "character varying",
+    "descripcion": "Dirección registrada para el tercero."
+   },
+   "codigoDaneDepartamento": {
+    "tipo": "character varying",
+    "descripcion": "Código DANE del departamento asociado a la ubicación del tercero."
+   },
+   "codigoDaneMunicipio": {
+    "tipo": "character varying",
+    "descripcion": "Código DANE del municipio asociado a la ubicación del tercero."
+   },
+   "codigoPais": {
+    "tipo": "character varying",
+    "descripcion": "Código del país asociado al tercero; el estándar utilizado no se puede deducir."
+   },
+   "valorCuenta1": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al primer espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base imponible asociada al registro; no se puede deducir qué impuesto ni qué regla de cálculo representa."
+   },
+   "valorCuenta2": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al segundo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta3": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al tercer espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta4": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al cuarto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta5": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al quinto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta6": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al sexto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta7": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al séptimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta8": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al octavo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta9": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al noveno espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta10": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al décimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta11": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al undécimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta12": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al duodécimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta13": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al decimotercer espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta14": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al decimocuarto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta15": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al decimoquinto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta16": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al decimosexto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta17": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al decimoséptimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta18": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al decimoctavo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta19": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al decimonoveno espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta20": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigésimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta21": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimoprimer espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta22": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimosegundo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta23": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimotercer espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta24": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimocuarto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta25": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimoquinto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta26": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimosexto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta27": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimoséptimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta28": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimoctavo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta29": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al vigesimonoveno espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta30": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al trigésimo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta31": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al trigésimo primer espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta32": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al trigésimo segundo espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta33": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al trigésimo tercer espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   },
+   "valorCuenta34": {
+    "tipo": "numeric",
+    "descripcion": "Importe asociado al trigésimo cuarto espacio de cuenta del registro; su concepto exacto no se puede deducir."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptImpuestoIva": {
+  "descripcion": "Por su nombre y por la función que la utiliza, posiblemente almacena valores de un reporte de impuesto al valor agregado (IVA) de Contabilidad. La estructura no permite identificar qué representa cada valor ni cómo se organiza cada registro. No se observa una clave primaria ni relaciones declaradas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "campo1": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 1 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo2": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 2 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo3": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 3 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo4": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 4 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo5": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 5 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo6": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 6 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo7": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 7 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo8": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 8 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo9": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 9 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo10": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 10 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo11": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 11 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo12": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 12 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo13": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 13 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo14": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 14 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo15": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 15 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo16": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 16 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo17": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 17 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo18": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 18 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo19": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 19 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo20": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 20 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo21": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 21 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo22": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 22 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo23": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 23 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo24": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 24 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo25": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 25 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo26": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 26 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo27": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 27 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo28": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 28 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo29": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 29 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo30": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 30 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo31": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 31 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo32": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 32 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo33": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 33 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo34": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 34 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo35": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 35 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo36": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 36 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo37": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 37 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo38": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 38 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo39": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 39 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo40": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 40 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo41": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 41 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo42": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 42 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo43": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 43 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo44": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 44 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo45": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 45 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo46": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 46 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo47": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 47 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo48": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 48 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo49": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 49 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo50": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 50 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo51": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 51 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo52": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 52 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo53": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 53 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo54": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 54 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo55": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 55 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo56": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 56 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo57": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 57 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo58": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 58 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo59": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 59 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo60": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 60 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo61": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 61 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo62": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 62 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo63": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 63 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo64": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 64 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo65": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 65 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que generó el reporte, según el comentario de la columna; no se declara a qué tabla apunta."
+   },
+   "campo66": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 66 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   },
+   "campo67": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico 67 del reporte; su concepto de negocio no se puede identificar con la estructura."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptRelacionDocumento": {
+  "descripcion": "Parece almacenar filas de información para el reporte de relación de documentos contables, posiblemente como resultado o soporte de Contabilidad.fnReporteRelacionDocumento. Incluye datos descriptivos del documento y valores separados para débito y crédito. La estructura no permite confirmar si conserva información histórica o se carga temporalmente para generar el reporte.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "consecutivo": {
+    "tipo": "bigint",
+    "descripcion": "Número consecutivo de la fila; no se declara como clave primaria."
+   },
+   "documento": {
+    "tipo": "character varying",
+    "descripcion": "Tipo o identificación del documento relacionado; su significado exacto no se puede determinar."
+   },
+   "numero": {
+    "tipo": "character varying",
+    "descripcion": "Número asociado al documento."
+   },
+   "fecha": {
+    "tipo": "character varying",
+    "descripcion": "Fecha asociada al documento, almacenada como texto; no se puede deducir su formato."
+   },
+   "detalle": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo o detalle de la fila del reporte."
+   },
+   "valorDebito": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario presentado como débito; no se puede deducir el signo ni cómo se calcula."
+   },
+   "valorCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario presentado como crédito; no se puede deducir el signo ni cómo se calcula."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado a la fila; no se declara una clave foránea que indique a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptRevelacion": {
+  "descripcion": "Guarda filas asociadas posiblemente a un reporte de revelación contable, con datos de documento, fecha, detalle y valores débito y crédito. La función Contabilidad.fnRevelacion la utiliza; no se puede determinar solo con la estructura si la tabla conserva resultados o sirve como área temporal de trabajo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "consecutivo": {
+    "tipo": "bigint",
+    "descripcion": "Número consecutivo de la fila; no se informa una clave primaria que permita confirmar su unicidad."
+   },
+   "documento": {
+    "tipo": "character varying",
+    "descripcion": "Identificación o tipo de documento relacionado con la fila; su significado exacto no se puede deducir."
+   },
+   "numero": {
+    "tipo": "character varying",
+    "descripcion": "Número asociado al documento o registro; su uso exacto no se puede deducir."
+   },
+   "fecha": {
+    "tipo": "character varying",
+    "descripcion": "Fecha asociada a la fila almacenada como texto; no se conoce su formato."
+   },
+   "detalle": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o detalle de la fila del reporte."
+   },
+   "valorDebito": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado en débito, posiblemente expresado en moneda; no se conoce su convención de signo."
+   },
+   "valorCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado en crédito, posiblemente expresado en moneda; no se conoce su convención de signo."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de un usuario relacionado con la fila; no se declara una clave foránea ni se conoce a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptTemBalanceGeneral": {
+  "descripcion": "Tabla de trabajo utilizada por funciones de Contabilidad para preparar datos de reportes como balance general, balance de prueba, estado de resultados y libro auxiliar. Reúne cuentas, centros de costo, valores débito y crédito y datos auxiliares que posiblemente se usan al generar o exportar esos reportes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "consecutivo": {
+    "tipo": "bigint",
+    "descripcion": "Número consecutivo del registro; no se puede deducir si identifica el orden, una ejecución o una fila."
+   },
+   "codigoCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Código de la cuenta contable incluida en el reporte."
+   },
+   "descripcionCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o nombre de la cuenta contable."
+   },
+   "centroCosto": {
+    "tipo": "character varying",
+    "descripcion": "Código o identificación del centro de costo asociado al registro, si aplica."
+   },
+   "saldoDebito": {
+    "tipo": "numeric",
+    "descripcion": "Importe registrado como saldo débito de la cuenta."
+   },
+   "saldoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Importe registrado como saldo crédito de la cuenta."
+   },
+   "valorDebito": {
+    "tipo": "numeric",
+    "descripcion": "Importe débito asociado al registro; su diferencia frente a los campos de saldo no se puede deducir."
+   },
+   "valorCredito": {
+    "tipo": "numeric",
+    "descripcion": "Importe crédito asociado al registro; su diferencia frente a los campos de saldo no se puede deducir."
+   },
+   "nuevoDebito": {
+    "tipo": "numeric",
+    "descripcion": "Importe en una categoría de débito denominada «nuevo»; el sentido exacto no se puede deducir."
+   },
+   "nuevoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Importe en una categoría de crédito denominada «nuevo»; el sentido exacto no se puede deducir."
+   },
+   "naturaleza": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de la naturaleza de la cuenta o del saldo; no se puede deducir qué representan verdadero y falso."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario relacionado con el registro; no se declara una clave foránea que indique a qué tabla apunta."
+   },
+   "tipoRegistro": {
+    "tipo": "character varying",
+    "descripcion": "Tipo de registro que se usa para generar el plano, según el comentario de la columna; los valores posibles no se especifican."
+   },
+   "cuentaAuxiliar": {
+    "tipo": "character varying",
+    "descripcion": "Código o identificación de una cuenta auxiliar asociada al registro, si aplica."
+   },
+   "nitAuxiliar": {
+    "tipo": "character varying",
+    "descripcion": "Identificación tributaria del auxiliar asociado al registro, posiblemente un tercero."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptTemBalanceGeneralAnual": {
+  "descripcion": "Posiblemente almacena filas de datos preparadas para el reporte anual de balance general de Contabilidad, que también utiliza la función Contabilidad.fnReporteBalanceGeneralAnual. Cada fila relaciona información de una cuenta —y posiblemente de un centro de costo— con saldos mensuales y un saldo total; la estructura no indica cómo se calculan esos valores ni cuándo se cargan.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "consecutivo": {
+    "tipo": "bigint",
+    "descripcion": "Número consecutivo de la fila o registro; su alcance y función exactos no se pueden deducir."
+   },
+   "codigoCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Código de la cuenta contable asociada a la fila."
+   },
+   "descripcionCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la cuenta contable."
+   },
+   "centroCosto": {
+    "tipo": "character varying",
+    "descripcion": "Código o identificador del centro de costo relacionado, si aplica."
+   },
+   "tipoRegistro": {
+    "tipo": "character varying",
+    "descripcion": "Código que clasifica el tipo de registro; sus valores y significado no se pueden deducir."
+   },
+   "claseCuenta": {
+    "tipo": "integer",
+    "descripcion": "Código numérico de la clase de cuenta; su catálogo y valores no se pueden deducir."
+   },
+   "naturaleza": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de la naturaleza de la cuenta, posiblemente deudora o acreedora; no se puede deducir qué valor representa cada naturaleza."
+   },
+   "saldoMes1": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 1 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes2": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 2 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes3": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 3 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes4": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 4 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes5": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 5 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes6": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 6 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes7": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 7 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes8": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 8 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes9": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 9 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes10": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 10 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes11": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 11 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoMes12": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado al mes 12 del período reportado; no se puede deducir si es saldo inicial, final u otro tipo de saldo."
+   },
+   "saldoTotal": {
+    "tipo": "numeric",
+    "descripcion": "Saldo total asociado a la fila; no se puede deducir cómo se calcula respecto de los saldos mensuales."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado al registro; no se declara una clave foránea, por lo que no se puede confirmar a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptTemBalanceGeneralComparativo": {
+  "descripcion": "Guarda filas con cuentas, centros de costo y hasta seis saldos para comparaciones usadas por reportes de balance general y estado de resultados. Por su nombre y uso en funciones de reporte, posiblemente es una tabla auxiliar para preparar esos resultados; la estructura no permite confirmar cómo se cargan ni cuánto tiempo se conservan los datos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "consecutivo": {
+    "tipo": "bigint",
+    "descripcion": "Número entero asociado a la fila; no se indica si funciona como orden, identificador u otro consecutivo."
+   },
+   "codigoCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Código de la cuenta contable incluida en la comparación."
+   },
+   "descripcionCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la cuenta contable."
+   },
+   "centroCosto": {
+    "tipo": "character varying",
+    "descripcion": "Código o referencia del centro de costo asociado a la fila, si aplica."
+   },
+   "saldoMes1": {
+    "tipo": "numeric",
+    "descripcion": "Saldo correspondiente al primer mes de la comparación; no se especifica el período ni el criterio de signo."
+   },
+   "saldoMes2": {
+    "tipo": "numeric",
+    "descripcion": "Saldo correspondiente al segundo mes de la comparación; no se especifica el período ni el criterio de signo."
+   },
+   "saldoMes3": {
+    "tipo": "numeric",
+    "descripcion": "Saldo correspondiente al tercer mes de la comparación; no se especifica el período ni el criterio de signo."
+   },
+   "saldoMes4": {
+    "tipo": "numeric",
+    "descripcion": "Saldo correspondiente al cuarto mes de la comparación; no se especifica el período ni el criterio de signo."
+   },
+   "saldoMes5": {
+    "tipo": "numeric",
+    "descripcion": "Saldo correspondiente al quinto mes de la comparación; no se especifica el período ni el criterio de signo."
+   },
+   "saldoMes6": {
+    "tipo": "numeric",
+    "descripcion": "Saldo correspondiente al sexto mes de la comparación; no se especifica el período ni el criterio de signo."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado a la fila; no se declara una clave foránea ni se conoce a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptTemBalanceGeneralPRO": {
+  "descripcion": "Almacena filas de detalle contable con cuentas, terceros, documentos, centros de costo y valores debitados o acreditados, posiblemente como información intermedia para reportes. La usan funciones de balance de prueba y libro auxiliar, incluidas variantes con filtro por centro de costo. La estructura no permite determinar con certeza el período ni la fórmula de los valores almacenados.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "consecutivo": {
+    "tipo": "bigint",
+    "descripcion": "Número consecutivo de la fila; no se declara como clave primaria."
+   },
+   "codigoCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Código de la cuenta contable asociada al registro."
+   },
+   "descripcionCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la cuenta contable."
+   },
+   "centroCosto": {
+    "tipo": "character varying",
+    "descripcion": "Código o identificador del centro de costo asociado."
+   },
+   "nitTercero": {
+    "tipo": "character varying",
+    "descripcion": "NIT del tercero relacionado con el registro."
+   },
+   "descripcionTercero": {
+    "tipo": "character varying",
+    "descripcion": "Descripción o nombre del tercero relacionado."
+   },
+   "documento": {
+    "tipo": "character varying",
+    "descripcion": "Identificador del documento contable relacionado."
+   },
+   "fecha": {
+    "tipo": "character varying",
+    "descripcion": "Fecha asociada al registro, almacenada como texto; se desconoce su formato."
+   },
+   "detalleCabecera": {
+    "tipo": "character varying",
+    "descripcion": "Texto de detalle o descripción de la cabecera del documento."
+   },
+   "saldoDebito": {
+    "tipo": "numeric",
+    "descripcion": "Valor de saldo débito asociado a la cuenta o al registro."
+   },
+   "saldoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor de saldo crédito asociado a la cuenta o al registro."
+   },
+   "valorDebito": {
+    "tipo": "numeric",
+    "descripcion": "Valor débito asociado al movimiento o registro."
+   },
+   "valorCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor crédito asociado al movimiento o registro."
+   },
+   "nuevoDebito": {
+    "tipo": "numeric",
+    "descripcion": "Valor débito identificado como nuevo; su cálculo o propósito específico no se deduce de la estructura."
+   },
+   "nuevoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor crédito identificado como nuevo; su cálculo o propósito específico no se deduce de la estructura."
+   },
+   "naturaleza": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano relacionado posiblemente con la naturaleza débito o crédito de la cuenta; no se puede determinar qué valor representa cada caso."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado al registro; no se declara una clave foránea."
+   },
+   "tipoRegistro": {
+    "tipo": "character varying",
+    "descripcion": "Código o descripción del tipo de registro; sus valores no se pueden deducir."
+   },
+   "cuentaAuxiliar": {
+    "tipo": "character varying",
+    "descripcion": "Código de la cuenta auxiliar asociada, si corresponde."
+   },
+   "nitAuxiliar": {
+    "tipo": "character varying",
+    "descripcion": "NIT del tercero auxiliar asociado, si corresponde."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.RptTemInventarioBalance": {
+  "descripcion": "Guarda filas posiblemente temporales utilizadas para generar reportes de balance de inventario contable, con información de cuentas, centros de costo y valores al débito y al crédito. Las funciones de reporte asociadas sugieren que sirve como conjunto de datos intermedio para presentar el balance, posiblemente con o sin filtro por centro de costo. La estructura no permite determinar cuándo se carga ni cómo se distinguen los distintos importes.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "consecutivo": {
+    "tipo": "bigint",
+    "descripcion": "Número consecutivo de la fila; no se puede confirmar si funciona como orden, identificador u otro dato."
+   },
+   "codigoCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Código de la cuenta contable incluida en el reporte."
+   },
+   "descripcionCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la cuenta contable."
+   },
+   "centroCosto": {
+    "tipo": "character varying",
+    "descripcion": "Código o identificación del centro de costo asociado, si corresponde."
+   },
+   "saldoDebito": {
+    "tipo": "numeric",
+    "descripcion": "Importe registrado como saldo débito; no se puede determinar el período o cálculo que representa."
+   },
+   "saldoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Importe registrado como saldo crédito; no se puede determinar el período o cálculo que representa."
+   },
+   "valorDebito": {
+    "tipo": "numeric",
+    "descripcion": "Importe de débito asociado a la cuenta; su diferencia respecto de saldoDebito no se deduce de la estructura."
+   },
+   "valorCredito": {
+    "tipo": "numeric",
+    "descripcion": "Importe de crédito asociado a la cuenta; su diferencia respecto de saldoCredito no se deduce de la estructura."
+   },
+   "nuevoDebito": {
+    "tipo": "numeric",
+    "descripcion": "Importe de débito identificado como nuevo; no se puede determinar qué condición lo hace nuevo."
+   },
+   "nuevoCredito": {
+    "tipo": "numeric",
+    "descripcion": "Importe de crédito identificado como nuevo; no se puede determinar qué condición lo hace nuevo."
+   },
+   "naturaleza": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano posiblemente relacionado con la naturaleza débito o crédito de la cuenta; no se conoce qué valor representa cada opción."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado a la fila; no se declara una clave foránea que permita confirmar a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.SaldoContable": {
+  "descripcion": "Guarda valores contables por cuenta del plan contable y período, con posibilidad de asociarlos a un centro de costo. Se utiliza en cálculos de saldos, cierres contables y reportes como el balance general y el balance de prueba. La estructura no permite determinar si los valores son movimientos del período, saldos acumulados o una combinación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idSaldoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de saldo contable; la estructura no declara que sea clave primaria."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la cuenta del plan contable a la que corresponde el registro; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el registro contable."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde el registro contable; no se puede deducir el formato o rango utilizado."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado, si corresponde; puede quedar sin valor y apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "valorDebito": {
+    "tipo": "numeric",
+    "descripcion": "Valor contabilizado en el lado débito; no se puede deducir si representa movimientos del período o un acumulado."
+   },
+   "valorCredito": {
+    "tipo": "numeric",
+    "descripcion": "Valor contabilizado en el lado crédito; no se puede deducir si representa movimientos del período o un acumulado."
+   },
+   "valorSaldo": {
+    "tipo": "numeric",
+    "descripcion": "Saldo asociado a la cuenta y período; no se puede deducir la fórmula ni la convención de signo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea que indique a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea que indique a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.SaldoContableTercero": {
+  "descripcion": "Guarda saldos contables asociados a una cuenta del plan contable, un tercero, un año y un mes, con un centro de costo opcional. Incluye valores de débito, crédito y saldo; posiblemente representa información periódica, aunque la estructura no permite confirmar si los valores son del período o acumulados. Se utiliza en procesos de cierre, recálculo y reportes contables.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idSaldoContableTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro; la estructura no indica si es clave primaria ni si es único."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la cuenta del plan contable a la que corresponde el saldo; referencia a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el tercero asociado al saldo; referencia a Tercero.Tercero(idTercero)."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el registro."
+   },
+   "mes": {
+    "tipo": "integer",
+    "descripcion": "Mes al que corresponde el registro."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado, si corresponde; puede ser nulo y referencia a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "valorDebito": {
+    "tipo": "numeric",
+    "descripcion": "Importe registrado como débito."
+   },
+   "valorCredito": {
+    "tipo": "numeric",
+    "descripcion": "Importe registrado como crédito."
+   },
+   "saldo": {
+    "tipo": "numeric",
+    "descripcion": "Importe del saldo contable; no se puede deducir su fórmula ni convención de signo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa una tabla de referencia."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)",
+   "idTercero -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.TerceroTipoImpuesto": {
+  "descripcion": "Relaciona terceros con tipos de impuesto y almacena un código asociado a cada relación. Puede servir para registrar la clasificación tributaria de un tercero, aunque el propósito exacto de `codigo` no se puede deducir de la estructura.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTerceroTipoImpuesto": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la relación entre un tercero y un tipo de impuesto; la estructura no indica que sea clave primaria."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al tercero relacionado; apunta a `Tercero.Tercero(idTercero)`."
+   },
+   "idTipoImpuesto": {
+    "tipo": "integer",
+    "descripcion": "Identifica el tipo de impuesto asociado; apunta a `Contabilidad.TipoImpuesto(idTipoImpuesto)`."
+   },
+   "codigo": {
+    "tipo": "integer",
+    "descripcion": "Código asociado a la relación; su significado y posibles valores no se pueden deducir de la estructura."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTipoImpuesto -> Contabilidad.TipoImpuesto(idTipoImpuesto)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.TipoImpuesto": {
+  "descripcion": "Guarda tipos de impuesto mediante un identificador, un código y una descripción. Posiblemente funciona como catálogo para clasificar los impuestos asociados a terceros, ya que Contabilidad.TerceroTipoImpuesto la referencia por idTipoImpuesto. Incluye un estado y fechas e identificadores de usuario para registrar información de control.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipoImpuesto": {
+    "tipo": "integer",
+    "descripcion": "Identificador del tipo de impuesto; Contabilidad.TerceroTipoImpuesto lo usa como referencia."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del tipo de impuesto; no se puede determinar qué valores o formato admite."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto que describe el tipo de impuesto."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado exacto no se especifica; posiblemente distingue tipos vigentes de no vigentes."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una tabla de referencia."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.TerceroTipoImpuesto(idTipoImpuesto)"
+  ]
+ },
+ "Contabilidad.TmpNiveles": {
+  "descripcion": "Registra niveles asociados posiblemente a planes contables e indica si cada nivel maneja movimientos. La función Contabilidad.fnCrearSaldoContabilidad la utiliza, posiblemente para crear saldos contables según esos niveles.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "id": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del nivel; la estructura no confirma si es único."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del plan contable asociado; no se declara una clave foránea que confirme a qué tabla apunta."
+   },
+   "manejaMovimiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el nivel permite manejar movimientos; el significado exacto de «manejar» debe confirmarse con el equipo."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.TmpVerificacionContable": {
+  "descripcion": "La tabla parece servir como almacenamiento auxiliar para la verificación de movimientos contables, ya que su nombre incluye «TmpVerificacion» y la utiliza Contabilidad.fnVerificaMovimientoContable. Posiblemente guarda comentarios o mensajes generados durante esa verificación; la estructura no permite confirmar su ciclo de vida ni si registra errores, advertencias u otro tipo de resultado.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "comentario": {
+    "tipo": "character varying",
+    "descripcion": "Texto opcional que posiblemente contiene un comentario o mensaje asociado a la verificación contable; su contenido específico no se puede deducir."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "Contabilidad.Transaccion": {
+  "descripcion": "Parece ser un catálogo de transacciones contables, identificado por un código y una descripción opcional. Otras tablas del módulo de Contabilidad lo referencian para asociarles una transacción. La estructura no permite determinar qué operaciones concretas representa cada registro ni cómo se usa su estado.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTransaccion": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la transacción; la estructura no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código de la transacción; no se pueden deducir su formato ni sus valores posibles."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción opcional de la transacción."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; posiblemente señala si la transacción está activa, pero debe confirmarse qué significan true y false."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la estructura no declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la estructura no declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Contabilidad.ConceptoTransaccion(idTransaccion)",
+   "Contabilidad.OtraCuentaCobrar(idTransaccion)",
+   "Contabilidad.OtroPasivo(idTransaccion)"
+  ]
+ },
+ "Contabilidad.TrmDiario": {
+  "descripcion": "Guarda valores de tasa de cambio asociados a una fecha y a un par de monedas. Posiblemente sirve como referencia para convertir importes entre la moneda identificada por idMoneda y la identificada por idMonedaConversion.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTrmDiario": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de tasa diaria; la estructura no indica si es clave primaria."
+   },
+   "idMoneda": {
+    "tipo": "integer",
+    "descripcion": "Moneda de origen o asociada a la tasa; referencia a Contabilidad.Moneda(idMoneda)."
+   },
+   "idMonedaConversion": {
+    "tipo": "integer",
+    "descripcion": "Moneda de conversión o destino asociada a la tasa; referencia a Contabilidad.Moneda(idMoneda)."
+   },
+   "fecha": {
+    "tipo": "date",
+    "descripcion": "Fecha a la que corresponde la tasa de cambio."
+   },
+   "valorTrm": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico de la tasa para el par de monedas; no se puede deducir su dirección ni escala."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idMoneda -> Contabilidad.Moneda(idMoneda)",
+   "idMonedaConversion -> Contabilidad.Moneda(idMoneda)"
+  ],
+  "la_referencian": []
+ },
+ "Contabilidad.Uvt": {
+  "descripcion": "Registra valores de UVT asociados a un año, posiblemente para cálculos tributarios. Por el nombre de la tabla y las funciones de nómina que la usan, posiblemente sirve para calcular retenciones en la fuente u otros conceptos relacionados con la UVT.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idUvt": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de UVT; la estructura no declara una clave primaria."
+   },
+   "anio": {
+    "tipo": "integer",
+    "descripcion": "Año al que corresponde el valor registrado."
+   },
+   "valor": {
+    "tipo": "numeric",
+    "descripcion": "Valor numérico de la UVT para el año indicado."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado y valores operativos no se pueden determinar solo con la estructura."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ }
+}

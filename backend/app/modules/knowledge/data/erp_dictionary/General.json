@@ -1,0 +1,1672 @@
+{
+ "General.ConceptoContable": {
+  "descripcion": "Catálogo de conceptos contables asociados a un centro de costo, que pueden ser utilizados en procesos de arriendo, cartera, contabilidad y cuentas por pagar. Sirve para identificar y clasificar conceptos que se referencian en transacciones y documentos de esos módulos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idConceptoContable": {
+    "tipo": "integer",
+    "descripcion": "Identificador del concepto contable; la estructura no indica si es clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código utilizado para identificar el concepto; su formato y reglas no se deducen de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del concepto contable."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado al concepto; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasificación del concepto: 0 = «Concepto Pagos Cartes» y 1 = «Otros Pasivos»."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica el estado del concepto; posiblemente señala si está activo, pero los valores no están documentados."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró el concepto."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla no especifica a qué entidad apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la tabla no especifica a qué entidad apunta."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)"
+  ],
+  "la_referencian": [
+   "Arriendo.ContratoArriendo(idConceptoContableArriendo)",
+   "Arriendo.ContratoArriendoArrendador(idConceptoContableArriendo)",
+   "Arriendo.ContratoArriendoConceptoRecurrente(idConceptoContable)",
+   "Arriendo.ContratoArriendoConceptoRetencion(idConceptoContable)",
+   "Arriendo.ContratoArriendoDescuentoProntoPago(idConceptoContable)",
+   "Arriendo.ObligacionArriendoDetalle(idConceptoContable)",
+   "Cartera.DetalleReciboComprobante(idConceptoContable)",
+   "Cartera.ReciboComprobante(idConceptoContable)",
+   "Contabilidad.ConceptoTransaccion(idConceptoContable)",
+   "CuentaPagar.ImportacionDianCabecera(idConceptoContable)",
+   "General.DetalleConceptoContable(idConceptoContable)"
+  ]
+ },
+ "General.CuadranteDireccion": {
+  "descripcion": "La tabla almacena registros de cuadrantes relacionados con direcciones y parece funcionar como un catálogo para describirlos, abreviarlos y ordenarlos. Posiblemente se usa para clasificar o presentar información de direcciones, pero la estructura no permite confirmar el significado funcional exacto de «cuadrante».",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCuadranteDireccion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de cuadrante de dirección; no se indica una clave primaria en la estructura proporcionada."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo del cuadrante de dirección."
+   },
+   "abreviatura": {
+    "tipo": "character varying",
+    "descripcion": "Abreviatura del cuadrante de dirección."
+   },
+   "orden": {
+    "tipo": "integer",
+    "descripcion": "Número que posiblemente determina el orden de presentación o clasificación."
+   },
+   "activo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro está activo; no se especifican los valores ni las reglas de uso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que posiblemente creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que posiblemente modificó el registro por última vez; no se declara una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "General.CuentaBancaria": {
+  "descripcion": "Guarda cuentas bancarias registradas en el ERP, asociadas a un banco y a una cuenta del plan contable. Sirve como referencia para procesos de conciliación bancaria; el número de cuenta puede usarse para verificar que un extracto importado corresponde a la cuenta registrada.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCuentaBancaria": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la cuenta bancaria; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código interno de la cuenta bancaria."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la cuenta bancaria."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Identificador del banco al que pertenece; apunta a Tercero.Banco(idBanco)."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la cuenta contable asociada; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Tipo de cuenta: 1 significa ahorros y 2 significa corriente."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuenta está habilitada o en otro estado; la estructura no aclara qué significa cada valor booleano."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "numeroCuenta": {
+    "tipo": "character varying",
+    "descripcion": "Número real de la cuenta en el banco; se usa para verificar que el extracto importado corresponde a esta cuenta."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)"
+  ],
+  "la_referencian": [
+   "Contabilidad.ConciliacionBancariaExtracto(idCuentaBancaria)"
+  ]
+ },
+ "General.Departamento": {
+  "descripcion": "Guarda un catálogo de departamentos o divisiones territoriales, posiblemente asociados a un país. Sirve para identificar y describir esas divisiones en registros como municipios y siniestros, y también se utiliza en funciones de reportes y de información exógena contable.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDepartamento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del departamento; la estructura no indica si es la clave primaria."
+   },
+   "codigoDane": {
+    "tipo": "character varying",
+    "descripcion": "Código DANE asociado al departamento; el formato y alcance exactos no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del departamento."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano posiblemente usado para señalar si el departamento está activo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica una relación con una tabla de usuarios."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica una relación con una tabla de usuarios."
+   },
+   "idPais": {
+    "tipo": "integer",
+    "descripcion": "País al que pertenece el departamento; clave foránea a General.Pais(idPais)."
+   }
+  },
+  "apunta_a": [
+   "idPais -> General.Pais(idPais)"
+  ],
+  "la_referencian": [
+   "General.Municipio(idDepartamento)",
+   "Mantenimiento.Siniestro(idDepartamento)"
+  ]
+ },
+ "General.DetalleConceptoContable": {
+  "descripcion": "Guarda detalles de configuración asociados a un concepto contable, vinculando cada detalle con una cuenta del plan contable. También puede incluir parámetros de retención, IVA, forma de pago, banco y fondo de crédito. Sirve posiblemente para determinar cómo se contabilizan distintos componentes de un concepto.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleConceptoContable": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle del concepto contable; la estructura no declara una clave primaria."
+   },
+   "idConceptoContable": {
+    "tipo": "integer",
+    "descripcion": "Concepto contable al que pertenece el detalle; apunta a General.ConceptoContable(idConceptoContable)."
+   },
+   "posicion": {
+    "tipo": "integer",
+    "descripcion": "Orden o posición del detalle dentro del concepto contable."
+   },
+   "idPlanContable": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta o elemento del plan contable asociado; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "naturaleza": {
+    "tipo": "character varying",
+    "descripcion": "Naturaleza contable asignada al detalle; los valores posibles no se pueden deducir."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Indicador de retención asociado, si corresponde; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA asociado, si corresponde; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "formaPago": {
+    "tipo": "integer",
+    "descripcion": "Código de forma de pago, si corresponde; no se especifica su catálogo ni sus valores."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado, si corresponde; apunta a Tercero.Banco(idBanco)."
+   },
+   "porcentajeRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de retención configurado para el detalle."
+   },
+   "indicadorCuenta": {
+    "tipo": "integer",
+    "descripcion": "Código que indica una característica o clasificación de la cuenta; su significado y valores no se pueden deducir."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del detalle; posiblemente señala si está habilitado, pero no se conocen los valores funcionales."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró el detalle."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla no especifica a qué entidad o catálogo apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la tabla no especifica a qué entidad o catálogo apunta."
+   },
+   "idFondoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tipo de fondo de crédito asociado, si corresponde; apunta a CarteraFinanciera.FondoCredito(idFondoCredito)."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idConceptoContable -> General.ConceptoContable(idConceptoContable)",
+   "idFondoCredito -> CarteraFinanciera.FondoCredito(idFondoCredito)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)",
+   "idPlanContable -> Contabilidad.PlanContable(idPlanContable)"
+  ],
+  "la_referencian": []
+ },
+ "General.Documento": {
+  "descripcion": "Guarda la configuración de los documentos que se usan en distintos procesos del ERP, como facturación, inventario, compras, ventas y contabilidad. Define su clasificación, numeración y opciones de operación, impresión e integración; también puede relacionarlos con otros documentos, almacenes y centros de costo.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento de configuración."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código con el que se identifica el documento."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del documento."
+   },
+   "numeracionAutomatica": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la numeración del documento es automática."
+   },
+   "consecutivoInicial": {
+    "tipo": "bigint",
+    "descripcion": "Consecutivo inicial configurado para la numeración."
+   },
+   "consecutivoFinal": {
+    "tipo": "bigint",
+    "descripcion": "Consecutivo final configurado para la numeración."
+   },
+   "consecutivoActual": {
+    "tipo": "bigint",
+    "descripcion": "Consecutivo actual de la numeración."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Clasifica el documento: 0 Inventario, 1 Remisiones, 2 Facturación cliente, 3 Facturación proveedor, 4 Anulación de facturación cliente, 5 Anulación de facturación proveedor, 6 Pedido de ventas, 7 Egresos, 8 Ingresos, 9 Contables, 10 Cotización, 11 Orden de servicio automotriz, 12 Traslados de inventario, 13 Devolución en compra, 14 Devolución en venta, 15 Otros pasivos y 16 Cierre anual contable."
+   },
+   "tipoImpresion": {
+    "tipo": "integer",
+    "descripcion": "Tipo de impresión: 0 Tiquete o 1 Normal."
+   },
+   "tipoMovimiento": {
+    "tipo": "boolean",
+    "descripcion": "Para movimientos de inventario, TRUE indica entrada y FALSE indica salida."
+   },
+   "formaPago": {
+    "tipo": "boolean",
+    "descripcion": "Indica la forma de pago: TRUE contado y FALSE crédito."
+   },
+   "cajonMonedero": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se usa el cajón monedero; el efecto concreto debe confirmarse."
+   },
+   "actualizaCosto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento actualiza costos; la regla aplicada debe confirmarse."
+   },
+   "impresionDirecta": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se habilita la impresión directa."
+   },
+   "impresionContinua": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se utiliza impresión continua."
+   },
+   "cuentaPagoGasto": {
+    "tipo": "character varying",
+    "descripcion": "Códigos de las cuentas contables para realizar pagos de gastos."
+   },
+   "soloFacturarOrdenServicio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la factura de venta debe solicitar una orden de servicio automotriz."
+   },
+   "idDocumentoAnticipo": {
+    "tipo": "integer",
+    "descripcion": "Referencia a otro documento de General.Documento asociado a anticipos."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado; referencia a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado; referencia a Inventario.Almacen(idAlmacen)."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador de estado del documento; los valores y su efecto deben confirmarse."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez."
+   },
+   "idDocumentoEntrada": {
+    "tipo": "integer",
+    "descripcion": "Documento de entrada de inventario para un traslado; referencia a General.Documento(idDocumento)."
+   },
+   "idDocumentoSalida": {
+    "tipo": "integer",
+    "descripcion": "Documento de salida de inventario para un traslado; referencia a General.Documento(idDocumento)."
+   },
+   "idMotivoMovimiento": {
+    "tipo": "integer",
+    "descripcion": "Motivo del movimiento de inventario, aplicable a facturas de venta y compra; referencia a Inventario.MotivoMovimiento(idMotivoMovimiento)."
+   },
+   "plantilla": {
+    "tipo": "bytea",
+    "descripcion": "Plantilla asociada al documento para impresión."
+   },
+   "plantillaAdicional": {
+    "tipo": "bytea",
+    "descripcion": "Segunda plantilla adicional asociada al documento para impresión."
+   },
+   "plantillaDocumento": {
+    "tipo": "bytea",
+    "descripcion": "Plantilla DOCX asociada al documento para impresión."
+   },
+   "acumulaPunto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento acumula puntos en POS y facturas."
+   },
+   "facturaElectronica": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento sincroniza automáticamente al crear la factura."
+   },
+   "calcularTotal": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se calcula el total a pagar en recibos de caja y comprobantes de egreso."
+   },
+   "contabilizarInventario": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el movimiento de inventario genera contabilidad."
+   },
+   "redondearFacturaCompra": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se redondean los valores al realizar una factura de compra."
+   },
+   "confirmaEmpleadoTercero": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al guardar se solicita confirmar el tercero empleado."
+   },
+   "tipoDocumentoHKA": {
+    "tipo": "character varying",
+    "descripcion": "Código de tipo de documento para homologación con HKA en facturación electrónica."
+   },
+   "plantillaDocumentoAdicional": {
+    "tipo": "bytea",
+    "descripcion": "Plantilla DOCX adicional asociada al documento para impresión."
+   },
+   "usoGuiaEnvio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cuarta plantilla se utiliza como guía de envío."
+   },
+   "solicitaCapturaEfectivo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el formulario de venta solicita capturar el efectivo."
+   },
+   "bloqueoCondicionPago": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solo se permiten facturas con la condición de pago seleccionada."
+   },
+   "unificarCuentaContable": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se unifican cuentas en el movimiento contable."
+   },
+   "generarTrasladoEntrega": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al facturar se genera un traslado al almacén de entrega."
+   },
+   "idDocumentoEntrega": {
+    "tipo": "integer",
+    "descripcion": "Documento de entrada de inventario para entregas; referencia a General.Documento(idDocumento)."
+   },
+   "idAlmacenEntrega": {
+    "tipo": "integer",
+    "descripcion": "Almacén donde se realiza la entrega; referencia a Inventario.Almacen(idAlmacen)."
+   },
+   "plantillaAdicional2": {
+    "tipo": "bytea",
+    "descripcion": "Tercera plantilla adicional asociada al documento para impresión."
+   },
+   "generarAnticipo": {
+    "tipo": "integer",
+    "descripcion": "Indica si se genera un anticipo: 0 no generar y 1 generar."
+   },
+   "tipoOperacionFE": {
+    "tipo": "character varying",
+    "descripcion": "Código de operación de factura electrónica: 09 servicios AIU, 10 estándar, 11 mandatos, 20 nota crédito referenciada a factura y 30 nota débito referenciada a factura."
+   },
+   "rutaDescargaFormato": {
+    "tipo": "character varying",
+    "descripcion": "Ruta configurada para la descarga automática de un formato."
+   },
+   "impresoraRemota": {
+    "tipo": "character varying",
+    "descripcion": "Dato relacionado con la impresión en una impresora remota; su formato debe confirmarse."
+   },
+   "macMaquinaUsuario": {
+    "tipo": "character varying",
+    "descripcion": "Dirección MAC asociada a la máquina del usuario; su uso debe confirmarse."
+   },
+   "nombreClienteRemoto": {
+    "tipo": "character varying",
+    "descripcion": "Nombre del cliente remoto asociado; su uso debe confirmarse."
+   },
+   "maquina": {
+    "tipo": "character varying",
+    "descripcion": "Máquina donde se generó la factura."
+   },
+   "exclusivoMonedaExtranjera": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento solo se muestra en formularios de transacciones en moneda extranjera."
+   },
+   "colaAlistamiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento pasa a la cola de alistamiento."
+   },
+   "idDocumentoFactura": {
+    "tipo": "integer",
+    "descripcion": "Documento tipo factura asociado a remisiones especiales; referencia a General.Documento(idDocumento)."
+   },
+   "idDocumentoFacturaElectronica": {
+    "tipo": "integer",
+    "descripcion": "Documento de factura electrónica asociado a remisiones especiales; referencia a General.Documento(idDocumento)."
+   },
+   "generaCarteraProveedor": {
+    "tipo": "boolean",
+    "descripcion": "Indica si una entrada de inventario genera cartera de proveedor."
+   },
+   "tarifaEspecialCotizacion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cotización utiliza tarifas especiales."
+   },
+   "calcularInteresAutomatico": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se calcula automáticamente el interés en el pago."
+   },
+   "facturaElectronicaTareaProgramada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la sincronización del documento se realiza mediante una tarea programada."
+   },
+   "montoMaximoFacturaPOS": {
+    "tipo": "numeric",
+    "descripcion": "Monto máximo configurado para facturación POS."
+   },
+   "plantillaAdicional3": {
+    "tipo": "bytea",
+    "descripcion": "Plantilla REPX adicional asociada al documento para impresión."
+   },
+   "excluirCertificadoRetencion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el documento se excluye de los certificados de retención."
+   },
+   "confirmarNuevoDocumento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se requiere confirmar la creación de un documento nuevo con la contraseña del usuario."
+   },
+   "noAplicaImpuesto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si en compras no se generan impuestos, incluidos IVA y retenciones."
+   },
+   "plantillaAdicional4": {
+    "tipo": "bytea",
+    "descripcion": "Plantilla REPX adicional para generar formatos anexos."
+   },
+   "valorGeneracionBoleta": {
+    "tipo": "numeric",
+    "descripcion": "Valor divisor utilizado para determinar la cantidad de boletas o bonos."
+   },
+   "noGenerarCuentaPagar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se evita generar una cuenta por pagar al crear un documento contable."
+   },
+   "confirmarOrdenCompra": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al facturar se confirma el número de la orden de compra."
+   },
+   "capturaAlmancenMotivoCabecera": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el almacén y el motivo se capturan en la cabecera del documento."
+   },
+   "generarRecordatorioVencimiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se genera un recordatorio al guardar la factura."
+   },
+   "idDocumentoApiSincronizacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de otro documento relacionado con la sincronización por API; su destino debe confirmarse."
+   },
+   "tipoOperacionFENoReferenciado": {
+    "tipo": "character varying",
+    "descripcion": "Código de operación FE para documentos sin referencia: 22 nota crédito y 32 nota débito."
+   },
+   "contabilizarParametroMixto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el movimiento de inventario se contabiliza usando parámetros mixtos."
+   },
+   "opcionSincronizacionDE": {
+    "tipo": "integer",
+    "descripcion": "Opción de sincronización del documento electrónico: 0 ninguna, 1 HKA y 2 API."
+   },
+   "decimalRedondeoContabilidad": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de decimales configurada para el redondeo contable."
+   },
+   "usarCostoValorMovimiento": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se usa el costo valor del movimiento; aplica a salidas de inventario."
+   },
+   "soloFacturarOrdenCompra": {
+    "tipo": "boolean",
+    "descripcion": "Indicador aplicable a facturas de compra relacionado con la orden de compra; su efecto preciso debe confirmarse."
+   },
+   "idProductoInteresCorriente": {
+    "tipo": "bigint",
+    "descripcion": "Producto para facturas de interés corriente en pagos de cartera financiera; referencia a Inventario.Producto(idProducto)."
+   },
+   "idProductoInteresMora": {
+    "tipo": "bigint",
+    "descripcion": "Producto para facturas de interés de mora en pagos de cartera financiera; referencia a Inventario.Producto(idProducto)."
+   },
+   "asignarVendedorCliente": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se asigna automáticamente el vendedor del cliente."
+   },
+   "capturaCentroCostoDetalle": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se captura el centro de costo en el detalle del documento."
+   },
+   "generarRecuperacionFactura": {
+    "tipo": "boolean",
+    "descripcion": "Indicador relacionado con la generación de recuperación de factura; su efecto debe confirmarse."
+   },
+   "tipoSectorFE": {
+    "tipo": "character varying",
+    "descripcion": "Sector de emisión del documento electrónico: 1 comercial o 2 salud."
+   },
+   "tipoOperacionSS": {
+    "tipo": "character varying",
+    "descripcion": "Código del tipo de operación para el sector salud."
+   },
+   "unificarCuentaPagar": {
+    "tipo": "boolean",
+    "descripcion": "Indica si un documento de otros pasivos genera una sola cuenta por pagar en cartera."
+   },
+   "plantillaContable": {
+    "tipo": "bytea",
+    "descripcion": "Plantilla contable para imprimir un formato especial."
+   },
+   "contabilizarSalidaCompuesto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se contabiliza el movimiento al realizar la salida de un compuesto."
+   },
+   "aprobacionOrdenCompra": {
+    "tipo": "boolean",
+    "descripcion": "Indicador relacionado con la aprobación de órdenes de compra; su efecto debe confirmarse."
+   },
+   "facturaTransporte": {
+    "tipo": "boolean",
+    "descripcion": "Indicador relacionado con facturas de transporte; su efecto debe confirmarse."
+   },
+   "sincronizaApiEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se utiliza una sincronización especial por API; sus reglas deben confirmarse."
+   },
+   "sincronizaApiIntegracionWMS": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se sincroniza mediante la integración API con WMS."
+   },
+   "plantillaAdicional5": {
+    "tipo": "bytea",
+    "descripcion": "Quinta plantilla REPX adicional para impresión, configurable desde la sección de plantillas del documento."
+   },
+   "ajustarCartera": {
+    "tipo": "boolean",
+    "descripcion": "Para documentos tipo 8 (Ingreso), TRUE indica que los recibos son ajustes de cartera y no abonos reales del cliente."
+   },
+   "asignarTerceroCentroCosto": {
+    "tipo": "boolean",
+    "descripcion": "Indica si al seleccionar un centro de costo se asigna y bloquea el cliente asociado a ese centro; FALSE conserva la captura manual."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idAlmacenEntrega -> Inventario.Almacen(idAlmacen)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDocumentoAnticipo -> General.Documento(idDocumento)",
+   "idDocumentoEntrada -> General.Documento(idDocumento)",
+   "idDocumentoEntrega -> General.Documento(idDocumento)",
+   "idDocumentoFactura -> General.Documento(idDocumento)",
+   "idDocumentoFacturaElectronica -> General.Documento(idDocumento)",
+   "idDocumentoSalida -> General.Documento(idDocumento)",
+   "idMotivoMovimiento -> Inventario.MotivoMovimiento(idMotivoMovimiento)",
+   "idProductoInteresCorriente -> Inventario.Producto(idProducto)",
+   "idProductoInteresMora -> Inventario.Producto(idProducto)"
+  ],
+  "la_referencian": [
+   "ActivoFijo.DepreciacionRegActivo(idDocumento)",
+   "Arriendo.ObligacionArriendo(idDocumentoAnticipo)",
+   "Arriendo.ObligacionArriendoPago(idDocumentoAnticipo)",
+   "Cartera.FacturaTercero(idDocumento)",
+   "Cartera.ReciboComprobante(idDocumento)",
+   "CarteraFinanciera.AprobacionSolicitud(idDocumento)",
+   "CarteraFinanciera.CreditoAsociado(idDocumento)",
+   "CarteraFinanciera.ProrrogaCuotaCreditoAsociado(idDocumento)",
+   "CarteraFinanciera.ReciboPagoCredito(idDocumento)",
+   "Contabilidad.Anticipo(idDocumento)",
+   "Contabilidad.DocumentoCuentaContable(idDocumento)",
+   "Contabilidad.MovimientoContable(idDocumento)",
+   "Contabilidad.OtraCuentaCobrar(idDocumento)",
+   "Contabilidad.OtroPasivo(idDocumento)",
+   "ControlPrestamo.SolicitudPrestamo(idDocumento)"
+  ]
+ },
+ "General.DocumentoModifica": {
+  "descripcion": "Registra documentos que están siendo modificados, junto con el usuario, el formulario y la fecha de modificación. Posiblemente sirve para identificar o rastrear modificaciones de documentos de distintos módulos; la estructura no permite determinar qué cambios se registran.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDocumentoModifica": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de modificación; no se indica que sea clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del documento modificado; apunta a General.Documento(idDocumento) y puede corresponder a un documento de cualquier módulo."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Usuario asociado a la modificación; apunta a Seguridad.Usuario(idUsuario)."
+   },
+   "idFormulario": {
+    "tipo": "integer",
+    "descripcion": "Formulario asociado a la modificación; apunta a Seguridad.Formulario(idFormulario)."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registra la modificación, con zona horaria."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de documento: 0 corresponde a orden de servicio y 1 a movimiento contable; no se conocen otros valores."
+   }
+  },
+  "apunta_a": [
+   "idFormulario -> Seguridad.Formulario(idFormulario)",
+   "idUsuario -> Seguridad.Usuario(idUsuario)",
+   "idDocumento -> General.Documento(idDocumento)"
+  ],
+  "la_referencian": []
+ },
+ "General.FormaPago": {
+  "descripcion": "Guarda el catálogo de formas de pago y parámetros que orientan qué información adicional se solicita al registrar una operación. Se utiliza en distintos procesos de cartera, contabilidad, compras, inventario, ventas y nómina, y puede asociar una forma de pago con un método de pago o un tercero.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la forma de pago."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la forma de pago; no se especifica su formato ni significado."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la forma de pago."
+   },
+   "solicitaCheque": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la forma de pago solicita información de cheque."
+   },
+   "solicitaTarjetaDebito": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita información de tarjeta débito."
+   },
+   "solicitaDia": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita un día; no se puede deducir qué representa."
+   },
+   "solicitaCuota": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita información de cuota; no se puede deducir cuál."
+   },
+   "solicitaEfectivo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita información de efectivo."
+   },
+   "solicitaCruceAnticipo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita información para cruzar un anticipo."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Estado habilitado o no de la forma de pago; posiblemente indica si está activa."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una referencia a otra tabla."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se declara una referencia a otra tabla."
+   },
+   "solicitaTarjetaCredito": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita información de tarjeta de crédito."
+   },
+   "solicitaBanco": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita banco, para pagos por consignación o transferencia."
+   },
+   "indicadorBanco": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo de operación bancaria: 1 = consignación; 2 = transferencia."
+   },
+   "exencionIVA": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la forma de pago está exenta del pago del IVA."
+   },
+   "imagen": {
+    "tipo": "bytea",
+    "descripcion": "Icono de la forma de pago almacenado como datos binarios; puede no tener valor."
+   },
+   "solicitaDevolucion": {
+    "tipo": "boolean",
+    "descripcion": "Indica si solicita una devolución mediante nota crédito sin factura."
+   },
+   "idMetodoPago": {
+    "tipo": "integer",
+    "descripcion": "Identificador del método de pago asociado; apunta a General.MetodoPago(idMetodoPago)."
+   },
+   "medioFacturaElectronica": {
+    "tipo": "integer",
+    "descripcion": "Código o identificador relacionado con un medio de factura electrónica; su significado no se deduce."
+   },
+   "idTerceroCxc": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del tercero asociado a cuentas por cobrar; apunta a Tercero.Tercero(idTercero)."
+   },
+   "tipoFinancieraCxc": {
+    "tipo": "integer",
+    "descripcion": "Código del tipo financiero relacionado con cuentas por cobrar; su significado no se deduce."
+   }
+  },
+  "apunta_a": [
+   "idTerceroCxc -> Tercero.Tercero(idTercero)",
+   "idMetodoPago -> General.MetodoPago(idMetodoPago)"
+  ],
+  "la_referencian": [
+   "Cartera.DetalleReciboComprobante(idFormaPago)",
+   "CarteraFinanciera.CreditoAsociado(idFormaPago)",
+   "CarteraFinanciera.DetalleReciboPagoCredito(idFormaPago)",
+   "Contabilidad.Anticipo(idFormaPago)",
+   "Contabilidad.DetalleOtraCuentaCobrar(idFormaPago)",
+   "Contabilidad.DetalleOtroPasivo(idFormaPago)",
+   "CuentaCobrar.Factura(idFormaPago)",
+   "CuentaCobrar.Remision(idFormaPago)",
+   "CuentaPagar.DetallePropuestaPago(idFormaPago)",
+   "CuentaPagar.FacturaCompra(idFormaPago)",
+   "CuentaPagar.OrdenCompra(idFormaPago)",
+   "Inventario.MovimientoInventario(idFormaPago)",
+   "Nomina.CreditoEmpleado(idFormaPago)",
+   "Nomina.Empleado(idFormaPago)",
+   "Nomina.LiquidacionNomina(idFormaPago)"
+  ]
+ },
+ "General.Linea": {
+  "descripcion": "Catálogo de líneas que pueden asociarse a productos y movimientos de inventario. Sirve para agruparlos y configurar cuentas contables e indicadores de impuestos que pueden intervenir en compras, ventas, devoluciones y cartera. También registra el estado y datos de auditoría de cada línea.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idLinea": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la línea; otras tablas lo usan para referenciarla."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código de identificación de la línea."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la línea."
+   },
+   "idPlanContableIngresos": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente usada para registrar ingresos; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableInveVenta": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente asociada al inventario en ventas; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableCosto": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente usada para registrar costos; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableDevo": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable para devoluciones en ventas; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableIngreso2": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente usada para un segundo tipo de ingreso; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableInve": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente asociada al inventario; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableInveComp": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente asociada al inventario en compras; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableDevoCompra": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable para devoluciones en compras; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableInveCompSimplificado": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable para compras al régimen simplificado; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableDevoCompraSimplificado": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable para devoluciones al régimen simplificado; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA asociado a la línea; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "res": {
+    "tipo": "boolean",
+    "descripcion": "Campo booleano cuyo significado funcional no se especifica en la estructura."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Campo booleano que posiblemente indica si la línea está activa o habilitada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa una tabla de referencia."
+   },
+   "soloServicio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la línea es solo para servicios."
+   },
+   "inventarioPeriodico": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el tipo de inventario es periódico."
+   },
+   "idIndicadorImpuestoSaludable": {
+    "tipo": "integer",
+    "descripcion": "Indicador de impuesto saludable asociado; apunta a Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)."
+   },
+   "idPlanContableCartera": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable para cartera, que según el comentario se toma en lugar de la cuenta del documento; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "aplicaImpuestoSaludable": {
+    "tipo": "integer",
+    "descripcion": "Indica dónde aplica el impuesto saludable: 0 = ninguno, 1 = compras, 2 = ventas, 3 = ambos."
+   },
+   "idPlanContableIngresoDescEspWS": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente asociada a ingresos con la condición «DescEspWS»; apunta a Contabilidad.PlanContable(idPlanContable)."
+   },
+   "idPlanContableDevoVentaDescEspWS": {
+    "tipo": "bigint",
+    "descripcion": "Cuenta contable posiblemente asociada a devoluciones de ventas con la condición «DescEspWS»; apunta a Contabilidad.PlanContable(idPlanContable)."
+   }
+  },
+  "apunta_a": [
+   "idPlanContableDevoVentaDescEspWS -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableIngresoDescEspWS -> Contabilidad.PlanContable(idPlanContable)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idPlanContableCartera -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableCosto -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableDevo -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableDevoCompra -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableDevoCompraSimplificado -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableIngreso2 -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableIngresos -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableInve -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableInveComp -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableInveCompSimplificado -> Contabilidad.PlanContable(idPlanContable)",
+   "idPlanContableInveVenta -> Contabilidad.PlanContable(idPlanContable)",
+   "idIndicadorImpuestoSaludable -> Inventario.IndicadorImpuestoSaludable(idIndicadorImpuestoSaludable)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.DetalleFactura(idLinea)",
+   "Inventario.DetalleMovimientoInventario(idLinea)",
+   "Inventario.Producto(idLinea)",
+   "Inventario.Producto(idLineaExencion)",
+   "Inventario.Producto(idLineaImpoConsumo)"
+  ]
+ },
+ "General.MetodoPago": {
+  "descripcion": "Guarda el catálogo de métodos de pago del sistema, con su código, descripción y, opcionalmente, un icono. Se referencia desde facturas y desde la tabla General.FormaPago para asociar un método de pago.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMetodoPago": {
+    "tipo": "integer",
+    "descripcion": "Identificador del método de pago; la estructura proporcionada no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al método de pago; no se indican sus valores ni formato."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del método de pago."
+   },
+   "imagen": {
+    "tipo": "bytea",
+    "descripcion": "Icono del método de pago almacenado como datos binarios."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado exacto no está especificado; posiblemente señala si el método está habilitado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró el método de pago."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del método de pago."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla apunta."
+   },
+   "tipoMetodoPago": {
+    "tipo": "integer",
+    "descripcion": "Código entero que clasifica el tipo de método de pago; sus valores no están especificados."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CuentaCobrar.Factura(idMetodoPago)",
+   "General.FormaPago(idMetodoPago)"
+  ]
+ },
+ "General.Municipio": {
+  "descripcion": "Catálogo de municipios y centros poblados asociados a un departamento, incluidos sus códigos y datos de control. Sirve para identificar ubicaciones en registros como direcciones, terceros y otros procesos del ERP.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idMunicipio": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de municipio o centro poblado; la estructura no declara una clave primaria."
+   },
+   "idDepartamento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del departamento al que pertenece; referencia a General.Departamento(idDepartamento)."
+   },
+   "codigoDane": {
+    "tipo": "character varying",
+    "descripcion": "Código DANE asociado al municipio o centro poblado; no se especifica su formato ni si debe ser único."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del municipio o centro poblado."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado operativo (por ejemplo, activo o inactivo) no se puede confirmar con la estructura."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara a qué tabla referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara a qué tabla referencia."
+   },
+   "tipo": {
+    "tipo": "integer",
+    "descripcion": "Tipo de ubicación: 0 corresponde a Municipio y 1 a Centro Poblado."
+   },
+   "idMunicipioApiSincronizacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador posiblemente usado para relacionar el registro con un municipio en una API de sincronización; su origen no está especificado."
+   },
+   "codigoPostal": {
+    "tipo": "character varying",
+    "descripcion": "Código postal oficial DANE / 4-72 del municipio, de 6 dígitos."
+   }
+  },
+  "apunta_a": [
+   "idDepartamento -> General.Departamento(idDepartamento)"
+  ],
+  "la_referencian": [
+   "Arriendo.ContratoArriendo(idMunicipio)",
+   "Bomberos.RescateTrasladoAsistencia(idMunicipio)",
+   "Empresa.Empresa(idMunicipio)",
+   "General.Vereda(idMunicipio)",
+   "Inventario.IndicadorRetencion(idMunicipio)",
+   "Mantenimiento.Siniestro(idMunicipio)",
+   "Tercero.Tercero(idMunicipio)",
+   "Tercero.Tercero(idMunicipioExpedicionDocumento)",
+   "Tercero.TerceroDireccion(idMunicipio)"
+  ]
+ },
+ "General.Pais": {
+  "descripcion": "Catálogo de países que permite registrar y consultar su código y nombre. Puede servir como referencia para asociar departamentos con un país y para procesos contables que utilizan información de países. La estructura no indica restricciones de unicidad ni claves foráneas declaradas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPais": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del país; la estructura no lo declara como clave primaria."
+   },
+   "codigoDane": {
+    "tipo": "character varying",
+    "descripcion": "Código asociado al país según DANE; el formato y la codificación exactos requieren confirmación."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del país."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano posiblemente usado para distinguir países habilitados de no habilitados; el significado de cada valor requiere confirmación."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora registradas para la creación del país."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora registradas para la última modificación del país."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; no se declara una clave foránea."
+   },
+   "logoPais": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario opcional asociado al logo o imagen del país."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "General.Departamento(idPais)"
+  ]
+ },
+ "General.ParametroRangoVencimiento": {
+  "descripcion": "Guarda parámetros para definir rangos de días asociados al vencimiento o a la antigüedad de saldos, con una descripción y un color para identificarlos. Posiblemente se usa para clasificar información en reportes; hay funciones de reporte de edades de cartera que la consultan.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idParametroRangoVencimiento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del parámetro; la estructura proporcionada no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del rango; no se puede deducir su formato ni sus valores válidos."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción funcional del rango."
+   },
+   "diaDesde": {
+    "tipo": "integer",
+    "descripcion": "Día inicial del rango; posiblemente delimita la antigüedad o los días de vencimiento."
+   },
+   "diaHasta": {
+    "tipo": "integer",
+    "descripcion": "Día final del rango; posiblemente delimita la antigüedad o los días de vencimiento."
+   },
+   "color": {
+    "tipo": "character varying",
+    "descripcion": "Color asociado al rango; no se indica el formato esperado."
+   },
+   "modulo": {
+    "tipo": "integer",
+    "descripcion": "Módulo al que aplica: 0 = Inventario, 1 = Cartera, 2 = Cartera Financiera."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea."
+   },
+   "codigoArgb": {
+    "tipo": "character varying",
+    "descripcion": "Código ARGB para representar el color en reportes."
+   },
+   "ordenEdadCartera": {
+    "tipo": "integer",
+    "descripcion": "Orden que se utiliza para mostrar o clasificar los rangos en la cartera de edades."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "General.PlantillaDocumento": {
+  "descripcion": "Guarda plantillas asociadas a documentos, posiblemente para generar o presentar reportes. Cada registro incluye una etiqueta para identificar el reporte, una descripción y el contenido de la plantilla en formato binario. También registra su estado y datos de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPlantillaDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la plantilla de documento; la estructura no declara una clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento al que se asocia la plantilla; apunta a General.Documento(idDocumento)."
+   },
+   "tagReporte": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta asignada al reporte, posiblemente utilizada para identificarlo o seleccionarlo."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la plantilla o del uso que tiene."
+   },
+   "plantilla": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario de la plantilla; no se puede deducir su formato."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la plantilla; no se puede deducir qué valor corresponde a cada estado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una relación con otra tabla."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una relación con otra tabla."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)"
+  ],
+  "la_referencian": []
+ },
+ "General.RegistroReporte": {
+  "descripcion": "La tabla parece guardar registros de configuración o definición de reportes del sistema, identificados por un formulario y un código. Puede incluir parámetros y una plantilla binaria asociada, además de fechas y usuarios de creación y modificación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idRegistroReporte": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico del registro; la estructura no declara que sea clave primaria."
+   },
+   "tagFormulario": {
+    "tipo": "character varying",
+    "descripcion": "Etiqueta que relaciona el registro con un formulario; el formato y los valores posibles no se deducen."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del registro o reporte; su formato y significado específico no se deducen."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo del registro o reporte."
+   },
+   "parametros": {
+    "tipo": "character varying",
+    "descripcion": "Texto que almacena parámetros asociados; no se deduce su formato ni cómo se interpretan."
+   },
+   "plantilla": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario posiblemente correspondiente a una plantilla del reporte; su formato no se deduce."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea ni se indica la tabla relacionada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea ni se indica la tabla relacionada."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "General.Resolucion": {
+  "descripcion": "Registra resoluciones asociadas a un tipo de documento y a un rango de numeración, posiblemente para controlar la numeración autorizada de facturas y otros documentos. Incluye datos de régimen, vigencia, avisos y sincronización con la API de la DIAN. La tabla es referenciada por documentos de contabilidad, cuentas por cobrar y cuentas por pagar.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idResolucion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la resolución; la estructura no declara una clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Identificador del documento al que corresponde la resolución; apunta a General.Documento(idDocumento)."
+   },
+   "regimen": {
+    "tipo": "character varying",
+    "descripcion": "Código o descripción del régimen asociado a la resolución; sus valores no se pueden deducir."
+   },
+   "numeroDesde": {
+    "tipo": "bigint",
+    "descripcion": "Número inicial del rango asociado a la resolución."
+   },
+   "numeroHasta": {
+    "tipo": "bigint",
+    "descripcion": "Número final del rango asociado a la resolución."
+   },
+   "resolucion": {
+    "tipo": "character varying",
+    "descripcion": "Número o referencia de la resolución."
+   },
+   "fechaEmision": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se emite la resolución."
+   },
+   "fechaDesde": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora desde la que comienza algún período relacionado con la resolución; su uso exacto no se puede deducir."
+   },
+   "fechaHasta": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora hasta la que se extiende algún período relacionado con la resolución; su uso exacto no se puede deducir."
+   },
+   "avisoCantidadFactura": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de facturas que determina cuándo generar un aviso relacionado con la resolución."
+   },
+   "habilitaAutoriza": {
+    "tipo": "integer",
+    "descripcion": "Indica el tipo de resolución: 0 corresponde a «Autoriza» y 1 a «Habilita»."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; no se puede deducir qué representa cada valor."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una tabla de referencia."
+   },
+   "vigenciaMes": {
+    "tipo": "integer",
+    "descripcion": "Vigencia de la resolución expresada en meses."
+   },
+   "origenApiDian": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano posiblemente relacionado con el origen de la resolución en la API de la DIAN; el significado exacto no se puede deducir."
+   },
+   "fechaSincronizacionApiDian": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de sincronización con la API de la DIAN, si aplica."
+   },
+   "idUsuarioSincronizacionApiDian": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la sincronización con la API de la DIAN; no se declara una tabla de referencia."
+   }
+  },
+  "apunta_a": [
+   "idDocumento -> General.Documento(idDocumento)"
+  ],
+  "la_referencian": [
+   "Contabilidad.OtroPasivo(idResolucion)",
+   "CuentaCobrar.Factura(idResolucion)",
+   "CuentaCobrar.Remision(idResolucion)",
+   "CuentaPagar.FacturaCompra(idResolucion)"
+  ]
+ },
+ "General.Tarifa": {
+  "descripcion": "Guarda tarifas identificables por código y descripción, que se asignan a terceros y se usan en operaciones de inventario, cuentas por cobrar y ventas. También registra si la tarifa es especial para remisiones, si se muestra en la consulta de precios y, cuando corresponde, una cantidad mínima de producto para aplicarla.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la tarifa; la estructura proporcionada no declara que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código usado para identificar la tarifa."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de la tarifa."
+   },
+   "listaPrecio": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano asociado a una lista de precios; su significado funcional exacto no se puede deducir."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la tarifa; no se puede deducir qué representan verdadero y falso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica una tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica una tabla de referencia."
+   },
+   "tarifaEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la tarifa es especial para procesos de remisiones."
+   },
+   "cantidadProducto": {
+    "tipo": "integer",
+    "descripcion": "Cantidad a partir de la cual aplica la tarifa; 0 indica que este criterio no aplica."
+   },
+   "visibleConsulta": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la tarifa es visible en la consulta de precios."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "CuentaCobrar.DetalleFactura(idTarifa)",
+   "CuentaCobrar.DetalleRemision(idTarifa)",
+   "CuentaPagar.TarifaProductoTemporal(idTarifa)",
+   "Inventario.TarifaProducto(idTarifa)",
+   "Tercero.Tercero(idTarifa)",
+   "Venta.DetalleCotizacion(idTarifa)",
+   "Venta.DetallePedido(idTarifa)"
+  ]
+ },
+ "General.TarjetaDebitoCredito": {
+  "descripcion": "Guarda un catálogo de tarjetas o tipos de tarjeta clasificados como débito o crédito. Sus registros se utilizan en procesos de cartera, contabilidad, cuentas por cobrar, cuentas por pagar y ventas, posiblemente para identificar la tarjeta asociada a una operación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del registro; la estructura no declara una clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado al registro en el catálogo."
+   },
+   "debitoCredito": {
+    "tipo": "boolean",
+    "descripcion": "Indica si corresponde a débito o crédito; el comentario especifica débito = 0 y crédito = 1."
+   },
+   "nombre": {
+    "tipo": "character varying",
+    "descripcion": "Nombre de la tarjeta o tipo de tarjeta."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado del registro; no se especifica qué valor representa cada estado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara la tabla a la que apunta."
+   },
+   "imagen": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario del icono asociado a la tarjeta; es opcional."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Cartera.DetalleReciboComprobante(idTarjetaDebitoCredito)",
+   "Contabilidad.Anticipo(idTarjetaDebitoCredito)",
+   "Contabilidad.DetalleOtraCuentaCobrar(idTarjetaDebitoCredito)",
+   "Contabilidad.DetalleOtroPasivo(idTarjetaDebitoCredito)",
+   "CuentaCobrar.Factura(idTarjetaDebitoCredito)",
+   "CuentaCobrar.Remision(idTarjetaDebitoCredito)",
+   "CuentaPagar.DetallePropuestaPago(idTarjetaDebitoCredito)",
+   "CuentaPagar.FacturaCompra(idTarjetaDebitoCredito)",
+   "CuentaPagar.OrdenCompra(idTarjetaDebitoCredito)",
+   "Venta.Cotizacion(idTarjetaDebitoCredito)"
+  ]
+ },
+ "General.TipoComplementoDireccion": {
+  "descripcion": "Guarda un catálogo de tipos de complemento de dirección, con una descripción y una abreviatura para cada tipo. Sirve posiblemente para estandarizar los complementos utilizados al registrar direcciones y para controlar cuáles están disponibles.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipoComplementoDireccion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del tipo de complemento de dirección; la estructura no confirma que sea clave primaria."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del tipo de complemento de dirección."
+   },
+   "abreviatura": {
+    "tipo": "character varying",
+    "descripcion": "Abreviatura asociada al tipo de complemento."
+   },
+   "orden": {
+    "tipo": "integer",
+    "descripcion": "Número que posiblemente determina el orden de presentación del tipo."
+   },
+   "activo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro está marcado como activo (true) o inactivo (false)."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la estructura no indica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la estructura no indica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "General.TipoVia": {
+  "descripcion": "Catálogo de tipos de vía, posiblemente usado para normalizar la información de direcciones. Guarda una descripción y una abreviatura para cada tipo, además de datos de orden, actividad y auditoría.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTipoVia": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del tipo de vía; la estructura no lo declara como clave primaria."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del tipo de vía."
+   },
+   "abreviatura": {
+    "tipo": "character varying",
+    "descripcion": "Abreviatura asociada al tipo de vía."
+   },
+   "orden": {
+    "tipo": "integer",
+    "descripcion": "Valor numérico posiblemente usado para ordenar los tipos de vía."
+   },
+   "activo": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el registro está activo; el significado funcional exacto no se puede deducir."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora registradas para la creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp without time zone",
+    "descripcion": "Fecha y hora registradas para la modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación; no se especifica una clave foránea."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la última modificación; no se especifica una clave foránea."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ }
+}

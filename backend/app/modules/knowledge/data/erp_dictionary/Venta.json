@@ -1,0 +1,1103 @@
+{
+ "Venta.Cotizacion": {
+  "descripcion": "Guarda los datos generales, comerciales y de pago de una cotización de venta, incluidos el tercero asociado, las fechas y los valores e impuestos calculados. Permite identificar y consultar la cotización y su estado, y sirve de referencia para sus detalles y otros registros relacionados. La estructura no permite determinar si una cotización puede convertirse posteriormente en una venta.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCotizacion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la cotización; no se informa si es clave primaria."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Documento asociado a la cotización; apunta a General.Documento(idDocumento), pero no se especifica su función exacta."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número de la cotización."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Centro de costo asociado, si aplica; apunta a Empresa.CentroCosto(idCentroCosto)."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la cotización."
+   },
+   "fechaVencimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora hasta la que posiblemente es válida la cotización."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado a la cotización, posiblemente el cliente; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Tercero asociado en el rol de empleado; apunta a Tercero.Tercero(idTercero)."
+   },
+   "texto1": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto auxiliar; su uso no se puede deducir."
+   },
+   "texto2": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto auxiliar; su uso no se puede deducir."
+   },
+   "texto3": {
+    "tipo": "character varying",
+    "descripcion": "Campo de texto auxiliar; su uso no se puede deducir."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Forma de pago asociada, si aplica; apunta a General.FormaPago(idFormaPago)."
+   },
+   "valorPagoEfectivo": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pago en efectivo."
+   },
+   "diasCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de crédito, si aplica."
+   },
+   "numeroCuotas": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de cuotas asociadas al pago."
+   },
+   "idBanco": {
+    "tipo": "integer",
+    "descripcion": "Banco asociado, si aplica; apunta a Tercero.Banco(idBanco)."
+   },
+   "numeroTarjeta": {
+    "tipo": "character varying",
+    "descripcion": "Número de tarjeta asociado al pago, si aplica."
+   },
+   "valorPagoTarjeta": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pago con tarjeta."
+   },
+   "numeroCheque": {
+    "tipo": "character varying",
+    "descripcion": "Número del cheque asociado, si aplica."
+   },
+   "fechaChequePostFechado": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha del cheque posfechado, si aplica."
+   },
+   "valorPagadoCheque": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado como pagado con cheque."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la factura antes de impuestos."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento, si lo hubiera."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la venta exenta de IVA."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la venta excluida de IVA."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor total sujeto a IVA."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor del IVA de los productos gravados."
+   },
+   "valorImpuestosRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor de las retenciones."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Total de la factura, sumando y descontando los impuestos requeridos."
+   },
+   "anulada": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la cotización está anulada."
+   },
+   "marcaAgua": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se aplica una marca de agua; el significado y las condiciones de uso no se especifican."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se informa la tabla de referencia."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se informa la tabla de referencia."
+   },
+   "idTarjetaDebitoCredito": {
+    "tipo": "integer",
+    "descripcion": "Tipo o registro de tarjeta asociado, si aplica; apunta a General.TarjetaDebitoCredito(idTarjetaDebitoCredito)."
+   },
+   "motivoAnulada": {
+    "tipo": "character varying",
+    "descripcion": "Motivo de anulación, si se registra."
+   },
+   "idConvenio": {
+    "tipo": "integer",
+    "descripcion": "Convenio asociado, si aplica; apunta a Venta.Convenio(idConvenio)."
+   },
+   "idTerceroDireccion": {
+    "tipo": "integer",
+    "descripcion": "Dirección del tercero asociada, si aplica; apunta a Tercero.TerceroDireccion(idTerceroDireccion)."
+   },
+   "valorImpuestoEspecial": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado para impuestos especiales; su definición exacta no se puede deducir."
+   },
+   "valorImpuestoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado para impuesto IVA; su relación con valorIva no se puede deducir."
+   },
+   "totalIpoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Valor total registrado para el impuesto al consumo; la sigla y el cálculo no se especifican."
+   },
+   "descuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Valor del descuento para los obsequios."
+   },
+   "idEstadoCotizacion": {
+    "tipo": "integer",
+    "descripcion": "Estado de la cotización, si está asignado; apunta a Venta.EstadoCotizacion(idEstadoCotizacion)."
+   }
+  },
+  "apunta_a": [
+   "idBanco -> Tercero.Banco(idBanco)",
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idConvenio -> Venta.Convenio(idConvenio)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroDireccion -> Tercero.TerceroDireccion(idTerceroDireccion)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)",
+   "idEstadoCotizacion -> Venta.EstadoCotizacion(idEstadoCotizacion)",
+   "idTarjetaDebitoCredito -> General.TarjetaDebitoCredito(idTarjetaDebitoCredito)"
+  ],
+  "la_referencian": [
+   "CuentaCobrar.CotizacionAutoventa(idCotizacion)",
+   "Venta.CotizacionIndicadorRetencion(idCotizacion)",
+   "Venta.CotizacionIva(idCotizacion)",
+   "Venta.DetalleCotizacion(idCotizacion)"
+  ]
+ },
+ "Venta.CotizacionIndicadorRetencion": {
+  "descripcion": "Registra indicadores de retención asociados a una cotización, junto con el porcentaje aplicado, la base usada para el cálculo y el valor de la retención. Sirve posiblemente para conservar el detalle de las retenciones consideradas en la cotización.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCotizacionIndicadorRetencion": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el registro de indicador de retención; la estructura no permite confirmar si es único o clave primaria."
+   },
+   "idCotizacion": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la cotización a la que corresponde el registro; apunta a Venta.Cotizacion(idCotizacion)."
+   },
+   "idIndicadorRetencion": {
+    "tipo": "integer",
+    "descripcion": "Identifica el indicador de retención aplicado; apunta a Inventario.IndicadorRetencion(idIndicadorRetencion)."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado a la retención."
+   },
+   "valorRetencion": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario de la retención registrada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base usada para el cálculo del impuesto, según el comentario de la columna."
+   }
+  },
+  "apunta_a": [
+   "idCotizacion -> Venta.Cotizacion(idCotizacion)",
+   "idIndicadorRetencion -> Inventario.IndicadorRetencion(idIndicadorRetencion)"
+  ],
+  "la_referencian": []
+ },
+ "Venta.CotizacionIva": {
+  "descripcion": "Guarda los importes y la tasa de IVA asociados a una cotización de venta, posiblemente desglosados por indicador de IVA. Sirve para registrar la base imponible y el valor de IVA correspondiente a cada registro vinculado con una cotización.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCotizacionIva": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de IVA de la cotización; la estructura no declara que sea clave primaria."
+   },
+   "idCotizacion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la cotización a la que pertenece; referencia Venta.Cotizacion(idCotizacion)."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Identificador del indicador de IVA aplicado; referencia Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "baseImpuesto": {
+    "tipo": "numeric",
+    "descripcion": "Base sobre la que se calcula el IVA, según el comentario de la columna."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicado; no se especifica si se almacena como porcentaje entero o como fracción."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA registrado para la base y el porcentaje del registro."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la creación; no se indica a qué tabla referencia."
+   },
+   "idUsuarioModicacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado posiblemente a una modificación; el nombre parece una variante o error tipográfico de idUsuarioModificacion."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario asociado a la modificación; no se indica a qué tabla referencia."
+   }
+  },
+  "apunta_a": [
+   "idCotizacion -> Venta.Cotizacion(idCotizacion)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)"
+  ],
+  "la_referencian": []
+ },
+ "Venta.DenominacionMoneda": {
+  "descripcion": "Guarda denominaciones asociadas a una moneda dentro del módulo de Ventas. Posiblemente sirve para registrar los valores de efectivo utilizados en cierres de caja, ya que Venta.CierreTurnoCajaEfectivo la referencia.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDenominacionMoneda": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la denominación; la estructura no declara una clave primaria."
+   },
+   "idMoneda": {
+    "tipo": "integer",
+    "descripcion": "Identifica la moneda a la que pertenece; apunta a Contabilidad.Moneda(idMoneda)."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la denominación; su formato o significado específico no se deduce."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Texto descriptivo de la denominación."
+   },
+   "valorMoneda": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la denominación según la moneda definida, de acuerdo con el comentario de la columna."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; posiblemente señala si la denominación está habilitada."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica a qué tabla apunta."
+   },
+   "imagen": {
+    "tipo": "bytea",
+    "descripcion": "Contenido binario opcional asociado a la denominación; su uso específico no se deduce."
+   }
+  },
+  "apunta_a": [
+   "idMoneda -> Contabilidad.Moneda(idMoneda)"
+  ],
+  "la_referencian": [
+   "Venta.CierreTurnoCajaEfectivo(idDenominacionMoneda)"
+  ]
+ },
+ "Venta.DetalleCotizacion": {
+  "descripcion": "Guarda las líneas de detalle de las cotizaciones de venta, con el producto, almacén, cantidades, precios, descuentos e importes relacionados con impuestos. También registra información de lote, unidades de medida y el estado de facturación de cada línea. Se relaciona con la cotización y con entidades de inventario, tarifas y convenios.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetalleCotizacion": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del detalle de cotización; la estructura no indica si es clave primaria."
+   },
+   "idCotizacion": {
+    "tipo": "bigint",
+    "descripcion": "Cotización a la que pertenece la línea; referencia a Venta.Cotizacion(idCotizacion)."
+   },
+   "numeroLinea": {
+    "tipo": "integer",
+    "descripcion": "Número de orden de la línea dentro de la cotización."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto cotizado; referencia a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado a la línea; referencia a Inventario.Almacen(idAlmacen)."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado a la línea."
+   },
+   "cantidad": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad cotizada del producto."
+   },
+   "valorUnitario": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario registrado para el producto."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor base de la línea antes de impuestos; el comentario indica que se calcula como cantidad por costo."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Importe del descuento aplicado a la línea."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA asociado al producto; referencia a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA aplicable al producto."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de IVA calculado para el producto según el porcentaje registrado."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía gravada con IVA."
+   },
+   "valorExentoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía exenta de IVA."
+   },
+   "valorExcluidoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de la mercancía excluida de IVA."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Valor total de la línea, incluidos los impuestos."
+   },
+   "lote": {
+    "tipo": "character varying",
+    "descripcion": "Identificador o descripción del lote del producto, si corresponde."
+   },
+   "fechaVencimientoLote": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento del lote, si corresponde."
+   },
+   "estado": {
+    "tipo": "integer",
+    "descripcion": "Estado de facturación de la línea: 0 = cotizado, 1 = facturado parcialmente y 2 = facturado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se creó el registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica la tabla referenciada."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica la tabla referenciada."
+   },
+   "idUnidadMedida": {
+    "tipo": "integer",
+    "descripcion": "Unidad de medida principal; referencia a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "idUnidadMedidaSecundaria": {
+    "tipo": "integer",
+    "descripcion": "Unidad de medida secundaria, si corresponde; referencia a Inventario.UnidadMedida(idUnidadMedida)."
+   },
+   "cantidadSecundaria": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad expresada en la unidad de medida secundaria."
+   },
+   "costo": {
+    "tipo": "numeric",
+    "descripcion": "Costo asociado a la línea; la estructura no precisa cómo se utiliza respecto de valorUnitario."
+   },
+   "ipoConsumo": {
+    "tipo": "numeric",
+    "descripcion": "Importe o porcentaje relacionado con IPO de consumo; no se puede determinar su significado exacto."
+   },
+   "totalGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe total gravado con IVA; la estructura no precisa cómo se diferencia de valorGravadoIva."
+   },
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Tarifa asociada, si corresponde; referencia a General.Tarifa(idTarifa)."
+   },
+   "idConvenio": {
+    "tipo": "integer",
+    "descripcion": "Convenio asociado, si corresponde; referencia a Venta.Convenio(idConvenio)."
+   },
+   "porcentajeConvenio": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje asociado al convenio."
+   },
+   "obsequio": {
+    "tipo": "boolean",
+    "descripcion": "Indica si la línea corresponde a un obsequio; no se especifican los valores o reglas de aplicación."
+   },
+   "observacion": {
+    "tipo": "character varying",
+    "descripcion": "Observación libre asociada a la línea."
+   },
+   "valorDescuentoObsequio": {
+    "tipo": "numeric",
+    "descripcion": "Importe del descuento por obsequio para el producto en esta línea."
+   },
+   "descripcionGrupo": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del grupo asociado, si corresponde."
+   },
+   "cantidadSubGrupo": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad asociada al subgrupo; el significado específico de subgrupo no se deduce de la estructura."
+   },
+   "tarifaEspecial": {
+    "tipo": "boolean",
+    "descripcion": "Indica si se aplicó una tarifa especial."
+   },
+   "idProductoDivisionFraccion": {
+    "tipo": "integer",
+    "descripcion": "División o fracción del producto, si corresponde; referencia a Inventario.ProductoDivisionFraccion(idProductoDivisionFraccion)."
+   },
+   "valorEquivalente": {
+    "tipo": "numeric",
+    "descripcion": "Valor equivalente asociado a la línea; no se especifica su unidad o cálculo."
+   },
+   "descripcionProducto": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del producto registrada en la línea."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idConvenio -> Venta.Convenio(idConvenio)",
+   "idCotizacion -> Venta.Cotizacion(idCotizacion)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idProductoDivisionFraccion -> Inventario.ProductoDivisionFraccion(idProductoDivisionFraccion)",
+   "idTarifa -> General.Tarifa(idTarifa)",
+   "idUnidadMedida -> Inventario.UnidadMedida(idUnidadMedida)",
+   "idUnidadMedidaSecundaria -> Inventario.UnidadMedida(idUnidadMedida)"
+  ],
+  "la_referencian": [
+   "Venta.DetalleCotizacionLote(idDetalleCotizacion)"
+  ]
+ },
+ "Venta.DetallePedido": {
+  "descripcion": "Guarda las líneas de los pedidos de venta, con el producto, el almacén, las cantidades y los importes asociados. También registra información de descuentos, IVA, despacho y devoluciones, posiblemente para dar seguimiento al cumplimiento del pedido. Sus referencias permiten relacionar cada línea con el pedido, el producto y otros datos de inventario o venta.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idDetallePedido": {
+    "tipo": "bigint",
+    "descripcion": "Identificador de la línea del pedido; la estructura no declara una clave primaria."
+   },
+   "idPedido": {
+    "tipo": "bigint",
+    "descripcion": "Pedido de venta al que pertenece la línea; apunta a Venta.Pedido(idPedido)."
+   },
+   "idProducto": {
+    "tipo": "bigint",
+    "descripcion": "Producto solicitado en la línea; apunta a Inventario.Producto(idProducto)."
+   },
+   "idAlmacen": {
+    "tipo": "integer",
+    "descripcion": "Almacén asociado a la línea; apunta a Inventario.Almacen(idAlmacen)."
+   },
+   "cantidadSolicitada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto solicitada en el pedido."
+   },
+   "valorUnitario": {
+    "tipo": "numeric",
+    "descripcion": "Valor unitario registrado para el producto en esta línea."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Importe total registrado para la línea; no se puede deducir si incluye descuentos o IVA."
+   },
+   "valorDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario del descuento aplicado a la línea."
+   },
+   "porcentajeDescuento": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de descuento aplicado a la línea."
+   },
+   "idIndicadorIva": {
+    "tipo": "integer",
+    "descripcion": "Indicador de IVA asociado a la línea; apunta a Inventario.IndicadorIva(idIndicadorIva)."
+   },
+   "porcentajeIva": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de IVA registrado para la línea."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de IVA registrado para la línea."
+   },
+   "totalGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Importe de la línea registrado como gravado con IVA."
+   },
+   "estado": {
+    "tipo": "integer",
+    "descripcion": "Estado de facturación de la línea: 0 = Cotizado, 1 = Facturado Parcial y 2 = Facturado; admite valores nulos."
+   },
+   "cantidadDespachada": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto que consta como despachada."
+   },
+   "cantidadPendienteDespachar": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto que consta como pendiente de despacho."
+   },
+   "cantidadDevolucion": {
+    "tipo": "numeric",
+    "descripcion": "Cantidad del producto registrada como devolución."
+   },
+   "idMotivoDevolucion": {
+    "tipo": "integer",
+    "descripcion": "Motivo asociado a la devolución; apunta a Venta.MotivoDevolucion(idMotivoDevolucion) y admite valores nulos."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se indica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se indica la tabla a la que apunta."
+   },
+   "idTarifa": {
+    "tipo": "integer",
+    "descripcion": "Tarifa asociada a la línea; apunta a General.Tarifa(idTarifa) y admite valores nulos."
+   }
+  },
+  "apunta_a": [
+   "idAlmacen -> Inventario.Almacen(idAlmacen)",
+   "idIndicadorIva -> Inventario.IndicadorIva(idIndicadorIva)",
+   "idMotivoDevolucion -> Venta.MotivoDevolucion(idMotivoDevolucion)",
+   "idPedido -> Venta.Pedido(idPedido)",
+   "idProducto -> Inventario.Producto(idProducto)",
+   "idTarifa -> General.Tarifa(idTarifa)"
+  ],
+  "la_referencian": []
+ },
+ "Venta.EstadoCotizacion": {
+  "descripcion": "Posiblemente es un catálogo de estados aplicables a las cotizaciones de venta. La tabla permite asociar cada cotización con un estado mediante `Venta.Cotizacion(idEstadoCotizacion)`. También registra datos de creación y modificación de cada registro.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEstadoCotizacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del estado de cotización; la estructura no indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asociado al estado; su formato y significado no se pueden deducir."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del estado de cotización."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado no se puede determinar con certeza; posiblemente señala si el registro está activo."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro por última vez; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Venta.Cotizacion(idEstadoCotizacion)"
+  ]
+ },
+ "Venta.EstadoPedido": {
+  "descripcion": "Posiblemente es un catálogo de estados aplicables a los pedidos de venta. La tabla es referenciada por Venta.Pedido mediante idEstadoPedido, por lo que permite asociar un estado a cada pedido. También conserva datos de creación y modificación de cada registro.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEstadoPedido": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del estado del pedido; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código del estado del pedido; no se indican los valores ni su significado."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción del estado del pedido."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano asociado al estado; no se especifica qué representan true y false."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se declara una clave foránea que indique a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se declara una clave foránea que indique a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "Venta.Pedido(idEstadoPedido)"
+  ]
+ },
+ "Venta.HistoricoPagoComision": {
+  "descripcion": "Guarda el historial de comisiones liquidadas a empleados por facturas, junto con la base, el porcentaje y el valor de la comisión pagada. También registra datos de la factura y, cuando corresponde, del comprobante de pago asociado y del saldo de la factura al liquidar la comisión. Puede servir para consultar o auditar liquidaciones, aunque el alcance exacto del historial debe confirmarse.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idHistoricoPagoComision": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro de historial; la estructura proporcionada no confirma que sea clave primaria."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identifica al empleado asociado a la comisión; apunta a Tercero.Tercero(idTercero)."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identifica la factura a la que aplica la comisión; apunta a CuentaCobrar.Factura(idFactura)."
+   },
+   "fechaFactura": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la factura."
+   },
+   "baseLiquidacion": {
+    "tipo": "numeric",
+    "descripcion": "Valor base sin IVA utilizado para liquidar la comisión."
+   },
+   "diasPago": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de pago registrada para la factura; no se puede determinar cómo se calcula."
+   },
+   "fechaPagoComision": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora registradas para el pago de la comisión."
+   },
+   "porcentajeComision": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de comisión pagado en la factura; no se especifica si se almacena como porcentaje entero o fracción."
+   },
+   "valorPagadoComision": {
+    "tipo": "numeric",
+    "descripcion": "Importe pagado por concepto de comisión."
+   },
+   "saldoFactura": {
+    "tipo": "numeric",
+    "descripcion": "Saldo de la factura en el momento de liquidar la comisión."
+   },
+   "idReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identifica el comprobante asociado al pago de la factura a crédito; apunta a Cartera.ReciboComprobante(idReciboComprobante) y puede ser nulo."
+   },
+   "valorPagado": {
+    "tipo": "numeric",
+    "descripcion": "Importe cancelado con el comprobante asociado."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreaion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado a la creación; el nombre parece tener un error tipográfico y no se especifica a qué tabla apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado a la última modificación; no se especifica a qué tabla apunta."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador de usuario asociado a la creación; no se especifica a qué tabla apunta."
+   }
+  },
+  "apunta_a": [
+   "idFactura -> CuentaCobrar.Factura(idFactura)",
+   "idReciboComprobante -> Cartera.ReciboComprobante(idReciboComprobante)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Venta.Pedido": {
+  "descripcion": "Guarda la cabecera de pedidos de venta: identifica el documento, sus terceros asociados, fechas, forma de pago y valores monetarios. Sirve para registrar y dar seguimiento a pedidos; otras tablas pueden asociarles detalles, facturas, remisiones y compromisos de inventario. La estructura no permite determinar por sí sola cuándo se considera atendido o facturable un pedido.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idPedido": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del pedido; otras tablas lo usan para referenciarlo."
+   },
+   "idDocumento": {
+    "tipo": "integer",
+    "descripcion": "Referencia a General.Documento; identifica el documento asociado al pedido."
+   },
+   "numero": {
+    "tipo": "bigint",
+    "descripcion": "Número asignado al pedido o documento; su alcance y reglas de numeración no se deducen."
+   },
+   "idCentroCosto": {
+    "tipo": "integer",
+    "descripcion": "Referencia a Empresa.CentroCosto; indica el centro de costo asociado."
+   },
+   "fecha": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora del pedido."
+   },
+   "fechaVencimiento": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de vencimiento asociada al pedido; cuándo se informa no se deduce."
+   },
+   "idTercero": {
+    "tipo": "bigint",
+    "descripcion": "Referencia a Tercero.Tercero; identifica un tercero relacionado con el pedido, posiblemente el cliente."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Referencia a Tercero.Tercero; identifica otro tercero relacionado, posiblemente el empleado responsable."
+   },
+   "comentario": {
+    "tipo": "character varying",
+    "descripcion": "Comentario libre asociado al pedido."
+   },
+   "idFormaPago": {
+    "tipo": "integer",
+    "descripcion": "Referencia a General.FormaPago; indica la forma de pago."
+   },
+   "diasCredito": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días de crédito asociada al pedido, si corresponde."
+   },
+   "subtotal": {
+    "tipo": "numeric",
+    "descripcion": "Valor subtotal del pedido; su fórmula y tratamiento de descuentos no se deducen."
+   },
+   "descuento": {
+    "tipo": "numeric",
+    "descripcion": "Valor de descuento registrado para el pedido; no se deduce si es importe o porcentaje."
+   },
+   "valorExento": {
+    "tipo": "numeric",
+    "descripcion": "Valor exento de IVA registrado en el pedido."
+   },
+   "valorIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor de IVA registrado en el pedido."
+   },
+   "valorGravadoIva": {
+    "tipo": "numeric",
+    "descripcion": "Valor gravado con IVA registrado en el pedido."
+   },
+   "total": {
+    "tipo": "numeric",
+    "descripcion": "Valor total registrado para el pedido."
+   },
+   "generado": {
+    "tipo": "integer",
+    "descripcion": "Dispositivo que genera el pedido: 0 = móvil y 1 = consola, según el comentario de la base."
+   },
+   "idEstadoPedido": {
+    "tipo": "integer",
+    "descripcion": "Referencia a Venta.EstadoPedido; indica el estado del pedido, pero los códigos no se deducen."
+   },
+   "anulado": {
+    "tipo": "boolean",
+    "descripcion": "Indica si el pedido está anulado (verdadero) o no (falso)."
+   },
+   "idMotivoAnulacion": {
+    "tipo": "integer",
+    "descripcion": "Referencia a Venta.MotivoAnulacion; identifica el motivo de anulación cuando corresponde."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación registrada."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; la tabla referenciada no se especifica."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; la tabla referenciada no se especifica."
+   }
+  },
+  "apunta_a": [
+   "idCentroCosto -> Empresa.CentroCosto(idCentroCosto)",
+   "idDocumento -> General.Documento(idDocumento)",
+   "idEstadoPedido -> Venta.EstadoPedido(idEstadoPedido)",
+   "idFormaPago -> General.FormaPago(idFormaPago)",
+   "idMotivoAnulacion -> Venta.MotivoAnulacion(idMotivoAnulacion)",
+   "idTercero -> Tercero.Tercero(idTercero)",
+   "idTerceroEmpleado -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": [
+   "Agenda.Ruta(idPedido)",
+   "CuentaCobrar.Factura(idPedido)",
+   "CuentaCobrar.Remision(idPedido)",
+   "Inventario.InventarioComprometido(idPedido)",
+   "Venta.DetallePedido(idPedido)"
+  ]
+ },
+ "Venta.TablaComision": {
+  "descripcion": "Guarda configuraciones de comisión en el módulo de Ventas, con un porcentaje y un rango de días asociado. Posiblemente se utiliza para determinar o liquidar comisiones, ya que la tabla es utilizada por funciones de liquidación de comisiones. Puede vincularse con un tercero vendedor.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTablaComision": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la configuración; la estructura no indica que sea clave primaria."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código de la configuración de comisión; su formato y significado no se deducen de la estructura."
+   },
+   "descripcion": {
+    "tipo": "character varying",
+    "descripcion": "Descripción de la configuración de comisión."
+   },
+   "porcentaje": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje de comisión que se guarda para la configuración."
+   },
+   "diaDesde": {
+    "tipo": "integer",
+    "descripcion": "Límite inferior, en días, del rango asociado al pago de la comisión."
+   },
+   "diaHasta": {
+    "tipo": "integer",
+    "descripcion": "Límite superior, en días, del rango asociado al pago de la comisión."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano de estado; no se puede deducir qué representan los valores verdadero y falso."
+   },
+   "fechaCreacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de creación del registro."
+   },
+   "fechaModificacion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la última modificación del registro."
+   },
+   "idUsuarioCreacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que creó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idUsuarioModificacion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del usuario que modificó el registro; no se especifica la tabla a la que apunta."
+   },
+   "idTerceroVendedor": {
+    "tipo": "bigint",
+    "descripcion": "Identificador opcional del tercero vendedor; apunta a Tercero.Tercero(idTercero)."
+   }
+  },
+  "apunta_a": [
+   "idTerceroVendedor -> Tercero.Tercero(idTercero)"
+  ],
+  "la_referencian": []
+ },
+ "Venta.TmpComisionVendedor": {
+  "descripcion": "Guarda registros temporales relacionados con la liquidación de comisiones de vendedores, incluyendo datos de facturas, recaudos, saldos y valores de comisión. Las funciones Venta.fnLiquidarComision y Venta.fnLiquidarComisionV2 la utilizan; posiblemente sirve como conjunto intermedio para calcular o presentar una liquidación.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idTmpComisionVendedor": {
+    "tipo": "bigint",
+    "descripcion": "Identificador del registro temporal; la estructura no declara una clave primaria."
+   },
+   "idTerceroEmpleado": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico del empleado asociado; no se declara a qué tabla apunta."
+   },
+   "terceroEmpleado": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción del empleado asociado."
+   },
+   "numeroFactura": {
+    "tipo": "character varying",
+    "descripcion": "Número de la factura relacionada con la comisión."
+   },
+   "formaPago": {
+    "tipo": "character varying",
+    "descripcion": "Código o descripción de la forma de pago; sus valores no se pueden deducir."
+   },
+   "fechaFactura": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora de la factura relacionada."
+   },
+   "valorFactura": {
+    "tipo": "numeric",
+    "descripcion": "Valor registrado para la factura."
+   },
+   "saldoFactura": {
+    "tipo": "numeric",
+    "descripcion": "Saldo registrado de la factura."
+   },
+   "baseLiquidacion": {
+    "tipo": "numeric",
+    "descripcion": "Valor usado como base para liquidar la comisión."
+   },
+   "pagoAnterior": {
+    "tipo": "numeric",
+    "descripcion": "Valor identificado como pago anterior, sin que se pueda determinar a qué pago corresponde."
+   },
+   "comprobanteIngreso": {
+    "tipo": "character varying",
+    "descripcion": "Número o descripción del comprobante de ingreso relacionado."
+   },
+   "fechaComision": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a la comisión."
+   },
+   "valorRecaudo": {
+    "tipo": "numeric",
+    "descripcion": "Valor del recaudo relacionado con la liquidación."
+   },
+   "diasPago": {
+    "tipo": "integer",
+    "descripcion": "Cantidad de días asociada al pago; no se puede deducir cómo se calcula."
+   },
+   "valorComision": {
+    "tipo": "numeric",
+    "descripcion": "Valor monetario de la comisión."
+   },
+   "porcentajeComision": {
+    "tipo": "numeric",
+    "descripcion": "Porcentaje aplicado o registrado para la comisión."
+   },
+   "tercero": {
+    "tipo": "character varying",
+    "descripcion": "Nombre o descripción de un tercero relacionado; no se puede determinar su función exacta."
+   },
+   "idUsuario": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del usuario asociado; no se declara a qué tabla apunta."
+   },
+   "idFactura": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico de la factura; no se declara formalmente la tabla a la que apunta."
+   },
+   "idReciboComprobante": {
+    "tipo": "bigint",
+    "descripcion": "Identificador numérico opcional de un recibo o comprobante; no se declara a qué tabla apunta."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ }
+}

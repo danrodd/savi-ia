@@ -28,6 +28,10 @@ from app.modules.knowledge.domain.entities import (
     WorkflowEntry,
 )
 from app.modules.knowledge.domain.interfaces import KnowledgeCatalog
+from app.modules.knowledge.infrastructure.erp_dictionary import (
+    ErpDictionary,
+    get_erp_dictionary,
+)
 
 # ──────────────────────────────────────────────────────────────────────
 # Serializers — qué le mandamos al LLM por tool
@@ -371,6 +375,7 @@ KNOWLEDGE_TIPOS: tuple[str, ...] = (
     "documentos",
     "documentos_disponibles",
     "empresa",
+    "tablas_erp",
 )
 
 
@@ -380,6 +385,7 @@ def build_consultar_conocimiento_impl(
     document_search: Callable[[str], Awaitable[dict[str, Any]]] | None = None,
     document_listing: Callable[[], Awaitable[dict[str, Any]]] | None = None,
     company_info: Callable[[], Awaitable[dict[str, Any]]] | None = None,
+    erp_dictionary: ErpDictionary | None = None,
 ) -> Callable[[dict[str, Any]], Any]:
     """Constructor de la tool unificada del catálogo.
 
@@ -423,6 +429,12 @@ def build_consultar_conocimiento_impl(
             if company_info is None:
                 return {"nota": "No hay datos de la empresa disponibles."}
             return await company_info()
+        if tipo == "tablas_erp":
+            # Estructura del ERP para escribir SQL libre, que solo tiene el
+            # administrador: a los demás no les sirve y no se les muestra.
+            if allowed_modules is not None:
+                return {"nota": "El diccionario de tablas es solo para administradores."}
+            return (erp_dictionary or get_erp_dictionary()).search(consulta)
         if tipo == "documentos_disponibles":
             if document_listing is None:
                 return {"documentos": [], "nota": "No hay documentos de la empresa disponibles."}

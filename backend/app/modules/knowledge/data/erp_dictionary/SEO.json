@@ -1,0 +1,238 @@
+{
+ "SEO.Categoria": {
+  "descripcion": "Mantiene un catálogo de categorías identificado por código y nombre. SEO.Etiqueta y Soporte.SolicitudRadicada incluyen una referencia a idCategoria, por lo que la tabla posiblemente sirve para clasificar registros de esos módulos.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idCategoria": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico de la categoría; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "codigo": {
+    "tipo": "character varying",
+    "descripcion": "Código asignado a la categoría; no se especifican su formato ni sus reglas de unicidad."
+   },
+   "nombre": {
+    "tipo": "character varying",
+    "descripcion": "Nombre descriptivo de la categoría."
+   },
+   "moduloCodigo": {
+    "tipo": "character varying",
+    "descripcion": "Código posiblemente asociado al módulo de la categoría; no se indican los valores ni su significado."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano del estado de la categoría; no se puede deducir qué significan true y false."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": [
+   "SEO.Etiqueta(idCategoria)",
+   "Soporte.SolicitudRadicada(idCategoria)"
+  ]
+ },
+ "SEO.Etiqueta": {
+  "descripcion": "Guarda etiquetas organizadas por categoría y con un nombre para identificarlas. La tabla es referenciada por Soporte.SolicitudRadicada, por lo que posiblemente permite clasificar solicitudes radicadas.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idEtiqueta": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la etiqueta; no se declara como clave primaria en la estructura proporcionada."
+   },
+   "idCategoria": {
+    "tipo": "integer",
+    "descripcion": "Identificador de la categoría a la que pertenece la etiqueta; apunta a SEO.Categoria(idCategoria)."
+   },
+   "nombre": {
+    "tipo": "character varying",
+    "descripcion": "Nombre de la etiqueta."
+   },
+   "diagnosticable": {
+    "tipo": "character",
+    "descripcion": "Indicador en formato de carácter relacionado con la posibilidad de diagnosticar la etiqueta; se desconocen sus valores y su significado exacto."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Booleano que posiblemente indica si la etiqueta está activa o disponible; el significado de true y false debe confirmarse."
+   }
+  },
+  "apunta_a": [
+   "idCategoria -> SEO.Categoria(idCategoria)"
+  ],
+  "la_referencian": [
+   "Soporte.SolicitudRadicada(idEtiqueta)"
+  ]
+ },
+ "SEO.HistoricoVersion": {
+  "descripcion": "Registra cambios de versión del sistema, posiblemente como historial de auditoría; la función `SEO.fnAuditarCambioVersion` también sugiere ese uso. Puede servir para consultar la versión anterior y la nueva, junto con información sobre quién y cuándo realizó la actualización.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idHistoricoVersion": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro histórico; no consta una clave primaria en la estructura proporcionada."
+   },
+   "versionAnterior": {
+    "tipo": "character varying",
+    "descripcion": "Versión del sistema anterior al cambio."
+   },
+   "versionNueva": {
+    "tipo": "character varying",
+    "descripcion": "Versión del sistema después del cambio."
+   },
+   "nombreActualizaVersion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre asociado a quien actualiza la versión; no se puede determinar si es una persona, proceso u otro identificador."
+   },
+   "fechaActualizaVersion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a la actualización de la versión."
+   },
+   "usuarioBd": {
+    "tipo": "character varying",
+    "descripcion": "Usuario de la base de datos asociado al registro; no se especifica si corresponde a quien ejecutó la actualización."
+   },
+   "fechaRegistro": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora en que se registró esta fila."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "SEO.Modulo": {
+  "descripcion": "La tabla parece registrar indicadores relacionados con los módulos disponibles o habilitados en el ERP, como Contabilidad, Nómina e Inventario. Posiblemente se usa para configurar qué módulos están activos para cada registro, pero la estructura no permite confirmar qué representa cada fila ni si los indicadores controlan licencias, acceso o funcionalidad.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idModulo": {
+    "tipo": "integer",
+    "descripcion": "Identificador numérico del registro o módulo; la estructura no indica si es único ni cómo se asigna."
+   },
+   "activoFijo": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de activos fijos."
+   },
+   "cuentaPagar": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de cuentas por pagar."
+   },
+   "cuentaCobrar": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de cuentas por cobrar."
+   },
+   "contabilidad": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de contabilidad; admite valores nulos."
+   },
+   "nomina": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de nómina."
+   },
+   "mantenimiento": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de mantenimiento."
+   },
+   "cultivo": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado un módulo relacionado con cultivos."
+   },
+   "carteraFinanciera": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de cartera financiera."
+   },
+   "inventario": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de inventario."
+   },
+   "produccionAvicola": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de producción avícola."
+   },
+   "bombero": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano asociado a «bombero»; no se puede deducir a qué módulo o función se refiere."
+   },
+   "controlPrestamo": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitada una función o módulo de control de préstamos."
+   },
+   "herramienta": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano asociado a «herramienta»; posiblemente señala la disponibilidad de un módulo o función con ese nombre."
+   },
+   "presupuesto": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano que posiblemente señala si está habilitado el módulo de presupuesto."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ },
+ "SEO.Sistema": {
+  "descripcion": "La tabla almacena parámetros generales del sistema, posiblemente usados para configurar versiones, correos, soporte y el bloqueo de acceso. Puede servir para centralizar datos de identificación y control del ERP. La estructura no permite determinar si cada fila corresponde a una instalación, una empresa u otra entidad.",
+  "validado": false,
+  "clave_primaria": [],
+  "columnas": {
+   "idSistema": {
+    "tipo": "integer",
+    "descripcion": "Identificador del registro de configuración; no está declarada como clave primaria."
+   },
+   "ultimaVersion": {
+    "tipo": "character varying",
+    "descripcion": "Versión más reciente registrada para el sistema."
+   },
+   "correoElectronicoReporte": {
+    "tipo": "character varying",
+    "descripcion": "Dirección de correo posiblemente usada para enviar reportes."
+   },
+   "claveCorreo": {
+    "tipo": "character varying",
+    "descripcion": "Clave asociada a la configuración de correo; su uso exacto no se deduce."
+   },
+   "correoElectronicoControl": {
+    "tipo": "character varying",
+    "descripcion": "Dirección de correo posiblemente usada para tareas de control."
+   },
+   "correoElectronicoCopiaControl": {
+    "tipo": "character varying",
+    "descripcion": "Dirección de correo posiblemente destinada a recibir una copia de mensajes de control."
+   },
+   "fechaBloqueo": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora asociadas a un bloqueo del sistema."
+   },
+   "mensajeBloqueo": {
+    "tipo": "character varying",
+    "descripcion": "Mensaje posiblemente mostrado o registrado cuando el sistema está bloqueado."
+   },
+   "nit": {
+    "tipo": "character varying",
+    "descripcion": "Número de identificación tributaria asociado a la configuración; no se conoce el país ni la entidad identificada."
+   },
+   "estado": {
+    "tipo": "boolean",
+    "descripcion": "Indicador booleano cuyo significado operativo no se puede deducir."
+   },
+   "fechaActualizaVersion": {
+    "tipo": "timestamp with time zone",
+    "descripcion": "Fecha y hora registradas para una actualización de versión."
+   },
+   "nombreActualizaVersion": {
+    "tipo": "character varying",
+    "descripcion": "Nombre asociado a la actualización de versión; no se conoce si identifica a una persona, proceso u otro elemento."
+   },
+   "urlSoporte": {
+    "tipo": "character varying",
+    "descripcion": "Dirección web posiblemente usada para acceder al soporte."
+   },
+   "claveSoporte": {
+    "tipo": "character varying",
+    "descripcion": "Clave asociada al soporte; su uso exacto no se deduce."
+   }
+  },
+  "apunta_a": [],
+  "la_referencian": []
+ }
+}
