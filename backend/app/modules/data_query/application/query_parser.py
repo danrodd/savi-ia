@@ -3,6 +3,7 @@
 Defensivo: valida enums y estructura, da errores accionables. No toca la
 BD ni el modelo semántico (eso es el compilador) — solo forma el objeto.
 """
+
 from __future__ import annotations
 
 from typing import Any, cast
@@ -39,8 +40,7 @@ def _parse_op(raw: Any) -> FilterOp:
         return FilterOp(str(raw))
     except ValueError:
         raise InvalidQueryError(
-            f"Operador de filtro inválido '{raw}'. Usa: =, !=, >, >=, <, <=, "
-            "entre, contiene, en."
+            f"Operador de filtro inválido '{raw}'. Usa: =, !=, >, >=, <, <=, entre, contiene, en."
         ) from None
 
 
@@ -52,9 +52,7 @@ def _parse_filters(raw: Any) -> list[QueryFilter]:
     out: list[QueryFilter] = []
     for raw_item in cast(list[Any], raw):
         if not isinstance(raw_item, dict):
-            raise InvalidQueryError(
-                "Cada filtro debe ser un objeto {campo, op, valor}."
-            )
+            raise InvalidQueryError("Cada filtro debe ser un objeto {campo, op, valor}.")
         item = cast(dict[str, Any], raw_item)
         campo = item.get("campo")
         if not campo:

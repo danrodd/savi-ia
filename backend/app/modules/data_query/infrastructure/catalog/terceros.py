@@ -17,7 +17,11 @@ from app.modules.data_query.domain.semantic_model import (
     SemanticEntity,
 )
 from app.modules.data_query.domain.semantic_query import FilterOp
-from app.modules.data_query.infrastructure.catalog._names import tercero_display_name
+from app.modules.data_query.infrastructure.catalog._names import (
+    tercero_display_name,
+    tercero_full_name,
+    tercero_search_text,
+)
 from app.modules.data_query.infrastructure.catalog._tercero_fields import (
     tercero_detail_dimensions,
     tercero_detail_fields,
@@ -33,8 +37,9 @@ TERCEROS = SemanticEntity(
     base_filters=(),
     description=(
         "Directorio de clientes y proveedores. Úsala para BUSCAR un cliente "
-        "por nombre (modo detalle, filtro 'nombre' contiene) y obtener su "
-        "id, o para contar terceros por tipo, municipio o vendedor. Los campos de "
+        "por nombre (modo detalle, filtro 'nombre' contiene: busca cada palabra en el "
+        "nombre comercial y en el completo) o por 'identificacion' (NIT o cédula) y "
+        "obtener su id, o para contar terceros por tipo, municipio o vendedor. Los campos de "
         "contacto (identificación, teléfono, celular, correo, dirección) y las cuentas "
         "bancarias se piden por nombre en 'campos'; si no aparecen en la lista de "
         "campos, el usuario no tiene permiso para verlos. "
@@ -55,6 +60,8 @@ TERCEROS = SemanticEntity(
     fields={
         "id": FieldDef("id", 't."idTercero"', "ID"),
         "nombre": FieldDef("nombre", _NAME, "Nombre"),
+        # Como figura en los documentos del ERP (apellidos y nombres, o razón social).
+        "nombre_completo": FieldDef("nombre_completo", tercero_full_name(), "Nombre completo"),
         "es_cliente": FieldDef("es_cliente", 't."cliente"', "Es cliente"),
         "es_proveedor": FieldDef("es_proveedor", 't."proveedor"', "Es proveedor"),
         "activo": FieldDef("activo", 't."estado"', "Activo"),
@@ -71,7 +78,8 @@ TERCEROS = SemanticEntity(
         **tercero_detail_fields(),
     },
     filters={
-        "nombre": FilterDef("nombre", _NAME, (FilterOp.CONTAINS,)),
+        # Busca en el nombre comercial, el completo y cada parte del nombre.
+        "nombre": FilterDef("nombre", tercero_search_text(), (FilterOp.CONTAINS,)),
         "id": FilterDef("id", 't."idTercero"', (FilterOp.EQ, FilterOp.IN), value_type="number"),
         "es_cliente": FilterDef("es_cliente", 't."cliente"', (FilterOp.EQ,), value_type="bool"),
         "es_proveedor": FilterDef(

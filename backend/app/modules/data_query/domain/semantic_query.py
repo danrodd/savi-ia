@@ -5,6 +5,7 @@ campos y filtros — todos validados después contra el modelo semántico.
 Nunca contiene fragmentos de SQL: las expresiones SQL viven en el catálogo
 (escrito por nosotros), el LLM solo elige nombres de un menú.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -13,9 +14,9 @@ from typing import Any, Literal
 
 
 class QueryMode(StrEnum):
-    AGGREGATE = "agregado"   # métricas agrupadas por dimensiones
-    DETAIL = "detalle"       # filas individuales (tope duro de filas)
-    RECORD = "registro"      # un único registro por clave
+    AGGREGATE = "agregado"  # métricas agrupadas por dimensiones
+    DETAIL = "detalle"  # filas individuales (tope duro de filas)
+    RECORD = "registro"  # un único registro por clave
 
 
 class FilterOp(StrEnum):
@@ -26,7 +27,7 @@ class FilterOp(StrEnum):
     LT = "<"
     LTE = "<="
     BETWEEN = "entre"
-    CONTAINS = "contiene"   # LIKE %valor%
+    CONTAINS = "contiene"  # LIKE %valor%
     IN = "en"
 
 

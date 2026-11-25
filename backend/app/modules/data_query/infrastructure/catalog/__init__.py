@@ -9,8 +9,13 @@ from __future__ import annotations
 from collections.abc import Collection
 
 from app.modules.data_query.domain.semantic_model import SemanticEntity
+from app.modules.data_query.infrastructure.catalog.anticipos import ANTICIPOS
 from app.modules.data_query.infrastructure.catalog.cartera import CARTERA
 from app.modules.data_query.infrastructure.catalog.compras import COMPRAS, COMPRAS_DETALLE
+from app.modules.data_query.infrastructure.catalog.devoluciones import (
+    DEVOLUCIONES_COMPRA,
+    DEVOLUCIONES_VENTA,
+)
 from app.modules.data_query.infrastructure.catalog.inventario import INVENTARIO
 from app.modules.data_query.infrastructure.catalog.inventario_rotacion import INVENTARIO_ROTACION
 from app.modules.data_query.infrastructure.catalog.terceros import TERCEROS
@@ -25,6 +30,9 @@ _ENTITIES: dict[str, SemanticEntity] = {
     INVENTARIO_ROTACION.name: INVENTARIO_ROTACION,
     COMPRAS.name: COMPRAS,
     COMPRAS_DETALLE.name: COMPRAS_DETALLE,
+    DEVOLUCIONES_VENTA.name: DEVOLUCIONES_VENTA,
+    DEVOLUCIONES_COMPRA.name: DEVOLUCIONES_COMPRA,
+    ANTICIPOS.name: ANTICIPOS,
 }
 
 
