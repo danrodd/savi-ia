@@ -6,10 +6,10 @@
  *
  * Las preguntas no salen de esta instalación.
  */
+import { Button } from '@savi/ui'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import Button from '@/components/ui/Button.vue'
 import { formatFullDateTime } from '@/lib/dateTime'
 import { triggerDownload } from '@/lib/download'
 import { HttpRequestError } from '@/lib/HttpClient'
