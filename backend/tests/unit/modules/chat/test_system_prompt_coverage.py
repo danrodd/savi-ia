@@ -33,3 +33,15 @@ def test_the_rules_forbid_turning_not_found_into_does_not_exist() -> None:
     assert "concluyas que el dato no existe" in COVERAGE
     assert "Nunca pidas una captura" in COVERAGE
     assert "anticipos" in COVERAGE
+
+
+def test_an_empty_free_query_says_where_it_looked() -> None:
+    # Prueba del 2026-11-25: "no encontré depreciaciones este mes", con la
+    # tabla vacía del todo y sin decir dónde buscó.
+    assert "Si `consultar_libre` no devuelve nada" in COVERAGE
+    assert "el ERP no tiene ninguno" in COVERAGE
+
+
+def test_the_name_as_it_appears_in_the_erp_is_copied_verbatim() -> None:
+    # Escribió "VÁSQUEZ" con tilde y dijo que así figuraba; en el ERP no la tiene.
+    assert "letra por letra" in COVERAGE

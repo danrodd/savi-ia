@@ -145,6 +145,19 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
   - **Nómina (fuera del catálogo):** la explora con la consulta libre y responde "no puedo confirmar", no "no existe".
 - **No se pudo reproducir el caso exacto del reporte:** la copia local de imporllantas no es la misma base del cliente que reportó (los AC 129 y 175 son de otros terceros).
 
+- **Prueba en la app** (2026-11-25, preguntas distintas a las del script; cada cifra se revisó contra la base):
+  - Ventas 2025: bruto $8.187.473.301,90, devoluciones $182.426.909,50, neto $8.005.046.392,40. Exacto.
+  - "ayúdame a buscar anticipos de clientes de David Camilo Vásquez": lo encuentra aunque en el ERP sea "VASQUEZ MOLANO DAVID CAMILO". 2 anticipos, $10.405.900. Exacto.
+  - "Todo lo pendiente con Sival Triplex": cuentas por pagar, 8 anticipos ($111.463.743), 725 compras y 20 devoluciones. Exacto.
+  - Compras de julio a septiembre de 2026 con el IVA por tarifa: 85 de 85, con el listado completo para exportar.
+- **Correcciones de esa prueba** (route: inline; cuatro cambios chicos y ya entendidos):
+  - [x] El título de la tarjeta no muestra ids internos ni booleanos ("Tercero id 41, Pendiente True" pasa a "Pendiente"). Las entidades nuevas tienen título en español. Prueba: `test_result_titles.py`.
+  - [x] El prompt pide copiar el nombre del ERP letra por letra. Antes escribió "VÁSQUEZ" con tilde y dijo que así figuraba.
+  - [x] El prompt pide, cuando `consultar_libre` no devuelve nada, decir qué tabla revisó y si está vacía del todo. Antes, con la tabla de depreciación vacía entera, respondió solo "no encontré este mes".
+  - [x] Las sugerencias de inicio son solo preguntas que el catálogo responde. Se quitaron nómina, contabilidad general, activos fijos y cartera financiera, que es otro módulo del ERP y no ve la entidad `cartera`. Prueba: `suggestions.spec.ts`.
+  - Comprobado en la app: el nombre sale tal cual y la depreciación dice "Tampoco hay registros históricos en ese registro".
+  - Pendiente: el manual de uso (`docs/manuales/01-manual-de-uso.html`) todavía trae como ejemplos el estado de resultados y el balance general.
+
 ## Próximo paso
 
 - Publicar una versión candidata desde `staging` con estos cambios. Necesita OK.

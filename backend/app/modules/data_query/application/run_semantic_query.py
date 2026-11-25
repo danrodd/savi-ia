@@ -60,6 +60,9 @@ _TITLES = {
     "inventario_rotacion": "Rotación de inventario",
     "compras": "Compras",
     "compras_detalle": "Compras por producto",
+    "devoluciones_venta": "Devoluciones en venta",
+    "devoluciones_compra": "Devoluciones en compra",
+    "anticipos": "Anticipos",
 }
 
 
@@ -88,8 +91,15 @@ def _title(query: SemanticQuery, entity: SemanticEntity) -> str:
     base = _TITLES.get(query.entidad, query.entidad.replace("_", " ").capitalize())
     parts: list[str] = []
     for f in query.filtros:
+        if f.campo == "id" or f.campo.endswith("_id"):
+            # Un id interno no le dice nada al usuario ("Tercero id 41").
+            continue
         field = entity.fields.get(f.campo)
         label = field.label if field is not None else f.campo.replace("_", " ").capitalize()
+        if isinstance(f.valor, bool):
+            # "Pendiente", no "Pendiente True".
+            parts.append(label if f.valor else f"Sin {label.lower()}")
+            continue
         words = _OP_WORDS.get(f.op.value, f.op.value)
         parts.append(" ".join(p for p in (label, words, _value_text(f.valor)) if p))
     return f"{base} · {', '.join(parts)}"[:150] if parts else base

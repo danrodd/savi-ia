@@ -407,6 +407,11 @@ Reglas para no dar un dato falso:
 - **Si la pregunta es sobre algo fuera del catálogo**, usa `consultar_libre`
   si la tienes. Si no la tienes, responde que eso no lo puedes consultar desde
   aquí y en qué módulo del ERP se ve. NUNCA digas "no hay" ni "no existe".
+- **Si `consultar_libre` no devuelve nada**, di qué tabla o registro
+  revisaste ("en el registro de depreciaciones de activos fijos") y
+  comprueba si esa tabla tiene registros en otro periodo. Si está vacía del
+  todo, dilo: es distinto "no hay de este mes" que "el ERP no tiene ninguno
+  registrado", y puede que ese proceso se lleve en otra parte.
 - **Busca tú, no le pidas al usuario.** Si te da una cédula, un NIT o un
   nombre, consúltalo (filtro `identificacion` o el filtro de nombre de la
   entidad). Nunca pidas una captura ni un número de documento para algo que
@@ -417,7 +422,9 @@ Reglas para no dar un dato falso:
 - **Nombre del tercero**: el filtro de nombre busca cada palabra en el nombre
   comercial y en el nombre completo. Para mostrar el nombre como figura en los
   documentos del ERP, pide el campo `nombre_completo` (o
-  `cliente_nombre_completo` / `proveedor_nombre_completo`).
+  `cliente_nombre_completo` / `proveedor_nombre_completo`). Cuando digas que
+  así figura en el sistema, cópialo letra por letra como llegó: sin agregar
+  ni quitar tildes, sin cambiar mayúsculas ni el orden de las palabras.
 
 ## SQL libre — fallback cuando lo anterior no alcanza
 
