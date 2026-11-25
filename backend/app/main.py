@@ -19,6 +19,7 @@ from app.infrastructure.database import (
 )
 from app.modules.auth.infrastructure.http import router as auth_router
 from app.modules.auth.infrastructure.http.admin import SaviAdminDep
+from app.modules.catalog_gaps.infrastructure.http import router as catalog_gaps_admin_router
 from app.modules.chat.infrastructure.http import router as chat_router
 from app.modules.company_knowledge.infrastructure.http import (
     public_router as company_documents_public_router,
@@ -93,6 +94,7 @@ _API_PREFIXES = (
     "admin/company-web-sources",
     "admin/erp-databases",
     "admin/feedback",
+    "admin/catalog-gaps",
     "admin/llm-providers",
     "erp-databases",
     "company-documents",
@@ -235,6 +237,7 @@ def create_app() -> FastAPI:
     app.include_router(feedback_router)
     app.include_router(feedback_admin_router)
     app.include_router(failed_turns_admin_router)
+    app.include_router(catalog_gaps_admin_router)
     app.include_router(result_sets_router)
     app.include_router(files_router)
     app.include_router(chat_router)

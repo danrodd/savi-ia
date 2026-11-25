@@ -42,10 +42,29 @@ Saber qué preguntas el catálogo de datos no cubre, para sumarlas cada mes (fas
 
 - [x] **V1 Tablas de una consulta.** `referenced_tables(sql)` con sqlglot, que excluye los CTE e `information_schema`. Pruebas.
   - `app/modules/free_query/application/referenced_tables.py`: solo identificadores `[A-Za-z0-9_]`, máximo 20. Pruebas en `test_referenced_tables.py` (5): la consulta del 2026-11-25, el esquema, que no se filtren valores, SQL ilegible y el tope. Route: inline.
-- [ ] **V2 Reporte local (backend).**
+- [x] **V2 Reporte local (backend).**
   - Módulo `catalog_gaps`: caso de uso y lector SQLAlchemy sobre `audit_query` y `messages`.
   - Rutas `GET /admin/catalog-gaps` y `GET /admin/catalog-gaps/export.csv`.
   - Agrupa por pregunta: tipo de vacío, veces, última vez y tablas.
+  - Hecho (route: inline):
+    - el módulo `app/modules/catalog_gaps` en domain, application e infrastructure, más el router en `main.py` y `admin/catalog-gaps` en `_API_PREFIXES`;
+    - la pregunta es el mensaje del usuario de ese turno, no la `pregunta_usuario` del modelo;
+    - las consultas de esquema no cuentan;
+    - "veces" = conversaciones distintas;
+    - el tope se detecta cuando el turno pasa el cupo con todas las consultas al ERP y la última se rechazó. Así vale para la regla vieja, en la que las de esquema gastaban el mismo cupo.
+  - Pruebas: `tests/unit/modules/catalog_gaps/test_catalog_gaps.py` (7), sobre SQLite:
+    - agrupa por la pregunta del usuario;
+    - consulta fallida y tope;
+    - otra base y conversación borrada;
+    - detección del tope;
+    - normalización de la pregunta;
+    - CSV contra la inyección de fórmulas;
+    - periodo.
+  - Probado con la base local del agente, el 2026-11-25 en frami: 7 turnos de consulta libre y 1 que llegó al tope.
+    - Plan de cuentas: 3 veces, `Contabilidad.PlanContable`.
+    - Depreciación: 2 veces, `ActivoFijo.DepreciacionRegActivo`.
+    - Retención: consulta libre y tope.
+    - Nómina: `Nomina.LiquidacionNomina`.
 - [ ] **V3 Página "Vacíos del catálogo" (frontend).**
   - Ruta `admin/vacios-catalogo` y enlace en el menú.
   - Periodo, resumen por tipo, tabla, exportar CSV y enlace a Turnos fallidos.
