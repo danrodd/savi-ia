@@ -7,6 +7,7 @@ import {
   FileText,
   MessageSquareHeart,
   RefreshCw,
+  SearchX,
   ShieldCheck,
   Sparkles,
   TriangleAlert,
@@ -27,6 +28,7 @@ const NAV = [
   { to: { name: 'admin-failed-turns' }, label: 'Turnos fallidos', icon: TriangleAlert },
   { to: { name: 'admin-cloud' }, label: 'SAVI Cloud', icon: CloudUpload },
   { to: { name: 'admin-security' }, label: 'Seguridad', icon: ShieldCheck },
+  { to: { name: 'admin-catalog-gaps' }, label: 'Vacíos del catálogo', icon: SearchX },
 ] as const
 </script>
 
