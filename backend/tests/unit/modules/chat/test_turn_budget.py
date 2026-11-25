@@ -26,6 +26,21 @@ def test_queries_stop_at_the_limit() -> None:
     assert "responde con los datos que ya tienes" in refused.text
 
 
+def test_schema_lookups_do_not_spend_the_data_queries() -> None:
+    # Prueba del 2026-11-25: nueve de doce consultas fueron para buscar tablas y
+    # la que traía los datos llegó sin cupo.
+    budget = TurnBudget(max_queries=1, max_chars=100, max_lookups=2)
+
+    assert budget.take_query(lookup=True) is None
+    assert budget.take_query(lookup=True) is None
+    assert budget.take_query() is None  # la de datos sigue teniendo su cupo
+
+    refused_lookup = budget.take_query(lookup=True)
+    assert refused_lookup is not None and "estructura de la base" in refused_lookup.text
+    refused_data = budget.take_query()
+    assert refused_data is not None and "responde con los datos" in refused_data.text
+
+
 def test_a_long_result_is_cut_with_a_notice() -> None:
     budget = TurnBudget(max_queries=2, max_chars=10)
 

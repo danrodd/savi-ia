@@ -25,6 +25,7 @@ from app.modules.chat.infrastructure.llm.tools.consultar_datos import (
 )
 from app.modules.chat.infrastructure.llm.tools.consultar_libre import (
     build_consultar_libre_impl,
+    is_schema_lookup,
 )
 from app.modules.chat.infrastructure.llm.tools.documents import (
     DocumentListing,
@@ -162,10 +163,11 @@ def _spec(
     *,
     budget: TurnBudget | None = None,
     counts_query: bool = False,
+    is_lookup: Callable[[dict[str, Any]], bool] | None = None,
 ) -> ToolSpec:
     async def handler(args: dict[str, Any]) -> ToolResult:
         if budget is not None and counts_query:
-            refused = budget.take_query()
+            refused = budget.take_query(lookup=is_lookup is not None and is_lookup(args))
             if refused is not None:
                 log.info("tool_query_limit name=%s", name)
                 return refused
@@ -294,6 +296,7 @@ def build_savi_tools(
                 build_consultar_libre_impl(conversation_id, erp_database_id),
                 budget=budget,
                 counts_query=True,
+                is_lookup=lambda args: is_schema_lookup(str(args.get("sql") or "")),
             ),
         )
     return tools
