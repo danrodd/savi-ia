@@ -47,6 +47,12 @@ JSON Schema draft 2020-12. Todo viaja en JSON UTF-8; las fechas son ISO-8601 con
 - **`policy.allow_local_cli`** (aditivo, `false` por defecto): la instalación local puede
   ofrecer el CLI de Claude con la cuenta de la persona. Solo aplica a SAVI local; el Master
   nunca lo ofrece.
+- **`free_query/1.tables`** (opcional, aprobado en revisión de privacidad el 2026-11-25):
+  las tablas del ERP que leyó la consulta libre, como `Esquema.Tabla` (patrón
+  `^[A-Za-z0-9_]{1,63}\.[A-Za-z0-9_]{1,63}$`, máximo 20, sin repetir). Son nombres del
+  esquema del ERP, iguales en todos los clientes: nunca columnas, filtros ni valores. Sirve
+  para ver entre clientes qué le falta al catálogo de datos. **Cloud se despliega antes**:
+  un Cloud anterior rechaza el evento que lo trae (`data` es lista blanca estricta).
 - **`session/1.user_label`** (opcional) viaja **solo** con `identity_mode = named`: el
   código de usuario del ERP, nunca el nombre completo ni el correo. Cloud lo descarta si el
   cliente no está en modo `named`.

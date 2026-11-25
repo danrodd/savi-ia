@@ -27,7 +27,14 @@
         "result": { "type": "string", "pattern": "^[a-z0-9_]{1,32}$" },
         "estimated_rows": { "type": ["integer", "null"], "minimum": 0 },
         "returned_rows": { "type": ["integer", "null"], "minimum": 0 },
-        "duration_ms": { "type": ["integer", "null"], "minimum": 0 }
+        "duration_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "tables": {
+          "description": "Tablas del ERP (Esquema.Tabla) que leyo la consulta: nombres del esquema, nunca columnas, filtros ni valores.",
+          "type": ["array", "null"],
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9_]{1,63}\\.[A-Za-z0-9_]{1,63}$" }
+        }
       }
     }
   }

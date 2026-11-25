@@ -28,6 +28,7 @@ from pydantic import (
     StrictBool,
     StrictInt,
     StringConstraints,
+    field_validator,
 )
 
 MAX_BATCH_EVENTS = 500
@@ -54,6 +55,7 @@ def _text(
 IsoDatetime = Annotated[AwareDatetime, BeforeValidator(_require_text)]
 UuidStr = Annotated[str, _text(pattern=_UUID_PATTERN)]
 NonNegInt = Annotated[StrictInt, Field(ge=0)]
+ErpTableName = Annotated[str, _text(pattern=r"^[A-Za-z0-9_]{1,63}\.[A-Za-z0-9_]{1,63}$")]
 Name200 = Annotated[str, _text(min_length=1, max_length=200)]
 Short64 = Annotated[str, _text(max_length=64)]
 Short128 = Annotated[str, _text(max_length=128)]
@@ -269,6 +271,16 @@ class FreeQueryData(_Strict):
     estimated_rows: NonNegInt | None = None
     returned_rows: NonNegInt | None = None
     duration_ms: NonNegInt | None = None
+    # Tablas del ERP que leyó la consulta (`Esquema.Tabla`): nombres del esquema,
+    # nunca columnas, filtros ni valores. Opcional: una instancia vieja no lo manda.
+    tables: Annotated[list[ErpTableName], Field(max_length=20)] | None = None
+
+    @field_validator("tables")
+    @classmethod
+    def _unique_tables(cls, value: list[str] | None) -> list[str] | None:
+        if value is not None and len(set(value)) != len(value):
+            raise ValueError("tables no puede repetir nombres")
+        return value
 
 
 class DatabaseData(_Strict):

@@ -135,6 +135,9 @@ class EvFreeQueryModel(Base):
     estimated_rows: Mapped[int | None] = mapped_column(Integer, nullable=True)
     returned_rows: Mapped[int | None] = mapped_column(Integer, nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Tablas del ERP (`Esquema.Tabla`) que leyó la consulta. `NULL` en los eventos de
+    # instancias que todavía no lo mandan.
+    tables: Mapped[list[str] | None] = mapped_column(JsonType, nullable=True)
 
 
 class InstanceDatabaseModel(Base):
@@ -235,6 +238,7 @@ def _row(event: AnyEvent, instance_id: UUID, client_id: UUID) -> tuple[_Target, 
             "estimated_rows": f.estimated_rows,
             "returned_rows": f.returned_rows,
             "duration_ms": f.duration_ms,
+            "tables": f.tables,
         }
     b = event.data
     return _DATABASES, {

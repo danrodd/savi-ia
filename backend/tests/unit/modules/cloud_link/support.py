@@ -273,6 +273,7 @@ async def add_free_query(
     database: UUID = DB_A,
     created_at: datetime = T0,
     result: str = "ok",
+    sql: str = "SELECT * FROM clientes WHERE nombre = 'Juan Pérez'",
 ) -> UUID:
     qid = uuid4()
     async with sm() as session:
@@ -282,7 +283,7 @@ async def add_free_query(
                 conversation_id=conversation_id,
                 erp_database_id=database,
                 user_question="¿Cuánto debe el cliente Juan Pérez?",
-                sql="SELECT * FROM clientes WHERE nombre = 'Juan Pérez'",
+                sql=sql,
                 result=result,
                 estimated_rows=10,
                 returned_rows=3,

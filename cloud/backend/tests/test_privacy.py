@@ -54,6 +54,9 @@ APPROVED_FIELDS: dict[str, set[str]] = {
         "estimated_rows",
         "returned_rows",
         "duration_ms",
+        # Aprobado el 2026-11-25 (vacíos del catálogo): solo `Esquema.Tabla` del ERP,
+        # con patrón estricto. Nunca columnas, filtros ni valores.
+        "tables",
     },
     "database": {
         "database_ref",

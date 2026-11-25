@@ -143,6 +143,34 @@ def test_free_query_result_is_normalised_to_the_contract_pattern() -> None:
     assert result_code("") == "unknown"
 
 
+async def test_free_query_event_carries_the_erp_tables_and_nothing_of_the_query(
+    sm: async_sessionmaker[AsyncSession], services: CloudLinkServices
+) -> None:
+    """Vacíos del catálogo (2026-11-25): Cloud ve qué tablas del ERP se piden por SQL
+    libre entre clientes. Solo `Esquema.Tabla`: ni columnas, ni filtros, ni valores."""
+    conversation = await add_conversation(sm)
+    await add_free_query(
+        sm,
+        conversation_id=conversation,
+        sql=(
+            'SELECT t."razonSocial" FROM "Tercero"."Tercero" t '
+            'JOIN "Contabilidad"."Anticipo" a ON a."idTercero" = t."idTercero" '
+            "WHERE t.\"numeroIdentificacion\" = '900042543'"
+        ),
+    )
+
+    free_query = _sources(sm, services)[3]
+    (event,) = await free_query.read_batch(_START, 10)
+    payload = event.to_payload()
+
+    assert payload["data"]["tables"] == ["Contabilidad.Anticipo", "Tercero.Tercero"]
+    EVENT_MODELS["free_query/1"].model_validate(payload)
+    validate_document("free_query", payload)
+    text = json.dumps(payload, ensure_ascii=False)
+    for secret in ("razonSocial", "numeroIdentificacion", "900042543", "SELECT", "Juan Pérez"):
+        assert secret not in text
+
+
 async def test_turn_event_maps_tokens_cost_tools_latency_and_action(
     sm: async_sessionmaker[AsyncSession], services: CloudLinkServices
 ) -> None:

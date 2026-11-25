@@ -399,7 +399,12 @@ async def test_ingest_accepts_all_streams(env: Env) -> None:
             "schema": "free_query/1",
             "source_id": "fq-1",
             "occurred_at": "2026-01-01T11:30:00Z",
-            "data": {"conversation_ref": CONVERSATION, "result": "ok", "returned_rows": 3},
+            "data": {
+                "conversation_ref": CONVERSATION,
+                "result": "ok",
+                "returned_rows": 3,
+                "tables": ["Contabilidad.PlanContable"],
+            },
         },
         {
             "schema": "database/1",

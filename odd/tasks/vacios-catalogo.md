@@ -72,10 +72,17 @@ Saber qué preguntas el catálogo de datos no cubre, para sumarlas cada mes (fas
     - `CatalogGapsView.vue`, `catalogGapsService.ts`, la ruta `admin/vacios-catalogo` y el enlace "Vacíos del catálogo" en el menú;
     - la página tiene totales por tipo, tablas más consultadas, la tabla por pregunta, periodo, CSV y enlace a Turnos fallidos.
   - Pruebas: `CatalogGapsView.spec.ts` (2). La suite del frontend da 359 de 359; `vue-tsc` y Biome, limpios.
-- [ ] **V4 Contrato y envío a Cloud.**
+- [x] **V4 Contrato y envío a Cloud.**
   - `tables` opcional en `free_query/1`: JSON Schema, fixtures, modelos de los dos lados y prueba de privacidad.
   - La instalación lo manda.
   - Cloud lo guarda (migración).
+  - Hecho (route: inline):
+    - **Contrato:** `tables` opcional en `free_query/1`. Patrón `Esquema.Tabla`, máximo 20 y sin repetir. Fixture válido actualizado y fixture inválido `table_with_values`. Aprobado en las listas blancas de privacidad de los dos lados y documentado en `contracts/sync/v1/README.md`, con el orden de despliegue: Cloud primero.
+    - **Instalación:** `FreeQuerySource` lee `sql` solo para `referenced_tables` y manda los nombres.
+    - **Cloud:** guarda `ev_free_queries.tables` (migración `0011`).
+  - Pruebas:
+    - instalación, `cloud_link`: 267, incluida una que comprueba que el evento lleva las tablas y nada de la consulta;
+    - Cloud: contrato, privacidad e ingesta, dentro de la suite completa de 384.
 - [ ] **V5 Vista en Cloud.** Ranking de tablas consultadas por SQL libre entre todos los clientes, por periodo.
 - [ ] **V6 Rutina mensual (C4.2).** Guía de soporte: exportar, revisar el ranking y llevar las más frecuentes al catálogo (repetir la fase 2).
 

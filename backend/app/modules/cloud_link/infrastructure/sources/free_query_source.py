@@ -1,7 +1,9 @@
 """Stream `free_query/1` (§4.4).
 
 Origen: `audit_query`. **Nunca** `sql`, `user_question` ni `error_message`: pueden
-contener literales con datos del ERP. Esas columnas ni siquiera se seleccionan.
+contener literales con datos del ERP. `user_question` y `error_message` ni siquiera se
+seleccionan; `sql` se lee solo para sacarle las tablas del ERP que consulta
+(`Esquema.Tabla`, ver `referenced_tables`) y no sale de esta función.
 """
 
 import re
@@ -13,6 +15,7 @@ from app.modules.cloud_link.domain.entities import Cursor, SyncEvent
 from app.modules.cloud_link.domain.interfaces import EventSource
 from app.modules.cloud_link.domain.value_objects import SyncStream
 from app.modules.cloud_link.infrastructure.sources.keyset import keyset_after
+from app.modules.free_query.application.referenced_tables import referenced_tables
 from app.modules.free_query.infrastructure.models import AuditQueryModel
 
 _NOT_CODE = re.compile(r"[^a-z0-9_]")
@@ -43,6 +46,7 @@ class FreeQuerySource(EventSource):
                 q.estimated_rows,
                 q.returned_rows,
                 q.duration_ms,
+                q.sql,
             )
             .where(keyset_after(q.created_at, q.id, after))
             .order_by(q.created_at, q.id)
@@ -66,6 +70,8 @@ class FreeQuerySource(EventSource):
                     if r.returned_rows is not None
                     else None,
                     "duration_ms": max(r.duration_ms, 0) if r.duration_ms is not None else None,
+                    # Solo nombres `Esquema.Tabla` del ERP: nunca el SQL ni sus valores.
+                    "tables": referenced_tables(r.sql),
                 },
                 cursor_id=str(r.id),
             )
