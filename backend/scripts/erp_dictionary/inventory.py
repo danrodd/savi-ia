@@ -270,13 +270,16 @@ async def read_snapshot(dsn: str) -> Snapshot:
     )
 
 
-async def main(dsns: Sequence[str], out: Path) -> None:
+async def collect(dsns: Sequence[str]) -> tuple[dict[str, TableInfo], int]:
     snapshots = [await read_snapshot(dsn) for dsn in dsns]
-    tables = merge(snapshots)
+    return merge(snapshots), len(snapshots)
+
+
+def main(dsns: Sequence[str], out: Path) -> None:
+    tables, bases = asyncio.run(collect(dsns))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
-        json.dumps(to_json(tables, len(snapshots)), ensure_ascii=False, indent=1),
-        encoding="utf-8",
+        json.dumps(to_json(tables, bases), ensure_ascii=False, indent=1), encoding="utf-8"
     )
     with_data = sum(1 for t in tables.values() if any(r > 0 for r in t.rows))
     print(f"{len(tables)} tablas ({with_data} con datos en alguna base) -> {out}")
@@ -287,4 +290,4 @@ if __name__ == "__main__":
     parser.add_argument("--dsn", action="append", required=True, help="Una por base.")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    asyncio.run(main(args.dsn, args.out))
+    main(args.dsn, args.out)
