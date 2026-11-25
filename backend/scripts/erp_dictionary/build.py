@@ -193,7 +193,9 @@ if __name__ == "__main__":
         args.out.mkdir(parents=True, exist_ok=True)
         for module, tables in modules.items():
             (args.out / f"{module}.json").write_text(
-                json.dumps(tables, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
+                json.dumps(tables, ensure_ascii=False, indent=1) + "\n",
+                encoding="utf-8",
+                newline="\n",  # como el resto del repo; en Windows saldría CRLF
             )
         total = sum(len(t) for t in modules.values())
         validated = sum(1 for t in modules.values() for e in t.values() if e["validado"])
