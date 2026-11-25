@@ -116,8 +116,13 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
 
 ### Fase 4: aprender de lo que preguntan
 
-- [ ] **C4.1 Reporte de vacíos.** Juntar las preguntas que cayeron en consulta libre, las que fallaron y las que llegaron al tope. Las fuentes son la auditoría local de consultas y las métricas de Cloud (`free_query`, `finish_reason`).
-- [ ] **C4.2 Rutina.** Cada mes, las más frecuentes pasan al catálogo (repetir la fase 2).
+- [x] **C4.1 Reporte de vacíos.** Juntar las preguntas que cayeron en consulta libre, las que fallaron y las que llegaron al tope. Las fuentes son la auditoría local de consultas y las métricas de Cloud (`free_query`, `finish_reason`).
+- [x] **C4.2 Rutina.** Cada mes, las más frecuentes pasan al catálogo (repetir la fase 2).
+  - Hecho el 2026-11-25 en `odd/tasks/vacios-catalogo.md`:
+    - la página local Administración → Vacíos del catálogo;
+    - las tablas por consulta libre a Cloud (`free_query/1.tables`), con su ranking en el Resumen;
+    - la guía `docs/plataforma/14-vacios-del-catalogo.md`.
+  - Falta la primera ronda con datos reales de clientes.
 
 ### Fase 5: diccionario del ERP
 
