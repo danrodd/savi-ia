@@ -77,7 +77,18 @@ Además, la búsqueda de terceros compara contra un solo nombre (el comercial, l
 
 ### Fase 3: informes completos
 
-- [ ] **C3.1 Exportes completos.** El Excel o CSV de una consulta libre trae todas las filas leídas, aunque el modelo vea solo 50. Antes, revisar `fetch_rows` y `max_rows`.
+- [x] **C3.1 Exportes completos.** El Excel o CSV de una consulta libre trae todas las filas leídas, aunque el modelo vea solo 50. Antes, revisar `fetch_rows` y `max_rows`.
+  - Hallazgo: la herramienta ya leía y guardaba hasta 10.000 filas (`fetch_rows = FULL_FETCH`). El corte venía del prompt, que tenía reglas de antes de la exportación:
+    - "`LIMIT` obligatorio, máximo 50": el modelo escribía `LIMIT 50` y el Excel salía con 50 filas;
+    - "Si pide todos los registros, NO lo hagas" y "no lo hagas ni con SQL libre": se negaba ("No puedo entregarle aquí el listado completo");
+    - de paso, "sin `WITH`" y "≤ 1000 filas estimadas", que ya no aplican.
+  - Cambios (route: inline, prompt + un parámetro de la herramienta):
+    - el `LIMIT` lo decide la pregunta: un listado completo va sin `LIMIT`;
+    - un listado completo se entrega: total, un top en el chat y la tabla completa para exportar;
+    - columnas legibles: booleanos y códigos traducidos con `CASE`;
+    - parámetro `exploracion` en `consultar_libre`: las consultas para ver valores no salen como tarjeta (`is_exploration`).
+  - Pruebas: `test_system_prompt_coverage.py` y `test_schema_lookup_not_recorded.py`.
+  - Comprobado en la app: "el plan de cuentas completo para Excel" da las 2.891 cuentas en una sola tarjeta, con la naturaleza como "Débito"/"Crédito" y el Excel de 72 KB. Antes: se negaba; después, tres tarjetas con `true`/`false`.
 - [ ] **C3.2 Tope de consultas por turno.** Revisar las 12 consultas para informes largos, con medición: cuántos turnos llegan al tope y por qué.
 - [ ] **C3.3 Informe que se amplía.** Al pedir otra columna, se conserva la estructura que ya tenía.
 
