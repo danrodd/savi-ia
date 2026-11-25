@@ -91,7 +91,8 @@ Saber qué preguntas el catálogo de datos no cubre, para sumarlas cada mes (fas
   - Pruebas:
     - Cloud backend: el ranking entre dos clientes y que ignore los eventos sin `tables`. Suite de 384, más la nueva.
     - Consola: `overview-lists.spec.ts`. Suite de 239; `vue-tsc` y Biome, limpios.
-- [ ] **V6 Rutina mensual (C4.2).** Guía de soporte: exportar, revisar el ranking y llevar las más frecuentes al catálogo (repetir la fase 2).
+- [x] **V6 Rutina mensual (C4.2).** Guía de soporte: exportar, revisar el ranking y llevar las más frecuentes al catálogo (repetir la fase 2).
+  - Hecho: `docs/plataforma/14-vacios-del-catalogo.md`, con las señales, dónde mirar (Cloud y cada cliente), seis pasos y qué no hacer.
 
 ## Criterios de aceptación
 
@@ -115,6 +116,11 @@ Saber qué preguntas el catálogo de datos no cubre, para sumarlas cada mes (fas
 - Estimado: unas 1.500 líneas en total, a partes iguales entre backend local, frontend y Cloud.
 
 ## Progreso
+
+- 2026-11-25: V1–V6 hechos.
+  - `staging`: eef701b, a6ee9d5, el commit de V3 y c1a236f.
+  - `develop`: la integración e969d85; 1ded270, el import de `@savi/ui`; 436e3c0 (V4); 4e4afa9 (V5); y V6.
+  - Pendiente: que Cloud se despliegue antes que las instalaciones con `tables` (necesita OK), y hacer la primera rutina mensual cuando haya datos reales de clientes.
 
 - 2026-11-25: plan creado tras la exploración. Datos disponibles:
   - `audit_query` (pregunta, SQL, resultado);
