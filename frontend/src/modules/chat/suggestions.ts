@@ -11,6 +11,10 @@
  *   usuario al chat.
  * - GENERAL no requiere módulo específico — son las que ven los usuarios
  *   sin verticales o cuando hay pocas opciones.
+ * - Solo preguntas que el catálogo de datos responde (ventas, compras,
+ *   cartera, terceros, inventario, anticipos y devoluciones). Una sugerencia
+ *   fuera del catálogo (nómina, contabilidad general, activos fijos) promete
+ *   algo que SAVI solo puede intentar por SQL libre.
  */
 import { M, type ModuleCode } from '@/modules/permisos'
 
@@ -24,22 +28,14 @@ export interface ChatSuggestion {
 }
 
 export const SUGGESTIONS: ChatSuggestion[] = [
-  // Contabilidad
-  { module: M.CONTABILIDAD, prompt: '¿Cuáles son los saldos contables del mes actual?' },
-  { module: M.CONTABILIDAD, prompt: 'Muéstreme el balance general del último trimestre.' },
-  { module: M.CONTABILIDAD, prompt: '¿Cuál fue el estado de resultados del mes pasado?' },
-  { module: M.CONTABILIDAD, prompt: 'Lísteme los últimos comprobantes contables registrados.' },
-
-  // Nómina
-  { module: M.NOMINA, prompt: '¿Cuántos empleados activos hay en la empresa?' },
-  { module: M.NOMINA, prompt: 'Muéstreme las últimas novedades de nómina registradas.' },
-  { module: M.NOMINA, prompt: '¿Qué empleados están próximos a vacaciones?' },
+  // Contabilidad (los anticipos los ve también este módulo)
+  { module: M.CONTABILIDAD, prompt: '¿Qué anticipos de clientes siguen pendientes por cruzar?' },
+  { module: M.CONTABILIDAD, prompt: '¿Qué anticipos a proveedores siguen sin cruzar?' },
 
   // Inventario
   { module: M.INVENTARIO, prompt: '¿Qué productos tienen menos de 10 unidades en stock?' },
-  { module: M.INVENTARIO, prompt: 'Muéstreme los productos con lotes próximos a vencer.' },
-  { module: M.INVENTARIO, prompt: '¿Cuál es el valor total del inventario actual?' },
-  { module: M.INVENTARIO, prompt: 'Lísteme los últimos movimientos de inventario.' },
+  { module: M.INVENTARIO, prompt: '¿Qué productos están por debajo del mínimo?' },
+  { module: M.INVENTARIO, prompt: '¿Qué productos llevan más de un año sin venderse?' },
 
   // Cuentas por cobrar
   { module: M.CUENTACOBRAR, prompt: '¿Cuántas facturas están pendientes de cobro?' },
@@ -49,22 +45,19 @@ export const SUGGESTIONS: ChatSuggestion[] = [
 
   // Cuentas por pagar
   { module: M.CUENTAPAGAR, prompt: '¿Cuáles son las facturas de proveedores próximas a vencer?' },
-  { module: M.CUENTAPAGAR, prompt: 'Muéstreme las compras del mes actual.' },
-  { module: M.CUENTAPAGAR, prompt: '¿Qué órdenes de compra están pendientes?' },
+  { module: M.CUENTAPAGAR, prompt: 'Muéstreme las compras del mes actual con el IVA por tarifa.' },
+  { module: M.CUENTAPAGAR, prompt: '¿Qué devoluciones a proveedores se hicieron este mes?' },
+  { module: M.CUENTAPAGAR, prompt: '¿Cuánto tenemos vencido por pagar a proveedores?' },
 
-  // Cartera financiera
-  { module: M.CARTERAFINANCIERA, prompt: 'Muéstreme la edad de cartera de clientes.' },
-  { module: M.CARTERAFINANCIERA, prompt: '¿Qué pagos se recibieron esta semana?' },
-  { module: M.CARTERAFINANCIERA, prompt: 'Lísteme las facturas vencidas hace más de 60 días.' },
+  // La cartera de clientes la ven Cuentas por cobrar y Ventas; Cartera
+  // financiera es otro módulo del ERP y no está en el catálogo.
+  { module: M.CUENTACOBRAR, prompt: 'Muéstreme la edad de cartera de clientes.' },
+  { module: M.CUENTACOBRAR, prompt: 'Lísteme las facturas vencidas hace más de 60 días.' },
 
   // Ventas
   { module: M.VENTA, prompt: '¿Cuál es el resumen de ventas de hoy?' },
-  { module: M.VENTA, prompt: 'Muéstreme los pedidos pendientes de despachar.' },
-  { module: M.VENTA, prompt: '¿Qué cotizaciones siguen activas?' },
-
-  // Activo fijo
-  { module: M.ACTIVOFIJO, prompt: 'Lísteme los activos fijos de la empresa.' },
-  { module: M.ACTIVOFIJO, prompt: '¿Cuánta depreciación se calculó este mes?' },
+  { module: M.VENTA, prompt: '¿Cuánto vendió cada vendedor este mes?' },
+  { module: M.VENTA, prompt: '¿Cuánto se devolvió en ventas este mes?' },
 
   // Terceros (core)
   { module: M.TERCERO, prompt: 'Búsqueme un cliente por nombre o NIT.' },
