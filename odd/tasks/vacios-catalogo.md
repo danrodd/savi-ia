@@ -65,9 +65,13 @@ Saber qué preguntas el catálogo de datos no cubre, para sumarlas cada mes (fas
     - Depreciación: 2 veces, `ActivoFijo.DepreciacionRegActivo`.
     - Retención: consulta libre y tope.
     - Nómina: `Nomina.LiquidacionNomina`.
-- [ ] **V3 Página "Vacíos del catálogo" (frontend).**
+- [x] **V3 Página "Vacíos del catálogo" (frontend).**
   - Ruta `admin/vacios-catalogo` y enlace en el menú.
   - Periodo, resumen por tipo, tabla, exportar CSV y enlace a Turnos fallidos.
+  - Hecho (route: inline):
+    - `CatalogGapsView.vue`, `catalogGapsService.ts`, la ruta `admin/vacios-catalogo` y el enlace "Vacíos del catálogo" en el menú;
+    - la página tiene totales por tipo, tablas más consultadas, la tabla por pregunta, periodo, CSV y enlace a Turnos fallidos.
+  - Pruebas: `CatalogGapsView.spec.ts` (2). La suite del frontend da 359 de 359; `vue-tsc` y Biome, limpios.
 - [ ] **V4 Contrato y envío a Cloud.**
   - `tables` opcional en `free_query/1`: JSON Schema, fixtures, modelos de los dos lados y prueba de privacidad.
   - La instalación lo manda.

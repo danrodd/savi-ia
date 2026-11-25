@@ -6,6 +6,7 @@ import {
   FileText,
   MessageSquareHeart,
   RefreshCw,
+  SearchX,
   Sparkles,
   TriangleAlert,
 } from 'lucide-vue-next'
@@ -21,6 +22,7 @@ const NAV = [
   { to: { name: 'admin-feedback' }, label: 'Feedback del piloto', icon: MessageSquareHeart },
   { to: { name: 'admin-updates' }, label: 'Actualizaciones', icon: RefreshCw },
   { to: { name: 'admin-failed-turns' }, label: 'Turnos fallidos', icon: TriangleAlert },
+  { to: { name: 'admin-catalog-gaps' }, label: 'Vacíos del catálogo', icon: SearchX },
 ] as const
 </script>
 

@@ -18,6 +18,7 @@ const FeedbackPilotView = () => import('@/modules/admin/views/FeedbackPilotView.
 const CompanyKnowledgeView = () => import('@/modules/admin/views/CompanyKnowledgeView.vue')
 const UpdatesAdminView = () => import('@/modules/updates/views/UpdatesAdminView.vue')
 const FailedTurnsView = () => import('@/modules/admin/views/FailedTurnsView.vue')
+const CatalogGapsView = () => import('@/modules/admin/views/CatalogGapsView.vue')
 const NotFoundView = () => import('@/components/NotFoundView.vue')
 const LandingView = () => import('@/modules/landing/views/LandingView.vue')
 
@@ -109,6 +110,8 @@ const router = createRouter({
         { path: 'consumo', name: 'admin-usage', component: AdminUsageView },
         { path: 'actualizaciones', name: 'admin-updates', component: UpdatesAdminView },
         { path: 'turnos-fallidos', name: 'admin-failed-turns', component: FailedTurnsView },
+        // `/admin/catalog-gaps` es del API: la pantalla vive en otro segmento.
+        { path: 'vacios-catalogo', name: 'admin-catalog-gaps', component: CatalogGapsView },
         // `/admin/feedback` es del API: la pantalla vive en otro segmento.
         { path: 'piloto', name: 'admin-feedback', component: FeedbackPilotView },
       ],
