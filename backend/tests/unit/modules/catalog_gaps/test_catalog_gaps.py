@@ -180,6 +180,11 @@ async def test_failed_queries_and_query_limit_are_their_own_kinds(session: Async
         GapKind.FAILED_QUERY: 1,
         GapKind.QUERY_LIMIT: 1,
     }
+    # Una sola pregunta: sus tablas cuentan una vez aunque tenga dos señales.
+    assert {t.table: t.times for t in report.top_tables} == {
+        "Contabilidad.PlanContable": 1,
+        "CuentaPagar.Nope": 1,
+    }
 
 
 async def test_other_databases_and_deleted_conversations_stay_out(session: AsyncSession) -> None:

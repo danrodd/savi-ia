@@ -69,8 +69,13 @@ def build_report(events: Sequence[GapEvent], start: datetime, end: datetime) -> 
                 conversation_id=latest.conversation_id,
             )
         )
-    for event in turns.values():
-        table_turns.update(event.tables)
+    # Cada tabla cuenta una vez por conversación y pregunta, aunque ese turno
+    # tenga dos señales (consulta libre y tope).
+    per_question: dict[tuple[UUID, str], set[str]] = {}
+    for (conversation_id, key, _), event in turns.items():
+        per_question.setdefault((conversation_id, key), set()).update(event.tables)
+    for tables_of_turn in per_question.values():
+        table_turns.update(tables_of_turn)
 
     gaps.sort(key=lambda g: (-g.times, -g.last_at.timestamp()))
     return CatalogGapReport(
