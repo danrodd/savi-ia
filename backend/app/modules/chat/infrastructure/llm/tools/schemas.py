@@ -71,6 +71,14 @@ CONSULTAR_LIBRE_SCHEMA: dict[str, Any] = {
             "type": "string",
             "description": "Pregunta original del usuario, para auditoría.",
         },
+        "exploracion": {
+            "type": "boolean",
+            "description": (
+                "true si la consulta es solo para ti (ver qué valores tiene una "
+                "columna, probar un cruce): no se le muestra al usuario. Omítelo "
+                "en la consulta que responde la pregunta."
+            ),
+        },
     },
     "required": ["sql", "pregunta_usuario"],
 }

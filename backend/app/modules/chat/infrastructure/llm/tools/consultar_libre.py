@@ -54,6 +54,16 @@ def is_schema_lookup(sql: str) -> bool:
     return _SCHEMA_LOOKUP.search(sql) is not None
 
 
+def is_exploration(sql: str, args: dict[str, Any]) -> bool:
+    """La consulta es para el modelo, no la respuesta: no llega al chat.
+
+    Las del esquema y las que el modelo marca con `exploracion` (ver qué
+    valores tiene una columna, probar un cruce). Si no, el usuario ve tablas
+    intermedias con `true`/`false` junto a la que responde su pregunta.
+    """
+    return args.get("exploracion") is True or is_schema_lookup(sql)
+
+
 def build_consultar_libre_impl(
     conversation_id: UUID | None,
     erp_database_id: UUID | None = None,
@@ -107,7 +117,7 @@ def build_consultar_libre_impl(
             }
         kept = False
         kept_id: str | None = None
-        if recorder is not None and len(result.rows) >= 2 and not is_schema_lookup(sql):
+        if recorder is not None and len(result.rows) >= 2 and not is_exploration(sql, args):
             title = (user_question or "Consulta del ERP").strip()[:150]
             personal = any(c.lower() in _CONTACT_COLUMNS for c in result.columns)
             try:
